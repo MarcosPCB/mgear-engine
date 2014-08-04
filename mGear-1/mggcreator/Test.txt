@@ -1,0 +1,29 @@
+//This must the header
+
+MGGNAME TEST //MGG name
+FRAMES 16 //Number of frames
+ANIMS 2 //Number of animations
+TYPE MULT //Type of mgg
+
+BEGIN //Start every animation instruction with BEGIN
+
+ANIM 0 //Animation number
+
+NAME EXAMPLE //Animation name
+FRAMESA 11 //Number of frames
+STARTF 0 //Start frame
+ENDF 10 //Final frame
+
+ENDA //End code with ENDA
+
+BEGIN
+
+ANIM 1
+
+NAME EXAMPLE2
+STARTF 11
+ENDF 15
+
+ENDA
+
+OBS: don't use commentaries
