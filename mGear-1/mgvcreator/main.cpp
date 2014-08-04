@@ -13,9 +13,9 @@ int main(int argc, char *argv[])
 
 	if(argc<3)
 	{
-		printf("Creates an MGV file.\n");
+		printf("Creates an MGV file from a JPG sequence.\n");
 		printf("-o output file name\n");
-		printf("-p path to the folder with frames and the audio ( MUST BE NAMED FRAME0000.TGA, FRAME0001.TGA... AND THE AUDIO MUST BE MGV.WAV\n");
+		printf("-p path to the folder with frames and the audio ( MUST BE NAMED FRAME0000.JPG, FRAME0001.JPG... AND THE AUDIO MUST BE MGV.WAV\n");
 		printf("-fps number of frames per second\n");
 		printf("-n total number of frames\n");
 		printf("EXAMPLE: -o test.mgv -p test//frames -fps 30 -n 100\n");

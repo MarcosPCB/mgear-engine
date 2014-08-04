@@ -331,14 +331,13 @@ void createmgv()
 uint32 LoadMGG(_MGG *mgg, const char name[32])
 {
 	FILE *file, *file2;
+	void *data;
 
 	if((file=DecompressFile(name))==NULL)
 		if(MessageBox(NULL,L"Error reading mgg file",NULL,MB_OK | MB_ICONERROR)==IDOK)
 			return false;
 
 	_MGGFORMAT mggf;
-
-	uint32 w, h;
 
 	rewind(file);
 
@@ -384,7 +383,7 @@ uint32 LoadMGG(_MGG *mgg, const char name[32])
 			totalsize+=(framesize[i-1]+2048);
 			fseek(file,totalsize,SEEK_CUR);
 		}
-		
+		/*
 		extern TGAHeader tgaheader;									
 		extern TGA tga;												
 		extern GLubyte uTGAcompare[12]; 	
@@ -411,23 +410,38 @@ uint32 LoadMGG(_MGG *mgg, const char name[32])
 		{
 			return false;
 		}
-
+		
 		glGenTextures(1, &texture.texID);			
 		glBindTexture(GL_TEXTURE_2D, texture.texID);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, texture.bpp / 8, texture.width, texture.height, 0, texture.type, GL_UNSIGNED_BYTE, texture.imageData);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 		
-		if (texture.imageData)						
+
+		w=POT(texture.width);
+		h=POT(texture.height);
+
+		GLubyte *img;
+		/*
+		if(w!=texture.width && h!=texture.height)
 		{
-			free(texture.imageData);					
+
+			img=(GLubyte*) malloc(texture.bpp*w*h);
+
+			up_scale_image(texture.imageData,texture.width,texture.height,texture.bpp,img,w,h);
 		}
 		
-		mgg->frames[i]=texture.texID;
-		mgg->size[i].x=texture.width;
-		mgg->size[i].y=texture.height;
-			
+		glTexImage2D(GL_TEXTURE_2D, 0, texture.bpp / 8, w, h, 0, texture.type, GL_UNSIGNED_BYTE, img);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+		*/
+
+		data=malloc(framesize[i]);
+
+		fread(data,framesize[i],1,file);
+
+		mgg->frames[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+		
+		if (data)						
+			free(data);
 	}
 
 	fclose(file);
@@ -474,8 +488,8 @@ void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/16384;
 			ent[i].pos.y=(st.screeny*y)/8192;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
+			ent[i].size.x=(sizex*st.screenx)/16384;
+			ent[i].size.y=(sizey*st.screeny)/8192;
 			ent[i].type=SPRITE;
 			ent[i].data=data;
 			ent[i].color.r=(float)r/255;
@@ -498,8 +512,8 @@ void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/16384;
 			ent[i].pos.y=(st.screeny*y)/8192;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
+			ent[i].size.x=(sizex*st.screenx)/16384;
+			ent[i].size.y=(sizey*st.screeny)/8192;
 			ent[i].type=TEXTURE;
 			ent[i].data=data;
 			ent[i].color.r=(float)r/255;
@@ -526,8 +540,8 @@ void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/800;
 			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
+			ent[i].size.x=(sizex*st.screenx)/800;
+			ent[i].size.y=(sizey*st.screeny)/600;
 			ent[i].type=HUD;
 			ent[i].data=data;
 			ent[i].x1y1.x=x1/sizex;
@@ -593,8 +607,8 @@ void DrawString(Font type, const char *text, double x, double y, double sizex, d
 			ent[i].type=TEXT;
 			ent[i].pos.x=(st.screenx*x)/800;
 			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=msg->w*sizex;
-			ent[i].size.y=msg->h*sizey;
+			ent[i].size.x=(msg->w*sizex*st.screenx)/800;
+			ent[i].size.y=(msg->h*sizey*st.screeny)/600;
 			ent[i].x1y1.x=0;
 			ent[i].x1y1.y=0;
 			ent[i].x2y2.x=1;
@@ -727,13 +741,12 @@ uint32 PlayMovie(const char *name)
 			mgv->frames[i].data=IMG_LoadJPG_RW(mgv->frames[i].rw);
 
 			glEnable(GL_TEXTURE_RECTANGLE);
-			//glEnable(GL_ARB_texture_non_power_of_two);
 
 			glGenTextures(1,&mgv->frames[i].ID);
 			glBindTexture(GL_TEXTURE_RECTANGLE,mgv->frames[i].ID);
 			glTexImage2D(GL_TEXTURE_RECTANGLE,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_BGR,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
-			//glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-			//glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
+			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 			
@@ -741,14 +754,14 @@ uint32 PlayMovie(const char *name)
 			glBegin(GL_TRIANGLES);
 				glTexCoord2i(0,0);
 				glVertex2d(0,0);
-				glTexCoord2i(1,0);
+				glTexCoord2i(mgv->frames[i].data->w,0);
 				glVertex2d(st.screenx,0);
-				glTexCoord2i(1,1);
+				glTexCoord2i(mgv->frames[i].data->w,mgv->frames[i].data->h);
 				glVertex2d(st.screenx, st.screeny);
 
-				glTexCoord2i(1,1);
+				glTexCoord2i(mgv->frames[i].data->w,mgv->frames[i].data->h);
 				glVertex2d(st.screenx, st.screeny);
-				glTexCoord2i(0,1);
+				glTexCoord2i(0,mgv->frames[i].data->h);
 				glVertex2d(0,st.screeny);
 				glTexCoord2i(0,0);
 				glVertex2d(0,0);
@@ -884,20 +897,21 @@ void DrawMap()
 	
 	//Draw the objects first
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
-	{
-		if(st.Current_Map.obj[i].type==WALL_BACK)
+		if(st.Current_Map.obj[i].type==FLOOR)
 			DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-		else if(st.Current_Map.obj[i].type==WALL_SIDE)
+	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+		if(st.Current_Map.obj[i].type==WALL_BACK)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-		else if(st.Current_Map.obj[i].type==CEILING)
+	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+		if(st.Current_Map.obj[i].type==WALL_SIDE)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-		else if(st.Current_Map.obj[i].type==FLOOR)
+	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+		if(st.Current_Map.obj[i].type==CEILING)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-	}
 	
 }
 

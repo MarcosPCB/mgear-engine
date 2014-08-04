@@ -84,10 +84,10 @@ void createmap()
 	st.Current_Map.obj[0].position.y=4096;
 	st.Current_Map.obj[0].priority=0;
 	st.Current_Map.obj[0].size.x=16384;
-	st.Current_Map.obj[0].size.y=200;
+	st.Current_Map.obj[0].size.y=4000;
 	st.Current_Map.obj[0].tag=0;
 	st.Current_Map.obj[0].TextureID=0;
-	st.Current_Map.obj[0].texsize.x=50;
+	st.Current_Map.obj[0].texsize.x=5;
 	st.Current_Map.obj[0].texsize.y=1;
 	st.Current_Map.obj[0].texpan.x=0;
 	st.Current_Map.obj[0].texpan.y=0;
@@ -103,10 +103,10 @@ void createmap()
 	st.Current_Map.obj[1].position.y=2048;
 	st.Current_Map.obj[1].priority=0;
 	st.Current_Map.obj[1].size.x=16384;
-	st.Current_Map.obj[1].size.y=200;
+	st.Current_Map.obj[1].size.y=2000;
 	st.Current_Map.obj[1].tag=0;
 	st.Current_Map.obj[1].TextureID=1;
-	st.Current_Map.obj[1].texsize.x=100;
+	st.Current_Map.obj[1].texsize.x=10;
 	st.Current_Map.obj[1].texsize.y=1;
 	st.Current_Map.obj[1].texpan.x=0;
 	st.Current_Map.obj[1].texpan.y=0;
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
 	InitMGG();
 
-	//createmap();
+	createmap();
 
 	//createmgg();
 	LoadMGG(&mgg[0],"fulgore.mgg");
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
 		if(startmovie==0)
 		{
-			PlayMovie("movie.mgv");
+			PlayMovie("LOGOHD.MGV");
 			startmovie=1;
 		}
 		
@@ -185,9 +185,9 @@ int main(int argc, char *argv[])
 
 		DrawMap();
 
-		MAnim(X,Y,128,128,0,255,255,255,&mgg[0],1,0.3,1);
-		//DrawSprite(8192-st.Camera.position.x,4096-st.Camera.position.y,256,256,0,255,250,250,mgg[0].frames[0],0.5);
-		//DrawString(COOPER,"menu test",400,300,0.5,0.5,30,250,250,32,0.2);
+		MAnim(X,Y,1280,1280,0,255,255,255,&mgg[0],1,0.3,1);
+		DrawSprite(8192-st.Camera.position.x,4096-st.Camera.position.y,256,256,0,255,250,250,mgg[0].frames[0],0.5);
+		DrawString(COOPER,"menu test",400,300,0.5,0.5,30,250,250,32,0.2);
 
 		MainSound();
 		Renderer();
