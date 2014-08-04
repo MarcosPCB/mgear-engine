@@ -10,15 +10,16 @@
 #include <SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "Tga.h"
+#include <SOIL.h>
 
 #define MAX_SPRITES 512
 #define MAX_HUDSPRITES 128
 #define MAX_GRAPHICS 4096
 #define TICSPERSECOND 100
-#define MAX_CHANNELS 8
+#define MAX_CHANNELS 32
+#define MUSIC_CHANNEL MAX_CHANNELS-1
 #define MAX_SOUNDS 32
-//#define MAX_OBJECTS 32
+#define MUSIC_SLOT MAX_SOUNDS-1
 #define MAX_KEYS 128
 #define MAX_OBJS 1024
 
@@ -417,6 +418,7 @@ int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 void Renderer();
 
 void PlaySound(const char *filename, uint8 loop);
-//void PlayMusic(const char *filename);
+void PlayMusic(const char *filename, uint8 loop);
 void MainSound();
 void StopAllSounds();
+void StopMusic();

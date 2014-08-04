@@ -158,7 +158,8 @@ int main(int argc, char *argv[])
 
 		if(startmovie==0)
 		{
-			PlayMovie("LOGOHD.MGV");
+			//PlayMovie("LOGOHD.MGV");
+			PlayMusic("castle.ogg",1);
 			startmovie=1;
 		}
 		

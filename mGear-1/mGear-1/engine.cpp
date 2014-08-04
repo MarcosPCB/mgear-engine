@@ -832,6 +832,8 @@ uint32 SaveMap(const char *name)
 
 	free(obj);
 	free(sprites);
+
+	return 1;
 }
 #endif
 
@@ -871,6 +873,8 @@ uint32 LoadMap(const char *name)
 	fread(st.Current_Map.sprites,sizeof(_MGMSPRITE),st.Current_Map.num_sprites,file);
 
 	fclose(file);
+
+	return 1;
 }
 
 void FreeMap()
@@ -1074,10 +1078,23 @@ void Renderer()
 	SDL_GL_SwapWindow(wn);
 }
 
+void PlayMusic(const char *filename, uint8 loop)
+{
+	if(st.sound_sys.slot_ID[MUSIC_SLOT]==-1 && st.sound_sys.slotch_ID[MUSIC_CHANNEL]==-1)
+	{
+		FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | loop==1 ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF,0,&st.sound_sys.slots[MUSIC_SLOT]);
+		st.sound_sys.slot_ID[MUSIC_SLOT]=1;
+		st.sound_sys.slotch_ID[MUSIC_SLOT]=MUSIC_SLOT;
+	}
+	
+	if(st.sound_sys.slot_ID[MUSIC_SLOT]==1 || st.sound_sys.slotch_ID[MUSIC_CHANNEL]!=-1)
+		FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,st.sound_sys.slots[MUSIC_SLOT],0,&st.sound_sys.channels[MUSIC_CHANNEL]);
+}
+
 void PlaySound(const char *filename, uint8 loop)
 {
 	int16 id=0, idc=0;
-	for(register uint16 i=0;i<MAX_SOUNDS;i++)
+	for(register uint16 i=0;i<MAX_SOUNDS-1;i++)
 	{
 		if(i==MAX_SOUNDS-1 && st.sound_sys.slot_ID[i]==1)
 		{
@@ -1087,14 +1104,14 @@ void PlaySound(const char *filename, uint8 loop)
 		else
 		if(st.sound_sys.slot_ID[i]==-1)
 		{
-			FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE,0,&st.sound_sys.slots[i]);
+			FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | loop==1 ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF,0,&st.sound_sys.slots[i]);
 			st.sound_sys.slot_ID[i]=1;
 			id=i;
 			break;
 		}
 	}
 
-	for(register uint16 i=0;i<MAX_CHANNELS;i++)
+	for(register uint16 i=0;i<MAX_CHANNELS-1;i++)
 	{
 		if(i==MAX_CHANNELS-1 && st.sound_sys.slotch_ID[i]!=-1)
 		{
@@ -1153,7 +1170,7 @@ void MainSound()
 
 void StopAllSounds()
 {
-	for(register uint32 i=0;i<MAX_CHANNELS;i++)
+	for(register uint32 i=0;i<MAX_CHANNELS-1;i++)
 	{
 		if(st.sound_sys.slotch_ID[i]>-1)
 		{
@@ -1162,5 +1179,16 @@ void StopAllSounds()
 			st.sound_sys.slot_ID[st.sound_sys.slotch_ID[i]]=-1;
 			st.sound_sys.slotch_ID[i]=-1;
 		}
+	}
+}
+
+void StopMusic()
+{
+	if(st.sound_sys.slotch_ID[MUSIC_CHANNEL]>-1)
+	{
+		FMOD_Channel_Stop(st.sound_sys.channels[MUSIC_CHANNEL]);
+		FMOD_Sound_Release(st.sound_sys.slots[st.sound_sys.slotch_ID[MUSIC_CHANNEL]]);
+		st.sound_sys.slot_ID[st.sound_sys.slotch_ID[MUSIC_CHANNEL]]=-1;
+		st.sound_sys.slotch_ID[MUSIC_CHANNEL]=-1;
 	}
 }
