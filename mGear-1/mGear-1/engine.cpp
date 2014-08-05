@@ -13,6 +13,9 @@ _MGG mgg[MAX_MGG];
 
 SDL_Window *wn;
 
+#define _ENGINE_VERSION 0.5
+const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
+
 #define timer SDL_Delay
 
 double inline __declspec (naked) __fastcall sqrt14(double n)
@@ -21,6 +24,41 @@ double inline __declspec (naked) __fastcall sqrt14(double n)
 	_asm fsqrt
 	_asm ret 8
 } 
+
+void LogIn(void *userdata, int category, SDL_LogPriority, const char *message)
+{
+	FILE *file;
+	size_t size;
+	if((file=fopen("mgear.log","a+"))==NULL)
+	{
+		if(MessageBox(NULL,L"Opening log file failed",NULL,MB_OK | MB_ICONERROR)==IDOK)
+			Quit();
+	}
+
+	fseek(file,0,SEEK_END);
+	fprintf(file,"%s\n",message);
+
+	fclose(file);
+}
+
+void CreateLog()
+{
+	FILE *file;
+	float version=_ENGINE_VERSION;
+	if((file=fopen("mgear.log","w"))==NULL)
+	{
+		if(MessageBox(NULL,L"Create log failed",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+			exit(1);
+	}
+
+	SDL_LogSetOutputFunction(&LogIn,NULL);
+
+	fprintf(file,"%s %.2f\n",WindowTitle,version);
+	fprintf(file,"Engine started\n");
+	fprintf(file,"Log created\n");
+
+	fclose(file);
+}
 
 void Timer()
 {
@@ -34,9 +72,7 @@ void FPSCounter()
 	{
 		st.FPS=SDL_GetTicks()-st.FPSTime;
 		st.FPS=1000/st.FPS;
-		itoa(st.FPS,st.FPSStr,10);
-		strcpy(st.WINDOW_NAME,"mGear-1 Engine ALPHA fps: ");
-		strcat(st.WINDOW_NAME,st.FPSStr);
+		sprintf(st.WINDOW_NAME,"%s fps: %.2f",WindowTitle,st.FPS);
 		st.FPS=0;
 		st.FPSTime=SDL_GetTicks();
 		SDL_SetWindowTitle(wn,st.WINDOW_NAME);
@@ -61,8 +97,6 @@ uint32 POT(uint32 value)
 
 void Quit()
 {
-	//SDL_WaitThread(st.InputThread,NULL);
-	//SDL_DestroyMutex(st.locker);
 	SDL_DestroyWindow(wn);
 	SDL_Quit();
 	FMOD_System_Close(st.sound_sys.Sound_System);
@@ -71,28 +105,37 @@ void Quit()
 	TTF_Quit();
 	exit(1);
 }
-/*
-int _EventThread(void *data)
-{
-	
 
-	return 0;
-}
-*/
 void Init()
 {	
+	CreateLog();
+
+	int check;
+	FMOD_RESULT result;
+
 	//Initialize SDL
-	if(SDL_Init(SDL_INIT_EVERYTHING)!=NULL)
-		if(MessageBox(NULL,L"SDL init error",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+	if((SDL_Init(SDL_INIT_EVERYTHING))!=NULL)
+	{
+		LogApp("SDL Initilization failed %s",SDL_GetError());
 			Quit();
+	}
+
+	LogApp("SDL 2.0 initialzed");
 		
-	if(FMOD_System_Create(&st.sound_sys.Sound_System)!=FMOD_OK)
-		if(MessageBox(NULL,L"Error while initializing FMOD, Creating System",NULL,MB_OK | MB_ICONERROR)==IDOK)
+	if((result=FMOD_System_Create(&st.sound_sys.Sound_System))!=FMOD_OK)
+	{
+		LogApp("Error while initializing FMOD, Creating System : %s",FMOD_ErrorString(result));
 			Quit();
+	}
+	LogApp("FMOD system created");
 	
-	if(FMOD_System_Init(st.sound_sys.Sound_System,MAX_CHANNELS,FMOD_INIT_NORMAL,NULL)!=FMOD_OK)
-		if(MessageBox(NULL,L"Error while initializing FMOD",NULL,MB_OK | MB_ICONERROR)==IDOK)
+	if((result=FMOD_System_Init(st.sound_sys.Sound_System,MAX_CHANNELS,FMOD_INIT_NORMAL,NULL))!=FMOD_OK)
+	{
+		LogApp("Error while initializing FMOD : %s",FMOD_ErrorString(result));
 			Quit();
+	}
+
+	LogApp("FMOD system initialzed, %d channels",MAX_CHANNELS);
 	
 	for(register uint8 i=0;i<MAX_SOUNDS;i++)
 		st.sound_sys.slot_ID[i]=-1;
@@ -101,12 +144,18 @@ void Init()
 		st.sound_sys.slotch_ID[i]=-1;
 
 	if(TTF_Init()==-1)
-	if(MessageBox(NULL,L"Error while initializing SDL TTF",NULL,MB_OK | MB_ICONERROR)==IDOK)
+	{
+		LogApp("Error while initializing SDL TTF : %s",TTF_GetError());
 			Quit();
+	}
+
+	LogApp("SDL TTF initialized");
 	
 	if((st.font[0]=TTF_OpenFont("font01.ttf",64))==NULL)
-		if(MessageBox(NULL,L"Error while opening TTF font font01.ttf",NULL,MB_OK | MB_ICONERROR)==IDOK)
+	{
+		LogApp("Error while opening TTF font : %s",TTF_GetError());
 			Quit();
+	}
 	
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
@@ -114,20 +163,30 @@ void Init()
 	if(st.fullscreen)
 	{
 		if((wn=SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL ))==NULL)
-			if(MessageBox(NULL,L"Error setting fullscreen video mode",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+		{
+			LogApp("Error setting fullscreen video mode %d x %d %d bits - %s",st.screenx,st.screeny,st.bpp,SDL_GetError());
 				Quit();
+		}
 	}
 	else
 	if(!st.fullscreen)
 	{
 		if((wn=SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_OPENGL))==NULL)
-			if(MessageBox(NULL,L"Error setting windowed video mode",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+		{
+			LogApp("Error setting widowed video mode %d x %d %d bits - %s",st.screenx,st.screeny,st.bpp,SDL_GetError());
+				Quit();
+		}
+	}
+
+	LogApp("Window created, %d x %d, %d bits",st.screenx,st.screeny,st.bpp);
+
+	if((st.glc=SDL_GL_CreateContext(wn))==NULL)
+	{
+		LogApp("Error setting renderer: %s",SDL_GetError());
 				Quit();
 	}
 
-	if(SDL_GL_CreateContext(wn)==NULL)
-		if(MessageBox(NULL,L"Error setting renderer",NULL,MB_OK | MB_ICONERROR)==IDOK) 
-				Quit();
+	LogApp("Opengl context created");
 	
 	//Initialize OpenGL
 	glClearColor(0,0,0,0);
@@ -140,6 +199,8 @@ void Init()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
 
+	LogApp("Opengl initialized");
+
 	st.quit=0;
 
 	for(register uint32 i=0;i<MAX_GRAPHICS;i++) ent[i].stat=DEAD;
@@ -150,12 +211,55 @@ void Init()
 
 	InputInit();
 
+	LogApp("Input initialized");
+
 	st.Camera.position.x=0;
 	st.Camera.position.y=0;
 	st.Camera.dimension.x=800;
 	st.Camera.dimension.y=600;
 	st.Camera.angle=0.0;
 
+}
+
+void RestartVideo()
+{
+	
+	LogApp("Video restarted");
+
+	SDL_DestroyWindow(wn);
+
+	wn=SDL_CreateWindow(st.WINDOW_NAME,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,st.screenx,st.screeny, st.fullscreen==1 ? SDL_WINDOW_FULLSCREEN : NULL | SDL_WINDOW_OPENGL);
+
+	if(wn==NULL)
+	{
+		if(st.fullscreen) LogApp("Error setting fullscreen video mode %d x %d %d bits - %s",st.screenx,st.screeny,st.bpp,SDL_GetError());
+		else LogApp("Error setting windowed video mode %d x %d %d bits - %s",st.screenx,st.screeny,st.bpp,SDL_GetError());
+	}
+
+	LogApp("Window created, %d x %d, %d bits",st.screenx,st.screeny,st.bpp);
+
+	SDL_GL_MakeCurrent(wn,st.glc);
+
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+
+	glViewport(0,0,st.screenx,st.screeny);
+
+	glClearColor(0,0,0,0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0,st.screenx,st.screeny,0,0,1);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_TEXTURE_2D);
+	
+	if(SDL_GetRelativeMouseMode())
+	{
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+		SDL_SetRelativeMouseMode(SDL_TRUE);
+	}
+	
 }
 
 static FILE *DecompressFile(const char *name)
@@ -328,14 +432,16 @@ void createmgv()
 
 }
 
-uint32 LoadMGG(_MGG *mgg, const char name[32])
+uint32 LoadMGG(_MGG *mgg, const char *name)
 {
 	FILE *file, *file2;
 	void *data;
 
 	if((file=DecompressFile(name))==NULL)
-		if(MessageBox(NULL,L"Error reading mgg file",NULL,MB_OK | MB_ICONERROR)==IDOK)
+	{
+		LogApp("Error reading MGG file %s",name);
 			return false;
+	}
 
 	_MGGFORMAT mggf;
 
@@ -383,62 +489,21 @@ uint32 LoadMGG(_MGG *mgg, const char name[32])
 			totalsize+=(framesize[i-1]+2048);
 			fseek(file,totalsize,SEEK_CUR);
 		}
-		/*
-		extern TGAHeader tgaheader;									
-		extern TGA tga;												
-		extern GLubyte uTGAcompare[12]; 	
-		extern GLubyte cTGAcompare[12];	
-
-
-		if(fread(&tgaheader, sizeof(TGAHeader), 1, file) == 0)					// Attempt to read 12 byte header from file
-		{
-			MessageBox(NULL, L"Could not read file header", L"ERROR", MB_OK);		// If it fails, display an error message 
-				return false;										
-		}
-
-		Texture texture;
-		
-		if(memcmp(uTGAcompare, &tgaheader, sizeof(tgaheader)) == 0)				// See if header matches the predefined header of 
-		{																		// an Uncompressed TGA image
-			if(!LoadUncompressedTGA(&texture, file)) return false;						// If so, jump to Uncompressed TGA loading code
-		}
-		else if(memcmp(cTGAcompare, &tgaheader, sizeof(tgaheader)) == 0)		// See if header matches the predefined header of
-		{																		// an RLE compressed TGA image
-			if(!LoadCompressedTGA(&texture, file)) return false;					// If so, jump to Compressed TGA loading code
-		}
-		else
-		{
-			return false;
-		}
-		
-		glGenTextures(1, &texture.texID);			
-		glBindTexture(GL_TEXTURE_2D, texture.texID);
-
-		
-
-		w=POT(texture.width);
-		h=POT(texture.height);
-
-		GLubyte *img;
-		/*
-		if(w!=texture.width && h!=texture.height)
-		{
-
-			img=(GLubyte*) malloc(texture.bpp*w*h);
-
-			up_scale_image(texture.imageData,texture.width,texture.height,texture.bpp,img,w,h);
-		}
-		
-		glTexImage2D(GL_TEXTURE_2D, 0, texture.bpp / 8, w, h, 0, texture.type, GL_UNSIGNED_BYTE, img);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-		*/
 
 		data=malloc(framesize[i]);
+
+		if(data==NULL)
+		{
+			LogApp("Error allocating memory for texture %d, size %d, file %s",i,framesize[i],name);
+			continue;
+		}
 
 		fread(data,framesize[i],1,file);
 
 		mgg->frames[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+		if(mgg->frames[i]==NULL)
+			LogApp("Error loading texture from memory");
 		
 		if (data)						
 			free(data);
@@ -633,6 +698,8 @@ uint32 PlayMovie(const char *name)
 	unsigned int ms;
 	register uint32 i=0;
 
+	FMOD_RESULT y;
+
 	uint8 id;
 
 	FMOD_BOOL p;
@@ -643,8 +710,10 @@ uint32 PlayMovie(const char *name)
 	mgv=(_MGV*) malloc(sizeof(_MGV));
 
 	if((mgv->file=fopen(name,"rb"))==NULL)
-		if(MessageBox(NULL, L"Could not read file header", L"ERROR", MB_OK)==IDOK)		// If it fails, display an error message 
+	{
+		LogApp("Error opening MGV file %s",name);
 				return false;
+	}
 
 
 	rewind(mgv->file);
@@ -689,7 +758,13 @@ uint32 PlayMovie(const char *name)
 	info.length=mgvt.sound_buffer_lenght;
 	info.cbsize=sizeof(info);
 
-	FMOD_System_CreateSound(st.sound_sys.Sound_System,(const char*) buffer,FMOD_HARDWARE | FMOD_OPENMEMORY,&info,&mgv->sound);
+	y=FMOD_System_CreateSound(st.sound_sys.Sound_System,(const char*) buffer,FMOD_HARDWARE | FMOD_OPENMEMORY,&info,&mgv->sound);
+
+	if(y!=FMOD_OK)
+	{
+		LogApp("Error while creating sound: %s",FMOD_ErrorString(y));
+		return false;
+	}
 	
 	FMOD_CHANNEL *ch;
 
@@ -698,7 +773,13 @@ uint32 PlayMovie(const char *name)
 	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512));
 
 
-	FMOD_RESULT y=FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,mgv->sound,0,&ch);
+	y=FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,mgv->sound,0,&ch);
+
+	if(y!=FMOD_OK)
+	{
+		LogApp("Error while playing sound: %s",FMOD_ErrorString(y));
+		return false;
+	}
 	
 	//Here's the video part!!
 	i=0;
@@ -733,6 +814,12 @@ uint32 PlayMovie(const char *name)
 		fseek(mgv->file,mgv->seeker[i],SEEK_SET);
 
 			mgv->frames[i].buffer=(void*) malloc(mgv->framesize[i]);
+
+			if(mgv->frames[i].buffer==NULL)
+			{
+				LogApp("Unable to allocate memory for MGV frame %d",i);
+				continue;
+			}
 
 			fread(mgv->frames[i].buffer,mgv->framesize[i],1,mgv->file);
 

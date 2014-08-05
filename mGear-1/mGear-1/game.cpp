@@ -123,13 +123,13 @@ int main(int argc, char *argv[])
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
 
-	strcpy(st.WINDOW_NAME,"mGear-1 Engine ALPHA");
+	strcpy(st.WINDOW_NAME,"mGear-1 Engine PRE-ALPHA");
 
 	Init();
 
 	InitMGG();
 
-	createmap();
+	//createmap();
 
 	//createmgg();
 	LoadMGG(&mgg[0],"fulgore.mgg");
@@ -153,13 +153,18 @@ int main(int argc, char *argv[])
 
 	while(!st.quit)
 	{
+		if(st.FPSYes)
+			FPSCounter();
 
 		InputProcess();
 
 		if(startmovie==0)
 		{
 			//PlayMovie("LOGOHD.MGV");
-			PlayMusic("castle.ogg",1);
+			//PlayMusic("castle.ogg",1);
+			st.screenx=1280;
+			st.screeny=720;
+			RestartVideo();
 			startmovie=1;
 		}
 		
@@ -174,6 +179,7 @@ int main(int argc, char *argv[])
 		{
 			if(X<12000) X+=100;
 			else if(X>12000) st.Camera.position.x+=100;
+			//PlayMovie("LOGOHD.MGV");
 			st.keys[2].state=0;
 		}
 
@@ -193,9 +199,6 @@ int main(int argc, char *argv[])
 		MainSound();
 		Renderer();
 		Timer();
-
-		if(st.FPSYes)
-			FPSCounter();
 	}
 	StopAllSounds();
 	FreeMGG(&mgg[0]);

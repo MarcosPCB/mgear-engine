@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SOIL.h>
+#include <time.h>
 
 #define MAX_SPRITES 512
 #define MAX_HUDSPRITES 128
@@ -46,6 +47,10 @@ typedef unsigned long int uint32;
 typedef long long unsigned uint64;
 
 double inline __declspec () __fastcall sqrt14(double n);
+
+#define LogApp SDL_Log
+#define LogErr SDL_LogError
+#define LogWn SDL_LogWarn
 
 //#define MAX_MGVFRAMES 65536
 
@@ -339,7 +344,7 @@ struct _SETTINGS
 {
 	uint32 backtrack;
 	char typetext[128];
-	char WINDOW_NAME[32];
+	char WINDOW_NAME[64];
 	uint16 screenx;
 	uint16 screeny;
 	uint8 bpp;
@@ -364,6 +369,8 @@ struct _SETTINGS
 	_CAMERA Camera;
 	GAME_STATE gt;
 
+	SDL_GLContext glc;
+
 #ifdef ENGINEER
 	uint8 Engineer_Mode;
 #endif
@@ -379,6 +386,8 @@ extern _ENTITIES ent[MAX_GRAPHICS];
 extern SDL_Event events;
 
 extern _MGG mgg[MAX_MGG];
+
+extern const char WindowTitle[32];
 
 void Init();
 void Quit();
@@ -404,6 +413,11 @@ void DrawMap();
 void Timer();
 
 void FPSCounter();
+
+void CreateLog();
+void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
+
+void RestartVideo();
 
 uint32 POT(uint32 value);
 
