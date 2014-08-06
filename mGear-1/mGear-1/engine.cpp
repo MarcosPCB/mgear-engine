@@ -201,6 +201,18 @@ void Init()
 
 	LogApp("Opengl initialized");
 
+	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_texture_non_power_of_two")==NULL)
+	{
+		st.LOWRES=1;
+		LogApp("Non power of two textures not supported, loading times might increase and video's fps might decrease");
+	}
+
+	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_texture_rectangle")==NULL && strstr((char const*) glGetString(GL_EXTENSIONS),"GL_NV_texture_rectangle")==NULL && strstr((char const*) glGetString(GL_EXTENSIONS),"GL_NV_texture_rectangle")==NULL)
+	{
+		LogApp("Rectangle textures not supported, your video card is not supported or try updating your driver");
+		Quit();
+	}
+
 	st.quit=0;
 
 	for(register uint32 i=0;i<MAX_GRAPHICS;i++) ent[i].stat=DEAD;
@@ -892,8 +904,10 @@ uint32 SaveMap(const char *name)
 	_MGMSPRITE *sprites;
 
 	if((file=fopen(name,"wb"))==NULL)
-		if(MessageBox(NULL, L"Could not create file", L"ERROR", MB_OK)==IDOK)		// If it fails, display an error message 
+	{
+		LogApp("Could not save file");
 				return false;
+	}
 
 	strcpy(header,"V1 mGear-1");
 
@@ -931,8 +945,10 @@ uint32 LoadMap(const char *name)
 	_MGMFORMAT map;
 
 	if((file=fopen(name,"rb"))==NULL)
-		if(MessageBox(NULL, L"Could not open file", L"ERROR", MB_OK)==IDOK)		// If it fails, display an error message 
+	{
+		LogApp("Could not open file %s",name);
 				return false;
+	}
 
 	//Tries to read 13 byte header
 	fread(header,13,1,file);
@@ -940,8 +956,10 @@ uint32 LoadMap(const char *name)
 	//Checks if it's the same version
 
 	if(strcmp(header,"V1 mGear-1")!=NULL)
-		if(MessageBox(NULL, L"Map version incompatible", L"ERROR", MB_OK)==IDOK)		// If it fails, display an error message 
+	{
+		LogApp("Invalid map format or version: %s", header);
 				return false;
+	}
 
 	//loads the map
 
@@ -988,19 +1006,23 @@ void DrawMap()
 	
 	//Draw the objects first
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
-		if(st.Current_Map.obj[i].type==FLOOR)
+		if(st.Current_Map.obj[i].type==FOREGROUND)
 			DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
-		if(st.Current_Map.obj[i].type==WALL_BACK)
+		if(st.Current_Map.obj[i].type==MIDGROUND)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
-		if(st.Current_Map.obj[i].type==WALL_SIDE)
+		if(st.Current_Map.obj[i].type==BACKGROUND3)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
-		if(st.Current_Map.obj[i].type==CEILING)
+		if(st.Current_Map.obj[i].type==BACKGROUND2)
+				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
+					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
+	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+		if(st.Current_Map.obj[i].type==BACKGROUND1)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	

@@ -228,14 +228,11 @@ struct _SPRITES
 
 enum _OBJTYPE
 {
-	FLOOR,
-	CEILING,
-	WALL_BACK,
-	WALL_FRONT,
-	WALL_SIDE,
 	BACKGROUND1,
 	BACKGROUND2,
 	BACKGROUND3,
+	MIDGROUND,
+	FOREGROUND,
 	BLANK
 };
 
@@ -379,6 +376,8 @@ struct _SETTINGS
 	uint32 FPSTime;
 	float FPS;
 	char FPSStr[6];
+
+	uint8 LOWRES : 2;
 };
 
 extern _SETTINGS st;

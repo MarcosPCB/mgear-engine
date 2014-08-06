@@ -91,7 +91,7 @@ void createmap()
 	st.Current_Map.obj[0].texsize.y=1;
 	st.Current_Map.obj[0].texpan.x=0;
 	st.Current_Map.obj[0].texpan.y=0;
-	st.Current_Map.obj[0].type=FLOOR;
+	st.Current_Map.obj[0].type=FOREGROUND;
 
 	st.Current_Map.obj[1].angle=0;
 	st.Current_Map.obj[1].block_type=none;
@@ -110,7 +110,7 @@ void createmap()
 	st.Current_Map.obj[1].texsize.y=1;
 	st.Current_Map.obj[1].texpan.x=0;
 	st.Current_Map.obj[1].texpan.y=0;
-	st.Current_Map.obj[1].type=WALL_BACK;
+	st.Current_Map.obj[1].type=MIDGROUND;
 
 	SaveMap("TEST.MAP");
 
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
 	InitMGG();
 
-	//createmap();
+	createmap();
 
 	//createmgg();
 	LoadMGG(&mgg[0],"fulgore.mgg");
@@ -160,11 +160,11 @@ int main(int argc, char *argv[])
 
 		if(startmovie==0)
 		{
-			//PlayMovie("LOGOHD.MGV");
+			PlayMovie("LOGOHD.MGV");
 			//PlayMusic("castle.ogg",1);
-			st.screenx=1280;
-			st.screeny=720;
-			RestartVideo();
+			//st.screenx=1280;
+			//st.screeny=720;
+			//RestartVideo();
 			startmovie=1;
 		}
 		
