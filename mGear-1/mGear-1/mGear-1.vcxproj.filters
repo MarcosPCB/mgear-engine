@@ -21,12 +21,6 @@
     <ClInclude Include="game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="texture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Tga.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="quicklz.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,9 +33,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="tga.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="quicklz.c">
