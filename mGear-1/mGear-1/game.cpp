@@ -67,9 +67,9 @@ uint16 LoadCFG()
 void createmap()
 {
 	st.Current_Map.num_mgg=1;
-	st.Current_Map.num_obj=2;
+	st.Current_Map.num_obj=1;
 	st.Current_Map.num_sprites=0;
-	strcpy(st.Current_Map.MGG_FILES[0],"TEX00.MGG");
+	strcpy(st.Current_Map.MGG_FILES[0],"STAGE.MGG");
 	strcpy(st.Current_Map.name,"TEST");
 	st.Current_Map.obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
 	st.Current_Map.sprites=(_MGMSPRITE*) malloc(0*sizeof(_MGMSPRITE));
@@ -81,36 +81,17 @@ void createmap()
 	st.Current_Map.obj[0].color.g=255;
 	st.Current_Map.obj[0].color.b=255;
 	st.Current_Map.obj[0].position.x=8192;
-	st.Current_Map.obj[0].position.y=4096;
+	st.Current_Map.obj[0].position.y=3096;
 	st.Current_Map.obj[0].priority=0;
-	st.Current_Map.obj[0].size.x=16384;
-	st.Current_Map.obj[0].size.y=4000;
+	st.Current_Map.obj[0].size.x=18384;
+	st.Current_Map.obj[0].size.y=10192;
 	st.Current_Map.obj[0].tag=0;
 	st.Current_Map.obj[0].TextureID=0;
-	st.Current_Map.obj[0].texsize.x=5;
-	st.Current_Map.obj[0].texsize.y=1;
+	st.Current_Map.obj[0].texsize.x=-1;
+	st.Current_Map.obj[0].texsize.y=-1;
 	st.Current_Map.obj[0].texpan.x=0;
 	st.Current_Map.obj[0].texpan.y=0;
-	st.Current_Map.obj[0].type=FOREGROUND;
-
-	st.Current_Map.obj[1].angle=0;
-	st.Current_Map.obj[1].block_type=none;
-	st.Current_Map.obj[1].color.a=1;
-	st.Current_Map.obj[1].color.r=255;
-	st.Current_Map.obj[1].color.g=255;
-	st.Current_Map.obj[1].color.b=255;
-	st.Current_Map.obj[1].position.x=8192;
-	st.Current_Map.obj[1].position.y=2048;
-	st.Current_Map.obj[1].priority=0;
-	st.Current_Map.obj[1].size.x=16384;
-	st.Current_Map.obj[1].size.y=2000;
-	st.Current_Map.obj[1].tag=0;
-	st.Current_Map.obj[1].TextureID=1;
-	st.Current_Map.obj[1].texsize.x=10;
-	st.Current_Map.obj[1].texsize.y=1;
-	st.Current_Map.obj[1].texpan.x=0;
-	st.Current_Map.obj[1].texpan.y=0;
-	st.Current_Map.obj[1].type=MIDGROUND;
+	st.Current_Map.obj[0].type=MIDGROUND;
 
 	SaveMap("TEST.MAP");
 
@@ -147,7 +128,7 @@ int main(int argc, char *argv[])
 	long long unsigned int time=st.time;
 
 	int32 anim=0;
-	double X=6840, Y=4096;
+	double X=6840, Y=6540;
 
 	st.FPSYes=1;
 
@@ -192,7 +173,7 @@ int main(int argc, char *argv[])
 
 		DrawMap();
 
-		MAnim(X,Y,1280,1280,0,255,255,255,&mgg[0],1,0.3,1);
+		MAnim(X,Y,3048,3048,0,255,255,255,&mgg[0],1,0.3,1);
 		DrawSprite(8192-st.Camera.position.x,4096-st.Camera.position.y,256,256,0,255,250,250,mgg[0].frames[0],0.5);
 		DrawString(COOPER,"menu test",400,300,0.5,0.5,30,250,250,32,0.2);
 

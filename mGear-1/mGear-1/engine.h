@@ -335,6 +335,40 @@ enum GAME_STATE
 	LOADING
 };
 
+struct Control
+{
+	SDL_GameController *device;
+
+	struct Button
+	{
+		SDL_GameControllerButton name;
+		uint8 state;;
+	} button[15];
+
+	struct Axis
+	{
+		SDL_GameControllerAxis name;
+		uint8 state;
+	} axis[6];
+};
+/*
+struct Joy
+{
+	SDL_Joystick *device;
+
+	struct Button
+	{
+		uint8
+		uint8 state;
+	} button[16];
+
+	struct Axis
+	{
+		SDL_GameControllerAxis name;
+		uint8 state;
+	} axis[6];
+}
+*/
 //The main structure
 //Contais all the information about the game
 struct _SETTINGS
@@ -378,6 +412,10 @@ struct _SETTINGS
 	char FPSStr[6];
 
 	uint8 LOWRES : 2;
+
+	uint8 control_num;
+	Control controller[4];
+	//SDL_Joystick *Joy[4];
 };
 
 extern _SETTINGS st;

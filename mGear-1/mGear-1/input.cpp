@@ -2,6 +2,8 @@
 
 void InputInit()
 {
+	uint32 num, j;
+
 	st.keys[ESC_KEY].key=SDL_SCANCODE_ESCAPE;
 	st.keys[RETURN_KEY].key=SDL_SCANCODE_RETURN;
 	st.keys[2].key=SDL_SCANCODE_RIGHT;
@@ -77,6 +79,56 @@ void InputInit()
 	st.keys[72].key=SDL_SCANCODE_PERIOD;
 	st.keys[73].key=SDL_SCANCODE_SEMICOLON;
 	st.keys[74].key=SDL_SCANCODE_CAPSLOCK;
+
+	num=SDL_NumJoysticks();
+
+	//Check if it's a game controller
+
+	if(num>4) num=4; //Max number of joysticks is 4
+
+	for(register uint8 i=0;i<num;i++)
+	{
+		if(SDL_IsGameController(i))
+		{
+			if((st.controller[j].device=SDL_GameControllerOpen(i))==NULL)
+				LogApp("Game Controller %d could not be initialized: %s",i,SDL_GetError());
+			else
+				j++;
+		}
+		/*
+		else
+		if((st.Joy[i]=SDL_JoystickOpen(i))==NULL)
+			LogApp("Joystick %d could not be initialized: %s",i,SDL_GetError());
+			*/
+	}
+
+	st.control_num=j;
+
+	for(register uint8 i=0;i<j;i++)
+	{
+		st.controller[i].axis[0].name=SDL_CONTROLLER_AXIS_LEFTX;
+		st.controller[i].axis[1].name=SDL_CONTROLLER_AXIS_LEFTY;
+		st.controller[i].axis[2].name=SDL_CONTROLLER_AXIS_RIGHTX;
+		st.controller[i].axis[3].name=SDL_CONTROLLER_AXIS_RIGHTY;
+		st.controller[i].axis[4].name=SDL_CONTROLLER_AXIS_TRIGGERLEFT;
+		st.controller[i].axis[5].name=SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
+
+		st.controller[i].button[0].name=SDL_CONTROLLER_BUTTON_A;
+		st.controller[i].button[1].name=SDL_CONTROLLER_BUTTON_B;
+		st.controller[i].button[2].name=SDL_CONTROLLER_BUTTON_X;
+		st.controller[i].button[3].name=SDL_CONTROLLER_BUTTON_Y;
+		st.controller[i].button[4].name=SDL_CONTROLLER_BUTTON_BACK;
+		st.controller[i].button[5].name=SDL_CONTROLLER_BUTTON_GUIDE;
+		st.controller[i].button[6].name=SDL_CONTROLLER_BUTTON_START;
+		st.controller[i].button[7].name=SDL_CONTROLLER_BUTTON_LEFTSTICK;
+		st.controller[i].button[8].name=SDL_CONTROLLER_BUTTON_RIGHTSTICK;
+		st.controller[i].button[9].name=SDL_CONTROLLER_BUTTON_LEFTSHOULDER;
+		st.controller[i].button[10].name=SDL_CONTROLLER_BUTTON_RIGHTSHOULDER;
+		st.controller[i].button[11].name=SDL_CONTROLLER_BUTTON_DPAD_UP;
+		st.controller[i].button[12].name=SDL_CONTROLLER_BUTTON_DPAD_DOWN;
+		st.controller[i].button[13].name=SDL_CONTROLLER_BUTTON_DPAD_LEFT;
+		st.controller[i].button[14].name=SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+	}
 }
 
 void InputProcess()
