@@ -66,13 +66,16 @@ uint16 LoadCFG()
 
 void createmap()
 {
-	st.Current_Map.num_mgg=1;
+	st.Current_Map.num_mgg=2;
 	st.Current_Map.num_obj=1;
 	st.Current_Map.num_sprites=0;
+	st.Current_Map.num_lights=2;
 	strcpy(st.Current_Map.MGG_FILES[0],"STAGE.MGG");
+	strcpy(st.Current_Map.MGG_FILES[1],"LIGHT_MAPS.MGG");
 	strcpy(st.Current_Map.name,"TEST");
 	st.Current_Map.obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
 	st.Current_Map.sprites=(_MGMSPRITE*) malloc(0*sizeof(_MGMSPRITE));
+	st.Current_Map.light=(_MGMLIGHT*) malloc(2*sizeof(_MGMLIGHT));
 
 	st.Current_Map.obj[0].angle=0;
 	st.Current_Map.obj[0].block_type=none;
@@ -92,7 +95,32 @@ void createmap()
 	st.Current_Map.obj[0].texpan.x=0;
 	st.Current_Map.obj[0].texpan.y=0;
 	st.Current_Map.obj[0].type=MIDGROUND;
+	st.Current_Map.obj[0].amblight=1;
+	
+	st.Current_Map.light[0].angle=0;
+	st.Current_Map.light[0].color.r=155;
+	st.Current_Map.light[0].color.g=155;
+	st.Current_Map.light[0].color.b=155;
+	st.Current_Map.light[0].color.a=1;
+	st.Current_Map.light[0].position.x=2048;
+	st.Current_Map.light[0].position.y=4096;
+	st.Current_Map.light[0].size.x=8192;
+	st.Current_Map.light[0].size.y=8192;
+	st.Current_Map.light[0].tag=0;
+	st.Current_Map.light[0].TextureID=1;
 
+	st.Current_Map.light[1].angle=0;
+	st.Current_Map.light[1].color.r=255;
+	st.Current_Map.light[1].color.g=255;
+	st.Current_Map.light[1].color.b=255;
+	st.Current_Map.light[1].color.a=1;
+	st.Current_Map.light[1].position.x=12096;
+	st.Current_Map.light[1].position.y=4096;
+	st.Current_Map.light[1].size.x=8192;
+	st.Current_Map.light[1].size.y=8192;
+	st.Current_Map.light[1].tag=0;
+	st.Current_Map.light[1].TextureID=1;
+	
 	SaveMap("TEST.MAP");
 
 	//FreeMap();
@@ -119,16 +147,17 @@ int main(int argc, char *argv[])
 
 	LoadMap("TEST.MAP");
 	LoadMGG(&mgg[3],st.Current_Map.MGG_FILES[0]);
+	//LoadMGG(&mgg[4],st.Current_Map.MGG_FILES[1]);
 	
 	st.MapTex[0].ID=mgg[3].frames[0];
 	st.MapTex[0].MGG_ID=3;
-	st.MapTex[1].ID=mgg[3].frames[2];
-	st.MapTex[1].MGG_ID=3;
+	//st.MapTex[1].ID=mgg[4].frames[0];
+	//st.MapTex[1].MGG_ID=4;
 	
 	long long unsigned int time=st.time;
 
 	int32 anim=0;
-	double X=6840, Y=6540;
+	double X=6840, Y=4096;
 
 	st.FPSYes=1;
 
@@ -171,11 +200,20 @@ int main(int argc, char *argv[])
 			st.keys[3].state=0;
 		}
 
+		//DrawMap();
+		
+
 		DrawMap();
 
-		MAnim(X,Y,3048,3048,0,255,255,255,&mgg[0],1,0.3,1);
-		DrawSprite(8192-st.Camera.position.x,4096-st.Camera.position.y,256,256,0,255,250,250,mgg[0].frames[0],0.5);
-		DrawString(COOPER,"menu test",400,300,0.5,0.5,30,250,250,32,0.2);
+		MAnim(X,Y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
+		DrawSprite(8192-st.Camera.position.x,4096-st.Camera.position.y,16384,16384,0,0,0,0,st.MapTex[5].ID,0.9);
+		//DrawString(COOPER,"menu test",400,300,0.5,0.5,30,250,250,32,0.2);
+		
+		//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)
+			//DrawLight(st.Current_Map.light[i].position.x-st.Camera.position.x,st.Current_Map.light[i].position.y-st.Camera.position.y,st.Current_Map.light[i].size.x,st.Current_Map.light[i].size.y,
+			//st.Current_Map.light[i].angle,st.Current_Map.light[i].color.r,st.Current_Map.light[i].color.g,st.Current_Map.light[i].color.b,st.MapTex[st.Current_Map.light[i].TextureID].ID,st.Current_Map.light[i].color.a);
+
+		
 
 		MainSound();
 		Renderer();

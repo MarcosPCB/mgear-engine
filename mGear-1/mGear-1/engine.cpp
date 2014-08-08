@@ -579,6 +579,30 @@ void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 	}
 }
 
+void DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
+{
+	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	{
+		if(ent[i].stat==DEAD)
+		{
+			ent[i].stat=USED;
+			ent[i].ang=ang;
+			ent[i].pos.x=(st.screenx*x)/16384;
+			ent[i].pos.y=(st.screeny*y)/8192;
+			ent[i].size.x=(sizex*st.screenx)/16384;
+			ent[i].size.y=(sizey*st.screeny)/8192;
+			ent[i].type=LIGHT_MAP;
+			ent[i].data=data;
+			ent[i].color.r=(float)r/255;
+			ent[i].color.g=(float)g/255;
+			ent[i].color.b=(float)b/255;
+			ent[i].color.a=a;
+			st.num_entities++;
+			break;
+		}
+	}
+}
+
 void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texsizeX, float texsizeY, float texpanX, float texpanY)
 {
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
@@ -902,6 +926,7 @@ uint32 SaveMap(const char *name)
 	_MGMFORMAT map;
 	_MGMOBJ *obj;
 	_MGMSPRITE *sprites;
+	_MGMLIGHT *lights;
 
 	if((file=fopen(name,"wb"))==NULL)
 	{
@@ -915,12 +940,15 @@ uint32 SaveMap(const char *name)
 
 	obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
 	sprites=(_MGMSPRITE*) malloc(st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
+	lights=(_MGMLIGHT*) malloc(st.Current_Map.num_lights*sizeof(_MGMLIGHT));
 
 	memcpy(&obj,&st.Current_Map.obj,sizeof(st.Current_Map.num_obj*sizeof(_MGMOBJ)));
 	memcpy(&sprites,&st.Current_Map.sprites,sizeof(st.Current_Map.num_sprites*sizeof(_MGMSPRITE)));
+	memcpy(&lights,&st.Current_Map.light,sizeof(st.Current_Map.num_lights*sizeof(_MGMLIGHT)));
 
 	map.num_mgg=st.Current_Map.num_mgg;
 	map.num_obj=st.Current_Map.num_obj;
+	map.num_lights=st.Current_Map.num_lights;
 	map.num_sprites=st.Current_Map.num_sprites;
 	strcpy(map.name,st.Current_Map.name);
 	memcpy(map.MGG_FILES,st.Current_Map.MGG_FILES,sizeof(st.Current_Map.MGG_FILES));
@@ -928,11 +956,13 @@ uint32 SaveMap(const char *name)
 	fwrite(&map,sizeof(_MGMFORMAT),1,file);
 	fwrite(obj,sizeof(_MGMOBJ),map.num_obj,file);
 	fwrite(sprites,sizeof(_MGMSPRITE),map.num_sprites,file);
+	fwrite(lights,sizeof(_MGMLIGHT),map.num_lights,file);
 
 	fclose(file);
 
 	free(obj);
 	free(sprites);
+	free(lights);
 
 	return 1;
 }
@@ -967,15 +997,18 @@ uint32 LoadMap(const char *name)
 
 	st.Current_Map.num_mgg=map.num_mgg;
 	st.Current_Map.num_obj=map.num_obj;
+	st.Current_Map.num_lights=map.num_lights;
 	st.Current_Map.num_sprites=map.num_sprites;
 	strcpy(st.Current_Map.name,map.name);
 	memcpy(&st.Current_Map.MGG_FILES,&map.MGG_FILES,sizeof(map.MGG_FILES));
 
 	st.Current_Map.obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
 	st.Current_Map.sprites=(_MGMSPRITE*) malloc(st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
+	st.Current_Map.light=(_MGMLIGHT*) malloc(st.Current_Map.num_lights*sizeof(_MGMLIGHT));
 
 	fread(st.Current_Map.obj,sizeof(_MGMOBJ),st.Current_Map.num_obj,file);
 	fread(st.Current_Map.sprites,sizeof(_MGMSPRITE),st.Current_Map.num_sprites,file);
+	fread(st.Current_Map.light,sizeof(_MGMLIGHT),st.Current_Map.num_lights,file);
 
 	fclose(file);
 
@@ -1005,6 +1038,9 @@ void DrawMap()
 {
 	
 	//Draw the objects first
+
+	
+
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==FOREGROUND)
 			DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
@@ -1012,7 +1048,11 @@ void DrawMap()
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==MIDGROUND)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
+				st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r*st.Current_Map.obj[i].amblight,st.Current_Map.obj[i].color.g*st.Current_Map.obj[i].amblight,st.Current_Map.obj[i].color.b*st.Current_Map.obj[i].amblight,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
+
+	//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)
+		//	DrawLight(st.Current_Map.light[i].position.x-st.Camera.position.x,st.Current_Map.light[i].position.y-st.Camera.position.y,st.Current_Map.light[i].size.x,st.Current_Map.light[i].size.y,
+			//st.Current_Map.light[i].angle,st.Current_Map.light[i].color.r,st.Current_Map.light[i].color.g,st.Current_Map.light[i].color.b,st.MapTex[st.Current_Map.light[i].TextureID].ID,st.Current_Map.light[i].color.a);
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==BACKGROUND3)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
@@ -1079,6 +1119,9 @@ void Renderer()
 				//glLoadIdentity();
 
 				glPushMatrix();
+
+				//glBlendFunc(GL_DST_COLOR, GL_MAX);
+				//glBlendEquation(GL_FUNC_ADD);
 				
 				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
 				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
@@ -1114,6 +1157,7 @@ void Renderer()
 				//glLoadIdentity();
 
 				glPushMatrix();
+
 				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
 				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
 				glRotatef(ent[i].ang,0.0,0.0,1.0);

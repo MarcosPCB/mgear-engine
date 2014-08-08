@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GLee.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_thread.h>
@@ -68,7 +69,9 @@ enum Enttype
 	TEXTURE,
 	VIDEO,
 	TEXT,
-	UI
+	UI,
+	LIGHT_MAP,
+	ent_none
 };
 
 enum Stat
@@ -253,6 +256,16 @@ enum _SPRITE_T
 	non
 };
 
+struct _MGMLIGHT
+{
+	Pos position;
+	Pos size;
+	float angle;
+	Colori color;
+	uint32 TextureID;
+	int16 tag;
+};
+
 struct _MGMOBJ
 {
 	Pos position;
@@ -266,6 +279,7 @@ struct _MGMOBJ
 	uint8 priority : 2;//0 - Most important, 1 - Medium, 2 - Less important
 	_OBJTYPE type;
 	_OBJBLOCK block_type;
+	float amblight;
 };
 
 //Map sprites
@@ -304,9 +318,11 @@ struct _MGM
 	char name[32];
 	_MGMSPRITE *sprites;
 	_MGMOBJ *obj;
+	_MGMLIGHT *light;
 	uint16 num_sprites;
 	uint16 num_obj;
 	uint8 num_mgg;
+	uint8 num_lights;
 	char MGG_FILES[32][256];
 };
 
@@ -316,6 +332,7 @@ struct _MGMFORMAT
 	uint16 num_sprites;
 	uint16 num_obj;
 	uint8 num_mgg;
+	uint8 num_lights;
 	char MGG_FILES[32][256];
 };
 
@@ -369,6 +386,15 @@ struct Joy
 	} axis[6];
 }
 */
+
+struct Render
+{
+	GLuint VShader[4];
+	GLuint FShader[4];
+	GLuint GShader[4];
+	GLuint Program[4];
+};
+
 //The main structure
 //Contais all the information about the game
 struct _SETTINGS
@@ -416,6 +442,8 @@ struct _SETTINGS
 	uint8 control_num;
 	Control controller[4];
 	//SDL_Joystick *Joy[4];
+
+	Render render;
 };
 
 extern _SETTINGS st;
@@ -461,6 +489,7 @@ uint32 POT(uint32 value);
 uint32 PlayMovie(const char *name);
 void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+void DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
 void DrawString(Font type, const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a);
 
