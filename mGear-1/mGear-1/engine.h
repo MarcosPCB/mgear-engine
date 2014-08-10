@@ -365,7 +365,7 @@ struct Control
 	struct Axis
 	{
 		SDL_GameControllerAxis name;
-		uint8 state;
+		int16 state;
 	} axis[6];
 };
 /*

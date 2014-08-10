@@ -185,19 +185,29 @@ int main(int argc, char *argv[])
 			st.keys[1].state=0;
 		}
 
-		if(st.keys[2].state==1)
+		if(st.control_num>0)
 		{
-			if(X<12000) X+=100;
-			else if(X>12000) st.Camera.position.x+=100;
-			//PlayMovie("LOGOHD.MGV");
-			st.keys[2].state=0;
-		}
 
-		if(st.keys[3].state==1)
-		{
-			if(X>4000) X-=100;
-			else if(X<4000) st.Camera.position.x-=100;
-			st.keys[3].state=0;
+			//printf("%f\n",st.controller[0].axis[0].state);
+			//printf("%f\n",st.controller[0].axis[1].state);
+
+			if(st.controller[0].axis[0].state!=0)
+			{
+				printf("%d\n",st.controller[0].axis[0].state);
+
+				if(X<12000) X+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
+				else if(X>12000) st.Camera.position.x+=100;
+				//PlayMovie("LOGOHD.MGV");
+				st.keys[2].state=0;
+			}
+			
+			if(st.controller[0].button[13].state==1)
+			{
+				if(X>4000) X-=100;
+				else if(X<4000) st.Camera.position.x-=100;
+				st.keys[3].state=0;
+			}
+			
 		}
 
 		//DrawMap();

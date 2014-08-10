@@ -85,6 +85,7 @@ void InputInit()
 	//Check if it's a game controller
 
 	if(num>4) num=4; //Max number of joysticks is 4
+	j=0;
 
 	for(register uint8 i=0;i<num;i++)
 	{
@@ -102,32 +103,38 @@ void InputInit()
 			*/
 	}
 
-	st.control_num=j;
+	LogApp("Found %d controller devices",j);
 
-	for(register uint8 i=0;i<j;i++)
+	if(j>0)
 	{
-		st.controller[i].axis[0].name=SDL_CONTROLLER_AXIS_LEFTX;
-		st.controller[i].axis[1].name=SDL_CONTROLLER_AXIS_LEFTY;
-		st.controller[i].axis[2].name=SDL_CONTROLLER_AXIS_RIGHTX;
-		st.controller[i].axis[3].name=SDL_CONTROLLER_AXIS_RIGHTY;
-		st.controller[i].axis[4].name=SDL_CONTROLLER_AXIS_TRIGGERLEFT;
-		st.controller[i].axis[5].name=SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
 
-		st.controller[i].button[0].name=SDL_CONTROLLER_BUTTON_A;
-		st.controller[i].button[1].name=SDL_CONTROLLER_BUTTON_B;
-		st.controller[i].button[2].name=SDL_CONTROLLER_BUTTON_X;
-		st.controller[i].button[3].name=SDL_CONTROLLER_BUTTON_Y;
-		st.controller[i].button[4].name=SDL_CONTROLLER_BUTTON_BACK;
-		st.controller[i].button[5].name=SDL_CONTROLLER_BUTTON_GUIDE;
-		st.controller[i].button[6].name=SDL_CONTROLLER_BUTTON_START;
-		st.controller[i].button[7].name=SDL_CONTROLLER_BUTTON_LEFTSTICK;
-		st.controller[i].button[8].name=SDL_CONTROLLER_BUTTON_RIGHTSTICK;
-		st.controller[i].button[9].name=SDL_CONTROLLER_BUTTON_LEFTSHOULDER;
-		st.controller[i].button[10].name=SDL_CONTROLLER_BUTTON_RIGHTSHOULDER;
-		st.controller[i].button[11].name=SDL_CONTROLLER_BUTTON_DPAD_UP;
-		st.controller[i].button[12].name=SDL_CONTROLLER_BUTTON_DPAD_DOWN;
-		st.controller[i].button[13].name=SDL_CONTROLLER_BUTTON_DPAD_LEFT;
-		st.controller[i].button[14].name=SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+		st.control_num=j;
+
+		for(register uint8 i=0;i<j;i++)
+		{
+			st.controller[i].axis[0].name=SDL_CONTROLLER_AXIS_LEFTX;
+			st.controller[i].axis[1].name=SDL_CONTROLLER_AXIS_LEFTY;
+			st.controller[i].axis[2].name=SDL_CONTROLLER_AXIS_RIGHTX;
+			st.controller[i].axis[3].name=SDL_CONTROLLER_AXIS_RIGHTY;
+			st.controller[i].axis[4].name=SDL_CONTROLLER_AXIS_TRIGGERLEFT;
+			st.controller[i].axis[5].name=SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
+
+			st.controller[i].button[0].name=SDL_CONTROLLER_BUTTON_A;
+			st.controller[i].button[1].name=SDL_CONTROLLER_BUTTON_B;
+			st.controller[i].button[2].name=SDL_CONTROLLER_BUTTON_X;
+			st.controller[i].button[3].name=SDL_CONTROLLER_BUTTON_Y;
+			st.controller[i].button[4].name=SDL_CONTROLLER_BUTTON_BACK;
+			st.controller[i].button[5].name=SDL_CONTROLLER_BUTTON_GUIDE;
+			st.controller[i].button[6].name=SDL_CONTROLLER_BUTTON_START;
+			st.controller[i].button[7].name=SDL_CONTROLLER_BUTTON_LEFTSTICK;
+			st.controller[i].button[8].name=SDL_CONTROLLER_BUTTON_RIGHTSTICK;
+			st.controller[i].button[9].name=SDL_CONTROLLER_BUTTON_LEFTSHOULDER;
+			st.controller[i].button[10].name=SDL_CONTROLLER_BUTTON_RIGHTSHOULDER;
+			st.controller[i].button[11].name=SDL_CONTROLLER_BUTTON_DPAD_UP;
+			st.controller[i].button[12].name=SDL_CONTROLLER_BUTTON_DPAD_DOWN;
+			st.controller[i].button[13].name=SDL_CONTROLLER_BUTTON_DPAD_LEFT;
+			st.controller[i].button[14].name=SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+		}
 	}
 }
 
@@ -137,7 +144,7 @@ void InputProcess()
 		{
 				if(events.type==SDL_QUIT) st.quit=1;
 
-				for(uint16 i=0;i<MAX_KEYS;i++)
+				for(register uint16 i=0;i<MAX_KEYS;i++)
 				{
 				
 					if(events.type==SDL_KEYUP)
@@ -145,13 +152,29 @@ void InputProcess()
 						if(st.keys[i].key==events.key.keysym.scancode)
 							st.keys[i].state=0;
 					}
-				
+					else
 					if(events.type==SDL_KEYDOWN)
 					{
 						if(st.keys[i].key==events.key.keysym.scancode)
 							st.keys[i].state=1;
 					}
 				
+				}
+
+				if(st.control_num>0)
+				{
+					SDL_GameControllerUpdate();
+
+					for(register uint8 j=0;j<st.control_num;j++)
+					{		
+						for(register uint16 i=0;i<15;i++)
+						{
+							st.controller[j].button[i].state=SDL_GameControllerGetButton(st.controller[j].device,st.controller[j].button[i].name);
+
+							if(i<6)
+								st.controller[j].axis[i].state=SDL_GameControllerGetAxis(st.controller[j].device,st.controller[j].axis[i].name);
+						}
+					}
 				}
 
 				if(events.type==SDL_MOUSEMOTION)
