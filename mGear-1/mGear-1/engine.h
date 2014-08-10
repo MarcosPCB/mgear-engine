@@ -367,6 +367,11 @@ struct Control
 		SDL_GameControllerAxis name;
 		int16 state;
 	} axis[6];
+
+	SDL_Haptic *force;
+	SDL_HapticEffect effect;
+
+	SDL_Joystick *joystick;
 };
 /*
 struct Joy

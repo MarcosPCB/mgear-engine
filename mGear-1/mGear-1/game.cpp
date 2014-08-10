@@ -191,14 +191,26 @@ int main(int argc, char *argv[])
 			//printf("%f\n",st.controller[0].axis[0].state);
 			//printf("%f\n",st.controller[0].axis[1].state);
 
-			if(st.controller[0].axis[0].state!=0)
+			if(st.controller[0].axis[0].state>10000)
 			{
-				printf("%d\n",st.controller[0].axis[0].state);
+				SDL_HapticRumblePlay(st.controller[0].force,1,100);
 
 				if(X<12000) X+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
 				else if(X>12000) st.Camera.position.x+=100;
+				//else if(X<4000) st.Camera.position.x-=100;
 				//PlayMovie("LOGOHD.MGV");
-				st.keys[2].state=0;
+				//st.controller[0].axis[0].state=0;
+			}
+
+			if(st.controller[0].axis[0].state<-10000)
+			{
+				SDL_HapticRumblePlay(st.controller[0].force,1,500);
+
+				if(X>4000) X+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
+				//else if(X>12000) st.Camera.position.x+=100;
+				else if(X<4000) st.Camera.position.x-=100;
+				//PlayMovie("LOGOHD.MGV");
+				//st.controller[0].axis[0].state=0;
 			}
 			
 			if(st.controller[0].button[13].state==1)

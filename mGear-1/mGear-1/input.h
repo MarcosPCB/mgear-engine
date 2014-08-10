@@ -85,3 +85,5 @@
 void InputInit();
 
 void InputProcess();
+
+void InputClose();

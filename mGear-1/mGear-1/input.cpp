@@ -94,6 +94,9 @@ void InputInit()
 			if((st.controller[j].device=SDL_GameControllerOpen(i))==NULL)
 				LogApp("Game Controller %d could not be initialized: %s",i,SDL_GetError());
 			else
+			if((st.controller[j].joystick=SDL_JoystickOpen(i))==NULL)
+				LogApp("Game Controller %d could not be initialized: %s",i,SDL_GetError());
+			else
 				j++;
 		}
 		/*
@@ -112,6 +115,12 @@ void InputInit()
 
 		for(register uint8 i=0;i<j;i++)
 		{
+			if((st.controller[i].force=SDL_HapticOpenFromJoystick(st.controller[i].joystick))==NULL)
+				LogApp("Controller %d does not support force feedback: %s",j,SDL_GetError());
+			else
+				if(SDL_HapticRumbleInit(st.controller[i].force)!=0)
+					LogApp("Could not initialize rumble: %s",SDL_GetError());
+
 			st.controller[i].axis[0].name=SDL_CONTROLLER_AXIS_LEFTX;
 			st.controller[i].axis[1].name=SDL_CONTROLLER_AXIS_LEFTY;
 			st.controller[i].axis[2].name=SDL_CONTROLLER_AXIS_RIGHTX;
@@ -216,4 +225,17 @@ void InputProcess()
 			st.PlayingVideo=0;
 			st.keys[RETURN_KEY].state=0;
 		}
+}
+
+void InputClose()
+{
+	if(st.control_num>0)
+	{
+		for(register uint8 i=0;i<st.control_num;i++)
+		{
+			SDL_HapticClose(st.controller[i].force);
+			SDL_JoystickClose(st.controller[i].joystick);
+			SDL_GameControllerClose(st.controller[i].device);
+		}
+	}
 }

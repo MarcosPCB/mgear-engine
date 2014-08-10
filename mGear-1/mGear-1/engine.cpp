@@ -97,6 +97,7 @@ uint32 POT(uint32 value)
 
 void Quit()
 {
+	InputClose();
 	SDL_DestroyWindow(wn);
 	SDL_Quit();
 	FMOD_System_Close(st.sound_sys.Sound_System);
