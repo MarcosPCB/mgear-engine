@@ -14,7 +14,6 @@
 #include <SOIL.h>
 #include <time.h>
 #include "types.h"
-#include "physics.h"
 
 #define MAX_SPRITES 512
 #define MAX_HUDSPRITES 128
@@ -189,6 +188,36 @@ enum _SPRITE_G
 	dead
 };
 
+enum Material
+{
+	METAL,
+	WOOD,
+	PLASTIC,
+	CONCRETE,
+	ORGANIC,
+	MATERIAL_END
+};
+
+struct _BODY
+{
+	float mass;
+	Pos size;
+	float max_elasticy;
+	Material material;
+	uint8 conductor : 2;
+	uint8 flamable : 2;
+	uint8 explosive : 2;
+	Pos position;
+	float total_vel;
+	Pos velxy;
+	float acceleration;
+	float energy;
+	float temperature;
+	float ang;
+};
+
+typedef struct _BODY Body;
+
 //Structure for te sprites in the game
 //When you create a sprite in the source code
 //You must add it to the structure
@@ -239,6 +268,7 @@ struct _SECTOR
 	struct LAYER
 	{
 		Pos position; // Y is constant
+		Pos size;
 		int16 tag;
 	} Layer[8];
 	Material material;
