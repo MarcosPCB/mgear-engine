@@ -556,6 +556,23 @@ void InitMGG()
 		memset(&mgg[i],0,sizeof(_MGG));
 }
 
+uint8 CheckColisionHitbox(Pos hitter, Pos hitter_size, Pos target, Pos target_size)
+{
+	double distx, disty;
+
+	distx=target.x-hitter.x;
+	disty=target.y-hitter.y;
+
+	if(distx<0) distx*=-1;
+	if(disty<0) disty*=-1;
+
+	if(distx<((hitter_size.x/2)+(target_size.x/2)) && disty<((hitter_size.y/2)+(target_size.y/2)))
+		return 1; //colision detected
+	else
+		return 0; //no colision
+	
+}
+
 void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
@@ -1076,6 +1093,8 @@ void Renderer()
 
 	glLoadIdentity();
 
+	//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
+
 	for(register uint32 i=0;i<MAX_GRAPHICS;i++)
 	{	
 		if(ent[i].stat==USED)
@@ -1085,6 +1104,8 @@ void Renderer()
 				//glLoadIdentity();
 
 				glPushMatrix();
+
+				//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
 
 				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
 
@@ -1128,6 +1149,8 @@ void Renderer()
 				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
 				glRotatef(ent[i].ang,0.0,0.0,1.0);
 				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
+
+				//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
 				
 				glBindTexture(GL_TEXTURE_2D,ent[i].data);
 					glBegin(GL_TRIANGLES);

@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <SOIL.h>
 #include <time.h>
+#include "types.h"
+#include "physics.h"
 
 #define MAX_SPRITES 512
 #define MAX_HUDSPRITES 128
@@ -38,14 +40,6 @@ typedef FMOD_CHANNEL Channel;
 #define MAX_MGG 64
 
 #define MGG_MAP_START 3 //The first slot to be used for loading map MGGs
-
-typedef signed char int8;
-typedef unsigned char uint8;
-typedef signed short int int16;
-typedef unsigned short int uint16;
-typedef signed long int int32;
-typedef unsigned long int uint32;
-typedef long long unsigned uint64;
 
 double inline __declspec () __fastcall sqrt14(double n);
 
@@ -79,28 +73,6 @@ enum Stat
 	USED,
 	DEAD
 };
-
-typedef struct
-{
-	double x;
-	double y;
-} Pos;
-
-typedef struct
-{
-	float r;
-	float g;
-	float b;
-	float a;
-} Color;
-
-typedef struct
-{
-	uint8 r;
-	uint8 g;
-	uint8 b;
-	float a;
-} Colori;
 
 struct _ENTITIES //To be rendered
 {
@@ -227,6 +199,9 @@ struct _SPRITES
 	uint8 MGG_ID : 6;
 	int16 health;
 	_SPRITE_G type;
+	int16 current_sector;
+	int8 current_layer;
+	Body body;
 };
 
 enum _OBJTYPE
@@ -254,6 +229,22 @@ enum _SPRITE_T
 	TEXTURED,
 	ENTITY,
 	non
+};
+
+struct _SECTOR
+{
+	Pos position;
+	Pos size;
+	uint8 layers;
+	struct LAYER
+	{
+		Pos position; // Y is constant
+		int16 tag;
+	} Layer[8];
+	Material material;
+	int16 tag;
+	uint8 destructive : 2;
+	int16 id;
 };
 
 struct _MGMLIGHT
@@ -319,10 +310,12 @@ struct _MGM
 	_MGMSPRITE *sprites;
 	_MGMOBJ *obj;
 	_MGMLIGHT *light;
+	_SECTOR *sector;
 	uint16 num_sprites;
 	uint16 num_obj;
 	uint8 num_mgg;
 	uint8 num_lights;
+	uint16 num_sector;
 	char MGG_FILES[32][256];
 };
 
@@ -507,3 +500,5 @@ void PlayMusic(const char *filename, uint8 loop);
 void MainSound();
 void StopAllSounds();
 void StopMusic();
+
+uint8 CheckColisionHitbox(Pos hitter, Pos hitter_size, Pos target, Pos target_size);

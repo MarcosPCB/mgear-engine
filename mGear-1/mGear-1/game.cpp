@@ -157,9 +157,23 @@ int main(int argc, char *argv[])
 	long long unsigned int time=st.time;
 
 	int32 anim=0;
-	double X=6840, Y=4096;
+
+	Pos fulg;
+	fulg.x=6840;
+	fulg.y=4096;
+	Pos fulgsize;
+	fulgsize.x=3048;
+	fulgsize.y=3048;
+
+	Pos fulg1;
+	fulg1.x=14000;
+	fulg1.y=4096;
+	fulgsize.x=3048;
+	fulgsize.y=3048;
 
 	st.FPSYes=1;
+
+	char num[64];
 
 	while(!st.quit)
 	{
@@ -193,10 +207,14 @@ int main(int argc, char *argv[])
 
 			if(st.controller[0].axis[0].state>10000)
 			{
-				SDL_HapticRumblePlay(st.controller[0].force,1,100);
+				//SDL_HapticRumblePlay(st.controller[0].force,1,100);
 
-				if(X<12000) X+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
-				else if(X>12000) st.Camera.position.x+=100;
+				if(fulg.x<=st.Camera.position.x+12000 && fulg.x>=st.Camera.position.x+4000) fulg.x+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
+				else if(fulg.x>st.Camera.position.x+4000)
+				{
+					fulg.x+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
+					st.Camera.position.x+=150;
+				}
 				//else if(X<4000) st.Camera.position.x-=100;
 				//PlayMovie("LOGOHD.MGV");
 				//st.controller[0].axis[0].state=0;
@@ -204,19 +222,53 @@ int main(int argc, char *argv[])
 
 			if(st.controller[0].axis[0].state<-10000)
 			{
-				SDL_HapticRumblePlay(st.controller[0].force,1,500);
+				//SDL_HapticRumblePlay(st.controller[0].force,1,500);
 
-				if(X>4000) X+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
+				if(fulg.x>=st.Camera.position.x+4000) fulg.x+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
 				//else if(X>12000) st.Camera.position.x+=100;
-				else if(X<4000) st.Camera.position.x-=100;
+				else if(fulg.x<=st.Camera.position.x+4000) 
+				{
+					fulg.x+=(100.0f/32768.0f)*st.controller[0].axis[0].state;
+					st.Camera.position.x-=150;
+				}
 				//PlayMovie("LOGOHD.MGV");
 				//st.controller[0].axis[0].state=0;
 			}
-			
+
+			if(st.controller[0].axis[1].state>10000)
+			{
+				//SDL_HapticRumblePlay(st.controller[0].force,1,100);
+
+				if(fulg.y<=st.Camera.position.y+6000 && fulg.y>=st.Camera.position.y+2000) fulg.y+=(100.0f/32768.0f)*st.controller[0].axis[1].state;
+				else if(fulg.y>=st.Camera.position.y+2000)
+				{
+					fulg.y+=(100.0f/32768.0f)*st.controller[0].axis[1].state;
+					st.Camera.position.y+=150;
+				}
+				//else if(X<4000) st.Camera.position.x-=100;
+				//PlayMovie("LOGOHD.MGV");
+				//st.controller[0].axis[0].state=0;
+			}
+
+			if(st.controller[0].axis[1].state<-10000)
+			{
+				//SDL_HapticRumblePlay(st.controller[0].force,1,500);
+
+				if(fulg.y>=st.Camera.position.y+2000) fulg.y+=(100.0f/32768.0f)*st.controller[0].axis[1].state;
+				//else if(X>12000) st.Camera.position.x+=100;
+				else if(fulg.y<=st.Camera.position.y+2000) 
+				{
+					st.Camera.position.y-=150;
+					fulg.y+=(100.0f/32768.0f)*st.controller[0].axis[1].state;
+				}
+				//PlayMovie("LOGOHD.MGV");
+				//st.controller[0].axis[0].state=0;
+			}
+
 			if(st.controller[0].button[13].state==1)
 			{
-				if(X>4000) X-=100;
-				else if(X<4000) st.Camera.position.x-=100;
+				if(fulg.x>4000) fulg.x-=110;
+				else if(fulg.x<4000) st.Camera.position.x-=100;
 				st.keys[3].state=0;
 			}
 			
@@ -227,9 +279,17 @@ int main(int argc, char *argv[])
 
 		DrawMap();
 
-		MAnim(X,Y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
-		DrawSprite(8192-st.Camera.position.x,4096-st.Camera.position.y,16384,16384,0,0,0,0,st.MapTex[5].ID,0.9);
-		//DrawString(COOPER,"menu test",400,300,0.5,0.5,30,250,250,32,0.2);
+		MAnim(fulg.x-st.Camera.position.x,fulg.y-st.Camera.position.y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
+		DrawSprite(fulg1.x-st.Camera.position.x,fulg1.y-st.Camera.position.y,fulgsize.x,fulgsize.y,0,255,128,32,mgg[0].frames[6],1);
+		sprintf(num,"%f %f",fulg.x,fulg.y);
+		DrawString(COOPER,num,100,50,0.1,0.1,0,255,255,255,1);
+		sprintf(num,"%f %f",fulg1.x,fulg1.y);
+		DrawString(COOPER,num,100,100,0.1,0.1,0,255,255,255,1);
+
+		if(CheckColisionHitbox(fulg,fulgsize,fulg1,fulgsize)==1)
+			{
+				DrawString(COOPER,"HIT",400,400,1,1,0,255,255,255,1);
+			}
 		
 		//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)
 			//DrawLight(st.Current_Map.light[i].position.x-st.Camera.position.x,st.Current_Map.light[i].position.y-st.Camera.position.y,st.Current_Map.light[i].size.x,st.Current_Map.light[i].size.y,
