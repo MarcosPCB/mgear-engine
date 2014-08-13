@@ -80,8 +80,10 @@ int main(int argc, char *argv[])
 	OpenFont("font//tt0524m_.ttf","geometry",2);
 
 	InitMGG();
-	
-	long long unsigned int time=st.time;
+
+	st.FPSYes=1;
+
+	st.gt=MAIN_MENU;
 
 	while(!st.quit)
 	{
@@ -89,8 +91,18 @@ int main(int argc, char *argv[])
 			FPSCounter();
 
 		InputProcess();
-		
-		if(st.keys[0].state==1) st.quit=1;
+
+		if(st.keys[ESC_KEY].state) 
+		{
+			if(st.gt!=GAME_MENU)
+				st.gt=GAME_MENU;
+			else
+				st.gt=INGAME;
+
+			st.keys[ESC_KEY].state=0;
+		}
+
+		Menu();
 		
 		DrawMap();
 		MainSound();

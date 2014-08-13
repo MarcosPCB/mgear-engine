@@ -136,6 +136,8 @@ int main(int argc, char *argv[])
 
 	Init();
 
+	OpenFont("font01.tff","font01",0);
+
 	InitMGG();
 
 	createmap();
@@ -282,13 +284,13 @@ int main(int argc, char *argv[])
 		MAnim(fulg.x-st.Camera.position.x,fulg.y-st.Camera.position.y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
 		DrawSprite(fulg1.x-st.Camera.position.x,fulg1.y-st.Camera.position.y,fulgsize.x,fulgsize.y,0,255,128,32,mgg[0].frames[6],1);
 		sprintf(num,"%f %f",fulg.x,fulg.y);
-		DrawString(COOPER,num,100,50,0.1,0.1,0,255,255,255,1);
+		DrawString(num,100,50,0.1,0.1,0,255,255,255,1,st.fonts[0].font);
 		sprintf(num,"%f %f",fulg1.x,fulg1.y);
-		DrawString(COOPER,num,100,100,0.1,0.1,0,255,255,255,1);
+		DrawString(num,100,100,0.1,0.1,0,255,255,255,1,st.fonts[0].font);
 
 		if(CheckColisionHitbox(fulg,fulgsize,fulg1,fulgsize)==1)
 			{
-				DrawString(COOPER,"HIT",400,400,1,1,0,255,255,255,1);
+				DrawString("HIT",400,400,1,1,0,255,255,255,1,st.fonts[0].font);
 			}
 		
 		//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)

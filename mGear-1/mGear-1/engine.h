@@ -535,4 +535,6 @@ void MainSound();
 void StopAllSounds();
 void StopMusic();
 
-uint8 CheckColisionHitbox(Pos hitter, Pos hitter_size, Pos target, Pos target_size);
+uint8 CheckColisionHitbox(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize);
+
+uint8 CheckColisionMouse(double tx, double ty, double txsize, double tysize);

@@ -568,17 +568,27 @@ void InitMGG()
 		memset(&mgg[i],0,sizeof(_MGG));
 }
 
-uint8 CheckColisionHitbox(Pos hitter, Pos hitter_size, Pos target, Pos target_size)
+uint8 CheckColisionHitbox(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize)
 {
 	double distx, disty;
 
-	distx=target.x-hitter.x;
-	disty=target.y-hitter.y;
+	distx=tx-x;
+	disty=ty-y;
 
 	if(distx<0) distx*=-1;
 	if(disty<0) disty*=-1;
 
-	if(distx<((hitter_size.x/2)+(target_size.x/2)) && disty<((hitter_size.y/2)+(target_size.y/2)))
+	if(distx<((xsize/2)+(txsize/2)) && disty<((ysize/2)+(tysize/2)))
+		return 1; //colision detected
+	else
+		return 0; //no colision
+	
+}
+
+uint8 CheckColisionMouse(double tx, double ty, double txsize, double tysize)
+{
+
+	if(st.mouse.x<tx+(txsize/2) && st.mouse.x>tx-(txsize/2) && st.mouse.y<ty+(tysize/2) && st.mouse.y>ty-(tysize/2))
 		return 1; //colision detected
 	else
 		return 0; //no colision
@@ -702,8 +712,7 @@ int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 }
 
 void DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
-{
-	
+{	
 	SDL_Color co;
 	co.r=255;
 	co.g=255;
@@ -737,8 +746,8 @@ void DrawString(const char *text, double x, double y, double sizex, double sizey
 			ent[i].type=TEXT;
 			ent[i].pos.x=(st.screenx*x)/800;
 			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=(msg->w*sizex*st.screenx)/800;
-			ent[i].size.y=(msg->h*sizey*st.screeny)/600;
+			ent[i].size.x=(sizex*st.screenx)/800;
+			ent[i].size.y=(sizey*st.screeny)/600;
 			ent[i].x1y1.x=0;
 			ent[i].x1y1.y=0;
 			ent[i].x2y2.x=1;
@@ -747,6 +756,7 @@ void DrawString(const char *text, double x, double y, double sizex, double sizey
 			ent[i].color.g=(float)g/255;
 			ent[i].color.b=(float)b/255;
 			ent[i].color.a=a;
+
 			SDL_FreeSurface(msg);
 			st.num_entities++;
 			
