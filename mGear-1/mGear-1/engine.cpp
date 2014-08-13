@@ -102,7 +102,6 @@ void Quit()
 	SDL_Quit();
 	FMOD_System_Close(st.sound_sys.Sound_System);
 	FMOD_System_Release(st.sound_sys.Sound_System);
-	TTF_CloseFont(st.font[0]);
 	TTF_Quit();
 	exit(1);
 }
@@ -151,12 +150,6 @@ void Init()
 	}
 
 	LogApp("SDL TTF initialized");
-	
-	if((st.font[0]=TTF_OpenFont("font01.ttf",64))==NULL)
-	{
-		LogApp("Error while opening TTF font : %s",TTF_GetError());
-			Quit();
-	}
 	
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
@@ -232,6 +225,25 @@ void Init()
 	st.Camera.dimension.y=600;
 	st.Camera.angle=0.0;
 
+	st.Current_Map.num_lights=0;
+	st.Current_Map.num_mgg=0;
+	st.Current_Map.num_obj=0;
+	st.Current_Map.num_sector=0;
+	st.Current_Map.num_sprites=0;
+
+}
+
+uint8 OpenFont(const char *file,const char *name, uint8 index)
+{
+	if((st.fonts[index].font=TTF_OpenFont(file,64))==NULL)
+	{
+		LogApp("Error while opening TTF font : %s",TTF_GetError());
+		return 0;
+	}
+	
+	strcpy(st.fonts[index].name,name);
+
+	return 1;
 }
 
 void RestartVideo()
@@ -689,10 +701,9 @@ int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 	return mgf->anim[id].current_frame;
 }
 
-void DrawString(Font type, const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a)
+void DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {
-	TTF_Font *f;
-	if(type==COOPER) f=st.font[0];
+	
 	SDL_Color co;
 	co.r=255;
 	co.g=255;

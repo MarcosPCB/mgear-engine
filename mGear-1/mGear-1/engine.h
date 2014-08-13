@@ -25,6 +25,7 @@
 #define MUSIC_SLOT MAX_SOUNDS-1
 #define MAX_KEYS 128
 #define MAX_OBJS 1024
+#define MAX_FONTS 8
 
 #define QLZ_COMPRESSION_LEVEL 3
 #define QLZ_STREAMING_BUFFER 0
@@ -45,15 +46,9 @@ double inline __declspec () __fastcall sqrt14(double n);
 #define LogApp SDL_Log
 #define LogErr SDL_LogError
 #define LogWn SDL_LogWarn
+#define TTF_CloseFont CloseFont
 
 //#define MAX_MGVFRAMES 65536
-
-//Types of font
-enum Font
-{
-	COOPER,
-	ARIAL
-};
 
 enum Enttype
 {
@@ -423,6 +418,12 @@ struct Render
 	GLuint Program[4];
 };
 
+struct TFont
+{
+	char name[64];
+	TTF_Font *font;
+};
+
 //The main structure
 //Contais all the information about the game
 struct _SETTINGS
@@ -439,7 +440,7 @@ struct _SETTINGS
 	uint32 num_entities;
 	long long unsigned int time;
 	_SOUNDSYS sound_sys;
-	TTF_Font *font[3];
+	TFont fonts[MAX_FONTS];
 	Pos mouse;
 	uint8 mouse1;
 	uint8 mouse2;
@@ -483,6 +484,9 @@ extern _MGG mgg[MAX_MGG];
 extern const char WindowTitle[32];
 
 void Init();
+
+uint8 OpenFont(const char *file,const char *name, uint8 index);
+
 void Quit();
 
 //For tests only
@@ -519,7 +523,7 @@ void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 void DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
-void DrawString(Font type, const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a);
+void DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
 
 int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
 

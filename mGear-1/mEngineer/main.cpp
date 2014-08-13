@@ -1,7 +1,5 @@
-#define ENGINNER
-
-#include "engine.h"
 #include "input.h"
+#include "main.h"
 #include <stdio.h> 
 #include <stdlib.h>
 
@@ -77,16 +75,24 @@ int main(int argc, char *argv[])
 
 	Init();
 
+	OpenFont("font//arial.ttf","arial",0);
+	OpenFont("font//arialbd.ttf","arial bould",1);
+	OpenFont("font//tt0524m_.ttf","geometry",2);
+
 	InitMGG();
 	
 	long long unsigned int time=st.time;
 
 	while(!st.quit)
 	{
+		if(st.FPSYes)
+			FPSCounter();
+
 		InputProcess();
 		
 		if(st.keys[0].state==1) st.quit=1;
 		
+		DrawMap();
 		MainSound();
 		Renderer();
 		Timer();
@@ -94,5 +100,5 @@ int main(int argc, char *argv[])
 
 	StopAllSounds();
 	Quit();
-	return true;
+	return 1;
 }
