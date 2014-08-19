@@ -568,24 +568,114 @@ void InitMGG()
 		memset(&mgg[i],0,sizeof(_MGG));
 }
 
-uint8 CheckColisionHitbox(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize)
+uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4], float angsec)
 {
-	double distx, disty;
 
-	distx=tx-x;
-	disty=ty-y;
+}
 
-	if(distx<0) distx*=-1;
-	if(disty<0) disty*=-1;
+uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt)
+{
+	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
-	if(distx<((xsize/2)+(txsize/2)) && disty<((ysize/2)+(tysize/2)))
-		return 1; //colision detected
+	for(register uint8 i=0;i<8;i++)
+	{
+		if(i<4)
+		{
+			if(i==0)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				xb=xl=tmpx;
+				yb=yl=tmpy;
+			}
+			else
+			if(i==1)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==2)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==3)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+		}
+		else
+		if(i>3)
+		{
+			if(i==4)
+			{
+				tmpx=tx+(((tx-(txsize/2))-tx)*cos((angt*pi)/180) - ((ty-(tysize/2))-ty)*sin((angt*pi)/180));
+				tmpy=ty+(((tx-(txsize/2))-tx)*sin((angt*pi)/180) + ((ty-(tysize/2))-ty)*cos((angt*pi)/180));
+				xtb=xtl=tmpx;
+				ytb=ytl=tmpy;
+			}
+			else
+			if(i==5)
+			{
+				tmpx=tx+(((tx+(txsize/2))-tx)*cos((angt*pi)/180) - ((ty-(tysize/2))-ty)*sin((angt*pi)/180));
+				tmpy=ty+(((tx+(txsize/2))-tx)*sin((angt*pi)/180) + ((ty-(tysize/2))-ty)*cos((angt*pi)/180));
+				if(tmpx>xtb) xtb=tmpx;
+				else if(tmpx<xtl) xtl=tmpx;
+
+				if(tmpy>ytb) ytb=tmpy;
+				else if(tmpy<ytl) ytl=tmpy;
+			}
+			else
+			if(i==6)
+			{
+				tmpx=tx+(((tx+(txsize/2))-tx)*cos((angt*pi)/180) - ((ty+(tysize/2))-ty)*sin((angt*pi)/180));
+				tmpy=ty+(((tx+(txsize/2))-tx)*sin((angt*pi)/180) + ((ty+(tysize/2))-ty)*cos((angt*pi)/180));
+				if(tmpx>xtb) xtb=tmpx;
+				else if(tmpx<xtl) xtl=tmpx;
+
+				if(tmpy>ytb) ytb=tmpy;
+				else if(tmpy<ytl) ytl=tmpy;
+			}
+			else
+			if(i==7)
+			{
+				tmpx=tx+(((tx-(txsize/2))-tx)*cos((angt*pi)/180) - ((ty+(tysize/2))-ty)*sin((angt*pi)/180));
+				tmpy=ty+(((tx-(txsize/2))-tx)*sin((angt*pi)/180) + ((ty+(tysize/2))-ty)*cos((angt*pi)/180));
+				if(tmpx>xtb) xtb=tmpx;
+				else if(tmpx<xtl) xtl=tmpx;
+
+				if(tmpy>ytb) ytb=tmpy;
+				else if(tmpy<ytl) ytl=tmpy;
+			}
+		}
+	}
+
+	if((xtb>xl && xtb<xb && ytb>yl && ytb<yb) || (xtl>xl && xtl<xb && ytl>yl && ytl<yb))
+		return 1; //Collided
 	else
-		return 0; //no colision
+		return 0; //No collision
 	
 }
 
-uint8 CheckColisionMouse(double tx, double ty, double txsize, double tysize)
+uint8 CheckColisionMouse(double tx, double ty, double txsize, double tysize, float ang)
 {
 
 	if(st.mouse.x<tx+(txsize/2) && st.mouse.x>tx-(txsize/2) && st.mouse.y<ty+(tysize/2) && st.mouse.y>ty-(tysize/2))

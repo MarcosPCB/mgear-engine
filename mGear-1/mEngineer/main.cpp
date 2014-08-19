@@ -96,10 +96,10 @@ static void PannelLeft()
 		//time++;
 		//if((st.time-time)==1000)
 		//{
-			DrawString("Draw a path or use it to block something",400,550,400,50,0,255,128,32,1,st.fonts[ARIAL].font);
+			DrawString("Draw a sector",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-			if(st.mouse1) meng.pannel_choice=1;
+			if(st.mouse1) meng.pannel_choice=0;
 	}
 
 	if(!CheckColisionMouse(75,27,48,48))
@@ -149,11 +149,12 @@ static void PannelLeft()
 
 		if(st.mouse1) meng.pannel_choice=3;
 	}
-
+	/*
 	if(!CheckColisionMouse(75,75,48,48) && !CheckColisionMouse(27,75,48,48) && !CheckColisionMouse(75,27,48,48) && !CheckColisionMouse(27,27,48,48) && st.mouse1)
 		meng.pannel_choice=0;
+		*/
 
-	if(meng.pannel_choice==1)
+	if(meng.pannel_choice==0)
 		DrawHud(27,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[0].ID,1);
 	//else
 	if(meng.pannel_choice==2)
@@ -164,6 +165,24 @@ static void PannelLeft()
 	//else
 	if(meng.pannel_choice==4)
 		DrawHud(27,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[1].ID,1);
+
+	meng.command=meng.pannel_choice;
+}
+
+static void AddVertex()
+
+static void ViewPort()
+{
+	if(!CheckColisionMouse(50,300,100,600))
+	{
+		if(meng.command==DRAW_SECTOR)
+		{
+			if(st.mouse1)
+			{
+
+			}
+		}
+	}
 }
 
 int main(int argc, char *argv[])
@@ -197,6 +216,8 @@ int main(int argc, char *argv[])
 	st.FPSYes=1;
 
 	st.gt=MAIN_MENU;
+
+	meng.pannel_choice=0;
 
 	while(!st.quit)
 	{

@@ -39,6 +39,8 @@ typedef FMOD_CHANNEL Channel;
 #define MAX_ANIMATIONS 64
 #define MAX_MGG 64
 
+#define pi 3.14159265
+
 #define MGG_MAP_START 3 //The first slot to be used for loading map MGGs
 
 double inline __declspec () __fastcall sqrt14(double n);
