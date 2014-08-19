@@ -46,7 +46,8 @@ double inline __declspec () __fastcall sqrt14(double n);
 #define LogApp SDL_Log
 #define LogErr SDL_LogError
 #define LogWn SDL_LogWarn
-#define TTF_CloseFont CloseFont
+#define CloseFont TTF_CloseFont
+#define GetTicks SDL_GetTicks
 
 //#define MAX_MGVFRAMES 65536
 

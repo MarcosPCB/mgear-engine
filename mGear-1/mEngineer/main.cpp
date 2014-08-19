@@ -5,6 +5,8 @@
 
 extern _MGG mgg[MAX_MGG];
 
+mEng meng;
+
 uint16 WriteCFG()
 {
 	FILE *file;
@@ -64,6 +66,105 @@ uint16 LoadCFG()
 	return true;
 
 }
+/*
+uint8 LoadList()
+{
+	FILE *file;
+
+	if((file=fopen("mgg.list","r"))==NULL)
+	{
+		LogApp("Unable to load MGG list");
+		Quit();
+	}
+
+}
+*/
+static void PannelLeft()
+{
+	uint8 mouse=0;
+
+	DrawHud(50,300,100,600,0,255,255,255,0,0,1,1,st.UiTex[4].ID,1);
+
+	if(!CheckColisionMouse(27,27,48,48))
+	{
+		DrawHud(27,27,48,48,0,255,255,255,0,0,1,1,st.UiTex[0].ID,1);
+		//if(st.mouse1) mouse=0;
+	}
+	else
+	{
+		DrawHud(27,27,48,48,0,255,128,32,0,0,1,1,st.UiTex[0].ID,1);
+		//time++;
+		//if((st.time-time)==1000)
+		//{
+			DrawString("Draw a path or use it to block something",400,550,400,50,0,255,128,32,1,st.fonts[ARIAL].font);
+		//}
+
+			if(st.mouse1) meng.pannel_choice=1;
+	}
+
+	if(!CheckColisionMouse(75,27,48,48))
+	{
+		DrawHud(75,27,48,48,0,255,255,255,0,0,1,1,st.UiTex[2].ID,1);
+		//if(st.mouse1) mouse=0;
+	}
+	else
+	{
+		DrawHud(75,27,48,48,0,255,128,32,0,0,1,1,st.UiTex[2].ID,1);
+		//if((st.time-time)==1000)
+		//{
+				DrawString("Select and edit",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
+		//}
+
+		if(st.mouse1) meng.pannel_choice=2;
+	}
+	
+	if(!CheckColisionMouse(27,75,48,48))
+	{
+		DrawHud(27,75,48,48,0,255,255,255,0,0,1,1,st.UiTex[1].ID,1);
+		//if(st.mouse1) mouse=0;
+	}
+	else
+	{
+		DrawHud(27,75,48,48,0,255,128,32,0,0,1,1,st.UiTex[1].ID,1);
+		//if((st.time-time)==1000)
+		//{
+			DrawString("Add an OBJ",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
+		//}
+
+		if(st.mouse1) meng.pannel_choice=4;
+	}
+	
+	if(!CheckColisionMouse(75,75,48,48))
+	{
+		DrawHud(75,75,48,48,0,255,255,255,0,0,1,1,st.UiTex[3].ID,1);
+		//if(st.mouse1) mouse=0;
+	}
+	else
+	{
+		DrawHud(75,75,48,48,0,255,128,32,0,0,1,1,st.UiTex[3].ID,1);
+		//if((st.time-time)==1000)
+		//{
+			DrawString("Add a sprite",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
+		//}
+
+		if(st.mouse1) meng.pannel_choice=3;
+	}
+
+	if(!CheckColisionMouse(75,75,48,48) && !CheckColisionMouse(27,75,48,48) && !CheckColisionMouse(75,27,48,48) && !CheckColisionMouse(27,27,48,48) && st.mouse1)
+		meng.pannel_choice=0;
+
+	if(meng.pannel_choice==1)
+		DrawHud(27,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[0].ID,1);
+	//else
+	if(meng.pannel_choice==2)
+		DrawHud(75,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[2].ID,1);
+	//else
+	if(meng.pannel_choice==3)
+		DrawHud(75,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[3].ID,1);
+	//else
+	if(meng.pannel_choice==4)
+		DrawHud(27,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[1].ID,1);
+}
 
 int main(int argc, char *argv[])
 {
@@ -80,6 +181,18 @@ int main(int argc, char *argv[])
 	OpenFont("font//tt0524m_.ttf","geometry",2);
 
 	InitMGG();
+
+	if(LoadMGG(&mgg[0],"data//mEngUI.mgg")==NULL)
+	{
+		LogApp("Could not open UI mgg");
+		Quit();
+	}
+
+	for(register uint16 i=0;i<mgg[0].num_frames;i++)
+	{
+		st.UiTex[i].ID=mgg[0].frames[i];
+		st.UiTex[i].MGG_ID=0;
+	}
 
 	st.FPSYes=1;
 
@@ -102,7 +215,8 @@ int main(int argc, char *argv[])
 			st.keys[ESC_KEY].state=0;
 		}
 
-		Menu();
+		PannelLeft();
+		//Menu();
 		
 		DrawMap();
 		MainSound();

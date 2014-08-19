@@ -685,10 +685,10 @@ void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 			ent[i].size.y=(sizey*st.screeny)/600;
 			ent[i].type=HUD;
 			ent[i].data=data;
-			ent[i].x1y1.x=x1/sizex;
-			ent[i].x1y1.y=y1/sizey;
-			ent[i].x2y2.x=x2/sizex;
-			ent[i].x2y2.y=y2/sizey;
+			ent[i].x1y1.x=x1;
+			ent[i].x1y1.y=y1;
+			ent[i].x2y2.x=x2;
+			ent[i].x2y2.y=y2;
 			ent[i].color.r=(float)r/255;
 			ent[i].color.g=(float)g/255;
 			ent[i].color.b=(float)b/255;
