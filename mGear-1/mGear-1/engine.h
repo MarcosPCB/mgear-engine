@@ -26,6 +26,7 @@
 #define MAX_KEYS 128
 #define MAX_OBJS 1024
 #define MAX_FONTS 8
+#define MAX_SECTORS 512
 
 #define QLZ_COMPRESSION_LEVEL 3
 #define QLZ_STREAMING_BUFFER 0
@@ -261,7 +262,7 @@ enum _SPRITE_T
 struct _SECTOR
 {
 	Pos position;
-	Pos size;
+	Pos vertex[4];
 	uint8 layers;
 	struct LAYER
 	{
@@ -463,6 +464,8 @@ struct _SETTINGS
 #ifdef ENGINEER
 	uint8 Engineer_Mode;
 #endif
+	
+	uint8 Developer_Mode : 1;
 
 	uint8 FPSYes : 1;
 	uint32 FPSTime;
@@ -538,6 +541,8 @@ void MainSound();
 void StopAllSounds();
 void StopMusic();
 
-uint8 CheckColisionHitbox(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize);
+uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt);
 
-uint8 CheckColisionMouse(double tx, double ty, double txsize, double tysize);
+uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float ang);
+
+uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4]);

@@ -6,10 +6,10 @@
 #define ARIAL_BOULD 1
 #define GEOMET 2
 
-#define DRAW_SECTOR 1
-#define ADD_OBJ 2
-#define ADD_SPRITE 3
-#define SELECT_EDIT 4
+#define DRAW_SECTOR 0
+#define ADD_OBJ 3
+#define ADD_SPRITE 4
+#define SELECT_EDIT 2
 
 struct mEng
 {

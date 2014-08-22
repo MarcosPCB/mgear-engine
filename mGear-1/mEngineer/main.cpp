@@ -85,7 +85,7 @@ static void PannelLeft()
 
 	DrawHud(50,300,100,600,0,255,255,255,0,0,1,1,st.UiTex[4].ID,1);
 
-	if(!CheckColisionMouse(27,27,48,48))
+	if(!CheckColisionMouse(27,27,48,48,0))
 	{
 		DrawHud(27,27,48,48,0,255,255,255,0,0,1,1,st.UiTex[0].ID,1);
 		//if(st.mouse1) mouse=0;
@@ -102,7 +102,7 @@ static void PannelLeft()
 			if(st.mouse1) meng.pannel_choice=0;
 	}
 
-	if(!CheckColisionMouse(75,27,48,48))
+	if(!CheckColisionMouse(75,27,48,48,0))
 	{
 		DrawHud(75,27,48,48,0,255,255,255,0,0,1,1,st.UiTex[2].ID,1);
 		//if(st.mouse1) mouse=0;
@@ -118,7 +118,7 @@ static void PannelLeft()
 		if(st.mouse1) meng.pannel_choice=2;
 	}
 	
-	if(!CheckColisionMouse(27,75,48,48))
+	if(!CheckColisionMouse(27,75,48,48,0))
 	{
 		DrawHud(27,75,48,48,0,255,255,255,0,0,1,1,st.UiTex[1].ID,1);
 		//if(st.mouse1) mouse=0;
@@ -134,7 +134,7 @@ static void PannelLeft()
 		if(st.mouse1) meng.pannel_choice=4;
 	}
 	
-	if(!CheckColisionMouse(75,75,48,48))
+	if(!CheckColisionMouse(75,75,48,48,0))
 	{
 		DrawHud(75,75,48,48,0,255,255,255,0,0,1,1,st.UiTex[3].ID,1);
 		//if(st.mouse1) mouse=0;
@@ -169,17 +169,78 @@ static void PannelLeft()
 	meng.command=meng.pannel_choice;
 }
 
-static void AddVertex()
-
-static void ViewPort()
+static void ViewPortCommands()
 {
-	if(!CheckColisionMouse(50,300,100,600))
+	Pos vertextmp[4];
+
+	if(!CheckColisionMouse(50,300,100,600,0))
 	{
 		if(meng.command==DRAW_SECTOR)
 		{
 			if(st.mouse1)
 			{
+				if(st.Current_Map.num_sector<MAX_SECTORS)
+				{
+					for(uint16 i=0;i<MAX_SECTORS;i++)
+					{
+						if(st.Current_Map.sector[i].id==-1)
+						{
+							st.Current_Map.sector[i].id=i;
+							st.Current_Map.sector[i].position.x=(st.mouse.x*16384)/st.screenx;
+							st.Current_Map.sector[i].position.y=(st.mouse.y*8192)/st.screeny;
+							st.Current_Map.sector[i].vertex[0].x=((st.mouse.x-64)*16384)/st.screenx;
+							st.Current_Map.sector[i].vertex[0].y=((st.mouse.y-64)*8192)/st.screeny;
+							st.Current_Map.sector[i].vertex[1].x=((st.mouse.x+64)*16384)/st.screenx;
+							st.Current_Map.sector[i].vertex[1].y=((st.mouse.y-64)*8192)/st.screeny;
+							st.Current_Map.sector[i].vertex[2].x=((st.mouse.x+64)*16384)/st.screenx;
+							st.Current_Map.sector[i].vertex[2].y=((st.mouse.y+64)*8192)/st.screeny;
+							st.Current_Map.sector[i].vertex[3].x=((st.mouse.x-64)*16384)/st.screenx;
+							st.Current_Map.sector[i].vertex[3].y=((st.mouse.y+64)*8192)/st.screeny;
+							st.Current_Map.num_sector++;
+							break;
+						}
+					}
+				}
+				printf("Sector Added\n");
+				st.mouse1=0;
+			}
+		}
+		else
+		if(meng.command==SELECT_EDIT)
+		{
+			if(st.Current_Map.num_sector>0)
+			{
+				for(uint16 i=0;i<st.Current_Map.num_sector;i++)
+				{
+					for(uint16 j=0;j<5;j++)
+					{
+						if(j<4 && CheckColisionMouse(st.Current_Map.sector[i].vertex[j].x,st.Current_Map.sector[i].vertex[j].y,16,16,0) && st.mouse1)
+							st.Current_Map.sector[i].vertex[j]=st.mouse;
+						else if(j==4 && CheckColisionMouse(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,32,32,0) && st.mouse1)
+						{
+							vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
+							vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
+							vertextmp[1].x=(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].position.x);
+							vertextmp[1].y=(st.Current_Map.sector[i].vertex[1].y-st.Current_Map.sector[i].position.y);
+							vertextmp[2].x=(st.Current_Map.sector[i].vertex[2].x-st.Current_Map.sector[i].position.x);
+							vertextmp[2].y=(st.Current_Map.sector[i].vertex[2].y-st.Current_Map.sector[i].position.y);
+							vertextmp[3].x=(st.Current_Map.sector[i].vertex[3].x-st.Current_Map.sector[i].position.x);
+							vertextmp[3].y=(st.Current_Map.sector[i].vertex[3].y-st.Current_Map.sector[i].position.y);
 
+							st.Current_Map.sector[i].position=st.mouse;
+
+							st.Current_Map.sector[i].vertex[0].x=st.Current_Map.sector[i].position.x+vertextmp[0].x;
+							st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].position.y+vertextmp[0].y;
+							st.Current_Map.sector[i].vertex[1].x=st.Current_Map.sector[i].position.x+vertextmp[1].x;
+							st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].position.y+vertextmp[1].y;
+							st.Current_Map.sector[i].vertex[2].x=st.Current_Map.sector[i].position.x+vertextmp[2].x;
+							st.Current_Map.sector[i].vertex[2].y=st.Current_Map.sector[i].position.y+vertextmp[2].y;
+							st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
+							st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
+						}
+					}
+					
+				}
 			}
 		}
 	}
@@ -217,7 +278,32 @@ int main(int argc, char *argv[])
 
 	st.gt=MAIN_MENU;
 
-	meng.pannel_choice=0;
+	meng.pannel_choice=2;
+	meng.command=2;
+
+	st.Developer_Mode=1;
+
+	st.Current_Map.obj=(_MGMOBJ*) malloc(MAX_OBJS*sizeof(_MGMOBJ));
+	st.Current_Map.sector=(_SECTOR*) malloc(MAX_SECTORS*sizeof(_SECTOR));
+	st.Current_Map.sprites=(_MGMSPRITE*) malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
+
+	st.Current_Map.num_sector=0;
+	st.Current_Map.num_obj=0;
+	st.Current_Map.num_sprites=0;
+
+	for(register uint16 i=0;i<MAX_SECTORS;i++)
+	{
+		st.Current_Map.sector[i].id=-1;
+		st.Current_Map.sector[i].layers=1;
+		st.Current_Map.sector[i].material=CONCRETE;
+		st.Current_Map.sector[i].tag=0;
+	}
+
+	for(register uint16 i=0;i<MAX_OBJS;i++)
+		st.Current_Map.obj[i].type=BLANK;
+
+	for(register uint16 i=0;i<MAX_SPRITES;i++)
+		st.Current_Map.sprites[i].type=non;
 
 	while(!st.quit)
 	{
@@ -237,6 +323,7 @@ int main(int argc, char *argv[])
 		}
 
 		PannelLeft();
+		ViewPortCommands();
 		//Menu();
 		
 		DrawMap();

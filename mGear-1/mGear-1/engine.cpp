@@ -568,9 +568,75 @@ void InitMGG()
 		memset(&mgg[i],0,sizeof(_MGG));
 }
 
-uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4], float angsec)
+uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4])
 {
+	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
+	for(register uint8 i=0;i<4;i++)
+	{
+			if(i==0)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				xb=xl=tmpx;
+				yb=yl=tmpy;
+			}
+			else
+			if(i==1)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==2)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==3)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+	}
+
+	for(register uint8 i=0;i<4;i++)
+	{
+		if(i==0)
+		{
+			xtb=xtl=vert[i].x;
+			ytb=ytl=vert[i].y;
+		}
+		else
+		{
+			if(vert[i].x<xtl) xtl=vert[i].x;
+			else if(vert[i].x>xtb) xtb=vert[i].x;
+
+			if(vert[i].y<ytl) ytl=vert[i].y;
+			else if(vert[i].y>ytb) ytb=vert[i].y;
+		}
+	}
+
+	if((xtb>xl && xtb<xb && ytb>yl && ytb<yb) || (xtl>xl && xtl<xb && ytl>yl && ytl<yb))
+		return 1; //Collided
+	else
+		return 0; //No collision
 }
 
 uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt)
@@ -675,13 +741,59 @@ uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, d
 	
 }
 
-uint8 CheckColisionMouse(double tx, double ty, double txsize, double tysize, float ang)
+uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float ang)
 {
 
-	if(st.mouse.x<tx+(txsize/2) && st.mouse.x>tx-(txsize/2) && st.mouse.y<ty+(tysize/2) && st.mouse.y>ty-(tysize/2))
-		return 1; //colision detected
+	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+
+	for(register uint8 i=0;i<4;i++)
+	{
+			if(i==0)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				xb=xl=tmpx;
+				yb=yl=tmpy;
+			}
+			else
+			if(i==1)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==2)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==3)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+	}
+
+	if(st.mouse.x>xl && st.mouse.x<xb && st.mouse.y>yl && st.mouse.y<yb)
+		return 1; //Collided
 	else
-		return 0; //no colision
+		return 0; //No collision
 	
 }
 
@@ -1194,7 +1306,18 @@ void DrawMap()
 		if(st.Current_Map.obj[i].type==BACKGROUND1)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,st.MapTex[st.Current_Map.obj[i].TextureID].ID,st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-	
+	if(st.Developer_Mode)
+	{
+		for(register uint16 i=0;i<st.Current_Map.num_sector;i++)
+			if(st.Current_Map.sector[i].id>-1)
+			{
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,256,256,0,255,255,255,st.UiTex[0].ID,1,1,1,0,0);
+			}
+	}
 }
 
 void Renderer()
