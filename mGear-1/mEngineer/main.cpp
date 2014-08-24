@@ -214,9 +214,12 @@ static void ViewPortCommands()
 				{
 					for(uint16 j=0;j<5;j++)
 					{
-						if(j<4 && CheckColisionMouse(st.Current_Map.sector[i].vertex[j].x,st.Current_Map.sector[i].vertex[j].y,16,16,0) && st.mouse1)
-							st.Current_Map.sector[i].vertex[j]=st.mouse;
-						else if(j==4 && CheckColisionMouse(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,32,32,0) && st.mouse1)
+						if(j<4 && CheckColisionMouse((st.Current_Map.sector[i].vertex[j].x*st.screenx)/16384,(st.Current_Map.sector[i].vertex[j].y*st.screeny)/8192,(256*st.screenx)/16384,(256*st.screenx)/8192,0) && st.mouse1)
+						{
+							st.Current_Map.sector[i].vertex[j].x=(st.mouse.x*16384)/st.screenx;
+							st.Current_Map.sector[i].vertex[j].y=(st.mouse.y*8192)/st.screeny;
+						}
+						else if(j==4 && CheckColisionMouse((st.Current_Map.sector[i].position.x*st.screenx)/16384,(st.Current_Map.sector[i].position.y*st.screeny)/8192,(484*st.screenx)/16384,(484*st.screeny)/8192,0) && st.mouse1)
 						{
 							vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
 							vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
@@ -227,7 +230,8 @@ static void ViewPortCommands()
 							vertextmp[3].x=(st.Current_Map.sector[i].vertex[3].x-st.Current_Map.sector[i].position.x);
 							vertextmp[3].y=(st.Current_Map.sector[i].vertex[3].y-st.Current_Map.sector[i].position.y);
 
-							st.Current_Map.sector[i].position=st.mouse;
+							st.Current_Map.sector[i].position.x=(st.mouse.x*16384)/st.screenx;
+							st.Current_Map.sector[i].position.y=(st.mouse.y*8192)/st.screeny;
 
 							st.Current_Map.sector[i].vertex[0].x=st.Current_Map.sector[i].position.x+vertextmp[0].x;
 							st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].position.y+vertextmp[0].y;

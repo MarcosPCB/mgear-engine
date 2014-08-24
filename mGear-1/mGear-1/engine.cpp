@@ -901,6 +901,30 @@ void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 	}
 }
 
+void DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth)
+{
+	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	{
+		if(ent[i].stat==DEAD)
+		{
+			ent[i].stat=USED;
+			ent[i].ang=0;
+			ent[i].pos.x=(st.screenx*x)/16384;
+			ent[i].pos.y=(st.screeny*y)/8192;
+			ent[i].size.x=(x2*st.screenx)/16384;
+			ent[i].size.y=(y2*st.screeny)/8192;
+			ent[i].type=LINE;
+			ent[i].color.r=(float)r/255;
+			ent[i].color.g=(float)g/255;
+			ent[i].color.b=(float)b/255;
+			ent[i].color.a=a;
+			ent[i].data=linewidth;
+			st.num_entities++;
+			break;
+		}
+	}
+}
+
 int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a)
 {
 	uint16 curf=0;
@@ -1280,6 +1304,7 @@ void DrawMap()
 	
 	//Draw the objects first
 
+	double x, y, sizex, sizey, ang, size;
 	
 
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
@@ -1311,11 +1336,17 @@ void DrawMap()
 		for(register uint16 i=0;i<st.Current_Map.num_sector;i++)
 			if(st.Current_Map.sector[i].id>-1)
 			{
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
-				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
-				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,128,128,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
-				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,256,256,0,255,255,255,st.UiTex[0].ID,1,1,1,0,0);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,255,255,1,2);
+				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,255,255,1,2);
+				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,255,255,1,2);
+				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,255,255,1,2);
+
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
+
+				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,st.UiTex[0].ID,1,1,1,0,0);
 			}
 	}
 }
@@ -1333,7 +1364,7 @@ void Renderer()
 	{	
 		if(ent[i].stat==USED)
 		{
-			if(ent[i].type==TEXTURE)
+			if(ent[i].type==TEXTURE || ent[i].type==LINE)
 			{
 				//glLoadIdentity();
 
@@ -1342,27 +1373,38 @@ void Renderer()
 				//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
 
 				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-
+				
 				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
 				glRotatef(ent[i].ang,0.0,0.0,1.0);
 				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
 				
-				glBindTexture(GL_TEXTURE_2D,ent[i].data);
-					glBegin(GL_TRIANGLES);
-						glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2f(ent[i].x2y2.x,ent[i].x1y1.y);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-						glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2f(ent[i].x1y1.x,ent[i].x2y2.y);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+				if(ent[i].type==LINE)
+				{
+					glLineWidth(ent[i].data);
+					glBegin(GL_LINES);
+					glVertex2d(ent[i].pos.x, ent[i].pos.y);
+					glVertex2d(ent[i].size.x, ent[i].size.y);
 					glEnd();
+				}
+				else
+				{
+					glBindTexture(GL_TEXTURE_2D,ent[i].data);
+						glBegin(GL_TRIANGLES);
+							glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glTexCoord2f(ent[i].x2y2.x,ent[i].x1y1.y);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+
+							glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+							glTexCoord2f(ent[i].x1y1.x,ent[i].x2y2.y);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+							glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+						glEnd();
+				}
 				glPopMatrix();
 
 				st.num_entities--;
