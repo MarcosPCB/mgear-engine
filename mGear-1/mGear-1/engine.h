@@ -500,7 +500,7 @@ void Quit();
 void createmgg();
 void createmgv();
 
-uint32 LoadMGG(_MGG *mgg, const char name[32]); //Loads a MGG file into a MGG type struct
+uint32 LoadMGG(_MGG *mgg, const char *name); //Loads a MGG file into a MGG type struct
 
 void FreeMGG(_MGG *file); //Free a MGG struct
 void InitMGG(); //Inits all MGG structs
@@ -527,12 +527,12 @@ uint32 POT(uint32 value);
 
 uint32 PlayMovie(const char *name);
 
-void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
-void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
-void DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
-void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
-void DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth);
-void DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
+int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth);
+int8 DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
 
 int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
 

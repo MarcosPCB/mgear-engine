@@ -797,10 +797,43 @@ uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float a
 	
 }
 
-void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
+int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
+	double tmp;
+
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	if(val==8) return 1;
+
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
 		if(ent[i].stat==DEAD)
 		{
 			ent[i].stat=USED;
@@ -819,12 +852,47 @@ void DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 			break;
 		}
 	}
+
+	return 0;
 }
 
-void DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
+int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
+	double tmp;
+
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	if(val==8) return 1;
+
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
 		if(ent[i].stat==DEAD)
 		{
 			ent[i].stat=USED;
@@ -843,14 +911,49 @@ void DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 			break;
 		}
 	}
+
+	return 0;
 }
 
-void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texsizeX, float texsizeY, float texpanX, float texpanY)
+int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texsizeX, float texsizeY, float texpanX, float texpanY)
 {
+	double tmp;
+
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>16384) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>8192) val++;
+
+	if(val==8) return 1;
+
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(ent[i].stat==DEAD)
 		{
+			if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+				return 2;
+
 			ent[i].stat=USED;
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/16384;
@@ -871,12 +974,46 @@ void DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 			break;
 		}
 	}
+
+	return 0;
 }
 
-void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a)
+int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a)
 {
+	double tmp;
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	if(val==8) return 1;
+
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
 		if(ent[i].stat==DEAD)
 		{
 			ent[i].stat=USED;
@@ -899,12 +1036,27 @@ void DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 			break;
 		}
 	}
+
+	return 0;
 }
 
-void DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth)
+int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth)
 {
+	uint8 val=0;
+
+	if(x>16384) val++;
+	if(y>8192) val++;
+
+	if(x2>16384) val++;
+	if(y2>8192) val++;
+
+	if(val==4) return 1;
+
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
 		if(ent[i].stat==DEAD)
 		{
 			ent[i].stat=USED;
@@ -923,6 +1075,8 @@ void DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 			break;
 		}
 	}
+
+	return 0;
 }
 
 int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a)
@@ -937,7 +1091,7 @@ int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 	return mgf->anim[id].current_frame;
 }
 
-void DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+int8 DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
 	co.r=255;
@@ -945,6 +1099,37 @@ void DrawString(const char *text, double x, double y, double sizex, double sizey
 	co.b=255;
 	co.a=255;
 	uint16 formatt;
+
+	double tmp;
+
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	if(val==8) return 1;
+
 	
 	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
 	
@@ -960,6 +1145,9 @@ void DrawString(const char *text, double x, double y, double sizex, double sizey
 
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
 		if(ent[i].stat==DEAD)
 		{
 			glGenTextures(1,&ent[i].data);
@@ -989,6 +1177,8 @@ void DrawString(const char *text, double x, double y, double sizex, double sizey
 			break;
 		}
 	}
+
+	return 0;
 
 }
 
@@ -1340,6 +1530,11 @@ void DrawMap()
 				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,255,255,1,2);
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,255,255,1,2);
 				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,255,255,1,2);
+
+				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,1,1);
+				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,1,1);
+				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,1,1);
+				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,1,1);
 
 				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);
 				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,st.UiTex[4].ID,1,1,1,0,0);

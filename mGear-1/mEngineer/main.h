@@ -10,6 +10,8 @@
 #define ADD_OBJ 3
 #define ADD_SPRITE 4
 #define SELECT_EDIT 2
+#define TEX_SEL 5
+#define MGG_SEL 6
 
 struct mEng
 {
@@ -18,8 +20,11 @@ struct mEng
 	uint8 pannel_choice;
 	uint8 command;
 	int16 scroll;
+	int16 scroll2;
 	uint16 command2;
 	GLuint tex_selection;
+	uint16 mgg_sel;
+	uint16 menu_sel;
 };
 
 extern mEng meng;

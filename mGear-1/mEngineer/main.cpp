@@ -80,6 +80,52 @@ uint8 LoadList()
 }
 */
 
+static void MGGList()
+{
+	uint16 j=0;
+	DrawHud(400,300,250,600,0,255,255,255,0,0,1,1,st.UiTex[4].ID,1);
+	if(meng.num_mgg>0)
+	{
+		for(uint16 i=25;i<800;i+=50)
+		{
+			if(j==meng.num_mgg)
+				break;
+			else
+			{
+				if(!CheckColisionMouse(400,i-meng.scroll2,150,50,0))
+				{
+					DrawString(meng.mgg_list[j],400,i-meng.scroll2,150,50,0,255,128,32,1,st.fonts[ARIAL].font);
+				}
+				else
+				{
+					DrawString(meng.mgg_list[j],400,i-meng.scroll2,150,50,0,255,32,0,1,st.fonts[ARIAL].font);
+					if(st.mouse1)
+					{
+						meng.mgg_sel=j+MGG_MAP_START;
+						meng.command=meng.pannel_choice;
+						break;
+					}
+				}
+				j++;
+			}
+		}
+
+		if(st.keys[UP_KEY].state)
+		{
+			meng.scroll2+=25;
+			st.keys[UP_KEY].state=0;
+		}
+
+		if(st.keys[DOWN_KEY].state)
+		{
+			meng.scroll2-=25;
+			st.keys[DOWN_KEY].state=0;
+		}
+	}
+	else
+		meng.command=meng.pannel_choice;
+}
+
 void ImageList(_MGG mggs)
 {
 	uint16 m=0;
@@ -190,10 +236,34 @@ static void PannelLeft()
 
 			if(st.mouse1) meng.command=meng.pannel_choice=4;
 	}
-	/*
-	if(!CheckColisionMouse(75,75,48,48) && !CheckColisionMouse(27,75,48,48) && !CheckColisionMouse(75,27,48,48) && !CheckColisionMouse(27,27,48,48) && st.mouse1)
-		meng.pannel_choice=0;
-		*/
+	
+	if(!CheckColisionMouse(51,123,60,24,0))
+	{
+		DrawString("Tex. Sel.",51,123,60,24,0,255,255,255,1,st.fonts[ARIAL].font);
+	}
+	else
+	{
+		DrawString("Tex. Sel.",51,123,60,24,0,255,128,32,1,st.fonts[ARIAL].font);
+
+		DrawString("Texture Selection",400,550,300,50,0,255,128,32,1,st.fonts[ARIAL].font);
+
+		if(st.mouse1) meng.command=5;
+	}
+
+	if(!CheckColisionMouse(51,171,60,24,0))
+	{
+		DrawString("MGG Sel.",51,171,60,24,0,255,255,255,1,st.fonts[ARIAL].font);
+	}
+	else
+	{
+		DrawString("MGG Sel.",51,171,60,24,0,255,128,32,1,st.fonts[ARIAL].font);
+
+		DrawString("MGG Selection",400,550,300,50,0,255,128,32,1,st.fonts[ARIAL].font);
+
+		if(st.mouse1) meng.command=6;
+	}
+
+	DrawHud(50,550,100,100,0,255,255,255,0,0,1,1,meng.tex_selection,1);
 
 	if(meng.pannel_choice==0)
 		DrawHud(27,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[0].ID,1);
@@ -212,6 +282,7 @@ static void PannelLeft()
 static void ViewPortCommands()
 {
 	Pos vertextmp[4];
+	uint8 got_it=0;
 
 	if(!CheckColisionMouse(50,300,100,600,0))
 	{
@@ -241,7 +312,7 @@ static void ViewPortCommands()
 						}
 					}
 				}
-				printf("Sector Added\n");
+				LogApp("Sector added");
 				st.mouse1=0;
 			}
 		}
@@ -258,8 +329,11 @@ static void ViewPortCommands()
 						{
 							st.Current_Map.sector[i].vertex[j].x=(st.mouse.x*16384)/st.screenx;
 							st.Current_Map.sector[i].vertex[j].y=(st.mouse.y*8192)/st.screeny;
+							got_it=1;
+							break;
 						}
-						else if(j==4 && CheckColisionMouse((st.Current_Map.sector[i].position.x*st.screenx)/16384,(st.Current_Map.sector[i].position.y*st.screeny)/8192,(484*st.screenx)/16384,(484*st.screeny)/8192,0) && st.mouse1)
+
+						if(j==4 && CheckColisionMouse((st.Current_Map.sector[i].position.x*st.screenx)/16384,(st.Current_Map.sector[i].position.y*st.screeny)/8192,(484*st.screenx)/16384,(484*st.screeny)/8192,0) && st.mouse1)
 						{
 							vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
 							vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
@@ -281,13 +355,54 @@ static void ViewPortCommands()
 							st.Current_Map.sector[i].vertex[2].y=st.Current_Map.sector[i].position.y+vertextmp[2].y;
 							st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
 							st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
+							got_it=1;
+							break;
 						}
 					}
+
+					if(got_it) break;
 					
 				}
 			}
 		}
 	}
+}
+
+static void MGGListLoad()
+{
+	FILE *file;
+	char str[512], str2[512];
+	uint16 j=MGG_MAP_START, i=0;
+
+	if((file=fopen("mgg.list","r"))==NULL)
+	{
+		LogApp("Could not open mgg list file");
+		Quit();
+	}
+
+	while(!feof(file))
+	{
+		DrawString("Loading...",400,300,200,50,0,255,255,255,1,st.fonts[GEOMET].font);
+		memset(str,0,sizeof(str));
+		fgets(str,512,file);
+		sscanf(str,"%s",str2);
+		
+		if(LoadMGG(&mgg[j],str2)!=NULL)
+		{
+			strcpy(meng.mgg_list[i],mgg[j].name);
+			meng.num_mgg++;
+			j++;
+			i++;
+			LogApp("Loaded: %s",str2);
+		}
+
+		Renderer();
+	}
+
+	fclose(file);
+
+	LogApp("MGGs loaded");
+
 }
 
 int main(int argc, char *argv[])
@@ -318,6 +433,8 @@ int main(int argc, char *argv[])
 		st.UiTex[i].MGG_ID=0;
 	}
 
+	MGGListLoad();
+
 	st.FPSYes=1;
 
 	st.gt=MAIN_MENU;
@@ -327,31 +444,7 @@ int main(int argc, char *argv[])
 
 	st.Developer_Mode=1;
 
-	st.Current_Map.obj=(_MGMOBJ*) malloc(MAX_OBJS*sizeof(_MGMOBJ));
-	st.Current_Map.sector=(_SECTOR*) malloc(MAX_SECTORS*sizeof(_SECTOR));
-	st.Current_Map.sprites=(_MGMSPRITE*) malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
-
-	st.Current_Map.num_sector=0;
-	st.Current_Map.num_obj=0;
-	st.Current_Map.num_sprites=0;
-
-	for(register uint16 i=0;i<MAX_SECTORS;i++)
-	{
-		st.Current_Map.sector[i].id=-1;
-		st.Current_Map.sector[i].layers=1;
-		st.Current_Map.sector[i].material=CONCRETE;
-		st.Current_Map.sector[i].tag=0;
-	}
-
-	for(register uint16 i=0;i<MAX_OBJS;i++)
-		st.Current_Map.obj[i].type=BLANK;
-
-	for(register uint16 i=0;i<MAX_SPRITES;i++)
-		st.Current_Map.sprites[i].type=non;
-
-	meng.scroll=0;
-	meng.tex_selection=-1;
-	meng.command2=0;
+	meng.menu_sel=0;
 
 	while(!st.quit)
 	{
@@ -370,22 +463,36 @@ int main(int argc, char *argv[])
 			st.keys[ESC_KEY].state=0;
 		}
 
-
-		if(meng.command==ADD_OBJ)
+		if(st.gt==INGAME)
 		{
-			ImageList(mgg[0]);
-			if(st.keys[BACKSPACE_KEY].state)
+			if(meng.command==TEX_SEL)
 			{
-				meng.command=2;
+				ImageList(mgg[meng.mgg_sel]);
+				if(st.keys[BACKSPACE_KEY].state)
+				{
+					meng.command=meng.pannel_choice;
+				}
+			}
+			else
+			if(meng.command==MGG_SEL)
+			{
+				PannelLeft();
+				MGGList();
+				if(st.keys[BACKSPACE_KEY].state)
+				{
+					meng.command=meng.pannel_choice;
+				}
+			}
+			else
+			{
+				PannelLeft();
+				ViewPortCommands();
+				DrawMap();
 			}
 		}
 		else
-		{
-			PannelLeft();
-			ViewPortCommands();
-			//Menu();
-			DrawMap();
-		}
+			if(st.gt==MAIN_MENU || st.gt==GAME_MENU)
+			Menu();
 
 		MainSound();
 		Renderer();
