@@ -17,8 +17,12 @@ struct mEng
 	uint8 num_mgg;
 	uint8 pannel_choice;
 	uint8 command;
+	int16 scroll;
+	uint16 command2;
+	GLuint tex_selection;
 };
 
 extern mEng meng;
 
 void Menu();
+void ImageList();

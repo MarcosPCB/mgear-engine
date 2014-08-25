@@ -79,6 +79,47 @@ uint8 LoadList()
 
 }
 */
+
+void ImageList(_MGG mggs)
+{
+	uint16 m=0;
+
+	for(uint16 i=80;i<160000;i+=160)
+	{
+		if(m>=mggs.num_frames) break;
+		for(uint16 j=80;j<800;j+=160)
+		{
+			if(m<mggs.num_frames)
+			{
+				if((CheckColisionMouse(j,i-meng.scroll,160,160,0) && st.mouse1) || meng.tex_selection==mggs.frames[m])
+				{
+					DrawHud(j,i-meng.scroll,160,160,0,255,128,32,0,0,1,1,mggs.frames[m],1);
+					meng.tex_selection=mggs.frames[m];
+				}
+				else
+				{
+					DrawHud(j,i-meng.scroll,160,160,0,255,255,255,0,0,1,1,mggs.frames[m],1);
+				}
+
+				m++;
+			}
+			else break;
+		}
+	}
+
+	if(st.keys[DOWN_KEY].state)
+	{
+		meng.scroll+=160;
+		st.keys[DOWN_KEY].state=0;
+	}
+
+	if(st.keys[UP_KEY].state)
+	{
+		meng.scroll-=160;
+		st.keys[UP_KEY].state=0;
+	}
+}
+
 static void PannelLeft()
 {
 	uint8 mouse=0;
@@ -99,7 +140,7 @@ static void PannelLeft()
 			DrawString("Draw a sector",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-			if(st.mouse1) meng.pannel_choice=0;
+			if(st.mouse1) meng.command=meng.pannel_choice=0;
 	}
 
 	if(!CheckColisionMouse(75,27,48,48,0))
@@ -115,7 +156,7 @@ static void PannelLeft()
 				DrawString("Select and edit",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-		if(st.mouse1) meng.pannel_choice=2;
+		if(st.mouse1) meng.command=meng.pannel_choice=2;
 	}
 	
 	if(!CheckColisionMouse(27,75,48,48,0))
@@ -131,7 +172,7 @@ static void PannelLeft()
 			DrawString("Add an OBJ",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-		if(st.mouse1) meng.pannel_choice=4;
+		if(st.mouse1) meng.command=meng.pannel_choice=3;
 	}
 	
 	if(!CheckColisionMouse(75,75,48,48,0))
@@ -147,7 +188,7 @@ static void PannelLeft()
 			DrawString("Add a sprite",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-		if(st.mouse1) meng.pannel_choice=3;
+			if(st.mouse1) meng.command=meng.pannel_choice=4;
 	}
 	/*
 	if(!CheckColisionMouse(75,75,48,48) && !CheckColisionMouse(27,75,48,48) && !CheckColisionMouse(75,27,48,48) && !CheckColisionMouse(27,27,48,48) && st.mouse1)
@@ -160,13 +201,12 @@ static void PannelLeft()
 	if(meng.pannel_choice==2)
 		DrawHud(75,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[2].ID,1);
 	//else
-	if(meng.pannel_choice==3)
+	if(meng.pannel_choice==4)
 		DrawHud(75,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[3].ID,1);
 	//else
-	if(meng.pannel_choice==4)
+	if(meng.pannel_choice==3)
 		DrawHud(27,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[1].ID,1);
 
-	meng.command=meng.pannel_choice;
 }
 
 static void ViewPortCommands()
@@ -309,6 +349,10 @@ int main(int argc, char *argv[])
 	for(register uint16 i=0;i<MAX_SPRITES;i++)
 		st.Current_Map.sprites[i].type=non;
 
+	meng.scroll=0;
+	meng.tex_selection=-1;
+	meng.command2=0;
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
@@ -326,11 +370,23 @@ int main(int argc, char *argv[])
 			st.keys[ESC_KEY].state=0;
 		}
 
-		PannelLeft();
-		ViewPortCommands();
-		//Menu();
-		
-		DrawMap();
+
+		if(meng.command==ADD_OBJ)
+		{
+			ImageList(mgg[0]);
+			if(st.keys[BACKSPACE_KEY].state)
+			{
+				meng.command=2;
+			}
+		}
+		else
+		{
+			PannelLeft();
+			ViewPortCommands();
+			//Menu();
+			DrawMap();
+		}
+
 		MainSound();
 		Renderer();
 		Timer();
