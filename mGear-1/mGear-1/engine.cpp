@@ -209,8 +209,6 @@ void Init()
 
 	st.quit=0;
 
-	for(register uint32 i=0;i<MAX_GRAPHICS;i++) ent[i].stat=DEAD;
-
 	st.time=0;
 
 	st.PlayingVideo=0;
@@ -230,6 +228,12 @@ void Init()
 	st.Current_Map.num_obj=0;
 	st.Current_Map.num_sector=0;
 	st.Current_Map.num_sprites=0;
+
+	st.num_hud=0;
+	st.num_tex=0;
+	st.num_ui=0;
+
+	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 
 }
 
@@ -848,6 +852,7 @@ int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 			ent[i].color.g=(float)g/255;
 			ent[i].color.b=(float)b/255;
 			ent[i].color.a=a;
+			st.num_tex++;
 			st.num_entities++;
 			break;
 		}
@@ -907,6 +912,7 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 			ent[i].color.g=(float)g/255;
 			ent[i].color.b=(float)b/255;
 			ent[i].color.a=a;
+			st.num_tex++;
 			st.num_entities++;
 			break;
 		}
@@ -970,6 +976,7 @@ int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 			ent[i].x1y1.y=texsizeY+texpanY;
 			ent[i].x2y2.x=texpanX;
 			ent[i].x2y2.y=texpanY;
+			st.num_tex++;
 			st.num_entities++;
 			break;
 		}
@@ -1032,6 +1039,70 @@ int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 			ent[i].color.g=(float)g/255;
 			ent[i].color.b=(float)b/255;
 			ent[i].color.a=a;
+			st.num_hud++;
+			st.num_entities++;
+			break;
+		}
+	}
+
+	return 0;
+}
+
+int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a)
+{
+	double tmp;
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	if(val==8) return 1;
+
+	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
+		if(ent[i].stat==DEAD)
+		{
+			ent[i].stat=USED;
+			ent[i].ang=ang;
+			ent[i].pos.x=(st.screenx*x)/800;
+			ent[i].pos.y=(st.screeny*y)/600;
+			ent[i].size.x=(sizex*st.screenx)/800;
+			ent[i].size.y=(sizey*st.screeny)/600;
+			ent[i].type=UI;
+			ent[i].data=data;
+			ent[i].x1y1.x=x1;
+			ent[i].x1y1.y=y1;
+			ent[i].x2y2.x=x2;
+			ent[i].x2y2.y=y2;
+			ent[i].color.r=(float)r/255;
+			ent[i].color.g=(float)g/255;
+			ent[i].color.b=(float)b/255;
+			ent[i].color.a=a;
+			st.num_ui++;
 			st.num_entities++;
 			break;
 		}
@@ -1071,6 +1142,7 @@ int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 			ent[i].color.b=(float)b/255;
 			ent[i].color.a=a;
 			ent[i].data=linewidth;
+			st.num_tex++;
 			st.num_entities++;
 			break;
 		}
@@ -1172,6 +1244,160 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 			ent[i].color.a=a;
 
 			SDL_FreeSurface(msg);
+			st.num_hud++;
+			st.num_entities++;
+			
+			break;
+		}
+	}
+
+	return 0;
+
+}
+
+int8 DrawStringUI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+{	
+	SDL_Color co;
+	co.r=255;
+	co.g=255;
+	co.b=255;
+	co.a=255;
+	uint16 formatt;
+
+	double tmp;
+
+	uint8 val=0;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	if(tmp>800) val++;
+
+	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	if(tmp>600) val++;
+
+	if(val==8) return 1;
+
+	
+	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+	if(msg->format->BytesPerPixel==4)
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+		else formatt=GL_BGRA_EXT;
+	} else
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+		else formatt=GL_BGR_EXT;
+	}
+
+	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
+		if(ent[i].stat==DEAD)
+		{
+			glGenTextures(1,&ent[i].data);
+			glBindTexture(GL_TEXTURE_2D,ent[i].data);
+			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			ent[i].ang=ang;
+			ent[i].stat=USED;
+			ent[i].type=TEXT;
+			ent[i].pos.x=(st.screenx*x)/800;
+			ent[i].pos.y=(st.screeny*y)/600;
+			ent[i].size.x=(sizex*st.screenx)/800;
+			ent[i].size.y=(sizey*st.screeny)/600;
+			ent[i].x1y1.x=0;
+			ent[i].x1y1.y=0;
+			ent[i].x2y2.x=1;
+			ent[i].x2y2.y=1;
+			ent[i].color.r=(float)r/255;
+			ent[i].color.g=(float)g/255;
+			ent[i].color.b=(float)b/255;
+			ent[i].color.a=a;
+
+			SDL_FreeSurface(msg);
+			st.num_hud++;
+			st.num_entities++;
+			
+			break;
+		}
+	}
+
+	return 0;
+
+}
+
+int8 DrawString2UI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+{	
+	SDL_Color co;
+	co.r=255;
+	co.g=255;
+	co.b=255;
+	co.a=255;
+	uint16 formatt;
+
+	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+	if(msg->format->BytesPerPixel==4)
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+		else formatt=GL_BGRA_EXT;
+	} else
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+		else formatt=GL_BGR_EXT;
+	}
+
+	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	{
+		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			return 2;
+
+		if(ent[i].stat==DEAD)
+		{
+			glGenTextures(1,&ent[i].data);
+			glBindTexture(GL_TEXTURE_2D,ent[i].data);
+			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			ent[i].ang=ang;
+			ent[i].stat=USED;
+			ent[i].type=TEXT;
+			ent[i].pos.x=(st.screenx*x)/800;
+			ent[i].pos.y=(st.screeny*y)/600;
+			ent[i].size.x=((msg->w*sizex)*st.screenx)/800;
+			ent[i].size.y=((msg->h*sizey)*st.screeny)/600;
+			ent[i].x1y1.x=0;
+			ent[i].x1y1.y=0;
+			ent[i].x2y2.x=1;
+			ent[i].x2y2.y=1;
+			ent[i].color.r=(float)r/255;
+			ent[i].color.g=(float)g/255;
+			ent[i].color.b=(float)b/255;
+			ent[i].color.a=a;
+
+			SDL_FreeSurface(msg);
+			st.num_ui++;
 			st.num_entities++;
 			
 			break;
@@ -1548,6 +1774,34 @@ void DrawMap()
 
 void Renderer()
 {
+	_ENTITIES tmp[MAX_GRAPHICS];
+	uint32 j=0, k=0, l=0;
+
+	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
+
+	for(register uint32 i=0;i<st.num_entities;i++)
+	{
+		if(ent[i].type==TEXTURE || ent[i].type==LINE || ent[i].type==SPRITE)
+		{
+			tmp[j]=ent[i];
+			j++;
+		}
+		else 
+		if(ent[i].type==HUD || ent[i].type==TEXT)
+		{
+			tmp[st.num_tex+k]=ent[i];
+			k++;
+		}
+		else 
+		if(ent[i].type==UI || ent[i].type==TEXT_UI)
+		{
+			tmp[st.num_tex+st.num_hud+l]=ent[i];
+			l++;
+		}
+	}
+
+	memcpy(&ent,&tmp,MAX_GRAPHICS*sizeof(_ENTITIES));
+
 	glClearColor(0.0,0.0,0.0,0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -1575,11 +1829,13 @@ void Renderer()
 				
 				if(ent[i].type==LINE)
 				{
+					glDisable(GL_TEXTURE_2D);
 					glLineWidth(ent[i].data);
 					glBegin(GL_LINES);
-					glVertex2d(ent[i].pos.x, ent[i].pos.y);
-					glVertex2d(ent[i].size.x, ent[i].size.y);
+						glVertex2d(ent[i].pos.x, ent[i].pos.y);
+						glVertex2d(ent[i].size.x, ent[i].size.y);
 					glEnd();
+					glEnable(GL_TEXTURE_2D);
 				}
 				else
 				{
@@ -1686,7 +1942,7 @@ void Renderer()
 				
 			}
 			else
-			if(ent[i].type==UI)
+			if(ent[i].type==UI || ent[i].type==TEXT_UI)
 			{
 				//glLoadIdentity();
 
@@ -1722,6 +1978,10 @@ void Renderer()
 			}
 		}
 	}
+
+	st.num_hud=0;
+	st.num_tex=0;
+	st.num_ui=0;
 
 	SDL_GL_SwapWindow(wn);
 }

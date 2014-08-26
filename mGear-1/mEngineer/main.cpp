@@ -101,19 +101,19 @@ static void MGGList()
 	DrawHud(400,300,250,600,0,255,255,255,0,0,1,1,st.UiTex[4].ID,1);
 	if(meng.num_mgg>0)
 	{
-		for(uint16 i=25;i<800;i+=50)
+		for(uint16 i=25;i<8000;i+=50)
 		{
 			if(j==meng.num_mgg)
 				break;
 			else
 			{
-				if(!CheckColisionMouse(400,i-meng.scroll2,150,50,0))
+				if(!CheckColisionMouse(400,i+meng.scroll2,150,50,0))
 				{
-					DrawString2(meng.mgg_list[j],400,i-meng.scroll2,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+					DrawString2UI(meng.mgg_list[j],400,i+meng.scroll2,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
 				}
 				else
 				{
-					DrawString2(meng.mgg_list[j],400,i-meng.scroll2,0.5,0.5,0,255,32,0,1,st.fonts[ARIAL].font);
+					DrawString2UI(meng.mgg_list[j],400,i+meng.scroll2,0.5,0.5,0,255,32,0,1,st.fonts[ARIAL].font);
 					if(st.mouse1)
 					{
 						meng.mgg_sel=j+MGG_MAP_START;
@@ -262,7 +262,11 @@ static void PannelLeft()
 
 		DrawString("Texture Selection",400,550,300,50,0,255,128,32,1,st.fonts[ARIAL].font);
 
-		if(st.mouse1) meng.command=5;
+		if(st.mouse1)
+		{
+			meng.scroll=0;
+			meng.command=5;
+		}
 	}
 
 	if(!CheckColisionMouse(51,171,60,24,0))
@@ -275,7 +279,11 @@ static void PannelLeft()
 
 		DrawString("MGG Selection",400,550,300,50,0,255,128,32,1,st.fonts[ARIAL].font);
 
-		if(st.mouse1) meng.command=6;
+		if(st.mouse1)
+		{
+			meng.scroll2=0;
+			meng.command=6;
+		}
 	}
 
 	DrawHud(50,550,100,100,0,255,255,255,0,0,1,1,meng.tex_selection,1);
@@ -461,6 +469,9 @@ int main(int argc, char *argv[])
 
 	meng.menu_sel=0;
 
+	meng.path=(char*) malloc(2);
+	strcpy(meng.path,".");
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
@@ -468,24 +479,15 @@ int main(int argc, char *argv[])
 
 		InputProcess();
 
-		if(st.keys[ESC_KEY].state) 
-		{
-			if(st.gt!=GAME_MENU)
-				st.gt=GAME_MENU;
-			else
-				st.gt=INGAME;
-
-			st.keys[ESC_KEY].state=0;
-		}
-
 		if(st.gt==INGAME)
 		{
 			if(meng.command==TEX_SEL)
 			{
 				ImageList(mgg[meng.mgg_sel]);
-				if(st.keys[BACKSPACE_KEY].state)
+				if(st.keys[ESC_KEY].state)
 				{
 					meng.command=meng.pannel_choice;
+					st.keys[ESC_KEY].state=0;
 				}
 			}
 			else
@@ -493,16 +495,24 @@ int main(int argc, char *argv[])
 			{
 				PannelLeft();
 				MGGList();
-				if(st.keys[BACKSPACE_KEY].state)
+				if(st.keys[ESC_KEY].state)
 				{
 					meng.command=meng.pannel_choice;
+					st.keys[ESC_KEY].state=0;
 				}
 			}
 			else
 			{
-				PannelLeft();
 				ViewPortCommands();
+				
+				PannelLeft();
 				DrawMap();
+
+				if(st.keys[ESC_KEY].state)
+				{
+					st.gt=GAME_MENU;
+					st.keys[ESC_KEY].state=0;
+				}
 			}
 		}
 		else

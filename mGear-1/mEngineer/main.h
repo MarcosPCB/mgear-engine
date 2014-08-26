@@ -25,6 +25,7 @@ struct mEng
 	GLuint tex_selection;
 	uint16 mgg_sel;
 	uint16 menu_sel;
+	char *path;
 };
 
 extern mEng meng;

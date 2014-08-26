@@ -16,8 +16,7 @@
 #include "types.h"
 
 #define MAX_SPRITES 512
-#define MAX_HUDSPRITES 128
-#define MAX_GRAPHICS 4096
+#define MAX_GRAPHICS 6656
 #define TICSPERSECOND 100
 #define MAX_CHANNELS 32
 #define MUSIC_CHANNEL MAX_CHANNELS-1
@@ -61,6 +60,7 @@ enum Enttype
 	TEXTURE,
 	VIDEO,
 	TEXT,
+	TEXT_UI,
 	UI,
 	LIGHT_MAP,
 	LINE,
@@ -69,8 +69,8 @@ enum Enttype
 
 enum Stat
 {
-	USED,
-	DEAD
+	DEAD,
+	USED
 };
 
 struct _ENTITIES //To be rendered
@@ -443,6 +443,9 @@ struct _SETTINGS
 	uint32 audiof;
 	uint8 audioc;
 	uint32 num_entities;
+	uint32 num_tex;
+	uint32 num_hud;
+	uint32 num_ui;
 	long long unsigned int time;
 	_SOUNDSYS sound_sys;
 	TFont fonts[MAX_FONTS];
@@ -533,6 +536,8 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
 int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth);
 int8 DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawString2UI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawStringUI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
 
 int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
 
