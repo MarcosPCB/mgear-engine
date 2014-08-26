@@ -2,6 +2,7 @@
 #include "main.h"
 #include <stdio.h> 
 #include <stdlib.h>
+#include "dirent.h"
 
 extern _MGG mgg[MAX_MGG];
 
@@ -66,19 +67,33 @@ uint16 LoadCFG()
 	return true;
 
 }
-/*
-uint8 LoadList()
-{
-	FILE *file;
 
-	if((file=fopen("mgg.list","r"))==NULL)
+int16 DirFiles(const char *path, char content[512][512])
+{
+	DIR *dir;
+	dirent *ent;
+	uint16 i=0;
+	int16 filenum=0;
+
+	if((dir=opendir(path))!=NULL)
 	{
-		LogApp("Unable to load MGG list");
-		Quit();
+		while((ent=readdir(dir))!=NULL)
+		{
+			strcpy(content[i],ent->d_name);
+			i++;
+			filenum++;
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		LogApp("Coulnd not open directory");
+		return -1;
 	}
 
+	return filenum;
 }
-*/
 
 static void MGGList()
 {
@@ -94,11 +109,11 @@ static void MGGList()
 			{
 				if(!CheckColisionMouse(400,i-meng.scroll2,150,50,0))
 				{
-					DrawString(meng.mgg_list[j],400,i-meng.scroll2,150,50,0,255,128,32,1,st.fonts[ARIAL].font);
+					DrawString2(meng.mgg_list[j],400,i-meng.scroll2,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
 				}
 				else
 				{
-					DrawString(meng.mgg_list[j],400,i-meng.scroll2,150,50,0,255,32,0,1,st.fonts[ARIAL].font);
+					DrawString2(meng.mgg_list[j],400,i-meng.scroll2,0.5,0.5,0,255,32,0,1,st.fonts[ARIAL].font);
 					if(st.mouse1)
 					{
 						meng.mgg_sel=j+MGG_MAP_START;

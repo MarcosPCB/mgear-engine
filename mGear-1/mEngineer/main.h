@@ -29,5 +29,7 @@ struct mEng
 
 extern mEng meng;
 
+int16 DirFiles(const char *path, char content[512][512]);
+
 void Menu();
 void ImageList();
