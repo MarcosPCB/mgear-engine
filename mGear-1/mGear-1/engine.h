@@ -504,6 +504,7 @@ void Quit();
 void createmgg();
 void createmgv();
 
+uint32 CheckMGGFile(const char *name); //Check if its a MGG file
 uint32 LoadMGG(_MGG *mgg, const char *name); //Loads a MGG file into a MGG type struct
 
 void FreeMGG(_MGG *file); //Free a MGG struct
@@ -543,6 +544,7 @@ int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 int8 DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
 int8 DrawString2UI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
 int8 DrawStringUI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
 
 int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
 

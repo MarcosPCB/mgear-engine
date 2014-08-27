@@ -12,6 +12,7 @@
 #define SELECT_EDIT 2
 #define TEX_SEL 5
 #define MGG_SEL 6
+#define MGG_LOAD 7
 
 struct mEng
 {

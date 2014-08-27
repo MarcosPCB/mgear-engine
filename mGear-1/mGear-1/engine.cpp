@@ -476,10 +476,10 @@ void createmgv()
 
 }
 
-uint32 LoadMGG(_MGG *mgg, const char *name)
+uint32 CheckMGGFile(const char *name)
 {
-	FILE *file, *file2;
-	void *data;
+	FILE *file;
+	char header[21];
 
 	if((file=DecompressFile(name))==NULL)
 	{
@@ -491,7 +491,68 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	rewind(file);
 
+	fread(header,21,1,file);
+
+	if(strcmp(header,"MGG File Version 1.0")!=NULL)
+	{
+		LogApp("Invalid MGG file header %s",name);
+		fclose(file);
+		return false;
+	}
+
+	rewind(file);
+
 	fread(&mggf,sizeof(_MGGFORMAT),1,file);
+
+	if((mggf.type!=SPRITEM && mggf.type!=TEXTUREM && mggf.type!=NONE) || (mggf.num_animations<0 || mggf.num_animations>MAX_ANIMATIONS) || (mggf.num_frames<0 || mggf.num_frames>MAX_FRAMES))
+	{
+		fclose(file);
+		LogApp("Invalid MGG file %s",name);
+		return false;
+	}
+
+	fclose(file);
+	return true;
+}
+
+uint32 LoadMGG(_MGG *mgg, const char *name)
+{
+	FILE *file, *file2;
+	void *data;
+
+	char header[21];
+
+	if((file=DecompressFile(name))==NULL)
+	{
+		LogApp("Error reading MGG file %s",name);
+			return false;
+	}
+
+	_MGGFORMAT mggf;
+
+	rewind(file);
+
+	fread(header,21,1,file);
+
+	if(strcmp(header,"MGG File Version 1.0")!=NULL)
+	{
+		LogApp("Invalid MGG file header %s",header);
+		fclose(file);
+		return false;
+	}
+
+	rewind(file);
+
+	fseek(file,21,SEEK_SET);
+
+	fread(&mggf,sizeof(_MGGFORMAT),1,file);
+
+	if((mggf.type!=SPRITEM && mggf.type!=TEXTUREM && mggf.type!=NONE) || (mggf.num_animations<0 || mggf.num_animations>MAX_ANIMATIONS) || (mggf.num_frames<0 || mggf.num_frames>MAX_FRAMES))
+	{
+		fclose(file);
+		LogApp("Invalid MGG file info %s",name);
+		return false;
+	}
 
 	strcpy(mgg->name,mggf.name);
 
@@ -509,16 +570,16 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 
 	rewind(file);
-	fseek(file,((sizeof(_MGGFORMAT)+512)),SEEK_CUR);
+	fseek(file,((sizeof(_MGGFORMAT)+512))+21,SEEK_CUR);
 	fread(mga,sizeof(_MGGANIM),mgg->num_anims,file);
 
 	for(register uint16 i=0;i<mgg->num_anims;i++)
 		mgg->anim[i]=mga[i];
 
-	fseek(file,((sizeof(_MGGFORMAT)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM)))),SEEK_SET);
+	fseek(file,((sizeof(_MGGFORMAT)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21,SEEK_SET);
 	fread(framesize,sizeof(uint32),mgg->num_frames,file);
 
-	size_t totalsize=((sizeof(_MGGFORMAT)+512)+(512+MAX_FRAMES*sizeof(uint32))+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))));
+	size_t totalsize=((sizeof(_MGGFORMAT)+512)+(512+MAX_FRAMES*sizeof(uint32))+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
 
 	mgg->frames=(GLuint*) malloc(mgg->num_frames*sizeof(GLuint));
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
@@ -584,7 +645,10 @@ void FreeMGG(_MGG *file)
 void InitMGG()
 {
 	for(register uint8 i=0; i<MAX_MGG; i++)
+	{
 		memset(&mgg[i],0,sizeof(_MGG));
+		mgg[i].type=NONE;
+	}
 }
 
 uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4])
@@ -1437,7 +1501,7 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			ent[i].ang=ang;
 			ent[i].stat=USED;
-			ent[i].type=TEXT;
+			ent[i].type=TEXT_UI;
 			ent[i].pos.x=(st.screenx*x)/800;
 			ent[i].pos.y=(st.screeny*y)/600;
 			ent[i].size.x=(sizex*st.screenx)/800;
@@ -1498,7 +1562,7 @@ int8 DrawString2UI(const char *text, double x, double y, double sizex, double si
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			ent[i].ang=ang;
 			ent[i].stat=USED;
-			ent[i].type=TEXT;
+			ent[i].type=TEXT_UI;
 			ent[i].pos.x=(st.screenx*x)/800;
 			ent[i].pos.y=(st.screeny*y)/600;
 			ent[i].size.x=((msg->w*sizex)*st.screenx)/800;
@@ -1530,6 +1594,7 @@ uint32 PlayMovie(const char *name)
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
 	unsigned int ms;
 	register uint32 i=0;
+	char header[21];
 
 	FMOD_RESULT y;
 
@@ -1548,8 +1613,19 @@ uint32 PlayMovie(const char *name)
 				return false;
 	}
 
+	rewind(mgv->file);
+	fread(header,21,1,mgv->file);
+
+	if(strcmp(header,"MGV File Version 1.0")!=NULL)
+	{
+		LogApp("Invalid MGV file header %s",name);
+		fclose(mgv->file);
+		return false;
+	}
 
 	rewind(mgv->file);
+	fseek(mgv->file,21,SEEK_SET);
+
 	fread(&mgvt,sizeof(_MGVFORMAT),1,mgv->file);
 
 	mgv->fps=mgvt.fps;
@@ -1557,11 +1633,11 @@ uint32 PlayMovie(const char *name)
 	
 	mgv->framesize=(uint32*) malloc(mgv->num_frames*sizeof(uint32));
 
-	fseek(mgv->file,(sizeof(_MGVFORMAT)+512),SEEK_SET);
+	fseek(mgv->file,(sizeof(_MGVFORMAT)+512)+21,SEEK_SET);
 
 	fread(mgv->framesize,sizeof(uint32),mgv->num_frames,mgv->file);
 
-	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512));
+	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512))+21;
 
 	mgv->frames=(_MGVTEX*) malloc(mgv->num_frames*sizeof(_MGVTEX)); 
 	mgv->seeker=(uint32*) malloc(mgv->num_frames*sizeof(uint32));
@@ -1603,7 +1679,7 @@ uint32 PlayMovie(const char *name)
 
 	StopAllSounds();
 	
-	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512));
+	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512))+21;
 
 
 	y=FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,mgv->sound,0,&ch);
@@ -1627,9 +1703,10 @@ uint32 PlayMovie(const char *name)
 		glClearColor(0.0,0.0,0.0,0.0);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glLoadIdentity();
-		glColor4f(1.0,1.0,1.0,1.0f);
 
 		glPushMatrix();
+
+		glColor4f(1.0,1.0,1.0,1.0f);
 		
 		FMOD_System_Update(st.sound_sys.Sound_System);
 		
@@ -1664,13 +1741,12 @@ uint32 PlayMovie(const char *name)
 
 			glGenTextures(1,&mgv->frames[i].ID);
 			glBindTexture(GL_TEXTURE_RECTANGLE,mgv->frames[i].ID);
-			glTexImage2D(GL_TEXTURE_RECTANGLE,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_BGR,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
+			glTexImage2D(GL_TEXTURE_RECTANGLE,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
 			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
 			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-			
-		
+
 			glBegin(GL_TRIANGLES);
 				glTexCoord2i(0,0);
 				glVertex2d(0,0);
@@ -1983,9 +2059,9 @@ void Renderer()
 				}
 				glPopMatrix();
 
-				st.num_entities--;
 				ent[i].data=-1;
 				ent[i].stat=DEAD;
+				st.num_entities--;
 			}
 			else
 			if(ent[i].type==SPRITE)
@@ -2022,9 +2098,9 @@ void Renderer()
 					glEnd();
 					
 				glPopMatrix();
-				st.num_entities--;
 				ent[i].data=-1;
 				ent[i].stat=DEAD;
+				st.num_entities--;
 				
 			}
 			else
@@ -2097,9 +2173,10 @@ void Renderer()
 					glEnd();
 				glPopMatrix();
 
-				st.num_entities--;
+				if(ent[i].type==TEXT_UI) glDeleteTextures(1,&ent[i].data);
 				ent[i].data=-1;
 				ent[i].stat=DEAD;
+				st.num_entities--;
 			}
 		}
 	}

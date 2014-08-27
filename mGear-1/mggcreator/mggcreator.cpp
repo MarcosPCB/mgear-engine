@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 	_MGGANIM *mga;
 	char FileName[256], filename[256], animfile[256], tmp[32], str[2][16], framename[256], framename2[256];
 	int16 t=0, value, p=0, a=-1;
+	char header[21]={"MGG File Version 1.0"};
 
 	if(argc<3)
 	{
@@ -182,15 +183,19 @@ int main(int argc, char *argv[])
 
 	fseek(file,0,SEEK_SET);
 
+	fwrite(header,21,1,file);
+
+	fseek(file,21,SEEK_SET);
+
 	fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
 	rewind(file);
-	fseek(file,(sizeof(_MGGFORMAT)+512),SEEK_SET);
+	fseek(file,(sizeof(_MGGFORMAT)+512)+21,SEEK_SET);
 	
 	fwrite(mga,sizeof(_MGGANIM),2,file);
 	
 	uint32 framesize[MAX_FRAMES];
 	size_t totalsize;
-	totalsize=((sizeof(_MGGFORMAT)+512)+(MAX_FRAMES*sizeof(uint32)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))));
+	totalsize=((sizeof(_MGGFORMAT)+512)+(MAX_FRAMES*sizeof(uint32)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
 
 	uint32 j=0;
 	for(register uint32 i=0;i<mgg.num_frames;i++)
@@ -242,7 +247,7 @@ int main(int argc, char *argv[])
 	}
 
 	rewind(file);
-	fseek(file,((sizeof(_MGGFORMAT)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM)))),SEEK_CUR);
+	fseek(file,((sizeof(_MGGFORMAT)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21,SEEK_CUR);
 	fwrite(framesize,sizeof(uint32),mgg.num_frames,file);
 
 	printf("Compressing file...\n");

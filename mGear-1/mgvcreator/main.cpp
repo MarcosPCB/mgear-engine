@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
 	_MGVFORMAT mgv;
 	memset(&mgv,0,sizeof(_MGVFORMAT));
 	char FileName[256], filename[256], framename[256], framename2[256];
+	char header[21]={ "MGV File Version 1.0"};
 
 	if(argc<3)
 	{
@@ -73,15 +74,17 @@ int main(int argc, char *argv[])
 	rewind(file);
 	fseek(file,0,SEEK_SET);
 
+	fwrite(header,21,1,file);
+
 	fwrite(&mgv,sizeof(_MGVFORMAT),1,file);
-	fseek(file,(sizeof(_MGVFORMAT)+512),SEEK_SET);
+	fseek(file,(sizeof(_MGVFORMAT)+512)+21,SEEK_SET);
 	
 	uint32 *framesize;
 
 	framesize=(uint32*) malloc(mgv.num_frames*sizeof(uint32));
 
 	size_t totalsize;
-	totalsize=((sizeof(_MGVFORMAT)+512)+(mgv.num_frames*sizeof(uint32)+512));
+	totalsize=((sizeof(_MGVFORMAT)+512)+(mgv.num_frames*sizeof(uint32)+512))+21;
 
 	uint32 j=0;
 	for(register uint32 i=0;i<mgv.num_frames+1;i++)
@@ -134,7 +137,7 @@ int main(int argc, char *argv[])
 	}
 
 	rewind(file);
-	fseek(file,((sizeof(_MGVFORMAT)+512)),SEEK_CUR);
+	fseek(file,((sizeof(_MGVFORMAT)+512))+21,SEEK_CUR);
 	fwrite(framesize,sizeof(uint32),mgv.num_frames,file);
 
 	printf("Writing audio data...\n");

@@ -181,6 +181,146 @@ void ImageList(_MGG mggs)
 	}
 }
 
+static int16 MGGLoad()
+{
+	uint16 j=0;
+	int16 num_files;
+	FILE *f;
+	DIR *dir;
+
+	int8 id;
+
+	char files[512][512];
+	char *path2;
+
+	size_t size;
+
+	for(uint8 i=3;i<MAX_MGG;i++)
+	{
+		if(i==MAX_MGG-1 && mgg[i].type!=NONE)
+		{
+			LogApp("Cannot load MGG, reached max number of MGG loaded");
+			return 0;
+		}
+
+		if(mgg[i].type==NONE)
+		{
+			id=i;
+			break;
+		}
+	}
+
+	num_files=DirFiles(meng.path,files);
+
+	for(uint16 i=25;i<8000;i+=50)
+	{
+		if(j==num_files) break;
+
+		if(CheckColisionMouse(400,i+meng.scroll,300,50,0))
+		{
+			DrawString2UI(files[j],400,i+meng.scroll,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				size=strlen(files[j]);
+				size+=4;
+				size+=strlen(meng.path);
+				path2=(char*) malloc(size);
+				strcpy(path2,meng.path);
+				strcat(path2,"//");
+				strcat(path2,files[j]);
+
+				//Check if it's a file
+				if((f=fopen(path2,"rb"))==NULL)
+				{
+					//Check if it's a directory
+					if((dir=opendir(path2))==NULL)
+					{
+						LogApp("Error invalid file or directory: %s",files[j]);
+						st.mouse1=0;
+						j++;
+						free(path2);
+						continue;
+					}
+					else
+					{
+						meng.path=(char*) realloc(meng.path,size);
+						strcpy(meng.path,path2);
+						closedir(dir);
+						meng.scroll=0;
+						st.mouse1=0;
+						free(path2);
+						break;
+					}
+				}
+				else
+				{
+					fclose(f);
+					if(CheckMGGFile(path2))
+					{
+						DrawUI(400,300,800,600,0,0,0,0,0,0,1,1,st.UiTex[4].ID,1);
+						DrawString2UI("Loading...",400,300,1,1,1,255,255,255,1,st.fonts[GEOMET].font);
+						Renderer();
+						LoadMGG(&mgg[id],path2);
+						strcpy(st.Current_Map.MGG_FILES[id-3],path2);
+						strcpy(meng.mgg_list[id-3],mgg[id].name);
+						meng.num_mgg++;
+						LogApp("MGG %s loaded",path2);
+						meng.scroll=0;
+						meng.pannel_choice=2;
+						meng.command=2;
+						st.mouse1=0;
+						free(path2);
+						free(meng.path);
+						meng.path=(char*) malloc(2);
+						strcpy(meng.path,".");
+						break;
+					}
+					else
+					{
+						st.mouse1=0;
+						j++;
+						free(path2);
+						continue;
+					}
+				}
+			}
+		}
+		else
+		{
+			DrawString2UI(files[j],400,i+meng.scroll,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
+		j++;
+
+		if(st.mouse_wheel>0)
+		{
+			if(meng.scroll<0) meng.scroll+=50;
+			st.mouse_wheel=0;
+		}
+
+		if(st.mouse_wheel<0)
+		{
+			meng.scroll-=50;
+			st.mouse_wheel=0;
+		}
+	}
+	
+	
+	if(st.keys[ESC_KEY].state)
+	{
+		free(meng.path);
+		meng.path=(char*) malloc(2);
+		strcpy(meng.path,".");
+
+		if(path2) free(path2);
+
+		meng.command=meng.pannel_choice;
+		st.keys[ESC_KEY].state=0;
+	}
+
+	return 1;
+}
+
 static void PannelLeft()
 {
 	uint8 mouse=0;
@@ -286,7 +426,24 @@ static void PannelLeft()
 		}
 	}
 
-	DrawHud(50,550,100,100,0,255,255,255,0,0,1,1,meng.tex_selection,1);
+	if(!CheckColisionMouse(51,575,60,24,0))
+	{
+		DrawString("Load MGG",51,575,60,24,0,255,255,255,1,st.fonts[ARIAL].font);
+	}
+	else
+	{
+		DrawString("Load MGG",51,575,60,24,0,255,128,32,1,st.fonts[ARIAL].font);
+
+		DrawString("Load an MGG file and adds it to the map list",400,550,600,50,0,255,128,32,1,st.fonts[ARIAL].font);
+
+		if(st.mouse1)
+		{
+			meng.scroll2=0;
+			meng.command=7;
+		}
+	}
+
+	DrawHud(50,500,100,100,0,255,255,255,0,0,1,1,meng.tex_selection,1);
 
 	if(meng.pannel_choice==0)
 		DrawHud(27,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[0].ID,1);
@@ -497,7 +654,7 @@ int main(int argc, char *argv[])
 		st.UiTex[i].MGG_ID=0;
 	}
 
-	MGGListLoad();
+	//MGGListLoad();
 
 	st.FPSYes=1;
 
@@ -522,6 +679,12 @@ int main(int argc, char *argv[])
 
 		if(st.gt==INGAME)
 		{
+			if(st.keys[SPACE_KEY].state)
+			{
+				PlayMovie("TENEBRIS.MGV");
+				st.keys[SPACE_KEY].state=0;
+			}
+
 			if(meng.command==TEX_SEL)
 			{
 				ImageList(mgg[meng.mgg_sel]);
@@ -541,6 +704,11 @@ int main(int argc, char *argv[])
 					meng.command=meng.pannel_choice;
 					st.keys[ESC_KEY].state=0;
 				}
+			}
+			else
+			if(meng.command==MGG_LOAD)
+			{
+				if(MGGLoad()==NULL) meng.command=meng.pannel_choice;
 			}
 			else
 			{

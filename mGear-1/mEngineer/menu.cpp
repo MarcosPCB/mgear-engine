@@ -66,6 +66,12 @@ void Menu()
 					for(register uint16 i=0;i<MAX_SPRITES;i++)
 						st.Current_Map.sprites[i].type=non;
 
+					memset(st.Current_Map.MGG_FILES,0,32*256);
+					st.Current_Map.num_mgg=0;
+
+					memset(meng.mgg_list,0,64*256);
+					meng.num_mgg=0;
+
 					st.gt=INGAME;
 
 					st.Camera.position.x=0;
