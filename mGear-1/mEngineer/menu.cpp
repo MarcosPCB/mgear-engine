@@ -68,6 +68,9 @@ void Menu()
 
 					st.gt=INGAME;
 
+					st.Camera.position.x=0;
+					st.Camera.position.y=0;
+
 					meng.pannel_choice=2;
 					meng.command=2;
 
@@ -178,6 +181,8 @@ void Menu()
 								if(LoadMap(path2))
 								{
 									LogApp("Map %s loaded",path2);
+									st.Camera.position.x=0;
+									st.Camera.position.y=0;
 									meng.scroll=0;
 									meng.tex_selection=-1;
 									meng.command2=0;
@@ -213,16 +218,16 @@ void Menu()
 					i++;
 				}
 
-				if(st.keys[UP_KEY].state)
+				if(st.mouse_wheel>0)
 				{
-					scroll+=50;
-					st.keys[UP_KEY].state=0;
+					if(scroll<0) scroll+=50;
+					st.mouse_wheel=0;
 				}
 
-				if(st.keys[DOWN_KEY].state)
+				if(st.mouse_wheel<0)
 				{
 					scroll-=50;
-					st.keys[DOWN_KEY].state=0;
+					st.mouse_wheel=0;
 				}
 			}
 

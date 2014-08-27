@@ -453,6 +453,7 @@ struct _SETTINGS
 	uint8 mouse1;
 	uint8 mouse2;
 	uint8 mouse_on : 2;
+	int32 mouse_wheel;
 	Key keys[MAX_KEYS];
 	uint8 quit;
 	uint8 PlayingVideo;
@@ -526,7 +527,11 @@ void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
 
 void RestartVideo();
 
+void _fastcall STW(double *x, double *y);
+
 uint32 POT(uint32 value);
+
+void _fastcall WTS(double *x, double *y);
 
 uint32 PlayMovie(const char *name);
 
@@ -550,7 +555,6 @@ void StopAllSounds();
 void StopMusic();
 
 uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt);
-
 uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float ang);
-
+uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, float ang);
 uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4]);

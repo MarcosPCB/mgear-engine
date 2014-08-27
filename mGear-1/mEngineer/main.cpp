@@ -125,16 +125,16 @@ static void MGGList()
 			}
 		}
 
-		if(st.keys[UP_KEY].state)
+		if(st.mouse_wheel>0)
 		{
-			meng.scroll2+=25;
-			st.keys[UP_KEY].state=0;
+			if(meng.scroll2<0) meng.scroll2+=50;
+			st.mouse_wheel=0;
 		}
 
-		if(st.keys[DOWN_KEY].state)
+		if(st.mouse_wheel<0)
 		{
-			meng.scroll2-=25;
-			st.keys[DOWN_KEY].state=0;
+			meng.scroll2-=50;
+			st.mouse_wheel=0;
 		}
 	}
 	else
@@ -152,14 +152,14 @@ void ImageList(_MGG mggs)
 		{
 			if(m<mggs.num_frames)
 			{
-				if((CheckColisionMouse(j,i-meng.scroll,160,160,0) && st.mouse1) || meng.tex_selection==mggs.frames[m])
+				if((CheckColisionMouse(j,i+meng.scroll,160,160,0) && st.mouse1) || meng.tex_selection==mggs.frames[m])
 				{
-					DrawHud(j,i-meng.scroll,160,160,0,255,128,32,0,0,1,1,mggs.frames[m],1);
+					DrawHud(j,i+meng.scroll,160,160,0,255,128,32,0,0,1,1,mggs.frames[m],1);
 					meng.tex_selection=mggs.frames[m];
 				}
 				else
 				{
-					DrawHud(j,i-meng.scroll,160,160,0,255,255,255,0,0,1,1,mggs.frames[m],1);
+					DrawHud(j,i+meng.scroll,160,160,0,255,255,255,0,0,1,1,mggs.frames[m],1);
 				}
 
 				m++;
@@ -168,16 +168,16 @@ void ImageList(_MGG mggs)
 		}
 	}
 
-	if(st.keys[DOWN_KEY].state)
+	if(st.mouse_wheel>0)
 	{
-		meng.scroll+=160;
-		st.keys[DOWN_KEY].state=0;
+		if(meng.scroll<0) meng.scroll+=160;
+		st.mouse_wheel=0;
 	}
 
-	if(st.keys[UP_KEY].state)
+	if(st.mouse_wheel<0)
 	{
 		meng.scroll-=160;
-		st.keys[UP_KEY].state=0;
+		st.mouse_wheel=0;
 	}
 }
 
@@ -320,16 +320,27 @@ static void ViewPortCommands()
 						if(st.Current_Map.sector[i].id==-1)
 						{
 							st.Current_Map.sector[i].id=i;
-							st.Current_Map.sector[i].position.x=(st.mouse.x*16384)/st.screenx;
-							st.Current_Map.sector[i].position.y=(st.mouse.y*8192)/st.screeny;
-							st.Current_Map.sector[i].vertex[0].x=((st.mouse.x-64)*16384)/st.screenx;
-							st.Current_Map.sector[i].vertex[0].y=((st.mouse.y-64)*8192)/st.screeny;
-							st.Current_Map.sector[i].vertex[1].x=((st.mouse.x+64)*16384)/st.screenx;
-							st.Current_Map.sector[i].vertex[1].y=((st.mouse.y-64)*8192)/st.screeny;
-							st.Current_Map.sector[i].vertex[2].x=((st.mouse.x+64)*16384)/st.screenx;
-							st.Current_Map.sector[i].vertex[2].y=((st.mouse.y+64)*8192)/st.screeny;
-							st.Current_Map.sector[i].vertex[3].x=((st.mouse.x-64)*16384)/st.screenx;
-							st.Current_Map.sector[i].vertex[3].y=((st.mouse.y+64)*8192)/st.screeny;
+
+							st.Current_Map.sector[i].position.x=st.mouse.x;
+							st.Current_Map.sector[i].position.y=st.mouse.y;
+							STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
+
+							st.Current_Map.sector[i].vertex[0].x=st.mouse.x-64;
+							st.Current_Map.sector[i].vertex[0].y=st.mouse.y-64;
+							STW(&st.Current_Map.sector[i].vertex[0].x,&st.Current_Map.sector[i].vertex[0].y);
+
+							st.Current_Map.sector[i].vertex[1].x=st.mouse.x+64;
+							st.Current_Map.sector[i].vertex[1].y=st.mouse.y-64;
+							STW(&st.Current_Map.sector[i].vertex[1].x,&st.Current_Map.sector[i].vertex[1].y);
+
+							st.Current_Map.sector[i].vertex[2].x=st.mouse.x+64;
+							st.Current_Map.sector[i].vertex[2].y=st.mouse.y+64;
+							STW(&st.Current_Map.sector[i].vertex[2].x,&st.Current_Map.sector[i].vertex[2].y);
+
+							st.Current_Map.sector[i].vertex[3].x=st.mouse.x-64;
+							st.Current_Map.sector[i].vertex[3].y=st.mouse.y+64;
+							STW(&st.Current_Map.sector[i].vertex[3].x,&st.Current_Map.sector[i].vertex[3].y);
+
 							st.Current_Map.num_sector++;
 							break;
 						}
@@ -348,36 +359,46 @@ static void ViewPortCommands()
 				{
 					for(uint16 j=0;j<5;j++)
 					{
-						if(j<4 && CheckColisionMouse((st.Current_Map.sector[i].vertex[j].x*st.screenx)/16384,(st.Current_Map.sector[i].vertex[j].y*st.screeny)/8192,(256*st.screenx)/16384,(256*st.screenx)/8192,0) && st.mouse1)
+						if(j<4 && CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[j].x,st.Current_Map.sector[i].vertex[j].y,256,256,0) && st.mouse1)
 						{
-							st.Current_Map.sector[i].vertex[j].x=(st.mouse.x*16384)/st.screenx;
-							st.Current_Map.sector[i].vertex[j].y=(st.mouse.y*8192)/st.screeny;
+							st.Current_Map.sector[i].vertex[j].x=st.mouse.x;
+							st.Current_Map.sector[i].vertex[j].y=st.mouse.y;
+							STW(&st.Current_Map.sector[i].vertex[j].x,&st.Current_Map.sector[i].vertex[j].y);
+
 							got_it=1;
 							break;
 						}
 
-						if(j==4 && CheckColisionMouse((st.Current_Map.sector[i].position.x*st.screenx)/16384,(st.Current_Map.sector[i].position.y*st.screeny)/8192,(484*st.screenx)/16384,(484*st.screeny)/8192,0) && st.mouse1)
+						if(j==4 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0) && st.mouse1)
 						{
 							vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
 							vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
+
 							vertextmp[1].x=(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].position.x);
 							vertextmp[1].y=(st.Current_Map.sector[i].vertex[1].y-st.Current_Map.sector[i].position.y);
+
 							vertextmp[2].x=(st.Current_Map.sector[i].vertex[2].x-st.Current_Map.sector[i].position.x);
 							vertextmp[2].y=(st.Current_Map.sector[i].vertex[2].y-st.Current_Map.sector[i].position.y);
+
 							vertextmp[3].x=(st.Current_Map.sector[i].vertex[3].x-st.Current_Map.sector[i].position.x);
 							vertextmp[3].y=(st.Current_Map.sector[i].vertex[3].y-st.Current_Map.sector[i].position.y);
 
-							st.Current_Map.sector[i].position.x=(st.mouse.x*16384)/st.screenx;
-							st.Current_Map.sector[i].position.y=(st.mouse.y*8192)/st.screeny;
+							st.Current_Map.sector[i].position.x=st.mouse.x;
+							st.Current_Map.sector[i].position.y=st.mouse.y;
+							STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
 
 							st.Current_Map.sector[i].vertex[0].x=st.Current_Map.sector[i].position.x+vertextmp[0].x;
 							st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].position.y+vertextmp[0].y;
+
 							st.Current_Map.sector[i].vertex[1].x=st.Current_Map.sector[i].position.x+vertextmp[1].x;
 							st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].position.y+vertextmp[1].y;
+
 							st.Current_Map.sector[i].vertex[2].x=st.Current_Map.sector[i].position.x+vertextmp[2].x;
 							st.Current_Map.sector[i].vertex[2].y=st.Current_Map.sector[i].position.y+vertextmp[2].y;
+
 							st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
 							st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
+
 							got_it=1;
 							break;
 						}
@@ -388,6 +409,26 @@ static void ViewPortCommands()
 				}
 			}
 		}
+	}
+
+	if(st.keys[UP_KEY].state)
+	{
+		st.Camera.position.y-=100;
+	}
+
+	if(st.keys[DOWN_KEY].state)
+	{
+		st.Camera.position.y+=100;
+	}
+
+	if(st.keys[RIGHT_KEY].state)
+	{
+		st.Camera.position.x+=100;
+	}
+
+	if(st.keys[LEFT_KEY].state)
+	{
+		st.Camera.position.x-=100;
 	}
 }
 

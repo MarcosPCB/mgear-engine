@@ -79,6 +79,12 @@ void FPSCounter()
 	}
 }
 
+void _fastcall STW(double *x, double *y)
+{
+	*x=((*x*16384)/st.screenx)+st.Camera.position.x;
+	*y=((*y*8192)/st.screeny)+st.Camera.position.y;
+}
+
 uint32 POT(uint32 value)
 {
 	if(value != 0)
@@ -93,6 +99,15 @@ uint32 POT(uint32 value)
     }
 
 	return value;
+}
+
+void _fastcall WTS(double *x, double *y)
+{
+	*x-=st.Camera.position.x;
+	*y-=st.Camera.position.y;
+
+	*x=(*x*st.screenx)/16384;
+	*y=(*y*st.screeny)/8192;
 }
 
 void Quit()
@@ -576,6 +591,21 @@ uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float
 {
 	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
+	vert[0].x-=st.Camera.position.x;
+	vert[0].y-=st.Camera.position.y;
+
+	vert[1].x-=st.Camera.position.x;
+	vert[1].y-=st.Camera.position.y;
+
+	vert[2].x-=st.Camera.position.x;
+	vert[2].y-=st.Camera.position.y;
+
+	vert[3].x-=st.Camera.position.x;
+	vert[3].y-=st.Camera.position.y;
+
 	for(register uint8 i=0;i<4;i++)
 	{
 			if(i==0)
@@ -646,6 +676,12 @@ uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float
 uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt)
 {
 	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
+	tx-=st.Camera.position.x;
+	ty-=st.Camera.position.y;
 
 	for(register uint8 i=0;i<8;i++)
 	{
@@ -801,11 +837,79 @@ uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float a
 	
 }
 
+uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, float ang)
+{
+
+	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
+	x=(x*st.screenx)/16384;
+	y=(y*st.screeny)/8192;
+
+	xsize=(xsize*st.screenx)/16384;
+	ysize=(ysize*st.screeny)/8192;
+
+	for(register uint8 i=0;i<4;i++)
+	{
+			if(i==0)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				xb=xl=tmpx;
+				yb=yl=tmpy;
+			}
+			else
+			if(i==1)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==2)
+			{
+				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+			else
+			if(i==3)
+			{
+				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				if(tmpx>xb) xb=tmpx;
+				else if(tmpx<xl) xl=tmpx;
+
+				if(tmpy>yb) yb=tmpy;
+				else if(tmpy<yl) yl=tmpy;
+			}
+	}
+
+	if(st.mouse.x>xl && st.mouse.x<xb && st.mouse.y>yl && st.mouse.y<yb)
+		return 1; //Collided
+	else
+		return 0; //No collision
+	
+}
+
 int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
 	double tmp;
 
 	uint8 val=0;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
 
 	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
 	if(tmp>16384) val++;
@@ -867,6 +971,9 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 
 	uint8 val=0;
 
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
 	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
 	if(tmp>16384) val++;
 
@@ -926,6 +1033,9 @@ int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 	double tmp;
 
 	uint8 val=0;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
 
 	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
 	if(tmp>16384) val++;
@@ -1114,6 +1224,12 @@ int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth)
 {
 	uint8 val=0;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
+	x2-=st.Camera.position.x;
+	y2-=st.Camera.position.y;
 
 	if(x>16384) val++;
 	if(y>8192) val++;
@@ -1671,6 +1787,15 @@ uint32 LoadMap(const char *name)
 		LogApp("Invalid map format or version: %s", header);
 				return false;
 	}
+
+					if(st.Current_Map.obj)
+						free(st.Current_Map.obj);
+
+					if(st.Current_Map.sprites)
+						free(st.Current_Map.sprites);
+
+					if(st.Current_Map.sector)
+						free(st.Current_Map.sector);
 
 	//loads the map
 

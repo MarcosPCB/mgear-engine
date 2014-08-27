@@ -217,6 +217,9 @@ void InputProcess()
 						st.mouse2=0;
 
 				}
+				else
+				if(events.type==SDL_MOUSEWHEEL)
+					st.mouse_wheel=events.wheel.y;
 
 		}
 
