@@ -681,7 +681,7 @@ int main(int argc, char *argv[])
 		{
 			if(st.keys[SPACE_KEY].state)
 			{
-				PlayMovie("TENEBRIS.MGV");
+				PlayMovie("LOGOHD.MGV");
 				st.keys[SPACE_KEY].state=0;
 			}
 

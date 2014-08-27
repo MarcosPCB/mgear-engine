@@ -1592,7 +1592,8 @@ uint32 PlayMovie(const char *name)
 {
 	SDL_Thread *t;
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
-	unsigned int ms;
+	unsigned int ms, ms1, ms2;
+	int ms3;
 	register uint32 i=0;
 	char header[21];
 
@@ -1716,9 +1717,11 @@ uint32 PlayMovie(const char *name)
 		
 		FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
 
-		i=ms/mgv->fps;
+		if((ms/mgv->fps)>i+1000) FMOD_Channel_SetPosition(ch,i*mgv->fps,FMOD_TIMEUNIT_MS);
 
 		if(i>mgv->num_frames-1) break;
+
+		ms1=GetTicks();
 
 		rewind(mgv->file);
 		fseek(mgv->file,mgv->seeker[i],SEEK_SET);
@@ -1772,6 +1775,18 @@ uint32 PlayMovie(const char *name)
 			SDL_FreeRW(mgv->frames[i].rw);
 			SDL_FreeSurface(mgv->frames[i].data);
 			glDeleteTextures(1,&mgv->frames[i].ID);
+
+			i++;
+
+			ms2=GetTicks();
+
+			ms3=ms2-ms1;
+
+			ms3=(1000/mgv->fps)-ms3;
+
+			if(ms3<0) ms3=0;
+
+			SDL_Delay(ms3);
 
 			if(st.FPSYes)
 				FPSCounter();
