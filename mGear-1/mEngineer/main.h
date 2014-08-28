@@ -24,6 +24,8 @@ struct mEng
 	int16 scroll2;
 	uint16 command2;
 	GLuint tex_selection;
+	uint32 tex_ID;
+	int8 tex_MGGID;
 	uint16 mgg_sel;
 	uint16 menu_sel;
 	char *path;

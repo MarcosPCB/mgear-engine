@@ -45,7 +45,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>M:\projetos\platform\mGear-1\mGear-1;C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;M:\projetos\platform\mGear-1\mGear-1\SOIL\src;M:\projetos\platform\mGear-1\mGear-1\glee;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\include;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\include;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;M:\projetos\platform\mGear-1\mGear-1\SOIL;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\lib\x86;M:\projetos\platform\mGear-1\mGear-1\glee\GLee\Release;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\lib\x86;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\lib\x86;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;M:\projetos\platform\mGear-1\mGear-1\SOIL;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\lib\x86;M:\projetos\platform\mGear-1\mGear-1\glee\Release;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\lib\x86;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -94,6 +94,7 @@
     <ClCompile Include="menu.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\mGear-1\dirent.h" />
     <ClInclude Include="..\mGear-1\engine.h" />
     <ClInclude Include="..\mGear-1\input.h" />
     <ClInclude Include="..\mGear-1\physics.h" />

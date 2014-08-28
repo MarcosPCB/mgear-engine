@@ -98,7 +98,7 @@ int16 DirFiles(const char *path, char content[512][512])
 static void MGGList()
 {
 	uint16 j=0;
-	DrawHud(400,300,250,600,0,255,255,255,0,0,1,1,st.UiTex[4].ID,1);
+	DrawHud(400,300,250,600,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
 	if(meng.num_mgg>0)
 	{
 		for(uint16 i=25;i<8000;i+=50)
@@ -141,25 +141,27 @@ static void MGGList()
 		meng.command=meng.pannel_choice;
 }
 
-void ImageList(_MGG mggs)
+void ImageList(uint8 id)
 {
 	uint16 m=0;
 
 	for(uint16 i=80;i<160000;i+=160)
 	{
-		if(m>=mggs.num_frames) break;
+		if(m>=mgg[id].num_frames) break;
 		for(uint16 j=80;j<800;j+=160)
 		{
-			if(m<mggs.num_frames)
+			if(m<mgg[id].num_frames)
 			{
-				if((CheckColisionMouse(j,i+meng.scroll,160,160,0) && st.mouse1) || meng.tex_selection==mggs.frames[m])
+				if((CheckColisionMouse(j,i+meng.scroll,160,160,0) && st.mouse1) || meng.tex_selection==mgg[id].frames[m])
 				{
-					DrawHud(j,i+meng.scroll,160,160,0,255,128,32,0,0,1,1,mggs.frames[m],1);
-					meng.tex_selection=mggs.frames[m];
+					DrawHud(j,i+meng.scroll,160,160,0,255,128,32,0,0,1,1,mgg[id].frames[m],1);
+					meng.tex_selection=mgg[id].frames[m];
+					meng.tex_ID=m;
+					meng.tex_MGGID=id;
 				}
 				else
 				{
-					DrawHud(j,i+meng.scroll,160,160,0,255,255,255,0,0,1,1,mggs.frames[m],1);
+					DrawHud(j,i+meng.scroll,160,160,0,255,255,255,0,0,1,1,mgg[id].frames[m],1);
 				}
 
 				m++;
@@ -188,7 +190,8 @@ static int16 MGGLoad()
 	FILE *f;
 	DIR *dir;
 
-	int8 id;
+	int8 id, loaded=0;
+	uint16 id2=meng.num_mgg, id3=0;
 
 	char files[512][512];
 	char *path2;
@@ -258,23 +261,45 @@ static int16 MGGLoad()
 					fclose(f);
 					if(CheckMGGFile(path2))
 					{
-						DrawUI(400,300,800,600,0,0,0,0,0,0,1,1,st.UiTex[4].ID,1);
+						DrawUI(400,300,800,600,0,0,0,0,0,0,1,1,mgg[0].frames[4],1);
 						DrawString2UI("Loading...",400,300,1,1,1,255,255,255,1,st.fonts[GEOMET].font);
 						Renderer();
 						LoadMGG(&mgg[id],path2);
-						strcpy(st.Current_Map.MGG_FILES[id-3],path2);
-						strcpy(meng.mgg_list[id-3],mgg[id].name);
-						meng.num_mgg++;
-						LogApp("MGG %s loaded",path2);
-						meng.scroll=0;
-						meng.pannel_choice=2;
-						meng.command=2;
-						st.mouse1=0;
-						free(path2);
-						free(meng.path);
-						meng.path=(char*) malloc(2);
-						strcpy(meng.path,".");
-						break;
+
+						for(uint16 u=0;u<meng.num_mgg;u++)
+						{
+							if(strcmp(meng.mgg_list[u],mgg[id].name)==NULL)
+							{
+								loaded=1;
+								break;
+							}
+
+						}
+
+						if(loaded==1)
+						{
+							FreeMGG(&mgg[id]);
+							st.mouse1=0;
+							j++;
+							free(path2);
+							continue;
+						}
+						else if(loaded==0);
+						{
+							strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg],path2);
+							strcpy(meng.mgg_list[meng.num_mgg],mgg[id].name);
+							meng.num_mgg++;
+							LogApp("MGG %s loaded",path2);
+							meng.scroll=0;
+							meng.pannel_choice=2;
+							meng.command=2;
+							st.mouse1=0;
+							free(path2);
+							free(meng.path);
+							meng.path=(char*) malloc(2);
+							strcpy(meng.path,".");
+							break;
+						}
 					}
 					else
 					{
@@ -324,17 +349,18 @@ static int16 MGGLoad()
 static void PannelLeft()
 {
 	uint8 mouse=0;
+	char num[32];
 
-	DrawHud(50,300,100,600,0,255,255,255,0,0,1,1,st.UiTex[4].ID,1);
+	DrawHud(50,300,100,600,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
 
 	if(!CheckColisionMouse(27,27,48,48,0))
 	{
-		DrawHud(27,27,48,48,0,255,255,255,0,0,1,1,st.UiTex[0].ID,1);
+		DrawHud(27,27,48,48,0,255,255,255,0,0,1,1,mgg[0].frames[0],1);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawHud(27,27,48,48,0,255,128,32,0,0,1,1,st.UiTex[0].ID,1);
+		DrawHud(27,27,48,48,0,255,128,32,0,0,1,1,mgg[0].frames[0],1);
 		//time++;
 		//if((st.time-time)==1000)
 		//{
@@ -346,12 +372,12 @@ static void PannelLeft()
 
 	if(!CheckColisionMouse(75,27,48,48,0))
 	{
-		DrawHud(75,27,48,48,0,255,255,255,0,0,1,1,st.UiTex[2].ID,1);
+		DrawHud(75,27,48,48,0,255,255,255,0,0,1,1,mgg[0].frames[2],1);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawHud(75,27,48,48,0,255,128,32,0,0,1,1,st.UiTex[2].ID,1);
+		DrawHud(75,27,48,48,0,255,128,32,0,0,1,1,mgg[0].frames[2],1);
 		//if((st.time-time)==1000)
 		//{
 				DrawString("Select and edit",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
@@ -362,12 +388,12 @@ static void PannelLeft()
 	
 	if(!CheckColisionMouse(27,75,48,48,0))
 	{
-		DrawHud(27,75,48,48,0,255,255,255,0,0,1,1,st.UiTex[1].ID,1);
+		DrawHud(27,75,48,48,0,255,255,255,0,0,1,1,mgg[0].frames[1],1);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawHud(27,75,48,48,0,255,128,32,0,0,1,1,st.UiTex[1].ID,1);
+		DrawHud(27,75,48,48,0,255,128,32,0,0,1,1,mgg[0].frames[1],1);
 		//if((st.time-time)==1000)
 		//{
 			DrawString("Add an OBJ",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
@@ -378,12 +404,12 @@ static void PannelLeft()
 	
 	if(!CheckColisionMouse(75,75,48,48,0))
 	{
-		DrawHud(75,75,48,48,0,255,255,255,0,0,1,1,st.UiTex[3].ID,1);
+		DrawHud(75,75,48,48,0,255,255,255,0,0,1,1,mgg[0].frames[3],1);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawHud(75,75,48,48,0,255,128,32,0,0,1,1,st.UiTex[3].ID,1);
+		DrawHud(75,75,48,48,0,255,128,32,0,0,1,1,mgg[0].frames[3],1);
 		//if((st.time-time)==1000)
 		//{
 			DrawString("Add a sprite",400,550,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
@@ -443,19 +469,29 @@ static void PannelLeft()
 		}
 	}
 
+	sprintf(num,"%.2f",st.Camera.dimension.x);
+	DrawString2UI(num,51,219,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
+	sprintf(num,"%.2f",st.Camera.dimension.y);
+	DrawString2UI(num,51,267,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
+
+	sprintf(num,"%.2f",st.Camera.position.x);
+	DrawString2UI(num,51,315,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
+	sprintf(num,"%.2f",st.Camera.position.y);
+	DrawString2UI(num,51,363,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
+
 	DrawHud(50,500,100,100,0,255,255,255,0,0,1,1,meng.tex_selection,1);
 
 	if(meng.pannel_choice==0)
-		DrawHud(27,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[0].ID,1);
+		DrawHud(27,27,48,48,0,128,32,32,0,0,1,1,mgg[0].frames[0],1);
 	//else
 	if(meng.pannel_choice==2)
-		DrawHud(75,27,48,48,0,128,32,32,0,0,1,1,st.UiTex[2].ID,1);
+		DrawHud(75,27,48,48,0,128,32,32,0,0,1,1,mgg[0].frames[2],1);
 	//else
 	if(meng.pannel_choice==4)
-		DrawHud(75,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[3].ID,1);
+		DrawHud(75,75,48,48,0,128,32,32,0,0,1,1,mgg[0].frames[3],1);
 	//else
 	if(meng.pannel_choice==3)
-		DrawHud(27,75,48,48,0,128,32,32,0,0,1,1,st.UiTex[1].ID,1);
+		DrawHud(27,75,48,48,0,128,32,32,0,0,1,1,mgg[0].frames[1],1);
 
 }
 
@@ -587,6 +623,20 @@ static void ViewPortCommands()
 	{
 		st.Camera.position.x-=100;
 	}
+
+	if(st.mouse_wheel>0)
+	{
+		if(st.Camera.dimension.x<2) st.Camera.dimension.x+=0.1;
+		if(st.Camera.dimension.y<2) st.Camera.dimension.y+=0.1;
+		st.mouse_wheel=0;
+	}
+
+	if(st.mouse_wheel<0)
+	{
+		if(st.Camera.dimension.x>0.4) st.Camera.dimension.x-=0.1;
+		if(st.Camera.dimension.y>0.4) st.Camera.dimension.y-=0.1;
+		st.mouse_wheel=0;
+	}
 }
 
 static void MGGListLoad()
@@ -648,14 +698,6 @@ int main(int argc, char *argv[])
 		Quit();
 	}
 
-	for(register uint16 i=0;i<mgg[0].num_frames;i++)
-	{
-		st.UiTex[i].ID=mgg[0].frames[i];
-		st.UiTex[i].MGG_ID=0;
-	}
-
-	//MGGListLoad();
-
 	st.FPSYes=1;
 
 	st.gt=MAIN_MENU;
@@ -687,7 +729,7 @@ int main(int argc, char *argv[])
 
 			if(meng.command==TEX_SEL)
 			{
-				ImageList(mgg[meng.mgg_sel]);
+				ImageList(meng.mgg_sel);
 				if(st.keys[ESC_KEY].state)
 				{
 					meng.command=meng.pannel_choice;

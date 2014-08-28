@@ -26,6 +26,7 @@
 #define MAX_OBJS 1024
 #define MAX_FONTS 8
 #define MAX_SECTORS 512
+#define MAX_LIGHT 64
 
 #define QLZ_COMPRESSION_LEVEL 3
 #define QLZ_STREAMING_BUFFER 0
@@ -295,7 +296,7 @@ struct _MGMOBJ
 	Pos texpan;
 	float angle;
 	Colori color;
-	uint32 TextureID;
+	_TEXTURES tex;
 	int16 tag;
 	uint8 priority : 2;//0 - Most important, 1 - Medium, 2 - Less important
 	_OBJTYPE type;
@@ -313,7 +314,7 @@ struct _MGMSPRITE
 	uint16 animation;
 
 	//Leave it blank if it's not a texture
-	uint32 frame_ID;
+	int32 frame_ID;
 	_SPRITE_T type;
 
 	//If it's an entity, you MUST insert here the game sprite name that has a code
@@ -356,6 +357,7 @@ struct _MGMFORMAT
 	uint16 num_obj;
 	uint8 num_mgg;
 	uint8 num_lights;
+	uint16 num_sector;
 	char MGG_FILES[32][256];
 };
 
@@ -457,10 +459,11 @@ struct _SETTINGS
 	Key keys[MAX_KEYS];
 	uint8 quit;
 	uint8 PlayingVideo;
+
 	_MGM Current_Map;
 	_SPRITES Game_Sprites[MAX_SPRITES];
-	_TEXTURES UiTex[MAX_GRAPHICS];
-	_TEXTURES MapTex[MAX_GRAPHICS];
+	uint16 num_sprites;
+
 	_CAMERA Camera;
 	GAME_STATE gt;
 

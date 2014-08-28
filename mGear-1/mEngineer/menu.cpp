@@ -13,6 +13,9 @@ void Menu()
 	DIR *dir;
 	char *path2;
 	size_t size;
+	int8 id=0;
+	uint32 id2=0;
+	char lo[32];
 
 	if(st.gt==MAIN_MENU || st.gt==GAME_MENU)
 	{
@@ -186,7 +189,28 @@ void Menu()
 								fclose(f);
 								if(LoadMap(path2))
 								{
+									memset(meng.mgg_list,0,64*256);
+									meng.num_mgg=0;
 									LogApp("Map %s loaded",path2);
+
+									id=MGG_MAP_START;
+									id2=0;
+
+									for(uint16 a=0;a<st.Current_Map.num_mgg;a++)
+									{
+										DrawUI(400,300,800,600,0,0,0,0,0,0,1,1,mgg[0].frames[4],1);
+										sprintf(lo,"Loading %d%",(a/st.Current_Map.num_mgg)*100);
+										DrawString2UI(lo,400,300,1,1,0,255,255,255,1,st.fonts[GEOMET].font);
+										if(CheckMGGFile(st.Current_Map.MGG_FILES[a]))
+										{
+											LoadMGG(&mgg[id],st.Current_Map.MGG_FILES[a]);
+											strcpy(meng.mgg_list[a],mgg[id].name);
+											meng.num_mgg++;
+											id++;
+										}
+
+									}
+
 									st.Camera.position.x=0;
 									st.Camera.position.y=0;
 									meng.scroll=0;
