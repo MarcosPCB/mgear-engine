@@ -83,6 +83,17 @@ void Menu()
 					meng.pannel_choice=2;
 					meng.command=2;
 
+					meng.obj.amblight=1;
+					meng.obj.color.r=255;
+					meng.obj.color.g=255;
+					meng.obj.color.b=255;
+					meng.obj.color.a=1;
+					meng.obj.texsize.x=1;
+					meng.obj.texsize.y=1;
+					meng.obj.texpan.x=0;
+					meng.obj.texpan.y=0;
+					meng.obj.type=MIDGROUND;
+
 				}
 			}
 			else
@@ -221,6 +232,16 @@ void Menu()
 									meng.pannel_choice=2;
 									meng.command=2;
 									meng.menu_sel=0;
+									meng.obj.amblight=1;
+									meng.obj.color.r=255;
+									meng.obj.color.g=255;
+									meng.obj.color.b=255;
+									meng.obj.color.a=1;
+									meng.obj.texsize.x=1;
+									meng.obj.texsize.y=1;
+									meng.obj.texpan.x=0;
+									meng.obj.texpan.y=0;
+									meng.obj.type=MIDGROUND;
 									st.gt=INGAME;
 									st.mouse1=0;
 									free(path2);

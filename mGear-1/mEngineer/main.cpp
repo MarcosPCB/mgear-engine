@@ -349,7 +349,7 @@ static int16 MGGLoad()
 static void PannelLeft()
 {
 	uint8 mouse=0;
-	char num[32];
+	char num[32], str[64];
 
 	DrawHud(50,300,100,600,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
 
@@ -469,16 +469,6 @@ static void PannelLeft()
 		}
 	}
 
-	sprintf(num,"%.2f",st.Camera.dimension.x);
-	DrawString2UI(num,51,219,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
-	sprintf(num,"%.2f",st.Camera.dimension.y);
-	DrawString2UI(num,51,267,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
-
-	sprintf(num,"%.2f",st.Camera.position.x);
-	DrawString2UI(num,51,315,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
-	sprintf(num,"%.2f",st.Camera.position.y);
-	DrawString2UI(num,51,363,0.2,0.2,0,255,255,255,1,st.fonts[ARIAL].font);
-
 	DrawHud(50,500,100,100,0,255,255,255,0,0,1,1,meng.tex_selection,1);
 
 	if(meng.pannel_choice==0)
@@ -491,7 +481,171 @@ static void PannelLeft()
 		DrawHud(75,75,48,48,0,128,32,32,0,0,1,1,mgg[0].frames[3],1);
 	//else
 	if(meng.pannel_choice==3)
+	{
 		DrawHud(27,75,48,48,0,128,32,32,0,0,1,1,mgg[0].frames[1],1);
+
+		if(meng.obj.type==MIDGROUND)
+		{
+			if(CheckColisionMouse(51,219,90,24,0))
+			{
+				DrawString("Midground",51,219,90,24,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.command=8;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString("Midground",51,219,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
+
+		if(meng.obj.type==FOREGROUND)
+		{
+			if(CheckColisionMouse(51,219,90,24,0))
+			{
+				DrawString("Foreground",51,219,90,24,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.command=8;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString("Foreground",51,219,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
+
+		if(meng.obj.type==BACKGROUND1)
+		{
+			if(CheckColisionMouse(51,219,90,24,0))
+			{
+				DrawString("Background1",51,219,90,24,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.command=8;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString("Background1",51,219,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
+
+		if(meng.obj.type==BACKGROUND2)
+		{
+			if(CheckColisionMouse(51,219,90,24,0))
+			{
+				DrawString("Background2",51,219,90,24,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.command=8;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString("Background2",51,219,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
+
+		if(meng.obj.type==BACKGROUND3)
+		{
+			if(CheckColisionMouse(51,219,90,24,0))
+			{
+				DrawString("Background3",51,219,90,24,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.command=8;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString("Background3",51,219,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
+
+		sprintf(str,"%d %d %d %.2f", meng.obj.color.r, meng.obj.color.g, meng.obj.color.b, meng.obj.color.a);
+		DrawString(str,51,267,90,24,0, meng.obj.color.r, meng.obj.color.g, meng.obj.color.b,1,st.fonts[ARIAL].font);
+
+		sprintf(str,"Light %.2f",meng.obj.amblight);
+		DrawString(str,51,315,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		sprintf(str,"Tex.Size %.2f %.2f",meng.obj.texsize.x, meng.obj.texsize.y);
+		DrawString(str,51,363,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		sprintf(str,"Tex.Pan %.2f %.2f",meng.obj.texpan.x, meng.obj.texpan.y);
+		DrawString(str,51,411,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+	}
+
+	if(meng.command==ADD_OBJ_TYPE)
+	{
+		DrawHud(150,185,100,130,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
+
+		if(CheckColisionMouse(150,135,90,25,0))
+		{
+			DrawString("Background1",150,135,90,25,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				meng.obj.type=BACKGROUND1;
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawString("Background1",150,135,90,25,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(CheckColisionMouse(150,160,90,25,0))
+		{
+			DrawString("Background2",150,160,90,25,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				meng.obj.type=BACKGROUND2;
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawString("Background2",150,160,90,25,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(CheckColisionMouse(150,185,90,25,0))
+		{
+			DrawString("Background3",150,185,90,25,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				meng.obj.type=BACKGROUND3;
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawString("Background3",150,185,90,25,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(CheckColisionMouse(150,210,90,25,0))
+		{
+			DrawString("Midground",150,210,90,25,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				meng.obj.type=MIDGROUND;
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawString("Midground",150,210,90,25,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(CheckColisionMouse(150,235,90,25,0))
+		{
+			DrawString("Foreground",150,235,90,25,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				meng.obj.type=FOREGROUND;
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawString("Foreground",150,235,90,25,0,255,255,255,1,st.fonts[ARIAL].font);
+	}
 
 }
 

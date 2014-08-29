@@ -1331,8 +1331,6 @@ int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 	if(dim.y<1) dim.y=8192/dim.y;
 	else dim.y*=8192;
 
-	printf("%f %f\n",dim.x, dim.y);
-
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
 

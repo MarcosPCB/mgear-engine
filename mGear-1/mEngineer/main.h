@@ -13,6 +13,7 @@
 #define TEX_SEL 5
 #define MGG_SEL 6
 #define MGG_LOAD 7
+#define ADD_OBJ_TYPE 8
 
 struct mEng
 {
@@ -28,6 +29,16 @@ struct mEng
 	int8 tex_MGGID;
 	uint16 mgg_sel;
 	uint16 menu_sel;
+
+	struct ObjEN
+	{
+		_OBJTYPE type;
+		Colori color;
+		float amblight;
+		Pos texsize;
+		Pos texpan;
+	} obj;
+
 	char *path;
 };
 
