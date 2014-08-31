@@ -541,7 +541,7 @@ void _fastcall WTS(double *x, double *y);
 
 uint32 PlayMovie(const char *name);
 
-int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY);
 int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);

@@ -15,6 +15,12 @@
 #define MGG_LOAD 7
 #define ADD_OBJ_TYPE 8
 #define TEX_SIZE_OBJ 9
+#define OBJ_AMBL 10
+#define TEX_PAN_OBJ 11
+#define RGB_OBJ 12
+
+#define EDIT_OBJ 13
+#define EDIT_OBJ_TYPE 14
 
 struct mEng
 {
@@ -25,6 +31,7 @@ struct mEng
 	int16 scroll;
 	int16 scroll2;
 	uint16 command2;
+	uint16 com_id;
 	GLuint tex_selection;
 	uint32 tex_ID;
 	int8 tex_MGGID;
@@ -38,7 +45,11 @@ struct mEng
 		float amblight;
 		Pos texsize;
 		Pos texpan;
-	} obj;
+	} obj, obj2;
+
+	uint32 palette[256][256];
+
+	Colori tmp_color;
 
 	char *path;
 };

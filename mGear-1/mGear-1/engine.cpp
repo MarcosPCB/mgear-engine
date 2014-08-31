@@ -81,8 +81,8 @@ void FPSCounter()
 
 void _fastcall STW(double *x, double *y)
 {
-	*x=(((*x*16384)/st.screenx)+st.Camera.position.x)/st.Camera.dimension.x;
-	*y=(((*y*8192)/st.screeny)+st.Camera.position.y)/st.Camera.dimension.y;
+	*x=((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
+	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
 uint32 POT(uint32 value)
@@ -1114,7 +1114,7 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 	return 0;
 }
 
-int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texsizeX, float texsizeY, float texpanX, float texpanY)
+int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY)
 {
 	double tmp;
 
@@ -1180,8 +1180,8 @@ int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 			ent[i].color.a=a;
 			ent[i].x1y1.x=texsizeX+texpanX;
 			ent[i].x1y1.y=texsizeY+texpanY;
-			ent[i].x2y2.x=texpanX;
-			ent[i].x2y2.y=texpanY;
+			ent[i].x2y2.x=texsizeX;
+			ent[i].x2y2.y=texsizeY;
 			st.num_tex++;
 			st.num_entities++;
 			break;
@@ -1993,11 +1993,11 @@ void DrawMap()
 
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==FOREGROUND)
-			DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
+			DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==MIDGROUND)
-				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
+				DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 				st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r*st.Current_Map.obj[i].amblight,st.Current_Map.obj[i].color.g*st.Current_Map.obj[i].amblight,st.Current_Map.obj[i].color.b*st.Current_Map.obj[i].amblight,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 
 	//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)
