@@ -14,6 +14,7 @@
 #define MGG_SEL 6
 #define MGG_LOAD 7
 #define ADD_OBJ_TYPE 8
+#define TEX_SIZE_OBJ 9
 
 struct mEng
 {

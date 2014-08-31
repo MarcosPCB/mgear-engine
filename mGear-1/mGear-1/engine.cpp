@@ -81,8 +81,8 @@ void FPSCounter()
 
 void _fastcall STW(double *x, double *y)
 {
-	*x=((*x*16384)/st.screenx)+st.Camera.position.x;
-	*y=((*y*8192)/st.screeny)+st.Camera.position.y;
+	*x=(((*x*16384)/st.screenx)+st.Camera.position.x)/st.Camera.dimension.x;
+	*y=(((*y*8192)/st.screeny)+st.Camera.position.y)/st.Camera.dimension.y;
 }
 
 uint32 POT(uint32 value)
@@ -106,8 +106,8 @@ void _fastcall WTS(double *x, double *y)
 	*x-=st.Camera.position.x;
 	*y-=st.Camera.position.y;
 
-	*x=(*x*st.screenx)/16384;
-	*y=(*y*st.screeny)/8192;
+	*x=((*x*st.screenx)/16384)*st.Camera.dimension.x;
+	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
 }
 
 void Quit()
@@ -911,11 +911,11 @@ uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, fl
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
 
-	x=(x*st.screenx)/16384;
-	y=(y*st.screeny)/8192;
+	x=((x*st.screenx)/16384)*st.Camera.dimension.x;
+	y=((y*st.screeny)/8192)*st.Camera.dimension.y;
 
-	xsize=(xsize*st.screenx)/16384;
-	ysize=(ysize*st.screeny)/8192;
+	xsize=((xsize*st.screenx)/16384)*st.Camera.dimension.x;
+	ysize=((ysize*st.screeny)/8192)*st.Camera.dimension.y;
 
 	for(register uint8 i=0;i<4;i++)
 	{

@@ -219,21 +219,6 @@ struct _BODY
 
 typedef struct _BODY Body;
 
-//Structure for te sprites in the game
-//When you create a sprite in the source code
-//You must add it to the structure
-struct _SPRITES
-{
-	char name[64];
-	uint32 ID;
-	uint8 MGG_ID : 6;
-	int16 health;
-	_SPRITE_G type;
-	int16 current_sector;
-	int8 current_layer;
-	Body body;
-};
-
 enum _OBJTYPE
 {
 	BACKGROUND1,
@@ -242,6 +227,23 @@ enum _OBJTYPE
 	MIDGROUND,
 	FOREGROUND,
 	BLANK
+};
+
+//Structure for te sprites in the game
+//When you create a sprite in the source code
+//You must add it to the structure
+struct _SPRITES
+{
+	char name[64];
+	_OBJTYPE place;
+	int32 ID;
+	int32 GameID;
+	int16 tag;
+	int16 health;
+	_SPRITE_G type;
+	int16 current_sector;
+	int8 current_layer;
+	Body body;
 };
 
 enum _OBJBLOCK

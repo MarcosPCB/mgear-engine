@@ -566,7 +566,56 @@ static void PannelLeft()
 		DrawString(str,51,315,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
 
 		sprintf(str,"Tex.Size %.2f %.2f",meng.obj.texsize.x, meng.obj.texsize.y);
-		DrawString(str,51,363,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(CheckColisionMouse(51,363,90,24,0))
+		{
+			DrawString(str,51,363,90,24,0,255,128,32,1,st.fonts[ARIAL].font);
+
+			if(st.mouse1)
+			{
+				meng.command=9;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawString(str,51,363,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(meng.command==TEX_SIZE_OBJ)
+		{
+			DrawString(str,51,363,90,24,0,255,32,32,1,st.fonts[ARIAL].font);
+
+			if(st.keys[UP_KEY].state)
+			{
+				meng.obj.texsize.y+=0.01;
+				st.keys[UP_KEY].state=0;
+			}
+
+			if(st.keys[DOWN_KEY].state)
+			{
+				meng.obj.texsize.y-=0.01;
+				st.keys[DOWN_KEY].state=0;
+			}
+
+			if(st.keys[RIGHT_KEY].state)
+			{
+				meng.obj.texsize.x+=0.01;
+				st.keys[RIGHT_KEY].state=0;
+			}
+
+			if(st.keys[LEFT_KEY].state)
+			{
+				meng.obj.texsize.x-=0.01;
+				st.keys[LEFT_KEY].state=0;
+			}
+
+			if(!CheckColisionMouse(51,363,90,24,0) && st.mouse1)
+			{
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+
+
+		}
 
 		sprintf(str,"Tex.Pan %.2f %.2f",meng.obj.texpan.x, meng.obj.texpan.y);
 		DrawString(str,51,411,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
@@ -758,38 +807,41 @@ static void ViewPortCommands()
 		}
 	}
 
-	if(st.keys[UP_KEY].state)
+	if(meng.command!=TEX_SIZE_OBJ)
 	{
-		st.Camera.position.y-=100;
-	}
+		if(st.keys[UP_KEY].state)
+		{
+			st.Camera.position.y-=100;
+		}
 
-	if(st.keys[DOWN_KEY].state)
-	{
-		st.Camera.position.y+=100;
-	}
+		if(st.keys[DOWN_KEY].state)
+		{
+			st.Camera.position.y+=100;
+		}
 
-	if(st.keys[RIGHT_KEY].state)
-	{
-		st.Camera.position.x+=100;
-	}
+		if(st.keys[RIGHT_KEY].state)
+		{
+			st.Camera.position.x+=100;
+		}
 
-	if(st.keys[LEFT_KEY].state)
-	{
-		st.Camera.position.x-=100;
-	}
+		if(st.keys[LEFT_KEY].state)
+		{
+			st.Camera.position.x-=100;
+		}
 
-	if(st.mouse_wheel>0)
-	{
-		if(st.Camera.dimension.x<2) st.Camera.dimension.x+=0.1;
-		if(st.Camera.dimension.y<2) st.Camera.dimension.y+=0.1;
-		st.mouse_wheel=0;
-	}
+		if(st.mouse_wheel>0)
+		{
+			if(st.Camera.dimension.x<2) st.Camera.dimension.x+=0.1;
+			if(st.Camera.dimension.y<2) st.Camera.dimension.y+=0.1;
+			st.mouse_wheel=0;
+		}
 
-	if(st.mouse_wheel<0)
-	{
-		if(st.Camera.dimension.x>0.4) st.Camera.dimension.x-=0.1;
-		if(st.Camera.dimension.y>0.4) st.Camera.dimension.y-=0.1;
-		st.mouse_wheel=0;
+		if(st.mouse_wheel<0)
+		{
+			if(st.Camera.dimension.x>0.4) st.Camera.dimension.x-=0.1;
+			if(st.Camera.dimension.y>0.4) st.Camera.dimension.y-=0.1;
+			st.mouse_wheel=0;
+		}
 	}
 }
 
