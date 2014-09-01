@@ -21,6 +21,7 @@
 
 #define EDIT_OBJ 13
 #define EDIT_OBJ_TYPE 14
+#define OBJ_EDIT_BOX 15
 
 struct mEng
 {

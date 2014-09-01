@@ -2091,10 +2091,11 @@ void Renderer()
 
 				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
 				
+				glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
+
 				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
 				glRotatef(ent[i].ang,0.0,0.0,1.0);
 				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-				glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
 				
 				if(ent[i].type==LINE)
 				{
@@ -2142,6 +2143,9 @@ void Renderer()
 				//glBlendEquation(GL_FUNC_ADD);
 				
 				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
+
+				glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
+
 				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
 				glRotatef(ent[i].ang,0.0,0.0,1.0);
 				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
