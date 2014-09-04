@@ -32,6 +32,7 @@ struct mEng
 	int16 scroll;
 	int16 scroll2;
 	uint16 command2;
+	uint16 sub_com;
 	uint16 com_id;
 	GLuint tex_selection;
 	uint32 tex_ID;

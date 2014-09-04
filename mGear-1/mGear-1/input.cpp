@@ -149,6 +149,7 @@ void InputInit()
 
 void InputProcess()
 {
+	size_t len;
 		while(SDL_PollEvent(&events))
 		{
 				if(events.type==SDL_QUIT) st.quit=1;
@@ -185,7 +186,18 @@ void InputProcess()
 						}
 					}
 				}
-
+				
+				if(st.keys[BACKSPACE_KEY].state && st.Text_Input)
+				{
+					len=strlen(st.TextInput);
+					st.TextInput[len]='\b';
+					st.TextInput[len-1]='\0';
+					st.keys[BACKSPACE_KEY].state=0;
+				}
+				
+				if(events.type==SDL_TEXTINPUT)
+					strcat(st.TextInput,events.text.text);
+				
 				if(events.type==SDL_MOUSEMOTION)
 				{
 					st.mouse.x=events.motion.x;

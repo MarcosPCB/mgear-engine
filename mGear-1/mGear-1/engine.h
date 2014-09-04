@@ -462,6 +462,10 @@ struct _SETTINGS
 	uint8 quit;
 	uint8 PlayingVideo;
 
+	char TextInput[128];
+	char TextEdit[32];
+	uint8 Text_Input;
+
 	_MGM Current_Map;
 	_SPRITES Game_Sprites[MAX_SPRITES];
 	uint16 num_sprites;

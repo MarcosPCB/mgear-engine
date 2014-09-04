@@ -522,18 +522,126 @@ static void PannelLeft()
 			DrawUI(400,300,200,200,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
 
 			sprintf(str,"X %.2f",st.Current_Map.obj[i].position.x);
-			DrawStringUI(str,400,225,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			if(CheckColisionMouse(400,225,190,50,0) && !meng.sub_com)
+			{
+				DrawStringUI(str,400,225,190,50,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.sub_com=1;
+					sprintf(st.TextInput,"%.2f",st.Current_Map.obj[i].position.x);
+					SDL_StartTextInput();
+					st.Text_Input=1;
+					st.mouse1=0;
+				}
+			}
+			else
+			if(meng.sub_com==1)
+			{
+				DrawStringUI(str,400,225,190,50,0,255,32,32,1,st.fonts[ARIAL].font);
+				st.Current_Map.obj[i].position.x=atof(st.TextInput);
+				if(st.keys[ESC_KEY].state)
+				{
+					SDL_StopTextInput();
+					st.Text_Input=0;
+					meng.sub_com=0;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+			else
+				DrawStringUI(str,400,225,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
 
 			sprintf(str,"Y %.2f",st.Current_Map.obj[i].position.y);
-			DrawStringUI(str,400,275,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			if(CheckColisionMouse(400,275,190,50,0) && !meng.sub_com)
+			{
+				DrawStringUI(str,400,275,190,50,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.sub_com=2;
+					sprintf(st.TextInput,"%.2f",st.Current_Map.obj[i].position.y);
+					SDL_StartTextInput();
+					st.Text_Input=1;
+					st.mouse1=0;
+				}
+			}
+			else
+			if(meng.sub_com==2)
+			{
+				DrawStringUI(str,400,275,190,50,0,255,32,32,1,st.fonts[ARIAL].font);
+				st.Current_Map.obj[i].position.y=atof(st.TextInput);
+				if(st.keys[ESC_KEY].state)
+				{
+					SDL_StopTextInput();
+					st.Text_Input=0;
+					meng.sub_com=0;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+			else
+				DrawStringUI(str,400,275,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
 
 			sprintf(str,"SX %.2f",st.Current_Map.obj[i].size.x);
-			DrawStringUI(str,400,325,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			if(CheckColisionMouse(400,325,190,50,0) && !meng.sub_com)
+			{
+				DrawStringUI(str,400,325,190,50,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.sub_com=3;
+					sprintf(st.TextInput,"%.2f",st.Current_Map.obj[i].size.x);
+					SDL_StartTextInput();
+					st.Text_Input=1;
+					st.mouse1=0;
+				}
+			}
+			else
+			if(meng.sub_com==3)
+			{
+				DrawStringUI(str,400,325,190,50,0,255,32,32,1,st.fonts[ARIAL].font);
+				st.Current_Map.obj[i].size.x=atof(st.TextInput);
+				if(st.keys[ESC_KEY].state)
+				{
+					SDL_StopTextInput();
+					st.Text_Input=0;
+					meng.sub_com=0;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+			else
+				DrawStringUI(str,400,325,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
 
 			sprintf(str,"SY %.2f",st.Current_Map.obj[i].size.y);
-			DrawStringUI(str,400,375,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
 
-			if(st.keys[ESC_KEY].state)
+			if(CheckColisionMouse(400,375,190,50,0) && !meng.sub_com)
+			{
+				DrawStringUI(str,400,375,190,50,0,255,128,32,1,st.fonts[ARIAL].font);
+				if(st.mouse1)
+				{
+					meng.sub_com=4;
+					sprintf(st.TextInput,"%.2f",st.Current_Map.obj[i].size.y);
+					SDL_StartTextInput();
+					st.Text_Input=1;
+					st.mouse1=0;
+				}
+			}
+			else
+			if(meng.sub_com==4)
+			{
+				DrawStringUI(str,400,375,190,50,0,255,32,32,1,st.fonts[ARIAL].font);
+				st.Current_Map.obj[i].size.y=atof(st.TextInput);
+				if(st.keys[ESC_KEY].state)
+				{
+					SDL_StopTextInput();
+					st.Text_Input=0;
+					meng.sub_com=0;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+			else
+				DrawStringUI(str,400,375,190,50,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			if(st.keys[ESC_KEY].state && !meng.sub_com)
 			{
 				meng.command=meng.pannel_choice;
 				st.keys[ESC_KEY].state=0;
