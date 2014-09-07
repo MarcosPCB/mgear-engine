@@ -27,9 +27,9 @@ void Menu()
 				st.keys[ESC_KEY].state=0;
 			}
 
-			if(CheckColisionMouse(400,200,200,50,0))
+			if(CheckColisionMouse(st.screenx/2,(st.screeny/2)-200,200,50,0))
 			{
-				DrawStringUI("Start New Map",400,200,200,50,0,255,128,32,1,st.fonts[GEOMET].font);
+				DrawStringUI("Start New Map",st.screenx/2,(st.screeny/2)-200,200,50,0,255,128,32,1,st.fonts[GEOMET].font);
 				if(st.mouse1)
 				{
 					meng.scroll=0;
@@ -88,8 +88,8 @@ void Menu()
 					meng.obj.color.g=255;
 					meng.obj.color.b=255;
 					meng.obj.color.a=1;
-					meng.obj.texsize.x=1;
-					meng.obj.texsize.y=1;
+					meng.obj.texsize.x=-1;
+					meng.obj.texsize.y=-1;
 					meng.obj.texpan.x=0;
 					meng.obj.texpan.y=0;
 					meng.obj.type=MIDGROUND;
@@ -97,13 +97,13 @@ void Menu()
 				}
 			}
 			else
-				DrawStringUI("Start New Map",400,200,200,50,0,255,255,255,1,st.fonts[GEOMET].font);
+				DrawStringUI("Start New Map",st.screenx/2,(st.screeny/2)-200,200,50,0,255,255,255,1,st.fonts[GEOMET].font);
 
 			if(st.gt==GAME_MENU) 
 			{
-				if(CheckColisionMouse(400,150,150,50,0))
+				if(CheckColisionMouse(st.screenx/2,(st.screeny/2)-250,150,50,0))
 				{
-					DrawStringUI("Save Map",400,150,150,50,0,255,128,32,1,st.fonts[GEOMET].font);
+					DrawStringUI("Save Map",st.screenx/2,(st.screeny/2)-250,150,50,0,255,128,32,1,st.fonts[GEOMET].font);
 					if(st.mouse1)
 					{
 						meng.menu_sel=1;
@@ -111,12 +111,12 @@ void Menu()
 					}
 				}
 				else
-					DrawStringUI("Save Map",400,150,150,50,0,255,255,255,1,st.fonts[GEOMET].font);
+					DrawStringUI("Save Map",st.screenx/2,(st.screeny/2)-250,150,50,0,255,255,255,1,st.fonts[GEOMET].font);
 			}
 
-			if(CheckColisionMouse(400,250,150,50,0))
+			if(CheckColisionMouse(st.screenx/2,(st.screeny/2)-150,150,50,0))
 			{
-				DrawStringUI("Load Map",400,250,150,50,0,255,128,32,1,st.fonts[GEOMET].font);
+				DrawStringUI("Load Map",st.screenx/2,(st.screeny/2)-150,150,50,0,255,128,32,1,st.fonts[GEOMET].font);
 				if(st.mouse1)
 				{
 					meng.menu_sel=2;
@@ -124,11 +124,11 @@ void Menu()
 				}
 			}
 			else
-				DrawStringUI("Load Map",400,250,150,50,0,255,255,255,1,st.fonts[GEOMET].font);
+				DrawStringUI("Load Map",st.screenx/2,(st.screeny/2)-150,150,50,0,255,255,255,1,st.fonts[GEOMET].font);
 
-			if(CheckColisionMouse(400,300,100,50,0))
+			if(CheckColisionMouse(st.screenx/2,(st.screeny/2)-100,100,50,0))
 			{
-				DrawStringUI("Options",400,300,100,50,0,255,128,32,1,st.fonts[GEOMET].font);
+				DrawStringUI("Options",st.screenx/2,(st.screeny/2)-100,100,50,0,255,128,32,1,st.fonts[GEOMET].font);
 				if(st.mouse1)
 				{
 					meng.menu_sel=3;
@@ -136,16 +136,16 @@ void Menu()
 				}
 			}
 			else
-				DrawStringUI("Options",400,300,100,50,0,255,255,255,1,st.fonts[GEOMET].font);
+				DrawStringUI("Options",st.screenx/2,(st.screeny/2)-100,100,50,0,255,255,255,1,st.fonts[GEOMET].font);
 
-			if(CheckColisionMouse(400,350,50,50,0))
+			if(CheckColisionMouse(st.screenx/2,(st.screeny/2)-50,50,50,0))
 			{
-				DrawStringUI("Quit",400,350,50,50,0,255,128,32,1,st.fonts[GEOMET].font);
+				DrawStringUI("Quit",st.screenx/2,(st.screeny/2)-50,50,50,0,255,128,32,1,st.fonts[GEOMET].font);
 				if(st.mouse1)
 					Quit();
 			}
 			else
-				DrawStringUI("Quit",400,350,50,50,0,255,255,255,1,st.fonts[GEOMET].font);
+				DrawStringUI("Quit",st.screenx/2,(st.screeny/2)-50,50,50,0,255,255,255,1,st.fonts[GEOMET].font);
 		}
 		else
 		if(meng.menu_sel==2)
@@ -160,9 +160,9 @@ void Menu()
 				{
 					if(i==num_files) break;
 
-					if(CheckColisionMouse(400,j+scroll,300,50,0))
+					if(CheckColisionMouse(st.screenx/2,j+scroll,300,50,0))
 					{
-						DrawString2UI(files[i],400,j+scroll,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+						DrawString2UI(files[i],st.screenx/2,j+scroll,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
 						if(st.mouse1)
 						{
 							size=strlen(files[i]);
@@ -209,9 +209,9 @@ void Menu()
 
 									for(uint16 a=0;a<st.Current_Map.num_mgg;a++)
 									{
-										DrawUI(400,300,800,600,0,0,0,0,0,0,1,1,mgg[0].frames[4],1);
+										DrawUI(st.screenx/2,st.screeny/2,st.screenx,st.screeny,0,0,0,0,0,0,1,1,mgg[0].frames[4],1);
 										sprintf(lo,"Loading %d%",(a/st.Current_Map.num_mgg)*100);
-										DrawString2UI(lo,400,300,1,1,0,255,255,255,1,st.fonts[GEOMET].font);
+										DrawString2UI(lo,st.screenx/2,st.screeny/2,1,1,0,255,255,255,1,st.fonts[GEOMET].font);
 										if(CheckMGGFile(st.Current_Map.MGG_FILES[a]))
 										{
 											LoadMGG(&mgg[id],st.Current_Map.MGG_FILES[a]);
@@ -263,7 +263,7 @@ void Menu()
 					}
 					else
 					{
-						DrawString2UI(files[i],400,j+scroll,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
+						DrawString2UI(files[i],st.screenx/2,j+scroll,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
 					}
 
 					i++;

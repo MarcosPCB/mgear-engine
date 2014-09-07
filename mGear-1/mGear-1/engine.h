@@ -201,6 +201,7 @@ enum Material
 
 struct _BODY
 {
+	uint8 physics_on;
 	float mass;
 	Pos size;
 	float max_elasticy;
@@ -229,13 +230,13 @@ enum _OBJTYPE
 	BLANK
 };
 
-//Structure for te sprites in the game
+//Structure for the sprites in the game
 //When you create a sprite in the source code
 //You must add it to the structure
 struct _SPRITES
 {
 	char name[64];
-	_OBJTYPE place;
+	_OBJTYPE type_s;
 	int32 ID;
 	int32 GameID;
 	int16 tag;
@@ -323,9 +324,18 @@ struct _MGMSPRITE
 	//or else, just leave it blank
 	char game_name[64]; 
 
+	_OBJTYPE type_s;
+
+	uint32 GameID;
+
+	Body bode;
+
 	int16 tag;
 
 	int16 health;
+
+	int16 current_sector;
+	int8 current_layer;
 
 	Pos position;
 	Pos size;
@@ -446,6 +456,7 @@ struct _SETTINGS
 	uint8 fullscreen;
 	uint32 audiof;
 	uint8 audioc;
+	uint8 vsync;
 	uint32 num_entities;
 	uint32 num_tex;
 	uint32 num_hud;
@@ -463,7 +474,6 @@ struct _SETTINGS
 	uint8 PlayingVideo;
 
 	char TextInput[128];
-	char TextEdit[32];
 	uint8 Text_Input;
 
 	_MGM Current_Map;

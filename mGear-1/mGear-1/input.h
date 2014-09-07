@@ -87,3 +87,6 @@ void InputInit();
 void InputProcess();
 
 void InputClose();
+
+uint8 StartText();
+void StopText();

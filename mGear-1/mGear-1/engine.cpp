@@ -207,6 +207,7 @@ void Init()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
+	SDL_GL_SetSwapInterval(st.vsync);
 
 	LogApp("Opengl initialized");
 
@@ -299,6 +300,7 @@ void RestartVideo()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
+	SDL_GL_SetSwapInterval(st.vsync);
 	
 	if(SDL_GetRelativeMouseMode())
 	{
@@ -1196,32 +1198,6 @@ int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 	double tmp;
 	uint8 val=0;
 
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	if(val==8) return 1;
-
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
@@ -1231,10 +1207,10 @@ int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 		{
 			ent[i].stat=USED;
 			ent[i].ang=ang;
-			ent[i].pos.x=(st.screenx*x)/800;
-			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=(sizex*st.screenx)/800;
-			ent[i].size.y=(sizey*st.screeny)/600;
+			ent[i].pos.x=x;
+			ent[i].pos.y=y;
+			ent[i].size.x=sizex;
+			ent[i].size.y=sizey;
 			ent[i].type=HUD;
 			ent[i].data=data;
 			ent[i].x1y1.x=x1;
@@ -1259,32 +1235,6 @@ int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 	double tmp;
 	uint8 val=0;
 
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	if(val==8) return 1;
-
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
@@ -1294,10 +1244,10 @@ int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 		{
 			ent[i].stat=USED;
 			ent[i].ang=ang;
-			ent[i].pos.x=(st.screenx*x)/800;
-			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=(sizex*st.screenx)/800;
-			ent[i].size.y=(sizey*st.screeny)/600;
+			ent[i].pos.x=x;
+			ent[i].pos.y=y;
+			ent[i].size.x=sizex;
+			ent[i].size.y=sizey;
 			ent[i].type=UI;
 			ent[i].data=data;
 			ent[i].x1y1.x=x1;
@@ -1397,33 +1347,6 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 	double tmp;
 
 	uint8 val=0;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	if(val==8) return 1;
-
 	
 	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
 	
@@ -1452,10 +1375,10 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 			ent[i].ang=ang;
 			ent[i].stat=USED;
 			ent[i].type=TEXT;
-			ent[i].pos.x=(st.screenx*x)/800;
-			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=(sizex*st.screenx)/800;
-			ent[i].size.y=(sizey*st.screeny)/600;
+			ent[i].pos.x=x;
+			ent[i].pos.y=y;
+			ent[i].size.x=sizex;
+			ent[i].size.y=sizey;
 			ent[i].x1y1.x=0;
 			ent[i].x1y1.y=0;
 			ent[i].x2y2.x=1;
@@ -1489,33 +1412,6 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 	double tmp;
 
 	uint8 val=0;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>800) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>600) val++;
-
-	if(val==8) return 1;
-
 	
 	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
 	
@@ -1544,10 +1440,10 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 			ent[i].ang=ang;
 			ent[i].stat=USED;
 			ent[i].type=TEXT_UI;
-			ent[i].pos.x=(st.screenx*x)/800;
-			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=(sizex*st.screenx)/800;
-			ent[i].size.y=(sizey*st.screeny)/600;
+			ent[i].pos.x=x;
+			ent[i].pos.y=y;
+			ent[i].size.x=sizex;
+			ent[i].size.y=sizey;
 			ent[i].x1y1.x=0;
 			ent[i].x1y1.y=0;
 			ent[i].x2y2.x=1;
@@ -1605,10 +1501,10 @@ int8 DrawString2UI(const char *text, double x, double y, double sizex, double si
 			ent[i].ang=ang;
 			ent[i].stat=USED;
 			ent[i].type=TEXT_UI;
-			ent[i].pos.x=(st.screenx*x)/800;
-			ent[i].pos.y=(st.screeny*y)/600;
-			ent[i].size.x=((msg->w*sizex)*st.screenx)/800;
-			ent[i].size.y=((msg->h*sizey)*st.screeny)/600;
+			ent[i].pos.x=x;
+			ent[i].pos.y=y;
+			ent[i].size.x=(msg->w*sizex);
+			ent[i].size.y=(msg->h*sizey);
 			ent[i].x1y1.x=0;
 			ent[i].x1y1.y=0;
 			ent[i].x2y2.x=1;

@@ -254,3 +254,24 @@ void InputClose()
 		}
 	}
 }
+
+uint8 StartText()
+{
+	if(st.Text_Input)
+	{
+		LogApp("Text Input already started");
+		return 0;
+	}
+	else
+	{
+		SDL_StartTextInput();
+		st.Text_Input=1;
+		return 1;
+	}
+}
+
+void StopText()
+{
+	st.Text_Input=0;
+	SDL_StopTextInput();
+}
