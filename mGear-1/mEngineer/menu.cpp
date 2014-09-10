@@ -94,6 +94,8 @@ void Menu()
 					meng.obj.texpan.y=0;
 					meng.obj.type=MIDGROUND;
 
+					memset(&meng.spr.body,0,sizeof(Body));
+
 				}
 			}
 			else

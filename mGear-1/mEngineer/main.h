@@ -69,6 +69,7 @@ struct mEng
 		int16 health;
 		uint16 anim; //if the game actor is animated than leave it NULL
 		uint32 gid;
+		Body body;
 	} spr, spr2;
 
 	uint32 palette[256][256];

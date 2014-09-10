@@ -713,8 +713,94 @@ static void PannelLeft()
 		}
 		else
 			DrawStringUI(str,51,405,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
+
+		if(meng.command==SPRITE_PHY)
+		{
+			DrawUI(st.screenx/2, st.screeny/2, 230,200,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
+
+			sprintf(str,"Physics? %d",meng.spr.body.physics_on);
+
+			if(CheckColisionMouse(st.screenx/2, st.screeny/2-80,90,20,0))
+			{
+				DrawString2UI(str,st.screenx/2, st.screeny/2-80,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+
+				if(st.mouse1)
+				{
+					if(meng.spr.body.physics_on==0) meng.spr.body.physics_on=1;
+					else meng.spr.body.physics_on=0;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,st.screenx/2, st.screeny/2-80,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			sprintf(str,"Mass %.2f",meng.spr.body.mass);
+
+			if(CheckColisionMouse(st.screenx/2, st.screeny/2-40,90,40,0))
+			{
+				DrawString2UI(str,st.screenx/2, st.screeny/2-40,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+
+				if(st.mouse1 && !StartText())
+				{
+					if(meng.spr.body.mass==0)
+						sprintf(st.TextInput,"%.0f",meng.spr.body.mass);
+					else
+						sprintf(st.TextInput,"%.2f",meng.spr.body.mass);
+					meng.sub_com=10;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,st.screenx/2, st.screeny/2-40,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			if(meng.sub_com==10)
+			{
+				DrawString2UI(str,st.screenx/2, st.screeny/2-40,0.5,0.5,0,255,32,32,1,st.fonts[ARIAL].font);
+				meng.spr.body.mass=atof(st.TextInput);
+				if(st.keys[ESC_KEY].state)
+				{
+					StopText();
+					meng.sub_com=0;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+
+			sprintf(str,"Flammable? %d",meng.spr.body.flamable);
+
+			if(CheckColisionMouse(st.screenx/2, st.screeny/2,90,40,0))
+			{
+				DrawString2UI(str,st.screenx/2, st.screeny/2,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+
+				if(st.mouse1)
+				{
+					if(meng.spr.body.flamable==0) meng.spr.body.flamable=1;
+					else meng.spr.body.flamable=0;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,st.screenx/2, st.screeny/2,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
+
+			sprintf(str,"Explosive? %d",meng.spr.body.explosive);
+
+			if(CheckColisionMouse(st.screenx/2, st.screeny/2+40,90,40,0))
+			{
+				DrawString2UI(str,st.screenx/2, st.screeny/2+40,0.5,0.5,0,255,128,32,1,st.fonts[ARIAL].font);
+
+				if(st.mouse1)
+				{
+					if(meng.spr.body.explosive==0) meng.spr.body.explosive=1;
+					else meng.spr.body.explosive=0;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,st.screenx/2, st.screeny/2+40,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL].font);
+		}
 	}
-	//else
 
 	//OBJ editing
 
@@ -1884,6 +1970,8 @@ int main(int argc, char *argv[])
 
 	meng.path=(char*) malloc(2);
 	strcpy(meng.path,".");
+
+	memset(&meng.spr.body,0,sizeof(Body));
 
 	while(!st.quit)
 	{
