@@ -70,10 +70,10 @@ void Menu()
 						st.Current_Map.sprites[i].type=non;
 
 					memset(st.Current_Map.MGG_FILES,0,32*256);
+					meng.num_mgg-=st.Current_Map.num_mgg;
 					st.Current_Map.num_mgg=0;
 
 					memset(meng.mgg_list,0,64*256);
-					meng.num_mgg=0;
 
 					st.gt=INGAME;
 
@@ -94,7 +94,9 @@ void Menu()
 					meng.obj.texpan.y=0;
 					meng.obj.type=MIDGROUND;
 
-					memset(&meng.spr.body,0,sizeof(Body));
+					memset(&meng.spr,0,sizeof(meng.spr));
+					meng.spr.gid=-1;
+					meng.spr2.gid=-1;
 
 				}
 			}

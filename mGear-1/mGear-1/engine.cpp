@@ -648,7 +648,7 @@ void FreeMGG(_MGG *file)
 
 void InitMGG()
 {
-	for(register uint8 i=0; i<MAX_MGG; i++)
+	for(register uint16 i=0; i<MAX_MGG; i++)
 	{
 		memset(&mgg[i],0,sizeof(_MGG));
 		mgg[i].type=NONE;

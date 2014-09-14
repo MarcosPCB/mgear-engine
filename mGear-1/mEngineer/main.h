@@ -37,8 +37,8 @@
 
 struct mEng
 {
-	char mgg_list[64][256];
-	uint8 num_mgg;
+	char mgg_list[32][256];
+	uint16 num_mgg;
 	uint8 pannel_choice;
 	uint8 command;
 	int16 scroll;
@@ -47,8 +47,11 @@ struct mEng
 	uint16 sub_com;
 	uint16 com_id;
 	GLuint tex_selection;
+	GLuint tex2_sel;
+	uint32 tex2_ID;
+	int16 tex2_MGGID;
 	uint32 tex_ID;
-	int8 tex_MGGID;
+	int16 tex_MGGID;
 	uint16 mgg_sel;
 	uint16 menu_sel;
 

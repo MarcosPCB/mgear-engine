@@ -27,6 +27,7 @@
 #define MAX_FONTS 8
 #define MAX_SECTORS 512
 #define MAX_LIGHT 64
+#define MAX_MAPMGG 32
 
 #define QLZ_COMPRESSION_LEVEL 3
 #define QLZ_STREAMING_BUFFER 0
@@ -38,11 +39,12 @@ typedef FMOD_CHANNEL Channel;
 //MGG format
 #define MAX_FRAMES 65536
 #define MAX_ANIMATIONS 64
-#define MAX_MGG 64
+#define MAX_MGG 256
 
 #define pi 3.14159265
 
 #define MGG_MAP_START 3 //The first slot to be used for loading map MGGs
+#define MGG_SPRITE_START MGG_MAP_START+MAX_MAPMGG
 
 double inline __declspec () __fastcall sqrt14(double n);
 
@@ -176,7 +178,7 @@ struct _MGV
 struct _TEXTURES
 {
 	uint32 ID;
-	uint8 MGG_ID : 6;
+	uint16 MGG_ID;
 	char name[32];
 };
 
@@ -236,6 +238,8 @@ enum _OBJTYPE
 struct _SPRITES
 {
 	char name[64];
+	int16 MGG_ID;
+	int32 frame;
 	_OBJTYPE type_s;
 	int32 ID;
 	int32 GameID;
@@ -311,7 +315,7 @@ struct _MGMOBJ
 struct _MGMSPRITE
 {
 	//if it's just a texture, you MUST inform the frame ID
-	uint8 MGG_ID;
+	uint16 MGG_ID;
 
 	//Leave it blank if it's not animated
 	uint16 animation;
@@ -328,7 +332,7 @@ struct _MGMSPRITE
 
 	uint32 GameID;
 
-	Body bode;
+	Body body;
 
 	int16 tag;
 

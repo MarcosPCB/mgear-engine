@@ -102,11 +102,11 @@ static void MGGList()
 {
 	uint16 j=0;
 	DrawUI(st.screenx/2,st.screeny/2,250,st.screeny,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
-	if(meng.num_mgg>0)
+	if(st.Current_Map.num_mgg>0)
 	{
 		for(uint16 i=25;i<8000;i+=50)
 		{
-			if(j==meng.num_mgg)
+			if(j==st.Current_Map.num_mgg)
 				break;
 			else
 			{
@@ -193,19 +193,19 @@ static int16 MGGLoad()
 	FILE *f;
 	DIR *dir;
 
-	int8 id, loaded=0;
-	uint16 id2=meng.num_mgg, id3=0;
+	int16 id, loaded=0;
+	uint16 id2=st.Current_Map.num_mgg, id3=0;
 
 	char files[512][512];
 	char *path2;
 
 	size_t size;
 
-	for(uint8 i=3;i<MAX_MGG;i++)
+	for(uint8 i=MGG_MAP_START;i<MGG_MAP_START+MAX_MAPMGG;i++)
 	{
-		if(i==MAX_MGG-1 && mgg[i].type!=NONE)
+		if(i==MGG_MAP_START+MAX_MAPMGG && mgg[i].type!=NONE)
 		{
-			LogApp("Cannot load MGG, reached max number of MGG loaded");
+			LogApp("Cannot load MGG, reached max number of map MGGs loaded");
 			return 0;
 		}
 
@@ -269,7 +269,7 @@ static int16 MGGLoad()
 						Renderer();
 						LoadMGG(&mgg[id],path2);
 
-						for(uint16 u=0;u<meng.num_mgg;u++)
+						for(uint8 u=0;u<st.Current_Map.num_mgg;u++)
 						{
 							if(strcmp(meng.mgg_list[u],mgg[id].name)==NULL)
 							{
@@ -290,8 +290,9 @@ static int16 MGGLoad()
 						else if(loaded==0);
 						{
 							strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg],path2);
-							strcpy(meng.mgg_list[meng.num_mgg],mgg[id].name);
+							strcpy(meng.mgg_list[st.Current_Map.num_mgg],mgg[id].name);
 							meng.num_mgg++;
+							st.Current_Map.num_mgg++;
 							LogApp("MGG %s loaded",path2);
 							meng.scroll=0;
 							meng.pannel_choice=2;
@@ -354,7 +355,7 @@ static void PannelLeft()
 {
 	uint8 mouse=0;
 	char num[32], str[64];
-	uint16 i=0;
+	uint16 i=0, j=0;
 	Pos p;
 
 	DrawUI(50,st.screeny/2,100,st.screeny,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
@@ -405,7 +406,14 @@ static void PannelLeft()
 		DrawStringUI("Add an OBJ",st.screenx/2,st.screeny-50,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-		if(st.mouse1) meng.command=meng.pannel_choice=meng.command2=3;
+		if(st.mouse1)
+		{
+			meng.tex_selection=meng.tex2_sel;
+			meng.tex_ID=meng.tex2_ID;
+			meng.tex_MGGID=meng.tex2_MGGID;
+
+			meng.command=meng.pannel_choice=meng.command2=3;
+		}
 	}
 	
 	if(!CheckColisionMouse(75,75,48,48,0))
@@ -421,7 +429,21 @@ static void PannelLeft()
 		DrawStringUI("Add a sprite",st.screenx/2,st.screeny-50,200,50,0,255,128,32,1,st.fonts[ARIAL].font);
 		//}
 
-			if(st.mouse1) meng.command=meng.pannel_choice=4;
+			if(st.mouse1)
+			{
+				if(meng.spr.gid!=-1)
+				{
+					meng.tex2_sel=meng.tex_selection;
+					meng.tex2_ID=meng.tex_ID;
+					meng.tex2_MGGID=meng.tex_MGGID;
+
+					meng.tex_selection=mgg[st.Game_Sprites[meng.spr.gid].MGG_ID].frames[st.Game_Sprites[meng.spr.gid].frame];
+					meng.tex_ID=st.Game_Sprites[meng.spr.gid].frame;
+					meng.tex_MGGID=st.Game_Sprites[meng.spr.gid].MGG_ID;
+				}
+
+				meng.command=meng.pannel_choice=4;
+			}
 	}
 	
 	if(!CheckColisionMouse(51,123,60,24,0))
@@ -612,35 +634,69 @@ static void PannelLeft()
 			if(st.mouse1)
 			{
 				meng.command=ACTOR_SPRITE;
+				meng.scroll=0;
 				st.mouse1=0;
 			}
 		}
 		else
 			DrawStringUI(str,51,315,90,24,0,255,255,255,1,st.fonts[ARIAL].font);
-		/*
-		if(meng.command==OBJ_AMBL)
+		
+		if(meng.command==ACTOR_SPRITE)
 		{
-			DrawStringUI(str,51,315,90,24,0,255,32,32,1,st.fonts[ARIAL].font);
+			DrawUI(st.screenx/2,st.screeny/2,100,st.screeny,0,255,255,255,0,0,1,1,mgg[0].frames[4],1);
 
-			if(st.keys[RIGHT_KEY].state)
+			i=0;
+			for(j=25+meng.scroll;j<st.screeny;j+=50)
 			{
-				meng.obj.amblight+=0.01;
-				st.keys[RIGHT_KEY].state=0;
+				if(i==st.num_sprites)
+					break;
+				else
+				if(CheckColisionMouse(st.screenx/2,j+meng.scroll,90,50,0))
+				{
+					DrawStringUI(st.Game_Sprites[i].name,st.screenx/2,j+meng.scroll,90,50,0,255,128,32,1,st.fonts[ARIAL].font);
+
+					if(st.mouse1)
+					{
+						meng.spr.gid=i;
+						if(st.Game_Sprites[i].frame>-1)
+						{
+							meng.tex2_sel=meng.tex_selection;
+							meng.tex2_ID=meng.tex_ID;
+							meng.tex2_MGGID=meng.tex_MGGID;
+							meng.tex_selection=mgg[st.Game_Sprites[i].MGG_ID].frames[st.Game_Sprites[i].frame];
+							meng.tex_ID=st.Game_Sprites[i].frame;
+							meng.tex_MGGID=st.Game_Sprites[i].MGG_ID;
+						}
+						st.mouse1=0;
+						meng.command=meng.pannel_choice;
+					}
+				}
+				else
+					DrawStringUI(st.Game_Sprites[i].name,st.screenx/2,j+meng.scroll,90,50,0,255,255,255,1,st.fonts[ARIAL].font);
+
+				i++;
 			}
 
-			if(st.keys[LEFT_KEY].state)
+			if(st.mouse_wheel>0)
 			{
-				meng.obj.amblight-=0.01;
-				st.keys[LEFT_KEY].state=0;
+				meng.scroll+=50;
+				st.mouse_wheel=0;
 			}
 
-			if(!CheckColisionMouse(51,315,90,24,0) && st.mouse1)
+			if(st.mouse_wheel<0)
+			{
+				meng.scroll-=50;
+				st.mouse_wheel=0;
+			}
+
+			if(st.keys[ESC_KEY].state)
 			{
 				meng.command=meng.pannel_choice;
-				st.mouse1=0;
+				meng.scroll=0;
+				st.keys[ESC_KEY].state=0;
 			}
 		}
-		*/
+
 		sprintf(str,"Tag %d",meng.spr.tag);
 
 		if(CheckColisionMouse(51,345,90,24,0))
@@ -1934,6 +1990,83 @@ static void MGGListLoad()
 
 }
 
+static void SpriteListLoad()
+{
+	FILE *file;
+	char str[3][64], tmp[1024];
+	int value[2];
+	register uint16 i=MGG_SPRITE_START, line=0;
+
+	if((file=fopen("sprite.list","r"))==NULL)
+	{
+		LogApp("Could not open the sprite list");
+		Quit();
+	}
+
+	while(!feof(file))
+	{
+		DrawStringUI("Loading...",st.screenx/2,st.screeny/2,200,50,0,255,255,255,1,st.fonts[GEOMET].font);
+		memset(tmp,0,sizeof(str));
+		fgets(tmp,1024,file);
+		sscanf(tmp,"%s %s %d %s %d",str[0], str[1], &value[0], str[2], &value[1]);
+		if(strcmp(str[0],"\0")==NULL)
+		{
+			line++;
+			continue;
+		}
+		else
+		if(strcmp(str[0],"SPRITE")==NULL)
+		{
+			strcpy(st.Game_Sprites[value[0]].name,str[1]);
+			if(strcmp(str[2],"NONE")==NULL)
+			{
+				st.Game_Sprites[value[0]].MGG_ID=-1;
+				st.Game_Sprites[value[0]].frame=-1;
+				st.num_sprites++;
+				line++;
+			}
+			else
+			{
+				if(CheckMGGFile(str[2]))
+				{
+					DrawString2UI(str[2],st.screenx/2,(st.screeny/2)+50,0.5,0.5,0,255,255,255,1,st.fonts[ARIAL_BOULD].font);
+					Renderer();
+					if(LoadMGG(&mgg[i],str[2]))
+					{
+						st.Game_Sprites[value[0]].MGG_ID=i;
+						st.Game_Sprites[value[0]].frame=value[1];
+						st.num_sprites++;
+						meng.num_mgg++;
+						line++;
+					}
+					else
+					{
+						LogApp("Failed to load sprite MGG: %s at slot %d",str[2], i);
+						line++;
+						continue;
+					}
+				}
+				else
+				{
+					LogApp("Invalid sprite MGG file: %s",str[2]);
+					line++;
+					continue;
+				}
+			}
+		}
+		else
+		{
+			LogApp("Invalid entry at line %d", line);
+			line++;
+			continue;
+		}
+
+		Renderer();
+	}
+
+	LogApp("%d Sprites loaded",st.num_sprites);
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -1956,6 +2089,12 @@ int main(int argc, char *argv[])
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
+
+	meng.num_mgg=0;
+	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
+	st.num_sprites=0;
+
+	SpriteListLoad();
 
 	st.FPSYes=1;
 
