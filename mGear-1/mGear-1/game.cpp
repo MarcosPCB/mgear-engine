@@ -17,6 +17,7 @@ uint16 WriteCFG()
 	st.bpp=32;
 	st.audiof=44100;
 	st.audioc=2;
+	st.vsync=0;
 
 	fprintf(file,"ScreenX = %d\n",st.screenx);
 	fprintf(file,"ScreenY = %d\n",st.screeny);
@@ -24,6 +25,7 @@ uint16 WriteCFG()
 	fprintf(file,"ScreenBPP = %d\n",st.bpp);
 	fprintf(file,"AudioFrequency = %d\n",st.audiof);
 	fprintf(file,"AudioChannels = %d\n",st.audioc);
+	fprintf(file,"VSync = %d\n",st.vsync);
 
 	fclose(file);
 
@@ -49,9 +51,10 @@ uint16 LoadCFG()
 		if(strcmp(str,"FullScreen")==NULL) st.fullscreen=value;
 		if(strcmp(str,"AudioFrequency")==NULL) st.audiof=value;
 		if(strcmp(str,"AudioChannels")==NULL) st.audioc=value;
+		if(strcmp(str,"VSync")==NULL) st.vsync=value;
 	}
 
-	if(!st.screenx || !st.screeny || !st.bpp || !st.audioc || !st.audioc)
+	if(!st.screenx || !st.screeny || !st.bpp || !st.audioc || !st.audioc || st.vsync>1)
 	{
 		fclose(file);
 		if(WriteCFG()==false)
@@ -63,7 +66,7 @@ uint16 LoadCFG()
 	return true;
 
 }
-
+/*
 void createmap()
 {
 	st.Current_Map.num_mgg=2;
@@ -125,9 +128,12 @@ void createmap()
 
 	//FreeMap();
 }
-
+*/
 int main(int argc, char *argv[])
 {
+
+	register uint32 i=0, j=0;
+
 	if(LoadCFG()==false)
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
@@ -136,25 +142,20 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	OpenFont("font01.tff","font01",0);
+	OpenFont("font01.ttf","font01",0);
 
 	InitMGG();
 
-	createmap();
+	//createmap();
 
 	//createmgg();
-	LoadMGG(&mgg[0],"fulgore.mgg");
+	//LoadMGG(&mgg[0],"fulgore.mgg");
 
 	int32 startmovie=1;
 
-	LoadMap("TEST.MAP");
-	LoadMGG(&mgg[3],st.Current_Map.MGG_FILES[0]);
+	//LoadMap("TEST.MAP");
+	//LoadMGG(&mgg[3],st.Current_Map.MGG_FILES[0]);
 	//LoadMGG(&mgg[4],st.Current_Map.MGG_FILES[1]);
-	
-	st.MapTex[0].ID=mgg[3].frames[0];
-	st.MapTex[0].MGG_ID=3;
-	//st.MapTex[1].ID=mgg[4].frames[0];
-	//st.MapTex[1].MGG_ID=4;
 	
 	long long unsigned int time=st.time;
 
@@ -200,7 +201,7 @@ int main(int argc, char *argv[])
 			startmovie=0;
 			st.keys[1].state=0;
 		}
-
+		/*
 		if(st.control_num>0)
 		{
 
@@ -275,23 +276,30 @@ int main(int argc, char *argv[])
 			}
 			
 		}
-
+		*/
 		//DrawMap();
 		
 
-		DrawMap();
+		//DrawMap();
 
-		MAnim(fulg.x-st.Camera.position.x,fulg.y-st.Camera.position.y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
-		DrawSprite(fulg1.x-st.Camera.position.x,fulg1.y-st.Camera.position.y,fulgsize.x,fulgsize.y,0,255,128,32,mgg[0].frames[6],1);
-		sprintf(num,"%f %f",fulg.x,fulg.y);
-		DrawString(num,100,50,0.1,0.1,0,255,255,255,1,st.fonts[0].font);
-		sprintf(num,"%f %f",fulg1.x,fulg1.y);
-		DrawString(num,100,100,0.1,0.1,0,255,255,255,1,st.fonts[0].font);
+		//MAnim(fulg.x-st.Camera.position.x,fulg.y-st.Camera.position.y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
 
-		if(CheckColisionHitbox(fulg,fulgsize,fulg1,fulgsize)==1)
-			{
-				DrawString("HIT",400,400,1,1,0,255,255,255,1,st.fonts[0].font);
-			}
+	
+	uint32 timej, timel;
+
+	//timej=GetTicks();
+
+		for(i=0;i<100;i++)
+			for(j=0;j<100;j++)
+				DrawSprite(j*50,i*50,50,50,0,255,255,255,0,1);
+				//DrawSprite(250,600,250,250,0,255,255,255,0,1);
+				//DrawSprite(250,950,250,250,0,255,255,255,0,1);
+				//DrawSprite(250,1200,250,250,0,255,255,255,0,1);
+				//DrawSprite(250,1500,250,250,0,255,255,255,0,1);
+
+		//timel=GetTicks();
+		//LogApp("For Time: %d",timel-timej);
+			//}
 		
 		//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)
 			//DrawLight(st.Current_Map.light[i].position.x-st.Camera.position.x,st.Current_Map.light[i].position.y-st.Camera.position.y,st.Current_Map.light[i].size.x,st.Current_Map.light[i].size.y,
@@ -299,9 +307,15 @@ int main(int argc, char *argv[])
 
 		
 
-		MainSound();
+		//MainSound();
+
+		timej=GetTicks();
+
 		Renderer();
-		Timer();
+
+		timel=GetTicks();
+		LogApp("Render Time: %d",timel-timej);
+		//Timer();
 	}
 	StopAllSounds();
 	FreeMGG(&mgg[0]);

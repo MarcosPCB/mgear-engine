@@ -13,6 +13,15 @@ _MGG mgg[MAX_MGG];
 
 SDL_Window *wn;
 
+GLdouble vertices[8*50000];
+GLushort index[6*50000];
+GLfloat color[18*400];
+
+uint32 curr_vert=0;
+uint32 curr_color=0;
+uint32 curr_ind=0;
+uint32 curr_ind2=0;
+
 #define _ENGINE_VERSION 0.5
 const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 
@@ -204,10 +213,61 @@ void Init()
 	glOrtho(0,st.screenx,st.screeny,0,0,1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_TEXTURE_2D);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_TEXTURE_2D);
 	SDL_GL_SetSwapInterval(st.vsync);
+
+	//GLfloat vertices[8];
+	//GLfloat color[12];
+	GLenum error;
+	/*
+				vertices[0]=0;
+				
+				vertices[1]=0;
+
+				vertices[2]=50;
+
+				vertices[3]=0;
+
+				vertices[4]=50;
+				vertices[5]=50;
+				
+				vertices[6]=0;
+				vertices[7]=50;
+
+				color[0]=1;
+				color[1]=1;
+				color[2]=1;
+				color[3]=1;
+				color[4]=1;
+				color[5]=1;
+				color[6]=1;
+				color[7]=1;
+				color[8]=1;
+				color[9]=1;
+				color[10]=1;
+				color[11]=1;
+
+				//vertices[8]=0;
+			//vertices[9]=400.0f;
+				/*
+				vertices[10]=0;
+				vertices[11]=0;
+				*/
+				
+				glGenBuffers(1,&st.VBO[0]);
+				glBindBuffer(GL_ARRAY_BUFFER,st.VBO[0]);
+
+				glBufferData(GL_ARRAY_BUFFER,sizeof(vertices),0,GL_STREAM_DRAW);
+
+				glGenBuffers(1,&st.VBO[1]);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,st.VBO[1]);
+
+				glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(index),0,GL_STREAM_DRAW);
+			
+				
+	st.tex_bound=0;
 
 	LogApp("Opengl initialized");
 
@@ -972,9 +1032,11 @@ uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, fl
 
 int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
+	/*
 	double tmp;
 
 	uint8 val=0;
+	register uint32 i=0;
 
 	Pos dim=st.Camera.dimension;
 
@@ -1015,13 +1077,16 @@ int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 
 	if(val==8) return 1;
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
+	//for(register uint32 i=0;i<st.num_entities;i++)
+	//{
+		//if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+			//return 2;
 
-		if(ent[i].stat==DEAD)
-		{
+	i=st.num_entities;
+
+		//if(ent[i].stat==DEAD)
+		//{
+	/*
 			ent[i].stat=USED;
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/16384;
@@ -1036,9 +1101,72 @@ int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 			ent[i].color.a=a;
 			st.num_tex++;
 			st.num_entities++;
-			break;
-		}
-	}
+			*/
+			vertices[curr_vert]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
+			vertices[curr_vert+1]=((st.screeny*y)/8192)-(((sizey/2)*st.screeny)/8192);
+
+			vertices[curr_vert+2]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
+			vertices[curr_vert+3]=((st.screeny*y)/8192)-(((sizey/2)*st.screeny)/8192);
+
+			//vertices[curr_vert+2]=((st.screenx*x)/16384)+((sizex*st.screenx)/16384);
+			//vertices[curr_vert+3]=((st.screeny*y)/8192)-((sizey*st.screeny)/8192);
+
+			vertices[curr_vert+4]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
+			vertices[curr_vert+5]=((st.screeny*y)/8192)+(((sizey/2)*st.screeny)/8192);
+
+			vertices[curr_vert+6]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
+			vertices[curr_vert+7]=((st.screeny*y)/8192)+(((sizey/2)*st.screeny)/8192);
+
+			//vertices[curr_vert+2]=((st.screenx*x)/16384)+((sizex*st.screenx)/16384);
+			//vertices[curr_vert+3]=((st.screeny*y)/8192)-((sizey*st.screeny)/8192);
+
+			//if(curr_ind==0)
+			//{
+				index[curr_ind]=curr_ind2;
+				index[curr_ind+1]=curr_ind2+1;
+				index[curr_ind+2]=curr_ind2+2;
+				index[curr_ind+3]=curr_ind2+2;
+				index[curr_ind+4]=curr_ind2+3;
+				index[curr_ind+5]=curr_ind2;
+			//}
+			//else
+			//{
+				/*
+				index[curr_ind]=curr_ind-2;
+				index[curr_ind+1]=curr_ind-1;
+				index[curr_ind+2]=curr_ind;
+				index[curr_ind+3]=curr_ind;
+				index[curr_ind+4]=curr_ind+1;
+				index[curr_ind+5]=curr_ind-2;
+				*/
+			//}
+				/*
+			color[curr_color]=1;
+			color[curr_color+1]=1;
+			color[curr_color+2]=1;
+			color[curr_color+3]=1;
+			color[curr_color+4]=1;
+			color[curr_color+5]=1;
+			color[curr_color+6]=1;
+			color[curr_color+7]=1;
+			color[curr_color+8]=1;
+			color[curr_color+9]=1;
+			color[curr_color+10]=1;
+			color[curr_color+11]=1;
+			color[curr_color+12]=1;
+			color[curr_color+13]=1;
+			color[curr_color+14]=1;
+			color[curr_color+15]=1;
+			color[curr_color+16]=1;
+			color[curr_color+17]=1;
+			*/
+			curr_vert+=8;
+			curr_ind+=6;
+			curr_ind2+=4;
+			//curr_color+=18;
+			//break;
+		//}
+	//}
 
 	return 0;
 }
@@ -1940,7 +2068,12 @@ void Renderer()
 {
 	_ENTITIES tmp[MAX_GRAPHICS];
 	uint32 j=0, k=0, l=0;
+	uint32 timel, timej;
+	
+	uint32 num_targets;
+	GLenum error;
 
+#ifndef _VERTARRAY
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 
 	for(register uint32 i=0;i<st.num_entities;i++)
@@ -1965,15 +2098,104 @@ void Renderer()
 	}
 
 	memcpy(&ent,&tmp,MAX_GRAPHICS*sizeof(_ENTITIES));
+	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
+	
+#endif
 
-	glClearColor(0.0,0.0,0.0,0.0);
+	num_targets=st.num_entities;
+
+	//glClearColor(0.0,0.0,0.0,0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glLoadIdentity();
+	//glLoadIdentity();
 
 	//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
 
-	for(register uint32 i=0;i<MAX_GRAPHICS;i++)
+#ifdef _VERTARRAY
+
+	//for(register uint32 i=0;i<num_targets;i++)
+	//{
+		//if(ent[i].stat==USED)
+		//{
+		//	if(ent[i].type!=LINE)
+		//	{
+				
+				glPushMatrix();
+
+				glColor3f(1,1,1);
+
+				//glTranslated(ent[i].pos.x,ent[i].pos.y,0);
+				
+				//timej=GetTicks();
+
+				glBindBuffer(GL_ARRAY_BUFFER,st.VBO[0]);
+
+				void *ptr=glMapBuffer(GL_ARRAY_BUFFER,GL_READ_WRITE);
+
+				if(ptr)
+				{
+					memcpy(ptr,vertices,sizeof(vertices));
+					//ptr+=sizeof(vertices);
+					//memcpy(ptr,color,sizeof(color));
+					glUnmapBuffer(GL_ARRAY_BUFFER);
+				}
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,st.VBO[1]);
+
+				ptr=glMapBuffer(GL_ELEMENT_ARRAY_BUFFER,GL_READ_WRITE);
+
+				if(ptr)
+				{
+					memcpy(ptr,index,sizeof(index));
+					//ptr+=sizeof(vertices);
+					//memcpy(ptr,color,sizeof(color));
+					glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+				}
+
+				//glBufferData(GL_ARRAY_BUFFER,sizeof(GLfloat)*(4800+7200),0,GL_STREAM_DRAW);
+				//error=glGetError();
+				//glBufferSubData(GL_ARRAY_BUFFER,0,sizeof(GLfloat)*4800,vertices);
+				//error=glGetError();
+				//glBufferSubData(GL_ARRAY_BUFFER,sizeof(GLfloat)*4800,sizeof(GLfloat)*7200,color);
+				//error=glGetError();
+				
+				glEnableClientState(GL_VERTEX_ARRAY);
+				//glEnableClientState(GL_COLOR_ARRAY);
+				glVertexPointer(2,GL_DOUBLE,0,0);
+				glIndexPointer(GL_UNSIGNED_SHORT,0,0);
+				//error=glGetError();
+				//error=glGetError();
+				//glColorPointer(3,GL_FLOAT,0,(void*)(sizeof(GLfloat)*4800));
+				//error=glGetError();
+				//error=glGetError();
+				
+				glDrawElements(GL_TRIANGLES,6*10000,GL_UNSIGNED_SHORT,0);
+				
+				//error=glGetError();
+				//error=glGetError();
+				glDisableClientState(GL_VERTEX_ARRAY);
+				//glDisableClientState(GL_COLOR_ARRAY);
+
+				glBindBuffer(GL_ARRAY_BUFFER,0);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+				//timel=GetTicks();
+				//LogApp("Time: %d",timel-timej);
+
+				glPopMatrix();
+				
+			//	ent[i].data=-1;
+				//ent[i].stat=DEAD;
+				//st.num_entities--; 
+				curr_vert=curr_color=curr_ind=curr_ind2=0;
+			//}
+		//}
+	//}
+#else
+
+	glLoadIdentity();
+
+	for(register uint32 i=0;i<num_targets;i++)
 	{	
 		if(ent[i].stat==USED)
 		{
@@ -2005,7 +2227,11 @@ void Renderer()
 				}
 				else
 				{
-					glBindTexture(GL_TEXTURE_2D,ent[i].data);
+					if(st.tex_bound!=ent[i].data)
+					{
+						glBindTexture(GL_TEXTURE_2D,ent[i].data);
+						st.tex_bound=ent[i].data;
+					}
 						glBegin(GL_TRIANGLES);
 							glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
 							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
@@ -2032,7 +2258,7 @@ void Renderer()
 			if(ent[i].type==SPRITE)
 			{
 				//glLoadIdentity();
-
+				
 				glPushMatrix();
 
 				//glBlendFunc(GL_DST_COLOR, GL_MAX);
@@ -2048,7 +2274,11 @@ void Renderer()
 
 				//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
 				
-				glBindTexture(GL_TEXTURE_2D,ent[i].data);
+				if(st.tex_bound!=ent[i].data)
+				{
+					glBindTexture(GL_TEXTURE_2D,ent[i].data);
+					st.tex_bound=ent[i].data;
+				}
 					glBegin(GL_TRIANGLES);
 						glTexCoord2i(0,0);
 						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
@@ -2066,6 +2296,7 @@ void Renderer()
 					glEnd();
 					
 				glPopMatrix();
+				
 				ent[i].data=-1;
 				ent[i].stat=DEAD;
 				st.num_entities--;
@@ -2084,7 +2315,11 @@ void Renderer()
 				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
 				//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
 				
-				glBindTexture(GL_TEXTURE_2D,ent[i].data);
+				if(st.tex_bound!=ent[i].data)
+				{
+					glBindTexture(GL_TEXTURE_2D,ent[i].data);
+					st.tex_bound=ent[i].data;
+				}
 					glBegin(GL_TRIANGLES);
 						glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
 						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
@@ -2125,7 +2360,11 @@ void Renderer()
 				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
 				//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
 				
-				glBindTexture(GL_TEXTURE_2D,ent[i].data);
+				if(st.tex_bound!=ent[i].data)
+				{
+					glBindTexture(GL_TEXTURE_2D,ent[i].data);
+					st.tex_bound=ent[i].data;
+				}
 					glBegin(GL_TRIANGLES);
 						glTexCoord2i(0,0);
 						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
@@ -2151,11 +2390,16 @@ void Renderer()
 		}
 	}
 
+#endif
 	st.num_hud=0;
 	st.num_tex=0;
 	st.num_ui=0;
 
+	
+
 	SDL_GL_SwapWindow(wn);
+
+	
 }
 
 void PlayMusic(const char *filename, uint8 loop)

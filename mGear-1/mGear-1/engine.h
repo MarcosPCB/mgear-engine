@@ -1,5 +1,3 @@
-#pragma once
-
 #include <GLee.h>
 #include <SDL.h>
 #include <SDL_opengl.h>
@@ -14,6 +12,9 @@
 #include <SOIL.h>
 #include <time.h>
 #include "types.h"
+
+#ifndef _ENGINE_H
+#define _ENGINE_H
 
 #define MAX_SPRITES 512
 #define MAX_GRAPHICS 6656
@@ -454,6 +455,7 @@ struct _SETTINGS
 	uint32 backtrack;
 	char typetext[128];
 	char WINDOW_NAME[64];
+
 	uint16 screenx;
 	uint16 screeny;
 	uint8 bpp;
@@ -461,19 +463,25 @@ struct _SETTINGS
 	uint32 audiof;
 	uint8 audioc;
 	uint8 vsync;
+
 	uint32 num_entities;
 	uint32 num_tex;
 	uint32 num_hud;
 	uint32 num_ui;
+
 	long long unsigned int time;
+
 	_SOUNDSYS sound_sys;
 	TFont fonts[MAX_FONTS];
+
 	Pos mouse;
 	uint8 mouse1;
 	uint8 mouse2;
 	uint8 mouse_on : 2;
 	int32 mouse_wheel;
+
 	Key keys[MAX_KEYS];
+
 	uint8 quit;
 	uint8 PlayingVideo;
 
@@ -481,6 +489,7 @@ struct _SETTINGS
 	uint8 Text_Input;
 
 	_MGM Current_Map;
+
 	_SPRITES Game_Sprites[MAX_SPRITES];
 	uint16 num_sprites;
 
@@ -488,6 +497,8 @@ struct _SETTINGS
 	GAME_STATE gt;
 
 	SDL_GLContext glc;
+	GLuint tex_bound; //keep track of texture binding
+	GLuint VBO[2];
 
 #ifdef ENGINEER
 	uint8 Engineer_Mode;
@@ -508,6 +519,8 @@ struct _SETTINGS
 
 	Render render;
 };
+
+#endif
 
 extern _SETTINGS st;
 extern _ENTITIES ent[MAX_GRAPHICS];
