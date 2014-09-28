@@ -13,19 +13,41 @@ _MGG mgg[MAX_MGG];
 
 SDL_Window *wn;
 
-GLdouble vertices[8*50000];
-GLushort index[6*50000];
-GLfloat color[18*400];
-
-uint32 curr_vert=0;
-uint32 curr_color=0;
-uint32 curr_ind=0;
-uint32 curr_ind2=0;
-
 #define _ENGINE_VERSION 0.5
 const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 
 #define timer SDL_Delay
+
+const char *Texture_VShader[64]={
+	"#version 150\n"
+
+	"in vec3 Position;\n"
+	"in vec2 TexCoord;\n"
+
+	"out vec2 TexCoord2;\n"
+
+	"void main()\n"
+	"{\n"
+	   "gl_Position = vec4(Position, 1.0);\n"
+	   "TexCoord2 = TexCoord;\n"
+	"};\n"
+};
+
+const char *Texture_FShader[64]={
+	"#version 150\n"
+
+	"uniform sampler2D texu;\n"
+
+	"in vec2 TexCoord2;\n"
+
+	"out vec4 FColor;\n"
+
+	"void main()\n"
+	"{\n"
+		"FColor = texture(texu, TexCoord2);\n"
+	"};\n"
+
+};
 
 double inline __declspec (naked) __fastcall sqrt14(double n)
 {
@@ -80,7 +102,8 @@ void FPSCounter()
 	if((SDL_GetTicks() - st.FPSTime)!=1000)
 	{
 		st.FPS=SDL_GetTicks()-st.FPSTime;
-		st.FPS=1000/st.FPS;
+		if(st.FPS<1000)
+			st.FPS=1000/st.FPS;
 		sprintf(st.WINDOW_NAME,"%s fps: %.2f",WindowTitle,st.FPS);
 		st.FPS=0;
 		st.FPSTime=SDL_GetTicks();
@@ -130,8 +153,48 @@ void Quit()
 	exit(1);
 }
 
+static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloat *texcoord, GLenum type, const GLushort *index)
+{
+	GLuint VAO, VBO, IBO;
+	GLint pos, texc;
+
+	glGenVertexArrays(1,&VAO);
+	glBindVertexArray(VAO);
+
+	pos=glGetAttribLocation(st.renderer.Program[0],"Position");
+	texc=glGetAttribLocation(st.renderer.Program[0],"TexCoord");
+
+	glEnableVertexAttribArray(pos);
+	glEnableVertexAttribArray(texc);
+
+	glGenBuffers(1,&VBO);
+	glBindBuffer(GL_ARRAY_BUFFER,VBO);
+
+	glBufferData(GL_ARRAY_BUFFER,((num_elements*8)*sizeof(GLfloat))+((num_elements*8)*sizeof(GLfloat)),0,type);
+	glBufferSubData(GL_ARRAY_BUFFER,0,(8*num_elements)*sizeof(GLfloat),vertex);
+	glBufferSubData(GL_ARRAY_BUFFER,(8*num_elements)*sizeof(GLfloat),(8*num_elements)*sizeof(GLfloat),texcoord);
+
+	glVertexAttribPointer(pos,2,GL_FLOAT,GL_FALSE,0,0);
+	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(void*) ((8*num_elements)*sizeof(GLfloat)));
+
+	glGenBuffers(1,&IBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IBO);
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*num_elements)*sizeof(GLushort),index,type);
+
+	glBindVertexArray(0);
+
+	return VAO;
+}
+
 void Init()
 {	
+	GLint status, status2, status3;
+
+	const GLfloat vertex[]={ -0.90,-0.90, -1,-0.90, -1,-1, -0.90,-1 };
+	const GLfloat tex[]={ 1,1, 0,1, 0,0, 1,0 };
+	const GLushort index[]={ 0,1,2, 2,3,0 };
+	
 	CreateLog();
 
 	int check;
@@ -215,59 +278,57 @@ void Init()
 	glLoadIdentity();
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glEnable(GL_TEXTURE_2D);
+	glEnable(GL_TEXTURE_2D);
 	SDL_GL_SetSwapInterval(st.vsync);
 
-	//GLfloat vertices[8];
-	//GLfloat color[12];
-	GLenum error;
-	/*
-				vertices[0]=0;
-				
-				vertices[1]=0;
+	st.renderer.VShader[0]=glCreateShader(GL_VERTEX_SHADER);
+	st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
 
-				vertices[2]=50;
+	glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
+	glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Texture_FShader,0);
 
-				vertices[3]=0;
+	glCompileShader(st.renderer.VShader[0]);
+	glCompileShader(st.renderer.FShader[0]);
 
-				vertices[4]=50;
-				vertices[5]=50;
-				
-				vertices[6]=0;
-				vertices[7]=50;
+	GLchar logs[2][1024];
 
-				color[0]=1;
-				color[1]=1;
-				color[2]=1;
-				color[3]=1;
-				color[4]=1;
-				color[5]=1;
-				color[6]=1;
-				color[7]=1;
-				color[8]=1;
-				color[9]=1;
-				color[10]=1;
-				color[11]=1;
+	glGetShaderiv(st.renderer.VShader[0],GL_COMPILE_STATUS,&status);
+	glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&status2);
 
-				//vertices[8]=0;
-			//vertices[9]=400.0f;
-				/*
-				vertices[10]=0;
-				vertices[11]=0;
-				*/
-				
-				glGenBuffers(1,&st.VBO[0]);
-				glBindBuffer(GL_ARRAY_BUFFER,st.VBO[0]);
+	glGetShaderInfoLog(st.renderer.VShader[0],1024,NULL,logs[0]);
+	glGetShaderInfoLog(st.renderer.FShader[0],1024,NULL,logs[1]);
+	
+	if(status && status2)
+	{
+		st.renderer.Program[0]=glCreateProgram();
 
-				glBufferData(GL_ARRAY_BUFFER,sizeof(vertices),0,GL_STREAM_DRAW);
+		glAttachShader(st.renderer.Program[0],st.renderer.VShader[0]);
+		glAttachShader(st.renderer.Program[0],st.renderer.FShader[0]);
 
-				glGenBuffers(1,&st.VBO[1]);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,st.VBO[1]);
+		glLinkProgram(st.renderer.Program[0]);
 
-				glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(index),0,GL_STREAM_DRAW);
-			
-				
-	st.tex_bound=0;
+		glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&status3);
+
+		if(!status3)
+		{
+			glDeleteProgram(st.renderer.Program[0]);
+			glDeleteShader(st.renderer.VShader[0]);
+			glDeleteShader(st.renderer.FShader[0]);
+		}
+		else
+		{
+			glDetachShader(st.renderer.Program[0],st.renderer.VShader[0]);
+			glDetachShader(st.renderer.Program[0],st.renderer.FShader[0]);
+		}
+	}
+
+	//glValidateProgram(st.renderer.Program[0]);
+
+	glUseProgram(st.renderer.Program[0]);
+
+	//glGetProgram
+
+	st.renderer.VAO=CreateVAO(vertex,1,tex,GL_STREAM_DRAW, index);
 
 	LogApp("Opengl initialized");
 
@@ -715,9 +776,9 @@ void InitMGG()
 	}
 }
 
-uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4])
+uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4])
 {
-	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
@@ -801,9 +862,9 @@ uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float
 		return 0; //No collision
 }
 
-uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt)
+uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt)
 {
-	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
@@ -909,10 +970,10 @@ uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, d
 	
 }
 
-uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float ang)
+uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 {
 
-	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	for(register uint8 i=0;i<4;i++)
 	{
@@ -965,10 +1026,10 @@ uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float a
 	
 }
 
-uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, float ang)
+uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang)
 {
 
-	double xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
@@ -1030,10 +1091,10 @@ uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, fl
 	
 }
 
-int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
+int8 DrawSprite(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
-	/*
-	double tmp;
+	
+	float tmp, ax, ay;
 
 	uint8 val=0;
 	register uint32 i=0;
@@ -1077,31 +1138,84 @@ int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 
 	if(val==8) return 1;
 
-	//for(register uint32 i=0;i<st.num_entities;i++)
-	//{
-		//if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			//return 2;
-
 	i=st.num_entities;
 
-		//if(ent[i].stat==DEAD)
-		//{
-	/*
+		if(ent[i].stat==DEAD)
+		{
+	
 			ent[i].stat=USED;
 			ent[i].ang=ang;
-			ent[i].pos.x=(st.screenx*x)/16384;
-			ent[i].pos.y=(st.screeny*y)/8192;
-			ent[i].size.x=(sizex*st.screenx)/16384;
-			ent[i].size.y=(sizey*st.screeny)/8192;
 			ent[i].type=SPRITE;
 			ent[i].data=data;
+			/*
 			ent[i].color.r=(float)r/255;
 			ent[i].color.g=(float)g/255;
 			ent[i].color.b=(float)b/255;
 			ent[i].color.a=a;
+			*/
+			ax=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
+			/*
+			ent[i].vertex[0]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
+			ent[i].vertex[1]=((st.screenx*y)/8192)-(((sizey/2)*st.screeny)/8192);
+
+			ent[i].vertex[2]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
+			ent[i].vertex[3]=((st.screenx*y)/8192)-(((sizey/2)*st.screeny)/8192);
+
+			ent[i].vertex[4]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
+			ent[i].vertex[5]=((st.screenx*y)/8192)+(((sizey/2)*st.screeny)/8192);
+
+			ent[i].vertex[6]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
+			ent[i].vertex[7]=((st.screenx*y)/8192)+(((sizey/2)*st.screeny)/8192);
+			*/
+
+			ent[i].vertex[0]=x-sizex/2;
+			ent[i].vertex[1]=y-sizey/2;
+
+			ent[i].vertex[2]=x+sizex/2;
+			ent[i].vertex[3]=y-sizey/2;
+
+			ent[i].vertex[4]=x+sizex/2;
+			ent[i].vertex[5]=y+sizey/2;
+
+			ent[i].vertex[6]=x-sizex/2;
+			ent[i].vertex[7]=y+sizey/2;
+
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			for(uint8 j=0;j<8;j++)
+			{
+				if(j%2==0)
+				{
+					ent[i].vertex[j]*=ax;
+					ent[i].vertex[j]-=1;
+				}
+				else
+				{
+					ent[i].vertex[j]*=ay;
+					ent[i].vertex[j]-=1;
+				}
+			}
+			
+			ent[i].mat[0][0]=1;
+			ent[i].mat[0][1]=0;
+			ent[i].mat[0][2]=(x*ax)-1;
+			ent[i].mat[1][0]=0;
+			ent[i].mat[1][1]=1;
+			ent[i].mat[1][2]=(y*ay)-1;
+			ent[i].mat[2][0]=0;
+			ent[i].mat[2][1]=0;
+			ent[i].mat[2][2]=1;
+
+			ent[i].pos.x=(x*ax)-1;
+			ent[i].pos.y=(y*ay)-1;
+			ent[i].size.x=(sizex*ax)-1;
+			ent[i].size.y=(sizey*ay)-1;
+
 			st.num_tex++;
 			st.num_entities++;
-			*/
+			
+			/*
 			vertices[curr_vert]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
 			vertices[curr_vert+1]=((st.screeny*y)/8192)-(((sizey/2)*st.screeny)/8192);
 
@@ -1131,16 +1245,16 @@ int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 			//}
 			//else
 			//{
-				/*
+				
 				index[curr_ind]=curr_ind-2;
 				index[curr_ind+1]=curr_ind-1;
 				index[curr_ind+2]=curr_ind;
 				index[curr_ind+3]=curr_ind;
 				index[curr_ind+4]=curr_ind+1;
 				index[curr_ind+5]=curr_ind-2;
-				*/
+				
 			//}
-				/*
+				
 			color[curr_color]=1;
 			color[curr_color+1]=1;
 			color[curr_color+2]=1;
@@ -1159,21 +1273,20 @@ int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8
 			color[curr_color+15]=1;
 			color[curr_color+16]=1;
 			color[curr_color+17]=1;
-			*/
+			
 			curr_vert+=8;
 			curr_ind+=6;
 			curr_ind2+=4;
 			//curr_color+=18;
-			//break;
-		//}
-	//}
+			*/
+		}
 
 	return 0;
 }
 
-int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
+int8 DrawLight(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
 {
-	double tmp;
+	float tmp;
 
 	uint8 val=0;
 
@@ -1223,6 +1336,7 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			ent[i].stat=USED;
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/16384;
@@ -1237,6 +1351,7 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 			ent[i].color.a=a;
 			st.num_tex++;
 			st.num_entities++;
+			*/
 			break;
 		}
 	}
@@ -1244,9 +1359,9 @@ int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 
 	return 0;
 }
 
-int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY)
+int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY)
 {
-	double tmp;
+	float tmp;
 
 	Pos dim=st.Camera.dimension;
 
@@ -1295,7 +1410,7 @@ int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 		{
 			if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 				return 2;
-
+			/*
 			ent[i].stat=USED;
 			ent[i].ang=ang;
 			ent[i].pos.x=(st.screenx*x)/16384;
@@ -1314,6 +1429,7 @@ int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 			ent[i].x2y2.y=texsizeY;
 			st.num_tex++;
 			st.num_entities++;
+			*/
 			break;
 		}
 	}
@@ -1321,9 +1437,9 @@ int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint
 	return 0;
 }
 
-int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a)
+int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a)
 {
-	double tmp;
+	float tmp;
 	uint8 val=0;
 
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
@@ -1333,6 +1449,7 @@ int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			ent[i].stat=USED;
 			ent[i].ang=ang;
 			ent[i].pos.x=x;
@@ -1351,6 +1468,7 @@ int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 			ent[i].color.a=a;
 			st.num_hud++;
 			st.num_entities++;
+			*/
 			break;
 		}
 	}
@@ -1358,9 +1476,9 @@ int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r,
 	return 0;
 }
 
-int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a)
+int8 DrawUI(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a)
 {
-	double tmp;
+	float tmp;
 	uint8 val=0;
 
 	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
@@ -1370,6 +1488,7 @@ int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			ent[i].stat=USED;
 			ent[i].ang=ang;
 			ent[i].pos.x=x;
@@ -1388,6 +1507,7 @@ int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 			ent[i].color.a=a;
 			st.num_ui++;
 			st.num_entities++;
+			*/
 			break;
 		}
 	}
@@ -1395,7 +1515,7 @@ int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 	return 0;
 }
 
-int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth)
+int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth)
 {
 	uint8 val=0;
 
@@ -1430,6 +1550,7 @@ int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			ent[i].stat=USED;
 			ent[i].ang=0;
 			ent[i].pos.x=(st.screenx*x)/16384;
@@ -1444,6 +1565,7 @@ int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 			ent[i].data=linewidth;
 			st.num_tex++;
 			st.num_entities++;
+			*/
 			break;
 		}
 	}
@@ -1451,7 +1573,7 @@ int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 
 	return 0;
 }
 
-int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a)
+int32 MAnim(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a)
 {
 	uint16 curf=0;
 	if(mgf->anim[id].current_frame>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID; else
@@ -1463,7 +1585,7 @@ int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, 
 	return mgf->anim[id].current_frame;
 }
 
-int8 DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
 	co.r=255;
@@ -1472,7 +1594,7 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 	co.a=255;
 	uint16 formatt;
 
-	double tmp;
+	float tmp;
 
 	uint8 val=0;
 	
@@ -1492,9 +1614,10 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
-
+		
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			glGenTextures(1,&ent[i].data);
 			glBindTexture(GL_TEXTURE_2D,ent[i].data);
 			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
@@ -1519,7 +1642,7 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 			SDL_FreeSurface(msg);
 			st.num_hud++;
 			st.num_entities++;
-			
+			*/
 			break;
 		}
 	}
@@ -1528,7 +1651,7 @@ int8 DrawString(const char *text, double x, double y, double sizex, double sizey
 
 }
 
-int8 DrawStringUI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
 	co.r=255;
@@ -1537,7 +1660,7 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 	co.a=255;
 	uint16 formatt;
 
-	double tmp;
+	float tmp;
 
 	uint8 val=0;
 	
@@ -1557,9 +1680,10 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
-
+		
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			glGenTextures(1,&ent[i].data);
 			glBindTexture(GL_TEXTURE_2D,ent[i].data);
 			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
@@ -1584,7 +1708,7 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 			SDL_FreeSurface(msg);
 			st.num_hud++;
 			st.num_entities++;
-			
+			*/
 			break;
 		}
 	}
@@ -1593,7 +1717,7 @@ int8 DrawStringUI(const char *text, double x, double y, double sizex, double siz
 
 }
 
-int8 DrawString2UI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
 	co.r=255;
@@ -1621,6 +1745,7 @@ int8 DrawString2UI(const char *text, double x, double y, double sizex, double si
 
 		if(ent[i].stat==DEAD)
 		{
+			/*
 			glGenTextures(1,&ent[i].data);
 			glBindTexture(GL_TEXTURE_2D,ent[i].data);
 			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
@@ -1629,6 +1754,7 @@ int8 DrawString2UI(const char *text, double x, double y, double sizex, double si
 			ent[i].ang=ang;
 			ent[i].stat=USED;
 			ent[i].type=TEXT_UI;
+			
 			ent[i].pos.x=x;
 			ent[i].pos.y=y;
 			ent[i].size.x=(msg->w*sizex);
@@ -1645,7 +1771,7 @@ int8 DrawString2UI(const char *text, double x, double y, double sizex, double si
 			SDL_FreeSurface(msg);
 			st.num_ui++;
 			st.num_entities++;
-			
+			*/
 			break;
 		}
 	}
@@ -2012,7 +2138,7 @@ void DrawMap()
 	
 	//Draw the objects first
 
-	double x, y, sizex, sizey, ang, size;
+	float x, y, sizex, sizey, ang, size;
 	
 
 	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
@@ -2066,17 +2192,20 @@ void DrawMap()
 
 void Renderer()
 {
-	_ENTITIES tmp[MAX_GRAPHICS];
-	uint32 j=0, k=0, l=0;
+	_ENTITIES *tmp;
+	uint32 j=0, k=0, l=0, t=0;
 	uint32 timel, timej;
-	
-	uint32 num_targets;
-	GLenum error;
+	GLint Tex;
+	void *ptr;
 
-#ifndef _VERTARRAY
+	float mat[4][4];
+
+	uint32 num_targets=0;
+
+	/*
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 
-	for(register uint32 i=0;i<st.num_entities;i++)
+	for(register uint16 i=0, j=0, k=0, l=0;i<st.num_entities;i++)
 	{
 		if(ent[i].type==TEXTURE || ent[i].type==LINE || ent[i].type==SPRITE)
 		{
@@ -2099,98 +2228,49 @@ void Renderer()
 
 	memcpy(&ent,&tmp,MAX_GRAPHICS*sizeof(_ENTITIES));
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
-	
-#endif
-
+	*/
 	num_targets=st.num_entities;
 
-	//glClearColor(0.0,0.0,0.0,0.0);
+	//glLoadIdentity();
+	
+	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	//glLoadIdentity();
-
-	//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
+	//SDL_GL_SwapWindow(wn);
 
 #ifdef _VERTARRAY
 
-	//for(register uint32 i=0;i<num_targets;i++)
-	//{
-		//if(ent[i].stat==USED)
-		//{
-		//	if(ent[i].type!=LINE)
-		//	{
-				
-				glPushMatrix();
+	//glColor3f(1.0f,1.0f,1.0f);
+	
+	glUseProgram(st.renderer.Program[0]);
 
-				glColor3f(1,1,1);
+	glBindVertexArray(st.renderer.VAO);
 
-				//glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-				
-				//timej=GetTicks();
+	glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D,ent[0].data);
 
-				glBindBuffer(GL_ARRAY_BUFFER,st.VBO[0]);
+			Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
+			glUniform1i(Tex,0);
 
-				void *ptr=glMapBuffer(GL_ARRAY_BUFFER,GL_READ_WRITE);
+	for(uint32 i=0;i<=num_targets;i++)
+	{
+		if(ent[i].stat==USED)
+		{
 
-				if(ptr)
-				{
-					memcpy(ptr,vertices,sizeof(vertices));
-					//ptr+=sizeof(vertices);
-					//memcpy(ptr,color,sizeof(color));
-					glUnmapBuffer(GL_ARRAY_BUFFER);
-				}
+			glBufferSubData(GL_ARRAY_BUFFER,0,(8*sizeof(GLfloat)),ent[i].vertex);
 
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,st.VBO[1]);
+			glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_SHORT,0);
 
-				ptr=glMapBuffer(GL_ELEMENT_ARRAY_BUFFER,GL_READ_WRITE);
+			ent[i].data=-1;
+			ent[i].stat=DEAD;
+			st.num_entities--;
+		}
+	}
 
-				if(ptr)
-				{
-					memcpy(ptr,index,sizeof(index));
-					//ptr+=sizeof(vertices);
-					//memcpy(ptr,color,sizeof(color));
-					glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-				}
+	glBindVertexArray(0);
 
-				//glBufferData(GL_ARRAY_BUFFER,sizeof(GLfloat)*(4800+7200),0,GL_STREAM_DRAW);
-				//error=glGetError();
-				//glBufferSubData(GL_ARRAY_BUFFER,0,sizeof(GLfloat)*4800,vertices);
-				//error=glGetError();
-				//glBufferSubData(GL_ARRAY_BUFFER,sizeof(GLfloat)*4800,sizeof(GLfloat)*7200,color);
-				//error=glGetError();
-				
-				glEnableClientState(GL_VERTEX_ARRAY);
-				//glEnableClientState(GL_COLOR_ARRAY);
-				glVertexPointer(2,GL_DOUBLE,0,0);
-				glIndexPointer(GL_UNSIGNED_SHORT,0,0);
-				//error=glGetError();
-				//error=glGetError();
-				//glColorPointer(3,GL_FLOAT,0,(void*)(sizeof(GLfloat)*4800));
-				//error=glGetError();
-				//error=glGetError();
-				
-				glDrawElements(GL_TRIANGLES,6*10000,GL_UNSIGNED_SHORT,0);
-				
-				//error=glGetError();
-				//error=glGetError();
-				glDisableClientState(GL_VERTEX_ARRAY);
-				//glDisableClientState(GL_COLOR_ARRAY);
-
-				glBindBuffer(GL_ARRAY_BUFFER,0);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-
-				//timel=GetTicks();
-				//LogApp("Time: %d",timel-timej);
-
-				glPopMatrix();
-				
-			//	ent[i].data=-1;
-				//ent[i].stat=DEAD;
-				//st.num_entities--; 
-				curr_vert=curr_color=curr_ind=curr_ind2=0;
-			//}
-		//}
-	//}
+	glUseProgram(0);
+	
 #else
 
 	glLoadIdentity();

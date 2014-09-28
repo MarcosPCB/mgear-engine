@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 	//createmap();
 
 	//createmgg();
-	//LoadMGG(&mgg[0],"fulgore.mgg");
+	LoadMGG(&mgg[0],"fulgore.mgg");
 
 	int32 startmovie=1;
 
@@ -289,13 +289,14 @@ int main(int argc, char *argv[])
 
 	//timej=GetTicks();
 
-		for(i=0;i<100;i++)
-			for(j=0;j<100;j++)
-				DrawSprite(j*50,i*50,50,50,0,255,255,255,0,1);
+		for(i=0;i<50;i++)
+			for(j=0;j<50;j++)
+				DrawSprite(j*150,i*150,150,150,0,255,255,255,mgg[0].frames[0],1);
 				//DrawSprite(250,600,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,950,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,1200,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,1500,250,250,0,255,255,255,0,1);
+				//DrawSprite(850,1500,250,250,0,255,255,255,0,1);
 
 		//timel=GetTicks();
 		//LogApp("For Time: %d",timel-timej);
@@ -309,12 +310,12 @@ int main(int argc, char *argv[])
 
 		//MainSound();
 
-		timej=GetTicks();
+		//timej=GetTicks();
 
 		Renderer();
 
-		timel=GetTicks();
-		LogApp("Render Time: %d",timel-timej);
+		//timel=GetTicks();
+		//LogApp("Render Time: %d",timel-timej);
 		//Timer();
 	}
 	StopAllSounds();

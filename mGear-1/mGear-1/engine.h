@@ -5,13 +5,20 @@
 #include <SDL_mutex.h>
 #include <fmod.h>
 #include <fmod_errors.h>
-#include <Windows.h>
+
+#ifdef WIN32
+	#include <Windows.h>
+#endif
+
 #include <SDL_ttf.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <SOIL.h>
 #include <time.h>
-#include "types.h"
+
+#ifndef _MGTYPES_H
+	#include "types.h"
+#endif
 
 #ifndef _ENGINE_H
 #define _ENGINE_H
@@ -29,6 +36,10 @@
 #define MAX_SECTORS 512
 #define MAX_LIGHT 64
 #define MAX_MAPMGG 32
+
+#define MAX_VERTEX MAX_GRAPHICS*8
+#define MAX_COLORS MAX_GRAPHICS*12
+#define MAX_INDEX MAX_GRAPHICS*6
 
 #define QLZ_COMPRESSION_LEVEL 3
 #define QLZ_STREAMING_BUFFER 0
@@ -80,13 +91,15 @@ enum Stat
 struct _ENTITIES //To be rendered
 {
 	Enttype type;
+	GLfloat vertex[8];
+	GLfloat mat[3][3];
 	Pos pos;
 	Pos x1y1;
 	Pos x2y2;
 	Stat stat;
 	GLuint data;
 	Pos size;
-	Color color;
+	float colors[12];
 	float ang;
 };
 
@@ -440,6 +453,9 @@ struct Render
 	GLuint FShader[4];
 	GLuint GShader[4];
 	GLuint Program[4];
+
+	GLuint *VBO;
+	GLuint VAO;
 };
 
 struct TFont
@@ -497,27 +513,25 @@ struct _SETTINGS
 	GAME_STATE gt;
 
 	SDL_GLContext glc;
-	GLuint tex_bound; //keep track of texture binding
-	GLuint VBO[2];
 
 #ifdef ENGINEER
 	uint8 Engineer_Mode;
 #endif
 	
-	uint8 Developer_Mode : 1;
+	uint8 Developer_Mode;
 
-	uint8 FPSYes : 1;
+	uint8 FPSYes;
 	uint32 FPSTime;
 	float FPS;
 	char FPSStr[6];
 
-	uint8 LOWRES : 2;
+	uint8 LOWRES;
 
 	uint8 control_num;
 	Control controller[4];
 	//SDL_Joystick *Joy[4];
 
-	Render render;
+	Render renderer;
 };
 
 #endif
@@ -564,25 +578,25 @@ void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
 
 void RestartVideo();
 
-void _fastcall STW(double *x, double *y);
+void _fastcall STW(float *x, float *y);
 
 uint32 POT(uint32 value);
 
-void _fastcall WTS(double *x, double *y);
+void _fastcall WTS(float *x, float *y);
 
 uint32 PlayMovie(const char *name);
 
-int8 DrawGraphic(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY);
-int8 DrawSprite(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
-int8 DrawLight(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
-int8 DrawHud(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
-int8 DrawLine(double x, double y, double x2, double y2, uint8 r, uint8 g, uint8 b, float a, double linewidth);
-int8 DrawString(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
-int8 DrawString2UI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
-int8 DrawStringUI(const char *text, double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
-int8 DrawUI(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, double x1, double y1, double x2, double y2, GLuint data, float a);
+int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY);
+int8 DrawSprite(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawLight(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
+int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth);
+int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawUI(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
 
-int32 MAnim(double x, double y, double sizex, double sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
+int32 MAnim(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
 
 void Renderer();
 
@@ -592,7 +606,7 @@ void MainSound();
 void StopAllSounds();
 void StopMusic();
 
-uint8 CheckColision(double x, double y, double xsize, double ysize, double tx, double ty, double txsize, double tysize, float ang, float angt);
-uint8 CheckColisionMouse(double x, double y, double xsize, double ysize, float ang);
-uint8 CheckColisionMouseWorld(double x, double y, double xsize, double ysize, float ang);
-uint8 CheckCollisionSector(double x, double y, double xsize, double ysize, float ang, Pos vert[4]);
+uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt);
+uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang);
+uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang);
+uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4]);
