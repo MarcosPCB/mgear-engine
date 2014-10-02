@@ -19,7 +19,7 @@ const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 #define timer SDL_Delay
 
 const char *Texture_VShader[64]={
-	"#version 150\n"
+	"#version 130\n"
 
 	"in vec3 Position;\n"
 	"in vec2 TexCoord;\n"
@@ -34,7 +34,7 @@ const char *Texture_VShader[64]={
 };
 
 const char *Texture_FShader[64]={
-	"#version 150\n"
+	"#version 130\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -153,7 +153,8 @@ void Quit()
 	exit(1);
 }
 
-static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloat *texcoord, GLenum type, const GLushort *index)
+#ifdef _VAO_RENDER
+static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloat *texcoord, const GLushort *index)
 {
 	GLuint VAO, VBO, IBO;
 	GLint pos, texc;
@@ -170,7 +171,7 @@ static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloa
 	glGenBuffers(1,&VBO);
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
 
-	glBufferData(GL_ARRAY_BUFFER,((num_elements*8)*sizeof(GLfloat))+((num_elements*8)*sizeof(GLfloat)),0,type);
+	glBufferData(GL_ARRAY_BUFFER,((num_elements*8)*sizeof(GLfloat))+((num_elements*8)*sizeof(GLfloat)),0,GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER,0,(8*num_elements)*sizeof(GLfloat),vertex);
 	glBufferSubData(GL_ARRAY_BUFFER,(8*num_elements)*sizeof(GLfloat),(8*num_elements)*sizeof(GLfloat),texcoord);
 
@@ -180,20 +181,50 @@ static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloa
 	glGenBuffers(1,&IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IBO);
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*num_elements)*sizeof(GLushort),index,type);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*num_elements)*sizeof(GLushort),index,GL_STREAM_DRAW);
 
 	glBindVertexArray(0);
 
 	return VAO;
 }
+#endif
+
+#ifdef _VBO_RENDER
+static VBO_PACKET CreateVBO(uint16 num_elements)
+{
+	VBO_PACKET VBO;
+
+	glGenBuffers(1,&VBO.VBO);
+	glGenBuffers(1,&VBO.IBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER,VBO.VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,VBO.IBO);
+
+	glBufferData(GL_ARRAY_BUFFER,2*((num_elements*8)*sizeof(GLfloat)),NULL,GL_STREAM_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*num_elements)*sizeof(GLushort),NULL,GL_STREAM_DRAW);
+
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+	VBO.elements=num_elements;
+
+	return VBO;
+}
+#endif
 
 void Init()
 {	
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	GLint status, status2, status3;
 
 	const GLfloat vertex[]={ -0.90,-0.90, -1,-0.90, -1,-1, -0.90,-1 };
 	const GLfloat tex[]={ 1,1, 0,1, 0,0, 1,0 };
 	const GLushort index[]={ 0,1,2, 2,3,0 };
+	GLchar logs[2][1024];
+
+	uint8 i=0;
+#endif
 	
 	CreateLog();
 
@@ -238,7 +269,8 @@ void Init()
 
 	LogApp("SDL TTF initialized");
 	
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL,1);
 
 	//Set video mode
 	if(st.fullscreen)
@@ -268,7 +300,104 @@ void Init()
 	}
 
 	LogApp("Opengl context created");
-	
+
+#ifdef _VAO_RENDER
+	st.renderer.VAO_ON=0;
+#endif
+
+#ifdef _VBO_RENDER
+	st.renderer.VBO_ON=0;
+#endif
+
+#ifdef _VA_RENDER
+	st.renderer.VA_ON=0;
+#endif
+
+#ifdef _IM_RENDER
+	st.renderer.IM_ON=0;
+#endif
+
+#ifdef _VAO_RENDER
+	if(!GLEE_VERSION_3_0 || strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_array_object")==NULL)
+	{
+		LogApp("VAO not supported, check your video's card driver for updates... Using VBO instead");
+		st.renderer.VAO_ON=0;
+
+#ifdef _VBO_RENDER
+
+		if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_buffer_object")==NULL)
+		{
+#ifdef _VA_RENDER
+			st.renderer.VA_ON=1;
+			LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
+#elif defined (_IM_RENDER)
+			st.renderer.IM_ON=1;
+			LogApp("VBOs not supported, check your video's card driver for updates... Using IM instead!!");
+#elif !defined (_IM_RENDER)
+			LogApp("Your video card is not adequate to play this game... Goodbye!!");
+			Quit();
+#endif
+		}
+		else
+			st.renderer.VBO_ON=1;
+#endif
+
+#ifdef _VA_RENDER
+		if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
+		{
+#ifdef _IM_RENDER
+			st.renderer.IM_ON=1;
+			LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
+#else
+			LogApp("Your video card is not adequate to play this game... Goodbye!!");
+			Quit();
+#endif
+		}
+#endif
+	}
+	else
+		st.renderer.VAO_ON=1;
+#endif
+
+#if !defined (_VAO_RENDER) && defined (_VBO_RENDER)
+	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_buffer_object")==NULL)
+	{
+#ifdef _VA_RENDER
+		st.renderer.VA_ON=1;
+		LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
+#elif defined (_IM_RENDER)
+		st.renderer.IM_ON=1;
+		LogApp("VBOs not supported, check your video's card driver for updates... Using IM instead!!");
+#elif !defined (_IM_RENDER)
+		LogApp("Your video card is not adequate to play this game... Goodbye!!");
+		Quit();
+#endif
+
+	}
+	else
+		st.renderer.VBO_ON=1;
+#endif
+
+#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && defined (_VA_RENDER)
+	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
+	{
+#ifdef _IM_RENDER
+		st.renderer.IM_ON=1;
+		LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
+#else
+		LogApp("Your video card is not adequate to play this game... Goodbye!!");
+		Quit();
+#endif
+
+	}
+	else
+		st.renderer.VA_ON=1;
+#endif
+
+#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && defined (_IM_RENDER)
+		st.renderer.IM_ON=1;
+#endif
+
 	//Initialize OpenGL
 	glClearColor(0,0,0,0);
 	glMatrixMode(GL_PROJECTION);
@@ -281,54 +410,112 @@ void Init()
 	glEnable(GL_TEXTURE_2D);
 	SDL_GL_SetSwapInterval(st.vsync);
 
-	st.renderer.VShader[0]=glCreateShader(GL_VERTEX_SHADER);
-	st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
-
-	glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
-	glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Texture_FShader,0);
-
-	glCompileShader(st.renderer.VShader[0]);
-	glCompileShader(st.renderer.FShader[0]);
-
-	GLchar logs[2][1024];
-
-	glGetShaderiv(st.renderer.VShader[0],GL_COMPILE_STATUS,&status);
-	glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&status2);
-
-	glGetShaderInfoLog(st.renderer.VShader[0],1024,NULL,logs[0]);
-	glGetShaderInfoLog(st.renderer.FShader[0],1024,NULL,logs[1]);
-	
-	if(status && status2)
+#ifdef _VAO_RENDER
+	if(st.renderer.VAO_ON)
 	{
-		st.renderer.Program[0]=glCreateProgram();
+		st.renderer.VShader[0]=glCreateShader(GL_VERTEX_SHADER);
+		st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
 
-		glAttachShader(st.renderer.Program[0],st.renderer.VShader[0]);
-		glAttachShader(st.renderer.Program[0],st.renderer.FShader[0]);
+		glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
+		glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Texture_FShader,0);
 
-		glLinkProgram(st.renderer.Program[0]);
+		glCompileShader(st.renderer.VShader[0]);
+		glCompileShader(st.renderer.FShader[0]);
 
-		glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&status3);
+		glGetShaderiv(st.renderer.VShader[0],GL_COMPILE_STATUS,&status);
+		glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&status2);
 
-		if(!status3)
+		if(!status || !status2)
 		{
-			glDeleteProgram(st.renderer.Program[0]);
-			glDeleteShader(st.renderer.VShader[0]);
-			glDeleteShader(st.renderer.FShader[0]);
+			glGetShaderInfoLog(st.renderer.VShader[0],1024,NULL,logs[0]);
+			glGetShaderInfoLog(st.renderer.FShader[0],1024,NULL,logs[1]);
+
+			LogApp("Vertex Shader: %s",logs[0]);
+			LogApp("Fragment Shader: %s",logs[1]);
+			LogApp("Could not compile shader for texture mapping");
+
+			LogApp("%s",Texture_VShader[0]);
+
+			LogApp("%s",Texture_FShader[0]);
+
+#ifdef _VBO_RENDER
+			LogApp("Changing to VBO...");
+
+			if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_buffer_object")==NULL)
+			{
+#ifdef _VA_RENDER
+				st.renderer.VA_ON=1;
+				LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
+#elif defined (_IM_RENDER)
+				st.renderer.IM_ON=1;
+				LogApp("VBO not supported, check your video's card driver for updates... Using IM instead!!");
+#elif !defined (_IM_RENDER)
+				LogApp("Your video card is not adequate to play this game... Goodbye!!");
+				Quit();
+#endif
+			}
+			else
+				st.renderer.VBO_ON=1;
+#endif
+
+#ifdef _VA_RENDER
+			
+			if(st.renderer.VA_ON==1)
+			{
+				LogApp("Changing to VA...");
+
+				if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
+				{
+#ifdef _IM_RENDER
+					st.renderer.IM_ON=1;
+					LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
+#else
+					LogApp("Your video card is not adequate to play this game... Goodbye!!");
+					Quit();
+#endif
+				}
+				else
+					st.renderer.VA_ON=1;
+#endif
+			}
 		}
 		else
+		if(status && status2)
 		{
-			glDetachShader(st.renderer.Program[0],st.renderer.VShader[0]);
-			glDetachShader(st.renderer.Program[0],st.renderer.FShader[0]);
+			st.renderer.Program[0]=glCreateProgram();
+
+			glAttachShader(st.renderer.Program[0],st.renderer.VShader[0]);
+			glAttachShader(st.renderer.Program[0],st.renderer.FShader[0]);
+
+			glLinkProgram(st.renderer.Program[0]);
+
+			glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&status3);
+
+			if(!status3)
+			{
+				glDeleteProgram(st.renderer.Program[0]);
+				glDeleteShader(st.renderer.VShader[0]);
+				glDeleteShader(st.renderer.FShader[0]);
+			}
+			else
+			{
+				glDetachShader(st.renderer.Program[0],st.renderer.VShader[0]);
+				glDetachShader(st.renderer.Program[0],st.renderer.FShader[0]);
+			}
+
+			glUseProgram(st.renderer.Program[0]);
+
+			//This is the main VAO, used for 1 Quad only objects
+			st.renderer.VAO_1Q=CreateVAO(vertex,1,tex, index);
 		}
 	}
 
-	//glValidateProgram(st.renderer.Program[0]);
+#endif
 
-	glUseProgram(st.renderer.Program[0]);
-
-	//glGetProgram
-
-	st.renderer.VAO=CreateVAO(vertex,1,tex,GL_STREAM_DRAW, index);
+#ifdef _VBO_RENDER
+	if(st.renderer.VBO_ON)
+		st.renderer.VBO_1Q=CreateVBO(1);
+#endif
 
 	LogApp("Opengl initialized");
 
@@ -339,10 +526,7 @@ void Init()
 	}
 
 	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_texture_rectangle")==NULL && strstr((char const*) glGetString(GL_EXTENSIONS),"GL_NV_texture_rectangle")==NULL && strstr((char const*) glGetString(GL_EXTENSIONS),"GL_NV_texture_rectangle")==NULL)
-	{
 		LogApp("Rectangle textures not supported, your video card is not supported or try updating your driver");
-		Quit();
-	}
 
 	st.quit=0;
 
@@ -1573,16 +1757,23 @@ int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, f
 	return 0;
 }
 
-int32 MAnim(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a)
+int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a)
 {
 	uint16 curf=0;
-	if(mgf->anim[id].current_frame>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID; else
-	if(mgf->anim[id].current_frame==0) curf=mgf->anim[id].startID; else
-	if((mgf->anim[id].current_frame>0) && (mgf->anim[id].current_frame<mgf->anim[id].endID)) curf=curf=mgf->anim[id].current_frame;
+
+	if((mgf->anim[id].current_frame/10)>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID; else
+
+	if((mgf->anim[id].current_frame/10)==0) curf=mgf->anim[id].startID; else
+
+	if(((mgf->anim[id].current_frame/10)>0) && ((mgf->anim[id].current_frame/10)<mgf->anim[id].endID)) curf=mgf->anim[id].current_frame/10;
+
 	DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a);
+
 	mgf->anim[id].current_frame+=speed;
-	if(mgf->anim[id].current_frame>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID;
-	return mgf->anim[id].current_frame;
+
+	if((mgf->anim[id].current_frame/10)>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID;
+
+	return mgf->anim[id].current_frame/10;
 }
 
 int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
@@ -2192,17 +2383,16 @@ void DrawMap()
 
 void Renderer()
 {
-	_ENTITIES *tmp;
+#ifdef _IM_RENDER
+	_ENTITIES tmp[MAX_GRAPHICS];
 	uint32 j=0, k=0, l=0, t=0;
-	uint32 timel, timej;
-	GLint Tex;
-	void *ptr;
+#endif
 
-	float mat[4][4];
+	GLint Tex;
 
 	uint32 num_targets=0;
 
-	/*
+#ifdef _IM_RENDER
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 
 	for(register uint16 i=0, j=0, k=0, l=0;i<st.num_entities;i++)
@@ -2228,244 +2418,243 @@ void Renderer()
 
 	memcpy(&ent,&tmp,MAX_GRAPHICS*sizeof(_ENTITIES));
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
-	*/
+#endif
+
 	num_targets=st.num_entities;
 
-	//glLoadIdentity();
-	
-	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	//SDL_GL_SwapWindow(wn);
-
-#ifdef _VERTARRAY
-
-	//glColor3f(1.0f,1.0f,1.0f);
-	
-	glUseProgram(st.renderer.Program[0]);
-
-	glBindVertexArray(st.renderer.VAO);
-
-	glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,ent[0].data);
-
-			Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
-			glUniform1i(Tex,0);
-
-	for(uint32 i=0;i<=num_targets;i++)
+#ifdef _VAO_RENDER
+	if(st.renderer.VAO_ON)
 	{
-		if(ent[i].stat==USED)
+		glUseProgram(st.renderer.Program[0]);
+
+		glBindVertexArray(st.renderer.VAO_1Q);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D,ent[0].data);
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
+		glUniform1i(Tex,0);
+
+		for(uint32 i=0;i<=num_targets;i++)
 		{
+			if(ent[i].stat==USED)
+			{
 
-			glBufferSubData(GL_ARRAY_BUFFER,0,(8*sizeof(GLfloat)),ent[i].vertex);
+				glBufferSubData(GL_ARRAY_BUFFER,0,(8*sizeof(GLfloat)),ent[i].vertex);
 
-			glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_SHORT,0);
+				glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_SHORT,0);
 
-			ent[i].data=-1;
-			ent[i].stat=DEAD;
-			st.num_entities--;
+				ent[i].data=-1;
+				ent[i].stat=DEAD;
+				st.num_entities--;
+			}
 		}
+
+		glBindVertexArray(0);
+
+		glUseProgram(0);
 	}
 
-	glBindVertexArray(0);
-
-	glUseProgram(0);
+#endif
 	
-#else
+#ifdef _IM_RENDER
+	if(st.renderer.IM_ON)
+	{
 
-	glLoadIdentity();
-
-	for(register uint32 i=0;i<num_targets;i++)
-	{	
-		if(ent[i].stat==USED)
-		{
-			if(ent[i].type==TEXTURE || ent[i].type==LINE)
+		for(register uint32 i=0;i<num_targets;i++)
+		{	
+			if(ent[i].stat==USED)
 			{
-				//glLoadIdentity();
-
-				glPushMatrix();
-
-				//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
-
-				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-				
-				glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-
-				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-				glRotatef(ent[i].ang,0.0,0.0,1.0);
-				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-				
-				if(ent[i].type==LINE)
+				if(ent[i].type==TEXTURE || ent[i].type==LINE)
 				{
-					glDisable(GL_TEXTURE_2D);
-					glLineWidth(ent[i].data);
-					glBegin(GL_LINES);
-						glVertex2d(ent[i].pos.x, ent[i].pos.y);
-						glVertex2d(ent[i].size.x, ent[i].size.y);
-					glEnd();
-					glEnable(GL_TEXTURE_2D);
+					//glLoadIdentity();
+
+					glPushMatrix();
+
+					//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
+
+					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
+				
+					glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
+
+					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
+					glRotatef(ent[i].ang,0.0,0.0,1.0);
+					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
+				
+					if(ent[i].type==LINE)
+					{
+						glDisable(GL_TEXTURE_2D);
+						glLineWidth(ent[i].data);
+						glBegin(GL_LINES);
+							glVertex2d(ent[i].pos.x, ent[i].pos.y);
+							glVertex2d(ent[i].size.x, ent[i].size.y);
+						glEnd();
+						glEnable(GL_TEXTURE_2D);
+					}
+					else
+					{
+						if(st.tex_bound!=ent[i].data)
+						{
+							glBindTexture(GL_TEXTURE_2D,ent[i].data);
+							st.tex_bound=ent[i].data;
+						}
+							glBegin(GL_TRIANGLES);
+								glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
+								glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+								glTexCoord2f(ent[i].x2y2.x,ent[i].x1y1.y);
+								glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+								glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
+								glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+
+								glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
+								glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+								glTexCoord2f(ent[i].x1y1.x,ent[i].x2y2.y);
+								glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+								glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
+								glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glEnd();
+					}
+					glPopMatrix();
+
+					ent[i].data=-1;
+					ent[i].stat=DEAD;
+					st.num_entities--;
 				}
 				else
+				if(ent[i].type==SPRITE)
 				{
+					//glLoadIdentity();
+				
+					glPushMatrix();
+
+					//glBlendFunc(GL_DST_COLOR, GL_MAX);
+					//glBlendEquation(GL_FUNC_ADD);
+				
+					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
+
+					glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
+
+					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
+					glRotatef(ent[i].ang,0.0,0.0,1.0);
+					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
+
+					//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
+				
 					if(st.tex_bound!=ent[i].data)
 					{
 						glBindTexture(GL_TEXTURE_2D,ent[i].data);
 						st.tex_bound=ent[i].data;
 					}
 						glBegin(GL_TRIANGLES);
-							glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
+							glTexCoord2i(0,0);
 							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2f(ent[i].x2y2.x,ent[i].x1y1.y);
+							glTexCoord2i(1,0);
 							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
+							glTexCoord2i(1,1);
 							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
 
-							glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
+							glTexCoord2i(1,1);
 							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2f(ent[i].x1y1.x,ent[i].x2y2.y);
+							glTexCoord2i(0,1);
 							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
+							glTexCoord2i(0,0);
 							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
 						glEnd();
-				}
-				glPopMatrix();
-
-				ent[i].data=-1;
-				ent[i].stat=DEAD;
-				st.num_entities--;
-			}
-			else
-			if(ent[i].type==SPRITE)
-			{
-				//glLoadIdentity();
-				
-				glPushMatrix();
-
-				//glBlendFunc(GL_DST_COLOR, GL_MAX);
-				//glBlendEquation(GL_FUNC_ADD);
-				
-				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-
-				glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-
-				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-				glRotatef(ent[i].ang,0.0,0.0,1.0);
-				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-
-				//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
-				
-				if(st.tex_bound!=ent[i].data)
-				{
-					glBindTexture(GL_TEXTURE_2D,ent[i].data);
-					st.tex_bound=ent[i].data;
-				}
-					glBegin(GL_TRIANGLES);
-						glTexCoord2i(0,0);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2i(1,0);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2i(1,1);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-						glTexCoord2i(1,1);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2i(0,1);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2i(0,0);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-					glEnd();
 					
-				glPopMatrix();
+					glPopMatrix();
 				
-				ent[i].data=-1;
-				ent[i].stat=DEAD;
-				st.num_entities--;
+					ent[i].data=-1;
+					ent[i].stat=DEAD;
+					st.num_entities--;
 				
-			}
-			else
-			if(ent[i].type==HUD || ent[i].type==TEXT)
-			{
-				//glLoadIdentity();
-
-				glPushMatrix();
-
-				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-				glRotatef(ent[i].ang,0.0,0.0,1.0);
-				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-				//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-				
-				if(st.tex_bound!=ent[i].data)
-				{
-					glBindTexture(GL_TEXTURE_2D,ent[i].data);
-					st.tex_bound=ent[i].data;
 				}
-					glBegin(GL_TRIANGLES);
-						glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2d(ent[i].x2y2.x,ent[i].x1y1.y);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2d(ent[i].x2y2.x,ent[i].x2y2.y);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-						glTexCoord2d(ent[i].x2y2.x,ent[i].x2y2.y);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2d(ent[i].x1y1.x,ent[i].x2y2.y);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-					glEnd();
-
-				glPopMatrix();
-
-				
-
-				if(ent[i].type==TEXT) glDeleteTextures(1,&ent[i].data);
-				ent[i].data=-1;
-				ent[i].stat=DEAD;
-				st.num_entities--;
-				
-			}
-			else
-			if(ent[i].type==UI || ent[i].type==TEXT_UI)
-			{
-				//glLoadIdentity();
-
-				glPushMatrix();
-
-				glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-
-				glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-				glRotatef(ent[i].ang,0.0,0.0,1.0);
-				glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-				//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-				
-				if(st.tex_bound!=ent[i].data)
+				else
+				if(ent[i].type==HUD || ent[i].type==TEXT)
 				{
-					glBindTexture(GL_TEXTURE_2D,ent[i].data);
-					st.tex_bound=ent[i].data;
+					//glLoadIdentity();
+
+					glPushMatrix();
+
+					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
+					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
+					glRotatef(ent[i].ang,0.0,0.0,1.0);
+					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
+					//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
+				
+					if(st.tex_bound!=ent[i].data)
+					{
+						glBindTexture(GL_TEXTURE_2D,ent[i].data);
+						st.tex_bound=ent[i].data;
+					}
+						glBegin(GL_TRIANGLES);
+							glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glTexCoord2d(ent[i].x2y2.x,ent[i].x1y1.y);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glTexCoord2d(ent[i].x2y2.x,ent[i].x2y2.y);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+
+							glTexCoord2d(ent[i].x2y2.x,ent[i].x2y2.y);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+							glTexCoord2d(ent[i].x1y1.x,ent[i].x2y2.y);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+							glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+						glEnd();
+
+					glPopMatrix();
+
+				
+
+					if(ent[i].type==TEXT) glDeleteTextures(1,&ent[i].data);
+					ent[i].data=-1;
+					ent[i].stat=DEAD;
+					st.num_entities--;
+				
 				}
-					glBegin(GL_TRIANGLES);
-						glTexCoord2i(0,0);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2i(1,0);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glTexCoord2i(1,1);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+				else
+				if(ent[i].type==UI || ent[i].type==TEXT_UI)
+				{
+					//glLoadIdentity();
 
-						glTexCoord2i(1,1);
-						glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2i(0,1);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-						glTexCoord2i(0,0);
-						glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-					glEnd();
-				glPopMatrix();
+					glPushMatrix();
 
-				if(ent[i].type==TEXT_UI) glDeleteTextures(1,&ent[i].data);
-				ent[i].data=-1;
-				ent[i].stat=DEAD;
-				st.num_entities--;
+					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
+
+					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
+					glRotatef(ent[i].ang,0.0,0.0,1.0);
+					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
+					//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
+				
+					if(st.tex_bound!=ent[i].data)
+					{
+						glBindTexture(GL_TEXTURE_2D,ent[i].data);
+						st.tex_bound=ent[i].data;
+					}
+						glBegin(GL_TRIANGLES);
+							glTexCoord2i(0,0);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glTexCoord2i(1,0);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+							glTexCoord2i(1,1);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+
+							glTexCoord2i(1,1);
+							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+							glTexCoord2i(0,1);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
+							glTexCoord2i(0,0);
+							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
+						glEnd();
+					glPopMatrix();
+
+					if(ent[i].type==TEXT_UI) glDeleteTextures(1,&ent[i].data);
+					ent[i].data=-1;
+					ent[i].stat=DEAD;
+					st.num_entities--;
+				}
 			}
 		}
 	}

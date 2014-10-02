@@ -20,6 +20,12 @@
 	#include "types.h"
 #endif
 
+#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && !defined (_IM_RENDER)
+	#error Rendering type not defined
+	#error Use _VAO_RENDER or _VBO_RENDER or _VA_RENDER or _IM_RENDER or all together
+#endif
+
+
 #ifndef _ENGINE_H
 #define _ENGINE_H
 
@@ -91,16 +97,13 @@ enum Stat
 struct _ENTITIES //To be rendered
 {
 	Enttype type;
-	GLfloat vertex[8];
-	GLfloat mat[3][3];
 	Pos pos;
 	Pos x1y1;
 	Pos x2y2;
 	Stat stat;
 	GLuint data;
 	Pos size;
-	float colors[12];
-	float ang;
+	int16 ang;
 };
 
 struct Key
@@ -130,9 +133,9 @@ struct _MGGANIM
 {
 	char name[32];
 	uint16 num_frames;
-	float current_frame;
-	uint32 startID;
-	uint32 endID;
+	uint16 current_frame;
+	uint16 startID;
+	uint16 endID;
 };
 
 //File header
@@ -218,20 +221,20 @@ enum Material
 struct _BODY
 {
 	uint8 physics_on;
-	float mass;
+	uint16 mass;
 	Pos size;
-	float max_elasticy;
+	uint16 max_elasticy;
 	Material material;
 	uint8 conductor : 2;
 	uint8 flamable : 2;
 	uint8 explosive : 2;
 	Pos position;
-	float total_vel;
+	int16 total_vel;
 	Pos velxy;
-	float acceleration;
-	float energy;
-	float temperature;
-	float ang;
+	int16 acceleration;
+	int16 energy;
+	int16 temperature;
+	int16 ang;
 };
 
 typedef struct _BODY Body;
@@ -303,7 +306,7 @@ struct _MGMLIGHT
 {
 	Pos position;
 	Pos size;
-	float angle;
+	int16 angle;
 	Colori color;
 	uint32 TextureID;
 	int16 tag;
@@ -315,14 +318,14 @@ struct _MGMOBJ
 	Pos size;
 	Pos texsize;
 	Pos texpan;
-	float angle;
+	int16 angle;
 	Colori color;
 	_TEXTURES tex;
 	int16 tag;
 	uint8 priority : 2;//0 - Most important, 1 - Medium, 2 - Less important
 	_OBJTYPE type;
 	_OBJBLOCK block_type;
-	float amblight;
+	uint8 amblight;
 };
 
 //Map sprites
@@ -358,7 +361,7 @@ struct _MGMSPRITE
 	Pos position;
 	Pos size;
 
-	float angle;
+	int16 angle;
 
 	Colori color;
 };
@@ -394,7 +397,7 @@ struct _MGMFORMAT
 struct _CAMERA
 {
 	Pos position;
-	float angle;
+	int16 angle;
 	Pos dimension;
 };
 
@@ -446,16 +449,49 @@ struct Joy
 	} axis[6];
 }
 */
+#ifdef _VBO_RENDER
+
+struct _VBO_PACKET
+{
+	GLuint VBO, IBO;
+	uint16 elements;
+};
+
+typedef _VBO_PACKET VBO_PACKET;
+
+#endif
 
 struct Render
 {
+
+#ifdef _VAO_RENDER
+	uint8 VAO_ON;
+
+	GLuint VAO_1Q;
+	GLuint *VAO;
+
+#endif
+
+#ifdef _VBO_RENDER
+	uint8 VBO_ON;
+
+	VBO_PACKET VBO_1Q;
+	VBO_PACKET *VBO;
+#endif
+
+#ifdef _VA_RENDER
+	uint8 VA_ON;
+#endif
+
+
+#ifdef _IM_RENDER
+	uint8 IM_ON;
+#endif
+
 	GLuint VShader[4];
 	GLuint FShader[4];
 	GLuint GShader[4];
 	GLuint Program[4];
-
-	GLuint *VBO;
-	GLuint VAO;
 };
 
 struct TFont
@@ -596,7 +632,7 @@ int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey,
 int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
 int8 DrawUI(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
 
-int32 MAnim(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, float speed, float a);
+int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a);
 
 void Renderer();
 
