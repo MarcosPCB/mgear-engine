@@ -4,6 +4,9 @@ MGGNAME TEST //MGG name
 FRAMES 16 //Number of frames
 ANIMS 2 //Number of animations
 TYPE MULT //Type of mgg
+ATLAS 1 //Number of atlases
+
+ATLASIMGNUM 0 16 //Defines the number of frames in an atlas
 
 BEGIN //Start every animation instruction with BEGIN
 
@@ -13,6 +16,7 @@ NAME EXAMPLE //Animation name
 FRAMESA 11 //Number of frames
 STARTF 0 //Start frame
 ENDF 10 //Final frame
+SPEED 2 //Animation speed
 
 ENDA //End code with ENDA
 
@@ -25,5 +29,11 @@ STARTF 11
 ENDF 15
 
 ENDA
+
+ATLASDIM 0 320 320 //Defines the atlas dimensions
+
+SET 0 0 0 32 32 15 0 10 2 //Set of images in an atlas: atlas ID, start at pixel x, start at pixel y, size x of images, size y of images, number of images, start at frame number, number of images in a row, number of images in a colunm
+
+ONEIMG 0 0 320 16 16 15 //One image only: atlas ID, start at pixel x, start at pixel y, x size, y size , frame number
 
 OBS: don't use commentaries

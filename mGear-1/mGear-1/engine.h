@@ -102,9 +102,7 @@ enum Stat
 
 struct _TEX_DATA
 {
-	GLuint atlas_ID; //Atlas ID if it belongs to a texture atlas
-	uint8 atlas; //Texture atlas or not
-	GLuint data; //Texture data if it's a single texture
+	GLuint data;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
 };
@@ -179,7 +177,7 @@ struct _MGG
 	char name[32];
 	uint16 num_frames;
 	_MGGTYPE type;
-	TEX_DATA *frames; //single-texture and atlas objects data
+	TEX_DATA frames[8192]; //single-texture and atlas objects data
 	GLuint *atlas; //texture atlas data
 	Pos *size;
 	//Pos *sizefix;

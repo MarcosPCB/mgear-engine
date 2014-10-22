@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 
 		//for(i=0;i<50;i++)
 			//for(j=0;j<50;j++)
-				DrawSprite(j*150,i*150,150,150,0,255,255,255,mgg[0].frames[0],1);
+				DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[1],1);
 				//DrawSprite(250,600,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,950,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,1200,250,250,0,255,255,255,0,1);
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 		//Timer();
 	}
 	StopAllSounds();
-	FreeMGG(&mgg[0]);
+	//FreeMGG(&mgg[0]);
 	Quit();
 	return true;
 }

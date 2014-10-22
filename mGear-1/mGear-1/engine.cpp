@@ -886,7 +886,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	//size_t totalsize=((sizeof(_MGGFORMAT)+512)+(512+MAX_FRAMES*sizeof(uint32))+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
 
-	mgg->frames=(TEX_DATA*) malloc(mgg->num_frames*sizeof(TEX_DATA));
+	//mgg->frames=(TEX_DATA*) malloc(mgg->num_frames*sizeof(TEX_DATA));
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 	mgg->atlas=(GLuint*) malloc(mggf.num_atlas*sizeof(GLuint));
 	//mgg->sizefix=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
@@ -916,10 +916,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 		if(j<mggf.num_atlas)
 		{
-			mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_INVERT_Y);
-
-			mgg->frames[i].atlas=1;
-			mgg->frames[i].atlas_ID=i;
+			mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
 			if(mgg->atlas[i]==NULL)
 				LogApp("Error loading texture from memory");
@@ -928,10 +925,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		}
 		else
 		{
-			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_INVERT_Y);
+			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
-			mgg->frames[i+(mggf.num_texinatlas)].atlas=0;
-			mgg->frames[i+(mggf.num_texinatlas)].atlas_ID=-1;
+			//mgg->frames[i+(mggf.num_texinatlas)].atlas=0;
+			//mgg->frames[i+(mggf.num_texinatlas)].atlas_ID=-1;
 			mgg->frames[i+(mggf.num_texinatlas)].posx=0;
 			mgg->frames[i+(mggf.num_texinatlas)].posy=0;
 
@@ -960,6 +957,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	for(i=1;i<mggf.num_texinatlas+1;i++)
 	{
+		mgg->frames[i].data=mgg->atlas[0];
 		mgg->frames[i].posx=posx[i-1];
 		mgg->frames[i].posy=posy[i-1];
 		mgg->frames[i].sizex=sizex[i-1];
@@ -1424,33 +1422,26 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				}
 			}
 
-			ent[i].texcor[0]=data.posx;
-			ent[i].texcor[1]=data.posy;
+			ent[i].texcor[0]=data.sizex+data.posx;
+			ent[i].texcor[1]=data.sizey+data.posy;
 
-			ent[i].texcor[2]=data.sizex;
-			ent[i].texcor[3]=data.posy;
+			ent[i].texcor[2]=data.posx;
+			ent[i].texcor[3]=data.sizey+data.posy;
 
-			ent[i].texcor[4]=data.sizex;
-			ent[i].texcor[5]=data.sizey;
+			ent[i].texcor[4]=data.posx;
+			ent[i].texcor[5]=data.posy;
 
-			ent[i].texcor[6]=data.posx;
-			ent[i].texcor[7]=data.sizey;
+			ent[i].texcor[6]=data.sizex+data.posx;
+			ent[i].texcor[7]=data.posy;
 
 			ax=(float) 1/(32768/2);
 			ay=(float) 1/(32768/2);
 
 			for(uint8 j=0;j<8;j++)
 			{
-				if(j%2==0)
-				{
-					ent[i].texcor[j]*=ax;
-					ent[i].texcor[j]-=1;
-				}
-				else
-				{
-					ent[i].texcor[j]*=ay;
-					ent[i].texcor[j]-=1;
-				}
+				ent[i].texcor[j]/=(float)32768;
+				//ent[i].texcor[j]-=1;
+				
 			}
 			
 			ent[i].pos.x=(x*ax)-1;
@@ -2486,6 +2477,7 @@ void Renderer()
 	num_targets=st.num_entities;
 
 	glClear(GL_COLOR_BUFFER_BIT);
+	//glClearColor(1,1,1,0);
 
 #ifdef _VAO_RENDER
 	if(st.renderer.VAO_ON)
@@ -2495,7 +2487,7 @@ void Renderer()
 		glBindVertexArray(st.renderer.VAO_1Q);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,ent[0].data.atlas_ID);
+		glBindTexture(GL_TEXTURE_2D,ent[0].data.data);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
 		glUniform1i(Tex,0);
