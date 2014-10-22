@@ -289,8 +289,8 @@ int main(int argc, char *argv[])
 
 	//timej=GetTicks();
 
-		for(i=0;i<50;i++)
-			for(j=0;j<50;j++)
+		//for(i=0;i<50;i++)
+			//for(j=0;j<50;j++)
 				DrawSprite(j*150,i*150,150,150,0,255,255,255,mgg[0].frames[0],1);
 				//DrawSprite(250,600,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,950,250,250,0,255,255,255,0,1);

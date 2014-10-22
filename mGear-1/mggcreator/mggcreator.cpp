@@ -13,11 +13,26 @@ int main(int argc, char *argv[])
 {
 	FILE *file, *file2, *file3, *file4;
 	_MGGFORMAT mgg;
-	memset(&mgg,0,sizeof(_MGGFORMAT));
 	_MGGANIM *mga;
 	char FileName[256], filename[256], animfile[256], tmp[32], str[2][16], framename[256], framename2[256];
-	int16 t=0, value, p=0, a=-1;
-	char header[21]={"MGG File Version 1.0"};
+	int16 t=0, value, p=0, a=-1, val[16];
+	char header[21]={"MGG File Version 1.1"};
+	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas=0, *dimx, *dimy;
+	uint8 *imgatlas;
+	uint32 frameoffset[MAX_FRAMES];
+	uint32 framesize[MAX_FRAMES];
+	size_t totalsize;
+	register uint16 i=0, j=0, k=0;
+
+	memset(&mgg,0,sizeof(_MGGFORMAT));
+
+	posx=(uint16*) malloc(sizeof(uint16));
+	posy=(uint16*) malloc(sizeof(uint16));
+	sizex=(uint16*) malloc(sizeof(uint16));
+	sizey=(uint16*) malloc(sizeof(uint16));
+	imgatlas=(uint8*) malloc(sizeof(uint8));
+	dimx=(uint16*) malloc(sizeof(uint16));
+	dimy=(uint16*) malloc(sizeof(uint16));
 
 	if(argc<3)
 	{
@@ -31,7 +46,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		for(register uint8 i=0; i<argc;i++)
+		for(i=0; i<argc;i++)
 		{
 			if(strcmp(argv[i],"-o")==NULL)
 			{
@@ -60,6 +75,8 @@ int main(int argc, char *argv[])
 		getch();
 		exit(1);
 	}
+
+	memset(&mgg,0,sizeof(_MGGFORMAT));
 
 	printf("Reading %s...\n",&animfile);
 
@@ -116,6 +133,12 @@ int main(int argc, char *argv[])
 					value=atoi(str[1]);
 					mga[a].num_frames=value;
 				}
+				else
+				if(strcmp(str[0],"SPEED")==NULL)
+				{
+					value=atoi(str[1]);
+					mga[a].speed=value;
+				}
 				else if(strcmp(str[0],"ENDA")==NULL)
 				{
 					p=0;
@@ -142,6 +165,13 @@ int main(int argc, char *argv[])
 				mga=(_MGGANIM*) malloc(value*sizeof(_MGGANIM));
 			}
 			else
+			if(strcmp(str[0],"ATLAS")==NULL)
+			{
+				value=atoi(str[1]);
+				mgg.num_atlas=value;
+
+			}
+			else
 			if(strcmp(str[0],"TYPE")==NULL)
 			{
 				if(strcmp(str[1],"MULT")==NULL)
@@ -162,8 +192,139 @@ int main(int argc, char *argv[])
 				}
 				else p++;
 			}
+			else
+			if(strcmp(str[0],"SET")==NULL)
+			{
+				if(!mgg.num_atlas || !num_img_in_atlas)
+				{
+					if(!mgg.num_atlas)
+						printf("Error: Number of atlas textures not previously defined in %s\n",&animfile);
+					
+					if(!num_img_in_atlas)
+						printf("Error: Number of images in atlases not previously defined in %s\n",&animfile);
+
+					fflush(stdin);
+					getch();
+					exit(1);
+				}
+				else
+				{
+					sscanf(tmp,"%s %d %d %d %d %d %d %d %d %d", str[1], &val[0], &val[1], &val[2], &val[3], &val[4], &val[5], &val[6], &val[7], &val[8]);
+				
+					k=val[6];
+
+					for(i=0;i<val[8];i++)
+					{
+						if(k==val[5]) break;
+
+						for(j=0;j<val[7];j++)
+						{
+							if(k==val[5]) break;
+
+							imgatlas[k]=val[0];
+
+							posx[k]=val[1]+(j*val[3]);
+							posy[k]=val[2]+(i*val[4]);
+							sizex[k]=val[3];
+							sizey[k]=val[4];
+
+							posx[k]=(posx[k]*32768)/dimx[val[0]];
+							posy[k]=(posy[k]*32768)/dimy[val[0]];
+							sizex[k]=(sizex[k]*32768)/dimx[val[0]];
+							sizey[k]=(sizey[k]*32768)/dimy[val[0]];
+
+							k++;
+						}
+					}
+				}
+			}
+			else
+			if(strcmp(str[0],"ONEIMG")==NULL)
+			{
+				if(!mgg.num_atlas || !num_img_in_atlas)
+				{
+					if(!mgg.num_atlas)
+						printf("Error: Number of atlas textures not previously defined in %s\n",&animfile);
+					
+					if(!num_img_in_atlas)
+						printf("Error: Number of images in atlases not previously defined in %s\n",&animfile);
+
+					fflush(stdin);
+					getch();
+					exit(1);
+				}
+				else
+				{
+					sscanf(tmp,"%s %d %d %d %d %d %d",str[1], &val[0], &val[1], &val[2], &val[3], &val[4], &val[5]);
+
+					imgatlas[val[5]]=val[0];
+
+					posx[val[5]]=val[1];
+					posy[val[5]]=val[2];
+					sizex[val[5]]=val[3];
+					sizey[val[5]]=val[4];
+
+					posx[k]=(posx[k]*32768)/dimx[val[0]];
+					posy[k]=(posy[k]*32768)/dimy[val[0]];
+					sizex[k]=(sizex[k]*32768)/dimx[val[0]];
+					sizey[k]=(sizey[k]*32768)/dimy[val[0]];
+				}
+			}
+			else
+			if(strcmp(str[0],"ATLASDIM")==NULL)
+			{
+				if(!mgg.num_atlas || !num_img_in_atlas)
+				{
+					if(!mgg.num_atlas)
+						printf("Error: Number of atlas textures not previously defined in %s\n",&animfile);
+					
+					if(!num_img_in_atlas)
+						printf("Error: Number of images in atlases not previously defined in %s\n",&animfile);
+
+					fflush(stdin);
+					getch();
+					exit(1);
+				}
+				else
+				{
+					sscanf(tmp,"%s %d %d %d",str[1], &val[0], &val[1], &val[2]);
+
+					dimx[val[0]]=val[1];
+					dimy[val[0]]=val[2];
+				}
+			}
+			else
+			if(strcmp(str[0],"ATLASIMGNUM")==NULL)
+			{
+				if(!mgg.num_atlas)
+				{
+					if(!mgg.num_atlas)
+						printf("Error: Number of atlas textures not previously defined in %s\n",&animfile);
+					
+					fflush(stdin);
+					getch();
+					exit(1);
+				}
+				else
+				{
+					sscanf(tmp,"%s %d %d", str[0], &val[0], &val[1]);
+
+					posx=(uint16*) realloc(posx,val[1]*sizeof(uint16));
+					posy=(uint16*) realloc(posy,val[1]*sizeof(uint16));
+					sizex=(uint16*) realloc(sizex,val[1]*sizeof(uint16));
+					sizey=(uint16*) realloc(sizey,val[1]*sizeof(uint16));
+					imgatlas=(uint8*) realloc(imgatlas,val[1]*sizeof(uint8));
+					dimx=(uint16*) realloc(dimx,val[1]*sizeof(uint16));
+					dimy=(uint16*) realloc(dimy,val[1]*sizeof(uint16));
+
+					num_img_in_atlas+=val[1];
+				}
+			}
 		}
 	}
+
+	mgg.num_singletex=mgg.num_frames-num_img_in_atlas;
+	mgg.num_texinatlas=num_img_in_atlas;
 
 	fclose(file4);
 
@@ -185,27 +346,26 @@ int main(int argc, char *argv[])
 
 	fwrite(header,21,1,file);
 
-	fseek(file,21,SEEK_SET);
+	//fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
 
-	fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
-	rewind(file);
-	fseek(file,(sizeof(_MGGFORMAT)+512)+21,SEEK_SET);
+	fseek(file,sizeof(_MGGFORMAT),SEEK_CUR);
 	
-	fwrite(mga,sizeof(_MGGANIM),2,file);
-	
-	uint32 framesize[MAX_FRAMES];
-	size_t totalsize;
-	totalsize=((sizeof(_MGGFORMAT)+512)+(MAX_FRAMES*sizeof(uint32)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
+	fwrite(mga,sizeof(_MGGANIM),mgg.num_animations,file);
 
-	uint32 j=0;
-	for(register uint32 i=0;i<mgg.num_frames;i++)
+	mgg.textures_offset=ftell(file);
+	
+	//totalsize=((sizeof(_MGGFORMAT)+512)+(MAX_FRAMES*sizeof(uint32)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
+
+	j=0;
+	for(i=0;i<mgg.num_singletex;i++)
 	{
 		//if(i==33) j=42;
 		strcpy(framename2,framename);
 		if(j<10) sprintf(filename,"//frame000%d.tga",j); else
 		if(j<100) sprintf(filename,"//frame00%d.tga",j); else
 		if(j<1000) sprintf(filename,"//frame0%d.tga",j); else
-		if(j<10000) sprintf(filename,"//frame0%d.tga",j);
+		if(j<10000) sprintf(filename,"//frame0%d.tga",j); else
+		if(j<100000) sprintf(filename,"//frame%d.tga",j);
 
 		strcat(framename2,filename);
 
@@ -229,16 +389,17 @@ int main(int argc, char *argv[])
 	
 			void *buf=(void*) malloc(size);
 			fread(buf,size,1,file2);
-			rewind(file);
-
-			if(i==0) fseek(file,totalsize,SEEK_CUR); 
+			//rewind(file);
+			
+			if(i==0) fseek(file,mgg.textures_offset+1,SEEK_SET); 
 			else
 			{
-				totalsize+=(framesize[i-1]+2048);
-				fseek(file,totalsize,SEEK_CUR);
+				//totalsize+=(framesize[i-1]+2048);
+				fseek(file,frameoffset[i-1]+1,SEEK_SET);
 			}
-
+			
 			fwrite(buf,size,1,file);
+			frameoffset[i]=ftell(file);
 			fclose(file2);
 			free(buf);
 			printf("Wrote frame number %d\n",j);
@@ -246,9 +407,23 @@ int main(int argc, char *argv[])
 		j++;
 	}
 
-	rewind(file);
-	fseek(file,((sizeof(_MGGFORMAT)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21,SEEK_CUR);
-	fwrite(framesize,sizeof(uint32),mgg.num_frames,file);
+	mgg.possize_offset=ftell(file);
+
+	fwrite(posx,sizeof(uint16),num_img_in_atlas,file);
+	fwrite(posy,sizeof(uint16),num_img_in_atlas,file);
+	fwrite(sizex,sizeof(uint16),num_img_in_atlas,file);
+	fwrite(sizey,sizeof(uint16),num_img_in_atlas,file);
+	fwrite(imgatlas,sizeof(uint8),num_img_in_atlas,file);
+
+	mgg.framesize_offset=ftell(file);
+
+	fwrite(framesize,sizeof(uint32),mgg.num_singletex,file);
+
+	fwrite(frameoffset,sizeof(uint32),mgg.num_singletex,file);
+
+	fseek(file,21,SEEK_SET);
+
+	fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
 
 	printf("Compressing file...\n");
 

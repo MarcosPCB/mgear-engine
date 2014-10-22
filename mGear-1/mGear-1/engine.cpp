@@ -802,7 +802,7 @@ uint32 CheckMGGFile(const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1.0")!=NULL)
+	if(strcmp(header,"MGG File Version 1.1")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",name);
 		fclose(file);
@@ -828,8 +828,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 {
 	FILE *file, *file2;
 	void *data;
-
+	_MGGFORMAT mggf;
 	char header[21];
+	register uint16 i=0, j=0, k=0;
+	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES];
+	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy;
 
 	if((file=DecompressFile(name))==NULL)
 	{
@@ -837,22 +840,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			return false;
 	}
 
-	_MGGFORMAT mggf;
 
 	rewind(file);
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1.0")!=NULL)
+	if(strcmp(header,"MGG File Version 1.1")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",header);
 		fclose(file);
 		return false;
 	}
-
-	rewind(file);
-
-	fseek(file,21,SEEK_SET);
 
 	fread(&mggf,sizeof(_MGGFORMAT),1,file);
 
@@ -869,41 +867,43 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	mgg->type=mggf.type;
 	
-	mgg->num_anims=2;
+	mgg->num_anims=mggf.num_animations;
 
 	_MGGANIM *mga;
-
-	uint32 framesize[MAX_FRAMES];
 
 	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 
-	rewind(file);
-	fseek(file,((sizeof(_MGGFORMAT)+512))+21,SEEK_CUR);
 	fread(mga,sizeof(_MGGANIM),mgg->num_anims,file);
 
-	for(register uint16 i=0;i<mgg->num_anims;i++)
+	for(i=0;i<mgg->num_anims;i++)
 		mgg->anim[i]=mga[i];
 
-	fseek(file,((sizeof(_MGGFORMAT)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21,SEEK_SET);
-	fread(framesize,sizeof(uint32),mgg->num_frames,file);
+	rewind(file);
+	fseek(file,mggf.framesize_offset,SEEK_CUR);
+	fread(framesize,sizeof(uint32),mggf.num_singletex,file);
+	fread(frameoffset,sizeof(uint32),mggf.num_singletex,file);
 
-	size_t totalsize=((sizeof(_MGGFORMAT)+512)+(512+MAX_FRAMES*sizeof(uint32))+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
+	//size_t totalsize=((sizeof(_MGGFORMAT)+512)+(512+MAX_FRAMES*sizeof(uint32))+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
 
-	mgg->frames=(GLuint*) malloc(mgg->num_frames*sizeof(GLuint));
+	mgg->frames=(TEX_DATA*) malloc(mgg->num_frames*sizeof(TEX_DATA));
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
-	mgg->sizefix=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
+	mgg->atlas=(GLuint*) malloc(mggf.num_atlas*sizeof(GLuint));
+	//mgg->sizefix=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 
-	for(register uint32 i=0;i<mgg->num_frames;i++)
+	//fseek(file,mggf.textures_offset,SEEK_SET);
+
+	for(i=0, j=0;i<mggf.num_singletex-1;i++)
 	{
-		rewind(file);
-		if(i==0) fseek(file,totalsize,SEEK_CUR);
+		
+		//rewind(file);
+		if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
 		else
 		{
-			totalsize+=(framesize[i-1]+2048);
-			fseek(file,totalsize,SEEK_CUR);
+			//totalsize+=(framesize[i-1]+2048);
+			fseek(file,frameoffset[i-1]+1,SEEK_SET);
 		}
-
+		
 		data=malloc(framesize[i]);
 
 		if(data==NULL)
@@ -914,13 +914,56 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 		fread(data,framesize[i],1,file);
 
-		mgg->frames[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+		if(j<mggf.num_atlas)
+		{
+			mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_INVERT_Y);
 
-		if(mgg->frames[i]==NULL)
-			LogApp("Error loading texture from memory");
+			mgg->frames[i].atlas=1;
+			mgg->frames[i].atlas_ID=i;
+
+			if(mgg->atlas[i]==NULL)
+				LogApp("Error loading texture from memory");
+
+			j++;
+		}
+		else
+		{
+			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_INVERT_Y);
+
+			mgg->frames[i+(mggf.num_texinatlas)].atlas=0;
+			mgg->frames[i+(mggf.num_texinatlas)].atlas_ID=-1;
+			mgg->frames[i+(mggf.num_texinatlas)].posx=0;
+			mgg->frames[i+(mggf.num_texinatlas)].posy=0;
+
+			if(mgg->frames[i+(mggf.num_texinatlas)].data==NULL)
+				LogApp("Error loading texture from memory");
+		}
 		
 		if (data)						
 			free(data);
+	}
+		
+	fseek(file,mggf.possize_offset,SEEK_SET);
+
+	posx=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	posy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	sizex=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	sizey=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	//imgatlas=(uint8*) malloc(sizeof(uint8));
+	//dimx=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	//dimy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+
+	fread(posx,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(posy,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(sizex,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(sizey,sizeof(uint16),mggf.num_texinatlas,file);
+
+	for(i=1;i<mggf.num_texinatlas+1;i++)
+	{
+		mgg->frames[i].posx=posx[i-1];
+		mgg->frames[i].posy=posy[i-1];
+		mgg->frames[i].sizex=sizex[i-1];
+		mgg->frames[i].sizey=sizey[i-1];
 	}
 
 	fclose(file);
@@ -935,7 +978,7 @@ void FreeMGG(_MGG *file)
 
 	for(register uint32 i=0; i<file->num_frames; i++)
 	{
-		glDeleteTextures(1, &file->frames[i]);
+		//glDeleteTextures(1, &file->frames[i]);
 		file->size[i].x=NULL;
 		file->size[i].y=NULL;
 	}
@@ -1275,14 +1318,14 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	
 }
 
-int8 DrawSprite(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a)
+int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a)
 {
 	
 	float tmp, ax, ay;
 
 	uint8 val=0;
 	register uint32 i=0;
-
+	/*
 	Pos dim=st.Camera.dimension;
 
 	x-=st.Camera.position.x;
@@ -1321,7 +1364,7 @@ int8 DrawSprite(float x, float y, float sizex, float sizey, float ang, uint8 r, 
 	if(tmp>dim.y) val++;
 
 	if(val==8) return 1;
-
+	*/
 	i=st.num_entities;
 
 		if(ent[i].stat==DEAD)
@@ -1380,17 +1423,36 @@ int8 DrawSprite(float x, float y, float sizex, float sizey, float ang, uint8 r, 
 					ent[i].vertex[j]-=1;
 				}
 			}
-			
-			ent[i].mat[0][0]=1;
-			ent[i].mat[0][1]=0;
-			ent[i].mat[0][2]=(x*ax)-1;
-			ent[i].mat[1][0]=0;
-			ent[i].mat[1][1]=1;
-			ent[i].mat[1][2]=(y*ay)-1;
-			ent[i].mat[2][0]=0;
-			ent[i].mat[2][1]=0;
-			ent[i].mat[2][2]=1;
 
+			ent[i].texcor[0]=data.posx;
+			ent[i].texcor[1]=data.posy;
+
+			ent[i].texcor[2]=data.sizex;
+			ent[i].texcor[3]=data.posy;
+
+			ent[i].texcor[4]=data.sizex;
+			ent[i].texcor[5]=data.sizey;
+
+			ent[i].texcor[6]=data.posx;
+			ent[i].texcor[7]=data.sizey;
+
+			ax=(float) 1/(32768/2);
+			ay=(float) 1/(32768/2);
+
+			for(uint8 j=0;j<8;j++)
+			{
+				if(j%2==0)
+				{
+					ent[i].texcor[j]*=ax;
+					ent[i].texcor[j]-=1;
+				}
+				else
+				{
+					ent[i].texcor[j]*=ay;
+					ent[i].texcor[j]-=1;
+				}
+			}
+			
 			ent[i].pos.x=(x*ax)-1;
 			ent[i].pos.y=(y*ay)-1;
 			ent[i].size.x=(sizex*ax)-1;
@@ -2326,7 +2388,7 @@ void FreeMap()
 
 void DrawMap()
 {
-	
+	/*
 	//Draw the objects first
 
 	float x, y, sizex, sizey, ang, size;
@@ -2379,6 +2441,7 @@ void DrawMap()
 				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg[0].frames[0],1,1,1,0,0);
 			}
 	}
+	*/
 }
 
 void Renderer()
@@ -2432,7 +2495,7 @@ void Renderer()
 		glBindVertexArray(st.renderer.VAO_1Q);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,ent[0].data);
+		glBindTexture(GL_TEXTURE_2D,ent[0].data.atlas_ID);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
 		glUniform1i(Tex,0);
@@ -2443,10 +2506,11 @@ void Renderer()
 			{
 
 				glBufferSubData(GL_ARRAY_BUFFER,0,(8*sizeof(GLfloat)),ent[i].vertex);
+				glBufferSubData(GL_ARRAY_BUFFER,(8*sizeof(GLfloat)),(8*sizeof(GLfloat)),ent[i].texcor);
 
 				glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_SHORT,0);
 
-				ent[i].data=-1;
+				//ent[i].data=-1;
 				ent[i].stat=DEAD;
 				st.num_entities--;
 			}

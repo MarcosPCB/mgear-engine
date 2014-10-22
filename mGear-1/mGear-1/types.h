@@ -1,6 +1,5 @@
-#pragma once
-
-#include <stdio.h>
+#ifndef _MGTYPES_H
+#define _MGTYPES_H
 
 typedef signed char int8;
 typedef unsigned char uint8;
@@ -12,8 +11,8 @@ typedef long long unsigned uint64;
 
 typedef struct
 {
-	double x;
-	double y;
+	int32 x;
+	int32 y;
 } Pos;
 
 typedef struct
@@ -29,5 +28,7 @@ typedef struct
 	uint8 r;
 	uint8 g;
 	uint8 b;
-	float a;
+	uint8 a;
 } Colori;
+
+#endif

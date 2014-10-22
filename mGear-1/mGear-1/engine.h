@@ -1,26 +1,32 @@
-#include <GLee.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
-#include <SDL_thread.h>
-#include <SDL_mutex.h>
-#include <fmod.h>
-#include <fmod_errors.h>
+#ifndef _DOS_BUILD
+	#include <GLee.h>
+	#include <SDL.h>
+	#include <SDL_opengl.h>
+	#include <SDL_thread.h>
+	#include <SDL_mutex.h>
+	#include <fmod.h>
+	#include <fmod_errors.h>
+	#include <SDL_ttf.h>
+	#include <SOIL.h>
+#else
+	#include <dos.h>
+	#include <conio.h>
+#endif
 
 #ifdef WIN32
 	#include <Windows.h>
 #endif
 
-#include <SDL_ttf.h>
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <SOIL.h>
 #include <time.h>
 
 #ifndef _MGTYPES_H
 	#include "types.h"
 #endif
 
-#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && !defined (_IM_RENDER)
+#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && !defined (_IM_RENDER) && !defined (_DOS_BUILD)
 	#error Rendering type not defined
 	#error Use _VAO_RENDER or _VBO_RENDER or _VA_RENDER or _IM_RENDER or all together
 #endif
@@ -55,7 +61,7 @@ typedef FMOD_SOUND Sound;
 typedef FMOD_CHANNEL Channel;
 
 //MGG format
-#define MAX_FRAMES 65536
+#define MAX_FRAMES 8192
 #define MAX_ANIMATIONS 64
 #define MAX_MGG 256
 
@@ -94,6 +100,17 @@ enum Stat
 	USED
 };
 
+struct _TEX_DATA
+{
+	GLuint atlas_ID; //Atlas ID if it belongs to a texture atlas
+	uint8 atlas; //Texture atlas or not
+	GLuint data; //Texture data if it's a single texture
+	uint16 posx, posy; //position in atlas
+	uint16 sizex, sizey; //size in atlas
+};
+
+typedef struct _TEX_DATA TEX_DATA;
+
 struct _ENTITIES //To be rendered
 {
 	Enttype type;
@@ -101,9 +118,11 @@ struct _ENTITIES //To be rendered
 	Pos x1y1;
 	Pos x2y2;
 	Stat stat;
-	GLuint data;
+	TEX_DATA data;
 	Pos size;
 	int16 ang;
+	float vertex[8];
+	float texcor[8];
 };
 
 struct Key
@@ -136,6 +155,7 @@ struct _MGGANIM
 	uint16 current_frame;
 	uint16 startID;
 	uint16 endID;
+	int8 speed;
 };
 
 //File header
@@ -144,7 +164,13 @@ struct _MGGFORMAT
 	char name[32];
 	uint16 num_frames;
 	_MGGTYPE type;
+	uint8 num_atlas;
+	uint16 num_singletex;
+	uint16 num_texinatlas;
 	uint32 num_animations;
+	size_t textures_offset;
+	size_t possize_offset;
+	size_t framesize_offset;
 };
 
 //MGG -> MGear Graphics
@@ -153,9 +179,10 @@ struct _MGG
 	char name[32];
 	uint16 num_frames;
 	_MGGTYPE type;
-	GLuint *frames;
+	TEX_DATA *frames; //single-texture and atlas objects data
+	GLuint *atlas; //texture atlas data
 	Pos *size;
-	Pos *sizefix;
+	//Pos *sizefix;
 	uint32 num_anims;
 	_MGGANIM *anim;
 };
@@ -622,8 +649,8 @@ void _fastcall WTS(float *x, float *y);
 
 uint32 PlayMovie(const char *name);
 
-int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY);
-int8 DrawSprite(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
+int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a);
 int8 DrawLight(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
 int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth);
