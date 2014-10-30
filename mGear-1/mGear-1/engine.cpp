@@ -8,6 +8,10 @@ _SETTINGS st;
 _ENTITIES ent[MAX_GRAPHICS];
 SDL_Event events;
 
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+	VB_DATA *vbd;
+#endif
+
 _MGG movie;
 _MGG mgg[MAX_MGG];
 
@@ -893,6 +897,14 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	//fseek(file,mggf.textures_offset,SEEK_SET);
 
+	if(mggf.num_atlas>0)
+	{
+		for(i=0;i<mggf.num_atlas;i++)
+		{
+
+		}
+	}
+
 	for(i=0, j=0;i<mggf.num_singletex-1;i++)
 	{
 		
@@ -963,6 +975,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].sizex=sizex[i-1];
 		mgg->frames[i].sizey=sizey[i-1];
 	}
+
+
 
 	fclose(file);
 

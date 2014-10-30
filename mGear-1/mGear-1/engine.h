@@ -100,8 +100,18 @@ enum Stat
 	USED
 };
 
+struct VB_DATA
+{
+	GLuint id;
+	float *vertex;
+	float *texcoord;
+	GLushort *index;
+	GLuint texture;
+};
+
 struct _TEX_DATA
 {
+	GLuint VAO_ID;
 	GLuint data;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
