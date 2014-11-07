@@ -9,7 +9,8 @@ _ENTITIES ent[MAX_GRAPHICS];
 SDL_Event events;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
-	VB_DATA *vbd;
+	VB_DATA vbd;
+	VB_DATA *vbdt;
 #endif
 
 _MGG movie;
@@ -158,13 +159,12 @@ void Quit()
 }
 
 #ifdef _VAO_RENDER
-static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloat *texcoord, const GLushort *index)
+static void CreateVAO(VB_DATA *data)
 {
-	GLuint VAO, VBO, IBO;
 	GLint pos, texc;
 
-	glGenVertexArrays(1,&VAO);
-	glBindVertexArray(VAO);
+	glGenVertexArrays(1,&data->vao_id);
+	glBindVertexArray(data->vao_id);
 
 	pos=glGetAttribLocation(st.renderer.Program[0],"Position");
 	texc=glGetAttribLocation(st.renderer.Program[0],"TexCoord");
@@ -172,24 +172,22 @@ static GLuint CreateVAO(const GLfloat *vertex, uint16 num_elements, const GLfloa
 	glEnableVertexAttribArray(pos);
 	glEnableVertexAttribArray(texc);
 
-	glGenBuffers(1,&VBO);
-	glBindBuffer(GL_ARRAY_BUFFER,VBO);
+	glGenBuffers(1,&data->vbo_id);
+	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 
-	glBufferData(GL_ARRAY_BUFFER,((num_elements*8)*sizeof(GLfloat))+((num_elements*8)*sizeof(GLfloat)),0,GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER,0,(8*num_elements)*sizeof(GLfloat),vertex);
-	glBufferSubData(GL_ARRAY_BUFFER,(8*num_elements)*sizeof(GLfloat),(8*num_elements)*sizeof(GLfloat),texcoord);
+	glBufferData(GL_ARRAY_BUFFER,((data->num_elements*8)*sizeof(GLfloat))+((data->num_elements*8)*sizeof(GLfloat)),0,GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER,0,(8*data->num_elements)*sizeof(GLfloat),data->vertex);
+	glBufferSubData(GL_ARRAY_BUFFER,(8*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 
 	glVertexAttribPointer(pos,2,GL_FLOAT,GL_FALSE,0,0);
-	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(void*) ((8*num_elements)*sizeof(GLfloat)));
+	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(void*) ((8*data->num_elements)*sizeof(GLfloat)));
 
-	glGenBuffers(1,&IBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,IBO);
+	glGenBuffers(1,&data->ibo_id);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*num_elements)*sizeof(GLushort),index,GL_STREAM_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*data->num_elements)*sizeof(GLushort),data->index,GL_STREAM_DRAW);
 
 	glBindVertexArray(0);
-
-	return VAO;
 }
 #endif
 
@@ -218,22 +216,47 @@ static VBO_PACKET CreateVBO(uint16 num_elements)
 
 void Init()
 {	
-
-#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
-	GLint status, status2, status3;
-
-	const GLfloat vertex[]={ -0.90,-0.90, -1,-0.90, -1,-1, -0.90,-1 };
-	const GLfloat tex[]={ 1,1, 0,1, 0,0, 1,0 };
-	const GLushort index[]={ 0,1,2, 2,3,0 };
-	GLchar logs[2][1024];
-
 	uint8 i=0;
-#endif
 	
 	CreateLog();
 
 	int check;
 	FMOD_RESULT result;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+	GLint status, status2, status3;
+	GLchar logs[2][1024];
+
+	vbd.vertex=(float*) malloc(8*sizeof(float));
+	vbd.texcoord=(float*) malloc(8*sizeof(float));
+	vbd.index=(GLushort*) malloc(6*sizeof(float));
+
+	vbd.vertex[0]=-0.90;
+	vbd.vertex[1]=-0.90;
+	vbd.vertex[2]=-1;
+	vbd.vertex[3]=-0.90;
+	vbd.vertex[4]=-1;
+	vbd.vertex[5]=-1;
+	vbd.vertex[6]=-0.90;
+	vbd.vertex[7]=-1;
+
+	vbd.texcoord[0]=1;
+	vbd.texcoord[1]=1;
+	vbd.texcoord[2]=0;
+	vbd.texcoord[3]=1;
+	vbd.texcoord[4]=0;
+	vbd.texcoord[5]=0;
+	vbd.texcoord[6]=1;
+	vbd.texcoord[7]=0;
+
+	vbd.index[0]=0;
+	vbd.index[1]=1;
+	vbd.index[2]=2;
+	vbd.index[3]=2;
+	vbd.index[4]=3;
+	vbd.index[5]=0;
+
+#endif
 
 	//Initialize SDL
 	if((SDL_Init(SDL_INIT_EVERYTHING))!=NULL)
@@ -510,7 +533,7 @@ void Init()
 			glUseProgram(st.renderer.Program[0]);
 
 			//This is the main VAO, used for 1 Quad only objects
-			st.renderer.VAO_1Q=CreateVAO(vertex,1,tex, index);
+			CreateVAO(&vbd);
 		}
 	}
 
@@ -897,14 +920,6 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	//fseek(file,mggf.textures_offset,SEEK_SET);
 
-	if(mggf.num_atlas>0)
-	{
-		for(i=0;i<mggf.num_atlas;i++)
-		{
-
-		}
-	}
-
 	for(i=0, j=0;i<mggf.num_singletex-1;i++)
 	{
 		
@@ -976,7 +991,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].sizey=sizey[i-1];
 	}
 
+	if(mggf.num_atlas>0)
+	{
+		for(i=0;i<mggf.num_atlas;i++)
+		{
 
+#ifdef _VAO_RENDER
+			
+#endif
+		}
+
+	}
 
 	fclose(file);
 

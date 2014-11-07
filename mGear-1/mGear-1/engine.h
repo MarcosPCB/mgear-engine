@@ -102,11 +102,17 @@ enum Stat
 
 struct VB_DATA
 {
-	GLuint id;
+#ifdef _VAO_RENDER 
+	GLuint vao_id;
+#endif
+
+	GLuint ibo_id;
+	GLuint vbo_id;
 	float *vertex;
 	float *texcoord;
 	GLushort *index;
 	GLuint texture;
+	uint16 num_elements;
 };
 
 struct _TEX_DATA
