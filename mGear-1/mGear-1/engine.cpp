@@ -11,6 +11,7 @@ SDL_Event events;
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	VB_DATA vbd;
 	VB_DATA *vbdt;
+	uint16 vbdt_num=0;
 #endif
 
 _MGG movie;
@@ -189,6 +190,13 @@ static void CreateVAO(VB_DATA *data)
 
 	glBindVertexArray(0);
 }
+
+void ResetVB()
+{
+	free(vbdt);
+	vbdt_num=0;
+}
+
 #endif
 
 #ifdef _VBO_RENDER
@@ -255,6 +263,8 @@ void Init()
 	vbd.index[3]=2;
 	vbd.index[4]=3;
 	vbd.index[5]=0;
+
+	vbdt_num=0;
 
 #endif
 
@@ -674,144 +684,6 @@ static FILE *DecompressFile(const char *name)
 	return file;
 }
 
-void createmgv()
-{
-	FILE *file, *file2, *file3;
-
-	//file=tmpfile();
-
-	if((file=fopen("movie.mgv","wb"))==NULL)
-		if(MessageBox(NULL,L"Error creating MGG file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
-			Quit();
-
-	_MGVFORMAT mgv;
-
-	mgv.num_frames=290;
-	mgv.fps=30;
-
-	if((file3=fopen("movie.wav","rb"))==NULL)
-		if(MessageBox(NULL,L"Error opening sound file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
-			Quit();
-
-	fseek(file3,0,SEEK_END);
-	mgv.sound_buffer_lenght=ftell(file3);
-
-	rewind(file);
-	fseek(file,0,SEEK_SET);
-
-	fwrite(&mgv,sizeof(_MGVFORMAT),1,file);
-	fseek(file,(sizeof(_MGVFORMAT)+512),SEEK_SET);
-	
-	uint32 *framesize;
-
-	framesize=(uint32*) malloc(mgv.num_frames*sizeof(uint32));
-
-	size_t totalsize;
-	totalsize=((sizeof(_MGVFORMAT)+512)+(mgv.num_frames*sizeof(uint32)+512));
-
-	uint32 j=0;
-	for(register uint32 i=0;i<mgv.num_frames+1;i++)
-	{
-		//if(i==33) j=42;
-		char filename[128];
-		if(j<10) sprintf(filename,"logo\\frame000%d.tga",j); else
-		if(j<100) sprintf(filename,"logo\\frame00%d.tga",j); else
-		if(j<1000) sprintf(filename,"logo\\frame0%d.tga",j);
-
-		if((file2=fopen(filename,"rb"))==NULL)
-		{
-			MessageBox(NULL,L"Error reading 0 file",NULL,MB_OK | MB_ICONERROR);
-			continue;
-		}
-		else
-		{
-			fseek(file2,0,SEEK_END);
-
-			size_t size=ftell(file2);
-			rewind(file2);
-
-			framesize[i]=size;
-	
-			void *buf=(void*) malloc(size);
-			fread(buf,size,1,file2);
-			rewind(file);
-
-			if(i==0) fseek(file,totalsize,SEEK_CUR); 
-			else
-			{
-				totalsize+=(framesize[i-1]+2048);
-				fseek(file,totalsize,SEEK_CUR);
-			}
-
-			fwrite(buf,size,1,file);
-			fclose(file2);
-			free(buf);
-		}
-		j++;
-	}
-
-	//j=42;
-	/*
-	for(register uint32 i=33;i<53;i++)
-	{
-		char filename[128];
-		if(j<10) sprintf(filename,"test\\frame000%d.tga",j); else
-		if(j<100) sprintf(filename,"test\\frame00%d.tga",j); else
-		if(j<1000) sprintf(filename,"test\\frame0%d.tga",j);
-
-		if((file2=fopen(filename,"rb"))==NULL)
-		{
-			MessageBox(NULL,L"Error reading 0 file",NULL,MB_OK | MB_ICONERROR);
-			continue;
-		}
-		else
-		{
-			fseek(file2,0,SEEK_END);
-
-			size_t size=ftell(file2);
-			rewind(file2);
-
-			framesize[i]=size;
-	
-			char *buf=(char*) malloc(size);
-			fread(buf,size,1,file2);
-			rewind(file);
-
-			if(i==0) fseek(file,totalsize,SEEK_CUR); 
-			else
-			{
-				totalsize+=(framesize[i-1]+2048);
-				fseek(file,totalsize,SEEK_CUR);
-			}
-
-			fwrite(buf,size,1,file);
-			fclose(file2);
-			free(buf);
-		}
-		j++;
-	}
-	*/
-	rewind(file);
-	fseek(file,((sizeof(_MGVFORMAT)+512)),SEEK_CUR);
-	fwrite(framesize,sizeof(uint32),mgv.num_frames,file);
-
-	rewind(file);
-	fseek(file,totalsize+512,SEEK_CUR);
-
-	rewind(file3);
-	
-	void *buffer=(void*) malloc(mgv.sound_buffer_lenght);
-	fread(buffer,mgv.sound_buffer_lenght,1,file3);
-	fwrite(buffer,mgv.sound_buffer_lenght,1,file);
-
-	free(buffer);
-
-	fclose(file3);
-
-	fclose(file);
-
-}
-
 uint32 CheckMGGFile(const char *name)
 {
 	FILE *file;
@@ -860,13 +732,13 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	register uint16 i=0, j=0, k=0;
 	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES];
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy;
+	uint8 *imgatlas;
 
 	if((file=DecompressFile(name))==NULL)
 	{
 		LogApp("Error reading MGG file %s",name);
 			return false;
 	}
-
 
 	rewind(file);
 
@@ -911,25 +783,15 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	fread(framesize,sizeof(uint32),mggf.num_singletex,file);
 	fread(frameoffset,sizeof(uint32),mggf.num_singletex,file);
 
-	//size_t totalsize=((sizeof(_MGGFORMAT)+512)+(512+MAX_FRAMES*sizeof(uint32))+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
-
-	//mgg->frames=(TEX_DATA*) malloc(mgg->num_frames*sizeof(TEX_DATA));
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 	mgg->atlas=(GLuint*) malloc(mggf.num_atlas*sizeof(GLuint));
-	//mgg->sizefix=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
-
-	//fseek(file,mggf.textures_offset,SEEK_SET);
 
 	for(i=0, j=0;i<mggf.num_singletex-1;i++)
 	{
 		
-		//rewind(file);
 		if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
 		else
-		{
-			//totalsize+=(framesize[i-1]+2048);
 			fseek(file,frameoffset[i-1]+1,SEEK_SET);
-		}
 		
 		data=malloc(framesize[i]);
 
@@ -954,10 +816,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		{
 			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
-			//mgg->frames[i+(mggf.num_texinatlas)].atlas=0;
-			//mgg->frames[i+(mggf.num_texinatlas)].atlas_ID=-1;
 			mgg->frames[i+(mggf.num_texinatlas)].posx=0;
 			mgg->frames[i+(mggf.num_texinatlas)].posy=0;
+			mgg->frames[i+mggf.num_texinatlas].vb_id=-1;
 
 			if(mgg->frames[i+(mggf.num_texinatlas)].data==NULL)
 				LogApp("Error loading texture from memory");
@@ -973,23 +834,13 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	posy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
 	sizex=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
 	sizey=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	//imgatlas=(uint8*) malloc(sizeof(uint8));
-	//dimx=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	//dimy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	imgatlas=(uint8*) malloc(sizeof(uint8));
 
 	fread(posx,sizeof(uint16),mggf.num_texinatlas,file);
 	fread(posy,sizeof(uint16),mggf.num_texinatlas,file);
 	fread(sizex,sizeof(uint16),mggf.num_texinatlas,file);
 	fread(sizey,sizeof(uint16),mggf.num_texinatlas,file);
-
-	for(i=1;i<mggf.num_texinatlas+1;i++)
-	{
-		mgg->frames[i].data=mgg->atlas[0];
-		mgg->frames[i].posx=posx[i-1];
-		mgg->frames[i].posy=posy[i-1];
-		mgg->frames[i].sizex=sizex[i-1];
-		mgg->frames[i].sizey=sizey[i-1];
-	}
+	fread(imgatlas,sizeof(uint8),mggf.num_texinatlas,file);
 
 	if(mggf.num_atlas>0)
 	{
@@ -997,10 +848,38 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		{
 
 #ifdef _VAO_RENDER
-			
+			if(!vbdt_num)
+			{
+				vbdt_num++;
+				vbdt=(VB_DATA*) malloc(sizeof(VB_DATA));
+			}
+			else
+			{
+				vbdt_num++;
+				vbdt=(VB_DATA*) realloc(vbdt,vbdt_num*sizeof(VB_DATA));
+			}
+
+			vbdt[vbdt_num-1].num_elements=0;
+			vbdt[vbdt_num-1].vertex=(float*) calloc(16*8,sizeof(float));
+			vbdt[vbdt_num-1].texcoord=(float*) calloc(16*8,sizeof(float));
+			vbdt[vbdt_num-1].index=(GLushort*) calloc(16*6,sizeof(GLushort));
+			CreateVAO(&vbdt[vbdt_num-1]);
+			vbdt[vbdt_num-1].texture=mgg->frames[i].data;
+			mgg->frames[i].vb_id=vbdt_num-1;
+			vbdt_num++;
 #endif
 		}
 
+	}
+
+	for(i=mggf.num_atlas-1;i<mggf.num_texinatlas+1;i++)
+	{
+		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
+		mgg->frames[i].posx=posx[i-1];
+		mgg->frames[i].posy=posy[i-1];
+		mgg->frames[i].sizex=sizex[i-1];
+		mgg->frames[i].sizey=sizey[i-1];
+		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
 	}
 
 	fclose(file);
@@ -1481,6 +1360,32 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				ent[i].texcor[j]/=(float)32768;
 				//ent[i].texcor[j]-=1;
 				
+			}
+
+			if(data.vb_id>0)
+			{
+				vbdt[data.vb_id].num_elements++;
+				if(vbdt[data.vb_id].num_elements>16)
+				{
+					vbdt[data.vb_id].vertex=(float*) realloc(vbdt[data.vb_id].vertex,vbdt[data.vb_id].num_elements*8);
+					vbdt[data.vb_id].texcoord=(float*) realloc(vbdt[data.vb_id].texcoord,vbdt[data.vb_id].num_elements*8);
+					vbdt[data.vb_id].index=(GLushort*) realloc(vbdt[data.vb_id].index,vbdt[data.vb_id].num_elements*6);
+				}
+
+				for(i=0;i<8;i++)
+				{
+					vbdt[data.vb_id].vertex[(vbdt[data.vb_id].num_elements*8)+i]=ent[i].vertex[i];
+					vbdt[data.vb_id].texcoord[(vbdt[data.vb_id].num_elements*8)+i]=ent[i].texcoord[i];
+
+					if(i<2 || i==4)
+						vbdt[data.vb_id].index[(vbdt[data.vb_id].num_elements*6)+i]=(vbdt[data.vb_id].num_elements*6)+i;
+
+					if(i==3)
+						vbdt[data.vb_id].index[(vbdt[data.vb_id].num_elements*6)+i]=(vbdt[data.vb_id].num_elements*6)+(i-1);
+
+					if(i==5)
+						vbdt[data.vb_id].index[(vbdt[data.vb_id].num_elements*6)+i]=(vbdt[data.vb_id].num_elements*6);
+				}
 			}
 			
 			ent[i].pos.x=(x*ax)-1;
@@ -2484,6 +2389,7 @@ void Renderer()
 	GLint Tex;
 
 	uint32 num_targets=0;
+	register uint32 i=0;
 
 #ifdef _IM_RENDER
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
@@ -2523,13 +2429,31 @@ void Renderer()
 	{
 		glUseProgram(st.renderer.Program[0]);
 
-		glBindVertexArray(st.renderer.VAO_1Q);
-
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D,ent[0].data.data);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
 		glUniform1i(Tex,0);
+
+		for(i=0;i<vbdt_num;i++)
+		{
+			glBindVertexArray(vbdt[i].vao_id);
+
+			glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
+
+			glBufferData(GL_ARRAY_BUFFER,0,(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].vertex);
+			glBufferData(GL_ARRAY_BUFFER,(vbdt[i].num_elements*8)*sizeof(float),(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].texcoord);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER,0,(vbdt[i].num_elements*6)*sizeof(GLushort),vbdt[i].index);
+
+			glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+
+			glBindVertexArray(0);
+		}
+
+		/*
+		glBindVertexArray(st.renderer.VAO_1Q);
+
+		
+		glBindTexture(GL_TEXTURE_2D,ent[0].data.data);
 
 		for(uint32 i=0;i<=num_targets;i++)
 		{
@@ -2548,7 +2472,7 @@ void Renderer()
 		}
 
 		glBindVertexArray(0);
-
+		*/
 		glUseProgram(0);
 	}
 
@@ -2758,8 +2682,6 @@ void Renderer()
 	st.num_hud=0;
 	st.num_tex=0;
 	st.num_ui=0;
-
-	
 
 	SDL_GL_SwapWindow(wn);
 

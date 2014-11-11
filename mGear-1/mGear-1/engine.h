@@ -117,8 +117,8 @@ struct VB_DATA
 
 struct _TEX_DATA
 {
-	GLuint VAO_ID;
 	GLuint data;
+	int16 vb_id;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
 };
@@ -662,6 +662,8 @@ uint32 POT(uint32 value);
 void _fastcall WTS(float *x, float *y);
 
 uint32 PlayMovie(const char *name);
+
+void ResetVB();
 
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a);
