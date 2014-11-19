@@ -100,7 +100,7 @@ enum Stat
 	USED
 };
 
-struct VB_DATA
+struct VB_DATAT
 {
 #ifdef _VAO_RENDER 
 	GLuint vao_id;
@@ -108,9 +108,9 @@ struct VB_DATA
 
 	GLuint ibo_id;
 	GLuint vbo_id;
-	float *vertex;
-	float *texcoord;
-	GLushort *index;
+	float vertex[16*8];
+	float texcoord[16*8];
+	GLushort index[16*6];
 	GLuint texture;
 	uint16 num_elements;
 };

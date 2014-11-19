@@ -9,8 +9,8 @@ _ENTITIES ent[MAX_GRAPHICS];
 SDL_Event events;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
-	VB_DATA vbd;
-	VB_DATA *vbdt;
+	VB_DATAT vbd;
+	VB_DATAT *vbdt;
 	uint16 vbdt_num=0;
 #endif
 
@@ -160,7 +160,7 @@ void Quit()
 }
 
 #ifdef _VAO_RENDER
-static void CreateVAO(VB_DATA *data)
+static void CreateVAO(VB_DATAT *data)
 {
 	GLint pos, texc;
 
@@ -175,7 +175,7 @@ static void CreateVAO(VB_DATA *data)
 
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
-
+	
 	glBufferData(GL_ARRAY_BUFFER,((data->num_elements*8)*sizeof(GLfloat))+((data->num_elements*8)*sizeof(GLfloat)),0,GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER,0,(8*data->num_elements)*sizeof(GLfloat),data->vertex);
 	glBufferSubData(GL_ARRAY_BUFFER,(8*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
@@ -187,7 +187,7 @@ static void CreateVAO(VB_DATA *data)
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*data->num_elements)*sizeof(GLushort),data->index,GL_STREAM_DRAW);
-
+	
 	glBindVertexArray(0);
 }
 
@@ -235,10 +235,10 @@ void Init()
 	GLint status, status2, status3;
 	GLchar logs[2][1024];
 
-	vbd.vertex=(float*) malloc(8*sizeof(float));
-	vbd.texcoord=(float*) malloc(8*sizeof(float));
-	vbd.index=(GLushort*) malloc(6*sizeof(float));
-
+	//vbd.vertex=(float*) malloc(8*sizeof(float));
+	//vbd.texcoord=(float*) malloc(8*sizeof(float));
+	//vbd.index=(GLushort*) malloc(6*sizeof(float));
+	/*
 	vbd.vertex[0]=-0.90;
 	vbd.vertex[1]=-0.90;
 	vbd.vertex[2]=-1;
@@ -263,7 +263,7 @@ void Init()
 	vbd.index[3]=2;
 	vbd.index[4]=3;
 	vbd.index[5]=0;
-
+	*/
 	vbdt_num=0;
 
 #endif
@@ -828,20 +828,6 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			free(data);
 	}
 		
-	fseek(file,mggf.possize_offset,SEEK_SET);
-
-	posx=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	posy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	sizex=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	sizey=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	imgatlas=(uint8*) malloc(sizeof(uint8));
-
-	fread(posx,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(posy,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(sizex,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(sizey,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(imgatlas,sizeof(uint8),mggf.num_texinatlas,file);
-
 	if(mggf.num_atlas>0)
 	{
 		for(i=0;i<mggf.num_atlas;i++)
@@ -851,26 +837,41 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			if(!vbdt_num)
 			{
 				vbdt_num++;
-				vbdt=(VB_DATA*) malloc(sizeof(VB_DATA));
+				vbdt=(VB_DATAT*) malloc(sizeof(VB_DATAT));
+				if(!vbdt)
+					LogApp("Error could not allocate memory for the Vertex Buffer");
 			}
 			else
 			{
 				vbdt_num++;
-				vbdt=(VB_DATA*) realloc(vbdt,vbdt_num*sizeof(VB_DATA));
+				vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
 			}
 
 			vbdt[vbdt_num-1].num_elements=0;
-			vbdt[vbdt_num-1].vertex=(float*) calloc(16*8,sizeof(float));
-			vbdt[vbdt_num-1].texcoord=(float*) calloc(16*8,sizeof(float));
-			vbdt[vbdt_num-1].index=(GLushort*) calloc(16*6,sizeof(GLushort));
+			//vbdt[vbdt_num-1].vertex=(float*) calloc(16*8,sizeof(float));
+			//vbdt[vbdt_num-1].texcoord=(float*) calloc(16*8,sizeof(float));
+			//vbdt[vbdt_num-1].index=(GLushort*) calloc(16*6,sizeof(GLushort));
 			CreateVAO(&vbdt[vbdt_num-1]);
-			vbdt[vbdt_num-1].texture=mgg->frames[i].data;
+			vbdt[vbdt_num-1].texture=mgg->atlas[i];
 			mgg->frames[i].vb_id=vbdt_num-1;
-			vbdt_num++;
 #endif
 		}
 
 	}
+
+	fseek(file,mggf.possize_offset,SEEK_SET);
+
+	posx=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	posy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	sizex=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	sizey=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
+	imgatlas=(uint8*) malloc(mggf.num_texinatlas*sizeof(uint8));
+
+	fread(posx,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(posy,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(sizex,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(sizey,sizeof(uint16),mggf.num_texinatlas,file);
+	fread(imgatlas,sizeof(uint8),mggf.num_texinatlas,file);
 
 	for(i=mggf.num_atlas-1;i<mggf.num_texinatlas+1;i++)
 	{
@@ -881,6 +882,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].sizey=sizey[i-1];
 		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
 	}
+
+	free(posx);
+	free(posy);
+	free(sizex);
+	free(sizey);
+	free(imgatlas);
 
 	fclose(file);
 
@@ -1240,7 +1247,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	float tmp, ax, ay;
 
 	uint8 val=0;
-	register uint32 i=0;
+	register uint32 i=0, j=0;
 	/*
 	Pos dim=st.Camera.dimension;
 
@@ -1326,7 +1333,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 
-			for(uint8 j=0;j<8;j++)
+			for(j=0;j<8;j++)
 			{
 				if(j%2==0)
 				{
@@ -1355,37 +1362,41 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ax=(float) 1/(32768/2);
 			ay=(float) 1/(32768/2);
 
-			for(uint8 j=0;j<8;j++)
+			for(j=0;j<8;j++)
 			{
 				ent[i].texcor[j]/=(float)32768;
 				//ent[i].texcor[j]-=1;
 				
 			}
 
-			if(data.vb_id>0)
+			if(data.vb_id>-1)
 			{
+				
 				vbdt[data.vb_id].num_elements++;
+
+				/*
 				if(vbdt[data.vb_id].num_elements>16)
 				{
 					vbdt[data.vb_id].vertex=(float*) realloc(vbdt[data.vb_id].vertex,vbdt[data.vb_id].num_elements*8);
 					vbdt[data.vb_id].texcoord=(float*) realloc(vbdt[data.vb_id].texcoord,vbdt[data.vb_id].num_elements*8);
 					vbdt[data.vb_id].index=(GLushort*) realloc(vbdt[data.vb_id].index,vbdt[data.vb_id].num_elements*6);
 				}
-
-				for(i=0;i<8;i++)
+				*/
+				for(j=0;j<8;j++)
 				{
-					vbdt[data.vb_id].vertex[(vbdt[data.vb_id].num_elements*8)+i]=ent[i].vertex[i];
-					vbdt[data.vb_id].texcoord[(vbdt[data.vb_id].num_elements*8)+i]=ent[i].texcoord[i];
+					vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*8)+j]=ent[i].vertex[j];
+					vbdt[data.vb_id].texcoord[((vbdt[data.vb_id].num_elements-1)*8)+j]=ent[i].texcor[j];
 
-					if(i<2 || i==4)
-						vbdt[data.vb_id].index[(vbdt[data.vb_id].num_elements*6)+i]=(vbdt[data.vb_id].num_elements*6)+i;
+					if(j<=2)
+						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6)+j;
 
-					if(i==3)
-						vbdt[data.vb_id].index[(vbdt[data.vb_id].num_elements*6)+i]=(vbdt[data.vb_id].num_elements*6)+(i-1);
+					if(j==3 || j==4)
+						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6)+(j-1);
 
-					if(i==5)
-						vbdt[data.vb_id].index[(vbdt[data.vb_id].num_elements*6)+i]=(vbdt[data.vb_id].num_elements*6);
+					if(j==5)
+						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6);
 				}
+				
 			}
 			
 			ent[i].pos.x=(x*ax)-1;
@@ -2387,6 +2398,7 @@ void Renderer()
 #endif
 
 	GLint Tex;
+	GLenum error;
 
 	uint32 num_targets=0;
 	register uint32 i=0;
@@ -2438,15 +2450,22 @@ void Renderer()
 		{
 			glBindVertexArray(vbdt[i].vao_id);
 
+			error=glGetError();
+
 			glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
 
-			glBufferData(GL_ARRAY_BUFFER,0,(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].vertex);
-			glBufferData(GL_ARRAY_BUFFER,(vbdt[i].num_elements*8)*sizeof(float),(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].texcoord);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER,0,(vbdt[i].num_elements*6)*sizeof(GLushort),vbdt[i].index);
-
+			error=glGetError();
+			
+			glBufferData(GL_ARRAY_BUFFER,2*((vbdt[i].num_elements*8)*sizeof(float)),NULL,GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER,0,(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,(vbdt[i].num_elements*8)*sizeof(float),(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].texcoord);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER,(vbdt[i].num_elements*6)*sizeof(GLushort),vbdt[i].index,GL_STREAM_DRAW);
+			
 			glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
 
 			glBindVertexArray(0);
+
+			vbdt[i].num_elements=0;
 		}
 
 		/*
@@ -2682,6 +2701,8 @@ void Renderer()
 	st.num_hud=0;
 	st.num_tex=0;
 	st.num_ui=0;
+	st.num_entities=0;
+	memset(&ent,0,MAX_GRAPHICS);
 
 	SDL_GL_SwapWindow(wn);
 
