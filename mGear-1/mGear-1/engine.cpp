@@ -176,7 +176,7 @@ static void CreateVAO(VB_DATAT *data)
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 	
-	glBufferData(GL_ARRAY_BUFFER,((data->num_elements*8)*sizeof(GLfloat))+((data->num_elements*8)*sizeof(GLfloat)),0,GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,2*(((data->num_elements*8)*sizeof(GLfloat))),0,GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER,0,(8*data->num_elements)*sizeof(GLfloat),data->vertex);
 	glBufferSubData(GL_ARRAY_BUFFER,(8*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 
@@ -851,7 +851,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			//vbdt[vbdt_num-1].vertex=(float*) calloc(16*8,sizeof(float));
 			//vbdt[vbdt_num-1].texcoord=(float*) calloc(16*8,sizeof(float));
 			//vbdt[vbdt_num-1].index=(GLushort*) calloc(16*6,sizeof(GLushort));
-			CreateVAO(&vbdt[vbdt_num-1]);
+			//CreateVAO(&vbdt[vbdt_num-1]);
 			vbdt[vbdt_num-1].texture=mgg->atlas[i];
 			mgg->frames[i].vb_id=vbdt_num-1;
 #endif
@@ -1290,8 +1290,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	*/
 	i=st.num_entities;
 
-		if(ent[i].stat==DEAD)
-		{
+		//if(ent[i].stat==DEAD)
+		//{
 	
 			ent[i].stat=USED;
 			ent[i].ang=ang;
@@ -1397,7 +1397,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6);
 				}
 				
-			}
+			//}
 			
 			ent[i].pos.x=(x*ax)-1;
 			ent[i].pos.y=(y*ay)-1;
@@ -2397,7 +2397,7 @@ void Renderer()
 	uint32 j=0, k=0, l=0, t=0;
 #endif
 
-	GLint Tex;
+	GLint Tex, texcat, vertat;
 	GLenum error;
 
 	uint32 num_targets=0;
@@ -2441,6 +2441,9 @@ void Renderer()
 	{
 		glUseProgram(st.renderer.Program[0]);
 
+		//vertat=glGetAttribLocation(st.renderer.Program[0],"Position");
+		//texcat=glGetAttribLocation(st.renderer.Program[0],"Texcoord");
+
 		glActiveTexture(GL_TEXTURE0);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
@@ -2448,24 +2451,21 @@ void Renderer()
 
 		for(i=0;i<vbdt_num;i++)
 		{
-			glBindVertexArray(vbdt[i].vao_id);
-
-			error=glGetError();
+			CreateVAO(&vbdt[i]);
 
 			glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
 
-			error=glGetError();
-			
-			glBufferData(GL_ARRAY_BUFFER,2*((vbdt[i].num_elements*8)*sizeof(float)),NULL,GL_STREAM_DRAW);
-			glBufferSubData(GL_ARRAY_BUFFER,0,(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].vertex);
-			glBufferSubData(GL_ARRAY_BUFFER,(vbdt[i].num_elements*8)*sizeof(float),(vbdt[i].num_elements*8)*sizeof(float),vbdt[i].texcoord);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER,(vbdt[i].num_elements*6)*sizeof(GLushort),vbdt[i].index,GL_STREAM_DRAW);
-			
+			glBindVertexArray(vbdt[i].vao_id);
+
 			glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
 
 			glBindVertexArray(0);
 
 			vbdt[i].num_elements=0;
+
+			glDeleteVertexArrays(1,&vbdt[i].vao_id);
+			glDeleteBuffers(1,&vbdt[i].vbo_id);
+			glDeleteBuffers(1,&vbdt[i].ibo_id);
 		}
 
 		/*

@@ -108,9 +108,9 @@ struct VB_DATAT
 
 	GLuint ibo_id;
 	GLuint vbo_id;
-	float vertex[16*8];
-	float texcoord[16*8];
-	GLushort index[16*6];
+	float vertex[2500*8];
+	float texcoord[2500*8];
+	GLushort index[2500*6];
 	GLuint texture;
 	uint16 num_elements;
 };
