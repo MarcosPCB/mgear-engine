@@ -1,7 +1,7 @@
 #include "engine.h"
-#include <math.h>
 #include "quicklz.h"
 #include "input.h"
+#include <math.h>
 #include <SDL_image.h>
 
 _SETTINGS st;
@@ -148,6 +148,27 @@ void _fastcall WTS(double *x, double *y)
 	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
 }
 
+float mCos(int16 ang)
+{
+	if(ang>3600) ang-=3600;
+
+	return st.CosTable[ang];
+}
+
+float mSin(int16 ang)
+{
+	if(ang>3600) ang-=3600;
+
+	return st.SinTable[ang];
+}
+
+float mTan(int16 ang)
+{
+	if(ang>3600) ang-=3600;
+
+	return st.TanTable[ang];
+}
+
 void Quit()
 {
 	InputClose();
@@ -176,12 +197,12 @@ static void CreateVAO(VB_DATAT *data)
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 	
-	glBufferData(GL_ARRAY_BUFFER,2*(((data->num_elements*8)*sizeof(GLfloat))),0,GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER,0,(8*data->num_elements)*sizeof(GLfloat),data->vertex);
-	glBufferSubData(GL_ARRAY_BUFFER,(8*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
+	glBufferData(GL_ARRAY_BUFFER,(((data->num_elements*15)*sizeof(GLfloat)))+(((data->num_elements*10)*sizeof(GLfloat))),0,GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER,0,(15*data->num_elements)*sizeof(GLfloat),data->vertex);
+	glBufferSubData(GL_ARRAY_BUFFER,(15*data->num_elements)*sizeof(GLfloat),(10*data->num_elements)*sizeof(GLfloat),data->texcoord);
 
-	glVertexAttribPointer(pos,2,GL_FLOAT,GL_FALSE,0,0);
-	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(void*) ((8*data->num_elements)*sizeof(GLfloat)));
+	glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
+	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((15*data->num_elements)*sizeof(GLfloat)));
 
 	glGenBuffers(1,&data->ibo_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
@@ -189,6 +210,9 @@ static void CreateVAO(VB_DATAT *data)
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*data->num_elements)*sizeof(GLushort),data->index,GL_STREAM_DRAW);
 	
 	glBindVertexArray(0);
+
+	glDisableVertexAttribArray(pos);
+	glDisableVertexAttribArray(texc);
 }
 
 void ResetVB()
@@ -224,7 +248,8 @@ static VBO_PACKET CreateVBO(uint16 num_elements)
 
 void Init()
 {	
-	uint8 i=0;
+	register uint16 i=0;
+	register float k=0;
 	
 	CreateLog();
 
@@ -445,6 +470,7 @@ void Init()
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
+	glDepthFunc(GL_ALWAYS);
 	SDL_GL_SetSwapInterval(st.vsync);
 
 #ifdef _VAO_RENDER
@@ -594,6 +620,15 @@ void Init()
 	st.num_sprites=0;
 
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
+
+	//Calculates Cos, Sin and Tan tables
+	for(k=0.0;k<360.0;k+=0.1)
+	{
+		i=k*10;
+		st.CosTable[i]=cos(k);
+		st.SinTable[i]=sin(k);
+		st.TanTable[i]=tan(k);
+	}
 
 }
 
@@ -1241,10 +1276,10 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	
 }
 
-int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a)
+int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z)
 {
 	
-	float tmp, ax, ay;
+	float tmp, ax, ay, az;
 
 	uint8 val=0;
 	register uint32 i=0, j=0;
@@ -1320,31 +1355,39 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 			ent[i].vertex[0]=x-sizex/2;
 			ent[i].vertex[1]=y-sizey/2;
+			ent[i].vertex[2]=z;
 
-			ent[i].vertex[2]=x+sizex/2;
-			ent[i].vertex[3]=y-sizey/2;
+			ent[i].vertex[3]=x+sizex/2;
+			ent[i].vertex[4]=y-sizey/2;
+			ent[i].vertex[5]=z;
 
-			ent[i].vertex[4]=x+sizex/2;
-			ent[i].vertex[5]=y+sizey/2;
-
-			ent[i].vertex[6]=x-sizex/2;
+			ent[i].vertex[6]=x+sizex/2;
 			ent[i].vertex[7]=y+sizey/2;
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=x-sizex/2;
+			ent[i].vertex[10]=y+sizey/2;
+			ent[i].vertex[11]=z;
+
+			ent[i].vertex[12]=x-sizex/2;
+			ent[i].vertex[13]=y-sizey/2;
+			ent[i].vertex[14]=z;
 
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
+			az=(float) 1/(4096/2);
 
-			for(j=0;j<8;j++)
+			for(j=0;j<15;j+=3)
 			{
-				if(j%2==0)
-				{
-					ent[i].vertex[j]*=ax;
-					ent[i].vertex[j]-=1;
-				}
-				else
-				{
-					ent[i].vertex[j]*=ay;
-					ent[i].vertex[j]-=1;
-				}
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]-=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+				
 			}
 
 			ent[i].texcor[0]=data.sizex+data.posx;
@@ -1359,15 +1402,12 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ent[i].texcor[6]=data.sizex+data.posx;
 			ent[i].texcor[7]=data.posy;
 
-			ax=(float) 1/(32768/2);
-			ay=(float) 1/(32768/2);
+			ent[i].texcor[8]=data.sizex+data.posx;
+			ent[i].texcor[9]=data.sizey+data.posy;
 
-			for(j=0;j<8;j++)
-			{
+
+			for(j=0;j<10;j++)
 				ent[i].texcor[j]/=(float)32768;
-				//ent[i].texcor[j]-=1;
-				
-			}
 
 			if(data.vb_id>-1)
 			{
@@ -1382,10 +1422,13 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 					vbdt[data.vb_id].index=(GLushort*) realloc(vbdt[data.vb_id].index,vbdt[data.vb_id].num_elements*6);
 				}
 				*/
-				for(j=0;j<8;j++)
+				for(j=0;j<15;j++)
 				{
-					vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*8)+j]=ent[i].vertex[j];
-					vbdt[data.vb_id].texcoord[((vbdt[data.vb_id].num_elements-1)*8)+j]=ent[i].texcor[j];
+					//if(j<6)
+						vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*15)+j]=ent[i].vertex[j];
+
+					if(j<8)
+						vbdt[data.vb_id].texcoord[((vbdt[data.vb_id].num_elements-1)*10)+j]=ent[i].texcor[j];
 
 					if(j<=2)
 						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6)+j;
@@ -1775,7 +1818,7 @@ int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 
 	if(((mgf->anim[id].current_frame/10)>0) && ((mgf->anim[id].current_frame/10)<mgf->anim[id].endID)) curf=mgf->anim[id].current_frame/10;
 
-	DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a);
+//	DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a);
 
 	mgf->anim[id].current_frame+=speed;
 
@@ -2434,15 +2477,11 @@ void Renderer()
 	num_targets=st.num_entities;
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	//glClearColor(1,1,1,0);
 
 #ifdef _VAO_RENDER
 	if(st.renderer.VAO_ON)
 	{
 		glUseProgram(st.renderer.Program[0]);
-
-		//vertat=glGetAttribLocation(st.renderer.Program[0],"Position");
-		//texcat=glGetAttribLocation(st.renderer.Program[0],"Texcoord");
 
 		glActiveTexture(GL_TEXTURE0);
 
@@ -2458,6 +2497,7 @@ void Renderer()
 			glBindVertexArray(vbdt[i].vao_id);
 
 			glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+			//glDrawArrays(GL_TRIANGLES,0,vbdt[i].num_elements*6);
 
 			glBindVertexArray(0);
 

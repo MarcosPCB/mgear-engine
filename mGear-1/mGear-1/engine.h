@@ -108,9 +108,9 @@ struct VB_DATAT
 
 	GLuint ibo_id;
 	GLuint vbo_id;
-	float vertex[2500*8];
-	float texcoord[2500*8];
-	GLushort index[2500*6];
+	float vertex[16*15];
+	float texcoord[16*10];
+	GLushort index[16*6];
 	GLuint texture;
 	uint16 num_elements;
 };
@@ -135,7 +135,7 @@ struct _ENTITIES //To be rendered
 	TEX_DATA data;
 	Pos size;
 	int16 ang;
-	float vertex[8];
+	float vertex[15];
 	float texcor[8];
 };
 
@@ -609,6 +609,11 @@ struct _SETTINGS
 	//SDL_Joystick *Joy[4];
 
 	Render renderer;
+
+	//Math content
+	float CosTable[3600];
+	float SinTable[3600];
+	float TanTable[3600];
 };
 
 #endif
@@ -665,8 +670,13 @@ uint32 PlayMovie(const char *name);
 
 void ResetVB();
 
+//Faster than math.h functions
+float mCos(int16 ang);
+float mSin(int16 ang);
+float mTan(int16 ang);
+
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
-int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a);
+int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
 int8 DrawLight(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
 int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
 int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth);
