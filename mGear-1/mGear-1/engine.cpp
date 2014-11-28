@@ -196,13 +196,13 @@ static void CreateVAO(VB_DATAT *data)
 
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
-	
-	glBufferData(GL_ARRAY_BUFFER,(((data->num_elements*15)*sizeof(GLfloat)))+(((data->num_elements*10)*sizeof(GLfloat))),0,GL_STREAM_DRAW);
-	glBufferSubData(GL_ARRAY_BUFFER,0,(15*data->num_elements)*sizeof(GLfloat),data->vertex);
-	glBufferSubData(GL_ARRAY_BUFFER,(15*data->num_elements)*sizeof(GLfloat),(10*data->num_elements)*sizeof(GLfloat),data->texcoord);
+
+	glBufferData(GL_ARRAY_BUFFER,(((data->num_elements*12)*sizeof(GLfloat)))+(((data->num_elements*8)*sizeof(GLfloat))),0,GL_STREAM_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
+	glBufferSubData(GL_ARRAY_BUFFER,(12*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 
 	glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
-	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((15*data->num_elements)*sizeof(GLfloat)));
+	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->num_elements)*sizeof(GLfloat)));
 
 	glGenBuffers(1,&data->ibo_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
@@ -471,6 +471,7 @@ void Init()
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
 	glDepthFunc(GL_ALWAYS);
+	//glEnable(GL_DEPTH_TEST);
 	SDL_GL_SetSwapInterval(st.vsync);
 
 #ifdef _VAO_RENDER
@@ -1365,19 +1366,23 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ent[i].vertex[7]=y+sizey/2;
 			ent[i].vertex[8]=z;
 
+			//ent[i].vertex[9]=x+sizex/2;
+			//ent[i].vertex[10]=y+sizey/2;
+			//ent[i].vertex[11]=z;
+
 			ent[i].vertex[9]=x-sizex/2;
 			ent[i].vertex[10]=y+sizey/2;
 			ent[i].vertex[11]=z;
 
-			ent[i].vertex[12]=x-sizex/2;
-			ent[i].vertex[13]=y-sizey/2;
-			ent[i].vertex[14]=z;
+			//ent[i].vertex[12]=x-sizex/2;
+			//ent[i].vertex[13]=y-sizey/2;
+			//ent[i].vertex[14]=z;
 
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 			az=(float) 1/(4096/2);
 
-			for(j=0;j<15;j+=3)
+			for(j=0;j<12;j+=3)
 			{
 				ent[i].vertex[j]*=ax;
 				ent[i].vertex[j]-=1;
@@ -1387,7 +1392,6 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
-				
 			}
 
 			ent[i].texcor[0]=data.sizex+data.posx;
@@ -1399,14 +1403,17 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ent[i].texcor[4]=data.posx;
 			ent[i].texcor[5]=data.posy;
 
+			//ent[i].texcor[6]=data.posx;
+			//ent[i].texcor[7]=data.posy;
+
 			ent[i].texcor[6]=data.sizex+data.posx;
 			ent[i].texcor[7]=data.posy;
 
-			ent[i].texcor[8]=data.sizex+data.posx;
-			ent[i].texcor[9]=data.sizey+data.posy;
+			//ent[i].texcor[8]=data.sizex+data.posx;
+			//ent[i].texcor[9]=data.sizey+data.posy;
 
 
-			for(j=0;j<10;j++)
+			for(j=0;j<8;j++)
 				ent[i].texcor[j]/=(float)32768;
 
 			if(data.vb_id>-1)
@@ -1422,22 +1429,51 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 					vbdt[data.vb_id].index=(GLushort*) realloc(vbdt[data.vb_id].index,vbdt[data.vb_id].num_elements*6);
 				}
 				*/
-				for(j=0;j<15;j++)
+				for(j=0;j<12;j++)
 				{
 					//if(j<6)
-						vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*15)+j]=ent[i].vertex[j];
+						vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*12)+j]=ent[i].vertex[j];
 
 					if(j<8)
-						vbdt[data.vb_id].texcoord[((vbdt[data.vb_id].num_elements-1)*10)+j]=ent[i].texcor[j];
+						vbdt[data.vb_id].texcoord[((vbdt[data.vb_id].num_elements-1)*8)+j]=ent[i].texcor[j];
 
+					
 					if(j<=2)
-						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6)+j;
+						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=(((vbdt[data.vb_id].num_elements-1)*6)-((vbdt[data.vb_id].num_elements-1)*2))+j;
 
 					if(j==3 || j==4)
-						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6)+(j-1);
+						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=(((vbdt[data.vb_id].num_elements-1)*6)-((vbdt[data.vb_id].num_elements-1)*2))+(j-1);
 
 					if(j==5)
-						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=((vbdt[data.vb_id].num_elements-1)*6);
+						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=(((vbdt[data.vb_id].num_elements-1)*6)-((vbdt[data.vb_id].num_elements-1)*2));
+						
+					/*
+					vbdt[data.vb_id].index[0]=0;
+					vbdt[data.vb_id].index[1]=1;
+					vbdt[data.vb_id].index[2]=2;
+					vbdt[data.vb_id].index[3]=2;
+					vbdt[data.vb_id].index[4]=3;
+					vbdt[data.vb_id].index[5]=0;
+					vbdt[data.vb_id].index[6]=4;
+					vbdt[data.vb_id].index[7]=5;
+					vbdt[data.vb_id].index[8]=6;
+					vbdt[data.vb_id].index[9]=6;
+					vbdt[data.vb_id].index[10]=7;
+					vbdt[data.vb_id].index[11]=4;
+					vbdt[data.vb_id].index[12]=8;
+					vbdt[data.vb_id].index[13]=9;
+					vbdt[data.vb_id].index[14]=10;
+					vbdt[data.vb_id].index[15]=10;
+					vbdt[data.vb_id].index[16]=11;
+					vbdt[data.vb_id].index[17]=8;
+					vbdt[data.vb_id].index[18]=12;
+					vbdt[data.vb_id].index[19]=13;
+					vbdt[data.vb_id].index[20]=14;
+					vbdt[data.vb_id].index[21]=14;
+					vbdt[data.vb_id].index[22]=15;
+					vbdt[data.vb_id].index[23]=12;
+					vbdt[data.vb_id].index[24]=16;
+					*/
 				}
 				
 			//}
@@ -2496,7 +2532,8 @@ void Renderer()
 
 			glBindVertexArray(vbdt[i].vao_id);
 
-			glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+			glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+			//glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
 			//glDrawArrays(GL_TRIANGLES,0,vbdt[i].num_elements*6);
 
 			glBindVertexArray(0);
