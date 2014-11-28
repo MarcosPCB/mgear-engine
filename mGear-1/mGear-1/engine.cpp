@@ -29,13 +29,16 @@ const char *Texture_VShader[64]={
 
 	"in vec3 Position;\n"
 	"in vec2 TexCoord;\n"
+	"in vec4 colori;\n"
 
 	"out vec2 TexCoord2;\n"
+	"out vec4 colore;\n"
 
 	"void main()\n"
 	"{\n"
 	   "gl_Position = vec4(Position, 1.0);\n"
 	   "TexCoord2 = TexCoord;\n"
+	   "colore = colori;\n"
 	"};\n"
 };
 
@@ -46,11 +49,13 @@ const char *Texture_FShader[64]={
 
 	"in vec2 TexCoord2;\n"
 
+	"in vec4 colore;\n"
+
 	"out vec4 FColor;\n"
 
 	"void main()\n"
 	"{\n"
-		"FColor = texture(texu, TexCoord2);\n"
+		"FColor = texture(texu, TexCoord2) * colore;\n"
 	"};\n"
 
 };
@@ -183,26 +188,30 @@ void Quit()
 #ifdef _VAO_RENDER
 static void CreateVAO(VB_DATAT *data)
 {
-	GLint pos, texc;
+	GLint pos, texc, col;
 
 	glGenVertexArrays(1,&data->vao_id);
 	glBindVertexArray(data->vao_id);
 
 	pos=glGetAttribLocation(st.renderer.Program[0],"Position");
 	texc=glGetAttribLocation(st.renderer.Program[0],"TexCoord");
+	col=glGetAttribLocation(st.renderer.Program[0],"colori");
 
 	glEnableVertexAttribArray(pos);
 	glEnableVertexAttribArray(texc);
+	glEnableVertexAttribArray(col);
 
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 
-	glBufferData(GL_ARRAY_BUFFER,(((data->num_elements*12)*sizeof(GLfloat)))+(((data->num_elements*8)*sizeof(GLfloat))),0,GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,(((data->num_elements*12)*sizeof(GLfloat)))+(((data->num_elements*8)*sizeof(GLfloat)))+(((data->num_elements*16)*sizeof(GLubyte))),0,GL_STREAM_DRAW);
 	glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
 	glBufferSubData(GL_ARRAY_BUFFER,(12*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
+	glBufferSubData(GL_ARRAY_BUFFER,(12*data->num_elements)*sizeof(GLfloat)+(8*data->num_elements)*sizeof(GLfloat),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
 
 	glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
 	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->num_elements)*sizeof(GLfloat)));
+	glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) ((12*data->num_elements)*sizeof(GLfloat)+(8*data->num_elements)*sizeof(GLfloat)));
 
 	glGenBuffers(1,&data->ibo_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
@@ -213,6 +222,7 @@ static void CreateVAO(VB_DATAT *data)
 
 	glDisableVertexAttribArray(pos);
 	glDisableVertexAttribArray(texc);
+	glDisableVertexAttribArray(col);
 }
 
 void ResetVB()
@@ -467,11 +477,12 @@ void Init()
 	glOrtho(0,st.screenx,st.screeny,0,0,1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
 	glDepthFunc(GL_ALWAYS);
 	//glEnable(GL_DEPTH_TEST);
+	glShadeModel(GL_SMOOTH);
 	SDL_GL_SetSwapInterval(st.vsync);
 
 #ifdef _VAO_RENDER
@@ -1283,7 +1294,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	float tmp, ax, ay, az;
 
 	uint8 val=0;
-	register uint32 i=0, j=0;
+	register uint32 i=0, j=0, k=0;
 	/*
 	Pos dim=st.Camera.dimension;
 
@@ -1382,18 +1393,6 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ay=(float) 1/(8192/2);
 			az=(float) 1/(4096/2);
 
-			for(j=0;j<12;j+=3)
-			{
-				ent[i].vertex[j]*=ax;
-				ent[i].vertex[j]-=1;
-
-				ent[i].vertex[j+1]*=ay;
-				ent[i].vertex[j+1]-=1;
-				
-				ent[i].vertex[j+2]*=az;
-				ent[i].vertex[j+2]-=1;
-			}
-
 			ent[i].texcor[0]=data.sizex+data.posx;
 			ent[i].texcor[1]=data.sizey+data.posy;
 
@@ -1412,10 +1411,34 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			//ent[i].texcor[8]=data.sizex+data.posx;
 			//ent[i].texcor[9]=data.sizey+data.posy;
 
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
 
-			for(j=0;j<8;j++)
-				ent[i].texcor[j]/=(float)32768;
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]-=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
 
+				if(j<8)
+				{
+					ent[i].texcor[j]/=(float)32768;
+					ent[i].texcor[j+1]/=(float)32768;
+					ent[i].texcor[j+2]/=(float)32768;
+				}
+
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+			
 			if(data.vb_id>-1)
 			{
 				
@@ -1429,9 +1452,11 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 					vbdt[data.vb_id].index=(GLushort*) realloc(vbdt[data.vb_id].index,vbdt[data.vb_id].num_elements*6);
 				}
 				*/
-				for(j=0;j<12;j++)
+				for(j=0;j<16;j++)
 				{
-					//if(j<6)
+					vbdt[data.vb_id].color[((vbdt[data.vb_id].num_elements-1)*16)+j]=ent[i].color[j];
+
+					if(j<12)
 						vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*12)+j]=ent[i].vertex[j];
 
 					if(j<8)

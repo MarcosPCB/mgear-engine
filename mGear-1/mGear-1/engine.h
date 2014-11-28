@@ -108,9 +108,10 @@ struct VB_DATAT
 
 	GLuint ibo_id;
 	GLuint vbo_id;
-	float vertex[10000*18];
-	float texcoord[10000*12];
-	GLushort index[10000*6];
+	float vertex[16*18];
+	float texcoord[16*12];
+	GLubyte color[16*16];
+	GLushort index[16*6];
 	GLuint texture;
 	uint16 num_elements;
 };
@@ -135,8 +136,9 @@ struct _ENTITIES //To be rendered
 	TEX_DATA data;
 	Pos size;
 	int16 ang;
-	float vertex[18];
-	float texcor[12];
+	float vertex[12];
+	float texcor[8];
+	GLubyte color[16];
 };
 
 struct Key
