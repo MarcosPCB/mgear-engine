@@ -1336,7 +1336,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 	uint8 val=0;
 	register uint32 i=0, j=0, k=0;
-	/*
+	
 	Pos dim=st.Camera.dimension;
 
 	x-=st.Camera.position.x;
@@ -1350,36 +1350,36 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	if(dim.y<1) dim.y=8192/dim.y;
 	else dim.y*=8192;
 
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	tmp=x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	tmp=y+(((x-(sizex/2))-x)*mSin(ang) - ((y-(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
+	tmp=x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
+	tmp=y+(((x+(sizex/2))-x)*mSin(ang) - ((y-(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	tmp=x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	tmp=y+(((x+(sizex/2))-x)*mSin(ang) - ((y+(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
+	tmp=x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
+	tmp=y+(((x-(sizex/2))-x)*mSin(ang) - ((y+(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
 	if(val==8) return 1;
-	*/
-	i=st.num_entities;
-
-		//if(ent[i].stat==DEAD)
-		//{
+	
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
 	
 			ent[i].stat=USED;
 			ent[i].ang=ang;
