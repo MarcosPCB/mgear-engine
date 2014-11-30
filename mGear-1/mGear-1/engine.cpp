@@ -12,8 +12,6 @@ SDL_Event events;
 	VB_DATAT vbd;
 	VB_DATAT *vbdt;
 	uint16 vbdt_num=0;
-	SDL_sem *VBproc=NULL;
-	SDL_Thread *VBthread;
 #endif
 
 _MGG movie;
@@ -31,7 +29,7 @@ const char *Texture_VShader[64]={
 
 	"in vec3 Position;\n"
 	"in vec2 TexCoord;\n"
-	"in vec4 colori;\n"
+	"in vec4 Color;\n"
 
 	"out vec2 TexCoord2;\n"
 	"out vec4 colore;\n"
@@ -40,7 +38,7 @@ const char *Texture_VShader[64]={
 	"{\n"
 	   "gl_Position = vec4(Position, 1.0);\n"
 	   "TexCoord2 = TexCoord;\n"
-	   "colore = colori;\n"
+	   "colore = Color;\n"
 	"};\n"
 };
 
@@ -178,6 +176,7 @@ float mTan(int16 ang)
 
 void Quit()
 {
+	ResetVB();
 	InputClose();
 	SDL_DestroyWindow(wn);
 	SDL_Quit();
@@ -197,7 +196,7 @@ static void CreateVAO(VB_DATAT *data)
 
 	pos=glGetAttribLocation(st.renderer.Program[0],"Position");
 	texc=glGetAttribLocation(st.renderer.Program[0],"TexCoord");
-	col=glGetAttribLocation(st.renderer.Program[0],"colori");
+	col=glGetAttribLocation(st.renderer.Program[0],"Color");
 
 	glEnableVertexAttribArray(pos);
 	glEnableVertexAttribArray(texc);
@@ -228,24 +227,34 @@ static void CreateVAO(VB_DATAT *data)
 
 	if(data->num_elements>16)
 	{
-
 		free(data->texcoord);
 		free(data->index);
 		free(data->color);
 		free(data->vertex);
-
-		//data->vertex=(float*) calloc(16*12,sizeof(float));
-		//data->texcoord=(float*) calloc(16*8,sizeof(float));
-		//data->index=(GLushort*) calloc(16*6,sizeof(GLushort));
-		//data->color=(GLubyte*) calloc(16*16,sizeof(GLubyte));
-
-		//data->buff_num=16;
 	}
 }
 
 void ResetVB()
 {
+	uint16 i=0;
+
+	for(i=0;i<vbdt_num;i++)
+	{
+		if(vbdt[i].color)
+			free(vbdt[i].color);
+
+		if(vbdt[i].index)
+			free(vbdt[i].index);
+
+		if(vbdt[i].texcoord)
+			free(vbdt[i].texcoord);
+
+		if(vbdt[i].vertex)
+			free(vbdt[i].vertex);
+	}
+
 	free(vbdt);
+
 	vbdt_num=0;
 }
 
@@ -673,9 +682,9 @@ void Init()
 	for(k=0.0;k<360.0;k+=0.1)
 	{
 		i=k*10;
-		st.CosTable[i]=cos(k);
-		st.SinTable[i]=sin(k);
-		st.TanTable[i]=tan(k);
+		st.CosTable[i]=cos((k*pi)/180);
+		st.SinTable[i]=sin((k*pi)/180);
+		st.TanTable[i]=tan((k*pi)/180);
 	}
 
 }
@@ -1327,12 +1336,7 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z)
 {
-	
 	float tmp, ax, ay, az;
-
-	float *V, *T;
-	GLushort *I;
-	GLubyte *C;
 
 	uint8 val=0;
 	register uint32 i=0, j=0, k=0;
@@ -1350,28 +1354,28 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	if(dim.y<1) dim.y=8192/dim.y;
 	else dim.y*=8192;
 
-	tmp=x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+	tmp=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x-(sizex/2))-x)*mSin(ang) - ((y-(sizey/2))-y)*mCos(ang));
+	tmp=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
-	tmp=x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+	tmp=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x+(sizex/2))-x)*mSin(ang) - ((y-(sizey/2))-y)*mCos(ang));
+	tmp=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
-	tmp=x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+	tmp=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x+(sizex/2))-x)*mSin(ang) - ((y+(sizey/2))-y)*mCos(ang));
+	tmp=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
-	tmp=x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+	tmp=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
 	if(tmp>dim.x) val++;
 
-	tmp=y+(((x-(sizex/2))-x)*mSin(ang) - ((y+(sizey/2))-y)*mCos(ang));
+	tmp=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 	if(tmp>dim.y) val++;
 
 	if(val==8) return 1;
@@ -1381,54 +1385,47 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	else
 		i=st.num_entities;
 	
-			ent[i].stat=USED;
+			ent[i].data=data;
+			
+#ifdef _IM_RENDER
+
 			ent[i].ang=ang;
 			ent[i].type=SPRITE;
-			ent[i].data=data;
-			/*
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-			*/
-			ax=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
-			/*
-			ent[i].vertex[0]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
-			ent[i].vertex[1]=((st.screenx*y)/8192)-(((sizey/2)*st.screeny)/8192);
 
-			ent[i].vertex[2]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
-			ent[i].vertex[3]=((st.screenx*y)/8192)-(((sizey/2)*st.screeny)/8192);
+			ent[i].Color.r=(float)r/255;
+			ent[i].Color.g=(float)g/255;
+			ent[i].Color.b=(float)b/255;
+			ent[i].Color.a=a;
 
-			ent[i].vertex[4]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
-			ent[i].vertex[5]=((st.screenx*y)/8192)+(((sizey/2)*st.screeny)/8192);
+			ent[i].pos.x=x;
+			ent[i].pos.y=y;
+			ent[i].pos.z=z;
 
-			ent[i].vertex[6]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
-			ent[i].vertex[7]=((st.screenx*y)/8192)+(((sizey/2)*st.screeny)/8192);
-			*/
+			ent[i].size.x=sizex;
+			ent[i].size.y=sizey;
 
-			ent[i].vertex[0]=x-sizex/2;
-			ent[i].vertex[1]=y-sizey/2;
+#endif
+
+#if defined (_VA_RENDER) || defined (_VBO_RENDER) || defined (_VAO_RENDER)
+
+			sizex*=st.Camera.dimension.x;
+			sizey*=st.Camera.dimension.y;
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[2]=z;
 
-			ent[i].vertex[3]=x+sizex/2;
-			ent[i].vertex[4]=y-sizey/2;
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[5]=z;
 
-			ent[i].vertex[6]=x+sizex/2;
-			ent[i].vertex[7]=y+sizey/2;
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[8]=z;
 
-			//ent[i].vertex[9]=x+sizex/2;
-			//ent[i].vertex[10]=y+sizey/2;
-			//ent[i].vertex[11]=z;
-
-			ent[i].vertex[9]=x-sizex/2;
-			ent[i].vertex[10]=y+sizey/2;
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[11]=z;
-
-			//ent[i].vertex[12]=x-sizex/2;
-			//ent[i].vertex[13]=y-sizey/2;
-			//ent[i].vertex[14]=z;
 
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
@@ -1443,14 +1440,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ent[i].texcor[4]=data.posx;
 			ent[i].texcor[5]=data.posy;
 
-			//ent[i].texcor[6]=data.posx;
-			//ent[i].texcor[7]=data.posy;
-
 			ent[i].texcor[6]=data.sizex+data.posx;
 			ent[i].texcor[7]=data.posy;
-
-			//ent[i].texcor[8]=data.sizex+data.posx;
-			//ent[i].texcor[9]=data.sizey+data.posy;
 
 			for(j=0;j<12;j+=3)
 			{
@@ -1482,159 +1473,9 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 			vbdt[data.vb_id].num_elements++;
 
-			/*
-			if(data.vb_id>-1)
-			{
-				
-				vbdt[data.vb_id].num_elements++;
+#endif
 
-				
-				if(vbdt[data.vb_id].num_elements>vbdt[data.vb_id].buff_num)
-				{
-					V=(float*) realloc(vbdt[data.vb_id].vertex,((vbdt[data.vb_id].num_elements+16)*12)*sizeof(float));
-					T=(float*) realloc(vbdt[data.vb_id].texcoord,((vbdt[data.vb_id].num_elements+16)*8)*sizeof(float));
-					I=(GLushort*) realloc(vbdt[data.vb_id].index,((vbdt[data.vb_id].num_elements+16)*6)*sizeof(GLushort));
-					C=(GLubyte*) realloc(vbdt[data.vb_id].color,((vbdt[data.vb_id].num_elements+16)*16)*sizeof(GLubyte));
-
-					if(V)
-						vbdt[data.vb_id].vertex=V;
-
-					if(T)
-						vbdt[data.vb_id].texcoord=T;
-
-					if(I)
-						vbdt[data.vb_id].index=I;
-
-					if(C)
-						vbdt[data.vb_id].color=C;
-
-					vbdt[data.vb_id].buff_num+=16;
-				}
-				
-				for(j=0;j<16;j++)
-				{
-					vbdt[data.vb_id].color[((vbdt[data.vb_id].num_elements-1)*16)+j]=ent[i].color[j];
-
-					if(j<12)
-						vbdt[data.vb_id].vertex[((vbdt[data.vb_id].num_elements-1)*12)+j]=ent[i].vertex[j];
-
-					if(j<8)
-						vbdt[data.vb_id].texcoord[((vbdt[data.vb_id].num_elements-1)*8)+j]=ent[i].texcor[j];
-
-					
-					if(j<=2)
-						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=(((vbdt[data.vb_id].num_elements-1)*6)-((vbdt[data.vb_id].num_elements-1)*2))+j;
-
-					if(j==3 || j==4)
-						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=(((vbdt[data.vb_id].num_elements-1)*6)-((vbdt[data.vb_id].num_elements-1)*2))+(j-1);
-
-					if(j==5)
-						vbdt[data.vb_id].index[((vbdt[data.vb_id].num_elements-1)*6)+j]=(((vbdt[data.vb_id].num_elements-1)*6)-((vbdt[data.vb_id].num_elements-1)*2));
-						
-					/*
-					vbdt[data.vb_id].index[0]=0;
-					vbdt[data.vb_id].index[1]=1;
-					vbdt[data.vb_id].index[2]=2;
-					vbdt[data.vb_id].index[3]=2;
-					vbdt[data.vb_id].index[4]=3;
-					vbdt[data.vb_id].index[5]=0;
-					vbdt[data.vb_id].index[6]=4;
-					vbdt[data.vb_id].index[7]=5;
-					vbdt[data.vb_id].index[8]=6;
-					vbdt[data.vb_id].index[9]=6;
-					vbdt[data.vb_id].index[10]=7;
-					vbdt[data.vb_id].index[11]=4;
-					vbdt[data.vb_id].index[12]=8;
-					vbdt[data.vb_id].index[13]=9;
-					vbdt[data.vb_id].index[14]=10;
-					vbdt[data.vb_id].index[15]=10;
-					vbdt[data.vb_id].index[16]=11;
-					vbdt[data.vb_id].index[17]=8;
-					vbdt[data.vb_id].index[18]=12;
-					vbdt[data.vb_id].index[19]=13;
-					vbdt[data.vb_id].index[20]=14;
-					vbdt[data.vb_id].index[21]=14;
-					vbdt[data.vb_id].index[22]=15;
-					vbdt[data.vb_id].index[23]=12;
-					vbdt[data.vb_id].index[24]=16;
-					
-				}
-				*/
-			//}
-			
-			ent[i].pos.x=(x*ax)-1;
-			ent[i].pos.y=(y*ay)-1;
-			ent[i].size.x=(sizex*ax)-1;
-			ent[i].size.y=(sizey*ay)-1;
-
-			st.num_tex++;
 			st.num_entities++;
-			
-			/*
-			vertices[curr_vert]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
-			vertices[curr_vert+1]=((st.screeny*y)/8192)-(((sizey/2)*st.screeny)/8192);
-
-			vertices[curr_vert+2]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
-			vertices[curr_vert+3]=((st.screeny*y)/8192)-(((sizey/2)*st.screeny)/8192);
-
-			//vertices[curr_vert+2]=((st.screenx*x)/16384)+((sizex*st.screenx)/16384);
-			//vertices[curr_vert+3]=((st.screeny*y)/8192)-((sizey*st.screeny)/8192);
-
-			vertices[curr_vert+4]=((st.screenx*x)/16384)+(((sizex/2)*st.screenx)/16384);
-			vertices[curr_vert+5]=((st.screeny*y)/8192)+(((sizey/2)*st.screeny)/8192);
-
-			vertices[curr_vert+6]=((st.screenx*x)/16384)-(((sizex/2)*st.screenx)/16384);
-			vertices[curr_vert+7]=((st.screeny*y)/8192)+(((sizey/2)*st.screeny)/8192);
-
-			//vertices[curr_vert+2]=((st.screenx*x)/16384)+((sizex*st.screenx)/16384);
-			//vertices[curr_vert+3]=((st.screeny*y)/8192)-((sizey*st.screeny)/8192);
-
-			//if(curr_ind==0)
-			//{
-				index[curr_ind]=curr_ind2;
-				index[curr_ind+1]=curr_ind2+1;
-				index[curr_ind+2]=curr_ind2+2;
-				index[curr_ind+3]=curr_ind2+2;
-				index[curr_ind+4]=curr_ind2+3;
-				index[curr_ind+5]=curr_ind2;
-			//}
-			//else
-			//{
-				
-				index[curr_ind]=curr_ind-2;
-				index[curr_ind+1]=curr_ind-1;
-				index[curr_ind+2]=curr_ind;
-				index[curr_ind+3]=curr_ind;
-				index[curr_ind+4]=curr_ind+1;
-				index[curr_ind+5]=curr_ind-2;
-				
-			//}
-				
-			color[curr_color]=1;
-			color[curr_color+1]=1;
-			color[curr_color+2]=1;
-			color[curr_color+3]=1;
-			color[curr_color+4]=1;
-			color[curr_color+5]=1;
-			color[curr_color+6]=1;
-			color[curr_color+7]=1;
-			color[curr_color+8]=1;
-			color[curr_color+9]=1;
-			color[curr_color+10]=1;
-			color[curr_color+11]=1;
-			color[curr_color+12]=1;
-			color[curr_color+13]=1;
-			color[curr_color+14]=1;
-			color[curr_color+15]=1;
-			color[curr_color+16]=1;
-			color[curr_color+17]=1;
-			
-			curr_vert+=8;
-			curr_ind+=6;
-			curr_ind2+=4;
-			//curr_color+=18;
-			*/
-		//}
 
 	return 0;
 }

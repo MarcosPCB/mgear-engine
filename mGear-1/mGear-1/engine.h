@@ -141,6 +141,7 @@ struct _ENTITIES //To be rendered
 	float vertex[12];
 	float texcor[8];
 	GLubyte color[16];
+	Color Color;
 };
 
 struct Key
@@ -352,7 +353,7 @@ struct _MGMLIGHT
 	Pos position;
 	Pos size;
 	int16 angle;
-	Colori color;
+	Color color;
 	uint32 TextureID;
 	int16 tag;
 };
@@ -364,7 +365,7 @@ struct _MGMOBJ
 	Pos texsize;
 	Pos texpan;
 	int16 angle;
-	Colori color;
+	Color color;
 	_TEXTURES tex;
 	int16 tag;
 	uint8 priority : 2;//0 - Most important, 1 - Medium, 2 - Less important
@@ -408,7 +409,7 @@ struct _MGMSPRITE
 
 	int16 angle;
 
-	Colori color;
+	Color color;
 };
 
 
