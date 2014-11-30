@@ -12,6 +12,8 @@ SDL_Event events;
 	VB_DATAT vbd;
 	VB_DATAT *vbdt;
 	uint16 vbdt_num=0;
+	SDL_sem *VBproc=NULL;
+	SDL_Thread *VBthread;
 #endif
 
 _MGG movie;
@@ -223,6 +225,22 @@ static void CreateVAO(VB_DATAT *data)
 	glDisableVertexAttribArray(pos);
 	glDisableVertexAttribArray(texc);
 	glDisableVertexAttribArray(col);
+
+	if(data->num_elements>16)
+	{
+
+		free(data->texcoord);
+		free(data->index);
+		free(data->color);
+		free(data->vertex);
+
+		//data->vertex=(float*) calloc(16*12,sizeof(float));
+		//data->texcoord=(float*) calloc(16*8,sizeof(float));
+		//data->index=(GLushort*) calloc(16*6,sizeof(GLushort));
+		//data->color=(GLubyte*) calloc(16*16,sizeof(GLubyte));
+
+		//data->buff_num=16;
+	}
 }
 
 void ResetVB()
@@ -255,7 +273,25 @@ static VBO_PACKET CreateVBO(uint16 num_elements)
 	return VBO;
 }
 #endif
+/*
+static int VBBuffProcess(void *data)
+{
+	register uint16 i=0;
+	uint16 current_ent=0;
+	uint8 done=0;
 
+	while(!done)
+	{
+		if(st.num_entities>current_ent)
+		{
+			i=current_ent+1;
+
+			
+		}
+	}
+
+}
+*/
 void Init()
 {	
 	register uint16 i=0;
@@ -895,10 +931,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			}
 
 			vbdt[vbdt_num-1].num_elements=0;
-			//vbdt[vbdt_num-1].vertex=(float*) calloc(16*8,sizeof(float));
+			//vbdt[vbdt_num-1].vertex=(float*) calloc(16*12,sizeof(float));
 			//vbdt[vbdt_num-1].texcoord=(float*) calloc(16*8,sizeof(float));
 			//vbdt[vbdt_num-1].index=(GLushort*) calloc(16*6,sizeof(GLushort));
-			//CreateVAO(&vbdt[vbdt_num-1]);
+			//vbdt[vbdt_num-1].color=(GLubyte*) calloc(16*16,sizeof(GLubyte));
+			vbdt[vbdt_num-1].buff_num=16;
 			vbdt[vbdt_num-1].texture=mgg->atlas[i];
 			mgg->frames[i].vb_id=vbdt_num-1;
 #endif
@@ -1293,6 +1330,10 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	
 	float tmp, ax, ay, az;
 
+	float *V, *T;
+	GLushort *I;
+	GLubyte *C;
+
 	uint8 val=0;
 	register uint32 i=0, j=0, k=0;
 	/*
@@ -1438,20 +1479,38 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				ent[i].color[j+2]=b;
 				ent[i].color[j+3]=a;
 			}
-			
+
+			vbdt[data.vb_id].num_elements++;
+
+			/*
 			if(data.vb_id>-1)
 			{
 				
 				vbdt[data.vb_id].num_elements++;
 
-				/*
-				if(vbdt[data.vb_id].num_elements>16)
+				
+				if(vbdt[data.vb_id].num_elements>vbdt[data.vb_id].buff_num)
 				{
-					vbdt[data.vb_id].vertex=(float*) realloc(vbdt[data.vb_id].vertex,vbdt[data.vb_id].num_elements*8);
-					vbdt[data.vb_id].texcoord=(float*) realloc(vbdt[data.vb_id].texcoord,vbdt[data.vb_id].num_elements*8);
-					vbdt[data.vb_id].index=(GLushort*) realloc(vbdt[data.vb_id].index,vbdt[data.vb_id].num_elements*6);
+					V=(float*) realloc(vbdt[data.vb_id].vertex,((vbdt[data.vb_id].num_elements+16)*12)*sizeof(float));
+					T=(float*) realloc(vbdt[data.vb_id].texcoord,((vbdt[data.vb_id].num_elements+16)*8)*sizeof(float));
+					I=(GLushort*) realloc(vbdt[data.vb_id].index,((vbdt[data.vb_id].num_elements+16)*6)*sizeof(GLushort));
+					C=(GLubyte*) realloc(vbdt[data.vb_id].color,((vbdt[data.vb_id].num_elements+16)*16)*sizeof(GLubyte));
+
+					if(V)
+						vbdt[data.vb_id].vertex=V;
+
+					if(T)
+						vbdt[data.vb_id].texcoord=T;
+
+					if(I)
+						vbdt[data.vb_id].index=I;
+
+					if(C)
+						vbdt[data.vb_id].color=C;
+
+					vbdt[data.vb_id].buff_num+=16;
 				}
-				*/
+				
 				for(j=0;j<16;j++)
 				{
 					vbdt[data.vb_id].color[((vbdt[data.vb_id].num_elements-1)*16)+j]=ent[i].color[j];
@@ -1498,9 +1557,9 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 					vbdt[data.vb_id].index[22]=15;
 					vbdt[data.vb_id].index[23]=12;
 					vbdt[data.vb_id].index[24]=16;
-					*/
+					
 				}
-				
+				*/
 			//}
 			
 			ent[i].pos.x=(x*ax)-1;
@@ -1575,7 +1634,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			curr_ind2+=4;
 			//curr_color+=18;
 			*/
-		}
+		//}
 
 	return 0;
 }
@@ -2505,7 +2564,43 @@ void Renderer()
 	GLenum error;
 
 	uint32 num_targets=0;
-	register uint32 i=0;
+	register uint32 i=0, j=0;
+
+#ifdef _VAO_RENDER
+
+	for(i=0;i<vbdt_num;i++)
+	{
+		vbdt[i].vertex=(float*) calloc(vbdt[i].num_elements*12,sizeof(float));
+		vbdt[i].texcoord=(float*) calloc(vbdt[i].num_elements*8,sizeof(float));
+		vbdt[i].index=(GLushort*) calloc(vbdt[i].num_elements*6,sizeof(GLushort));
+		vbdt[i].color=(GLubyte*) calloc(vbdt[i].num_elements*16,sizeof(GLubyte));
+	}
+
+	for(i=0;i<st.num_entities;i++)
+	{
+		for(j=0;j<16;j++)
+		{
+			vbdt[ent[i].data.vb_id].color[(i*16)+j]=ent[i].color[j];
+
+			if(j<12)
+				vbdt[ent[i].data.vb_id].vertex[(i*12)+j]=ent[i].vertex[j];
+
+			if(j<8)
+				vbdt[ent[i].data.vb_id].texcoord[(i*8)+j]=ent[i].texcor[j];
+
+					
+			if(j<=2)
+				vbdt[ent[i].data.vb_id].index[(i*6)+j]=((i*6)-(i*2))+j;
+
+			if(j==3 || j==4)
+				vbdt[ent[i].data.vb_id].index[(i*6)+j]=((i*6)-(i*2))+(j-1);
+
+			if(j==5)
+				vbdt[ent[i].data.vb_id].index[(i*6)+j]=((i*6)-(i*2));
+		}
+	}
+
+#endif
 
 #ifdef _IM_RENDER
 	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
@@ -2558,9 +2653,7 @@ void Renderer()
 			glBindVertexArray(vbdt[i].vao_id);
 
 			glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
-			//glDrawElements(GL_TRIANGLES,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
-			//glDrawArrays(GL_TRIANGLES,0,vbdt[i].num_elements*6);
-
+			
 			glBindVertexArray(0);
 
 			vbdt[i].num_elements=0;

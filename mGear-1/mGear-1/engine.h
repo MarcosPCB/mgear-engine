@@ -108,12 +108,14 @@ struct VB_DATAT
 
 	GLuint ibo_id;
 	GLuint vbo_id;
-	float vertex[16*18];
-	float texcoord[16*12];
-	GLubyte color[16*16];
-	GLushort index[16*6];
+	float *vertex;
+	float *texcoord;
+	GLubyte *color;
+	GLushort *index;
 	GLuint texture;
 	uint16 num_elements;
+
+	uint16 buff_num;
 };
 
 struct _TEX_DATA
