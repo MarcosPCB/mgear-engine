@@ -114,8 +114,7 @@ struct VB_DATAT
 	GLushort *index;
 	GLuint texture;
 	uint16 num_elements;
-
-	uint16 buff_num;
+	int w, h;
 };
 
 struct _TEX_DATA
@@ -124,6 +123,7 @@ struct _TEX_DATA
 	int16 vb_id;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
+	int w, h; //texture dimensions
 };
 
 typedef struct _TEX_DATA TEX_DATA;

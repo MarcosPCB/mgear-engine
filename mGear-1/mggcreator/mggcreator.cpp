@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
 			else
 			if(strcmp(str[0],"ATLAS")==NULL)
 			{
-				value=atoi(str[1]);
+				value=atoi(str[0]);
 				mgg.num_atlas=value;
 
 			}

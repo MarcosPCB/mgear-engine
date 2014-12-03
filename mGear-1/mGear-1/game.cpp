@@ -150,6 +150,7 @@ int main(int argc, char *argv[])
 
 	//createmgg();
 	LoadMGG(&mgg[0],"fulgore.mgg");
+	LoadMGG(&mgg[1],"mEngUI.mgg");
 
 	int32 startmovie=1;
 
@@ -290,10 +291,12 @@ int main(int argc, char *argv[])
 	//timej=GetTicks();
 
 		//for(i=0;i<100;i++)
-			for(j=0;j<64;j++)
-				DrawSprite(j*256,4096,256,256,0,255,255,255,mgg[0].frames[1],255,0);
-				//DrawSprite(4096,4096,1024,1024,0,100,100,100,mgg[0].frames[1],255,2048);
-				//DrawSprite(8192,4096,1024,1024,0,255,255,255,mgg[0].frames[1],255,0);
+			//for(j=0;j<64;j++)
+				//DrawSprite(j*256,4096,256,256,0,255,255,255,mgg[1].frames[1],255,0);
+	//st.Camera.dimension.x=2;
+	//st.Camera.dimension.y=2;
+				//DrawSprite(4096,4096,1024,1024,0,255,255,255,mgg[0].frames[1],255,2048);
+				//DrawSprite(8192,4096,1024,1024,0,255,255,255,mgg[0].frames[52],255,0);
 				//DrawSprite(1024,4096,1024,1024,0,255,255,255,mgg[0].frames[1],1,0);
 				//DrawSprite(250,950,250,250,0,255,255,255,0,1);
 				//DrawSprite(250,1200,250,250,0,255,255,255,0,1);
