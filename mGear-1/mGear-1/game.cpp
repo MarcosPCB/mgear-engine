@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 
 	//createmgg();
 	LoadMGG(&mgg[0],"fulgore.mgg");
-	LoadMGG(&mgg[1],"mEngUI.mgg");
+	//LoadMGG(&mgg[1],"mEngUI.mgg");
 
 	int32 startmovie=1;
 
@@ -295,7 +295,15 @@ int main(int argc, char *argv[])
 				//DrawSprite(j*256,4096,256,256,0,255,255,255,mgg[1].frames[1],255,0);
 	//st.Camera.dimension.x=2;
 	//st.Camera.dimension.y=2;
-				//DrawSprite(4096,4096,1024,1024,0,255,255,255,mgg[0].frames[1],255,2048);
+				DrawSprite(2048,4096,2048,2048,0,255,255,255,mgg[0].frames[50],255,0);
+				DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[54],255,2048);
+				//DrawSprite(4096,4096,2048,2048,0,255,255,255,mgg[0].frames[52],255,2048);
+				//DrawSprite(6200,4096,2048,2048,0,255,255,255,mgg[0].frames[53],255,2048);
+				//DrawSprite(8248,4096,2048,2048,0,255,255,255,mgg[0].frames[54],255,2048);
+				//DrawSprite(10500,4096,2048,2048,0,255,255,255,mgg[0].frames[55],255,2048);
+				//DrawSprite(12548,4096,2048,2048,0,255,255,255,mgg[0].frames[56],255,2048);
+				//DrawSprite(14600,4096,2048,2048,0,255,255,255,mgg[0].frames[57],255,2048);
+				//DrawSprite(16648,4096,2048,2048,0,255,255,255,mgg[0].frames[57],255,2048);
 				//DrawSprite(8192,4096,1024,1024,0,255,255,255,mgg[0].frames[52],255,0);
 				//DrawSprite(1024,4096,1024,1024,0,255,255,255,mgg[0].frames[1],1,0);
 				//DrawSprite(250,950,250,250,0,255,255,255,0,1);
