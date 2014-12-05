@@ -556,8 +556,8 @@ void Init()
 	glOrtho(0,st.screenx,st.screeny,0,0,1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
 	glDepthFunc(GL_ALWAYS);
 	//glEnable(GL_DEPTH_TEST);
@@ -903,7 +903,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	fread(mga,sizeof(_MGGANIM),mgg->num_anims,file);
 
 	for(i=0;i<mgg->num_anims;i++)
+	{
 		mgg->anim[i]=mga[i];
+		mgg->anim[i].current_frame*=10;
+	}
 
 	rewind(file);
 	fseek(file,mggf.framesize_offset,SEEK_CUR);
@@ -913,7 +916,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 	mgg->atlas=(GLuint*) malloc(mggf.num_atlas*sizeof(GLuint));
 
-	for(i=0, j=0;i<mggf.num_singletex-1;i++)
+	for(i=0, j=0;i<mggf.num_singletex;i++)
 	{
 		
 		if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
@@ -987,17 +990,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fseek(file,mggf.possize_offset,SEEK_SET);
 
-	posx=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	posy=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	sizex=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	sizey=(uint16*) malloc(mggf.num_texinatlas*sizeof(uint16));
-	imgatlas=(uint8*) malloc(mggf.num_texinatlas*sizeof(uint8));
+	posx=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
+	posy=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
+	sizex=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
+	sizey=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
+	imgatlas=(uint8*) malloc((mggf.num_texinatlas+1)*sizeof(uint8));
 
-	fread(posx,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(posy,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(sizex,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(sizey,sizeof(uint16),mggf.num_texinatlas,file);
-	fread(imgatlas,sizeof(uint8),mggf.num_texinatlas,file);
+	fread(posx,sizeof(uint16),(mggf.num_texinatlas+1),file);
+	fread(posy,sizeof(uint16),(mggf.num_texinatlas+1),file);
+	fread(sizex,sizeof(uint16),(mggf.num_texinatlas+1),file);
+	fread(sizey,sizeof(uint16),(mggf.num_texinatlas+1),file);
+	fread(imgatlas,sizeof(uint8),(mggf.num_texinatlas+1),file);
 
 	for(i=mggf.num_atlas-1;i<mggf.num_texinatlas+1;i++)
 	{
@@ -1081,11 +1084,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				
 			glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
 
-			w[l]=mgg->frames[i].w;
-			h[l]=mgg->frames[i].h;
-
 			mgg->frames[i].posx=(float)(w[l]*32768)/2048;
 			mgg->frames[i].posy=(float)(currh[l]*32768)/2048;
+
+			w[l]=mgg->frames[i].w;
+			h[l]=mgg->frames[i].h;
 
 			mgg->frames[i].sizex=(float)(mgg->frames[i].w*32768)/2048;
 			mgg->frames[i].sizey=(float)(mgg->frames[i].h*32768)/2048;
@@ -1118,13 +1121,13 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
 
+				mgg->frames[i].posx=(w[l]*32768)/2048;
+				mgg->frames[i].posy=(currh[l]*32768)/2048;
+
 				w[l]+=mgg->frames[i].w;
 
 				if(currh[l]+mgg->frames[i].h>h[l])
 					h[l]+=mgg->frames[i].h;
-
-				mgg->frames[i].posx=(w[l]*32768)/2048;
-				mgg->frames[i].posy=(currh[l]*32768)/2048;
 
 				mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
 				mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
@@ -1213,11 +1216,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				
 					glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],currh[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
 
-					w[vbdt_num-1]=mgg->frames[i].w;
-					h[l]=mgg->frames[i].h;
-
 					mgg->frames[i].posx=(w[vbdt_num-1]*32768)/2048;
 					mgg->frames[i].posy=(currh[vbdt_num-1]*32768)/2048;
+
+					w[vbdt_num-1]=mgg->frames[i].w;
+					h[vbdt_num-1]=mgg->frames[i].h;
 
 					mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
 					mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
@@ -1251,14 +1254,14 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 							glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
 				
 							glTexSubImage2D(GL_TEXTURE_2D,0,w[n],h[n],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
+	
+							mgg->frames[i].posx=(w[n]*32768)/2048;
+							mgg->frames[i].posy=(currh[n]*32768)/2048;
 
 							w[n]+=mgg->frames[i].w;
 
 							if(currh[n]+mgg->frames[i].h>h[n])
 								h[n]+=mgg->frames[i].h;
-	
-							mgg->frames[i].posx=(w[n]*32768)/2048;
-							mgg->frames[i].posy=(currh[n]*32768)/2048;
 
 							mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
 							mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
@@ -1316,11 +1319,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				
 							glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],h[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
 
-							w[vbdt_num-1]=mgg->frames[i].w;
-							h[vbdt_num-1]=mgg->frames[i].h;
-
 							mgg->frames[i].posx=(w[vbdt_num-1]*32768)/2048;
 							mgg->frames[i].posy=(currh[vbdt_num-1]*32768)/2048;
+
+							w[vbdt_num-1]=mgg->frames[i].w;
+							h[vbdt_num-1]=mgg->frames[i].h;
 
 							mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
 							mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
@@ -2161,17 +2164,17 @@ int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 {
 	uint16 curf=0;
 
-	if((mgf->anim[id].current_frame/10)>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID; else
+	if((mgf->anim[id].current_frame)>mgf->anim[id].endID*10) 
+		mgf->anim[id].current_frame=mgf->anim[id].startID*10; 
+	else
+	if((mgf->anim[id].current_frame/10)==0) 
+		curf=mgf->anim[id].startID; 
+	
+	curf=mgf->anim[id].current_frame/10;
 
-	if((mgf->anim[id].current_frame/10)==0) curf=mgf->anim[id].startID; else
-
-	if(((mgf->anim[id].current_frame/10)>0) && ((mgf->anim[id].current_frame/10)<mgf->anim[id].endID)) curf=mgf->anim[id].current_frame/10;
-
-//	DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a);
+	DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a,0);
 
 	mgf->anim[id].current_frame+=speed;
-
-	if((mgf->anim[id].current_frame/10)>mgf->anim[id].endID) mgf->anim[id].current_frame=mgf->anim[id].startID;
 
 	return mgf->anim[id].current_frame/10;
 }
@@ -2794,6 +2797,7 @@ void Renderer()
 
 	uint32 num_targets=0;
 	register uint32 i=0, j=0;
+	uint16 *k;
 
 #ifdef _VAO_RENDER
 
@@ -2808,32 +2812,38 @@ void Renderer()
 		}
 	}
 
+	k=(uint16*) calloc(vbdt_num,sizeof(uint16));
+
 	for(i=0;i<st.num_entities;i++)
 	{
 		if(ent[i].data.vb_id!=-1)
 		{
 			for(j=0;j<16;j++)
 			{
-				vbdt[ent[i].data.vb_id].color[(i*16)+j]=ent[i].color[j];
+				vbdt[ent[i].data.vb_id].color[(k[ent[i].data.vb_id]*16)+j]=ent[i].color[j];
 
 				if(j<12)
-					vbdt[ent[i].data.vb_id].vertex[(i*12)+j]=ent[i].vertex[j];
+					vbdt[ent[i].data.vb_id].vertex[(k[ent[i].data.vb_id]*12)+j]=ent[i].vertex[j];
 
 				if(j<8)
-					vbdt[ent[i].data.vb_id].texcoord[(i*8)+j]=ent[i].texcor[j];
+					vbdt[ent[i].data.vb_id].texcoord[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcor[j];
 
 					
 				if(j<=2)
-					vbdt[ent[i].data.vb_id].index[(i*6)+j]=((i*6)-(i*2))+j;
+					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+j;
 
 				if(j==3 || j==4)
-					vbdt[ent[i].data.vb_id].index[(i*6)+j]=((i*6)-(i*2))+(j-1);
+					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+(j-1);
 
 				if(j==5)
-					vbdt[ent[i].data.vb_id].index[(i*6)+j]=((i*6)-(i*2));
+					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2));
 			}
+
+			k[ent[i].data.vb_id]++;
 		}
 	}
+
+	free(k);
 
 #endif
 
@@ -2867,7 +2877,6 @@ void Renderer()
 
 	num_targets=st.num_entities;
 
-	glClear(GL_COLOR_BUFFER_BIT);
 	glClearColor(1,1,1,1);
 
 #ifdef _VAO_RENDER
