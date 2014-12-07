@@ -62,6 +62,55 @@ const char *Texture_FShader[64]={
 
 };
 
+const char *Lighting_FShader[128]={
+	"#version 130\n"
+
+	"in vec2 TexCoord2;\n"
+
+	"in vec4 colore;\n"
+
+	"out vec4 FColor;\n"
+
+	"uniform sampler2D texu;\n"
+
+	"uniform vec3 LightPos;\n"
+
+	"uniform vec4 LightColor;\n"
+
+	"uniform vec4 AmbientColor;\n"
+
+	"uniform vec3 Falloff;\n"
+
+	"uniform vec2 Screen;\n"
+
+	"uniform float radius;\n"
+
+	"void main()\n"
+	"{\n"
+		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
+
+		"vec3 LightDir = vec3(LightPos.xy - (gl_FragCoord.xy / Screen.xy), LightPos.z);\n"
+
+		"LightDir.x *= Screen.x / Screen.y;\n"
+
+		"float D = length(LightDir);\n"
+
+		 "vec3 L = normalize(LightDir);\n"
+
+		 "float Att = 1.0 / (Falloff.z*D*D);\n"
+
+		"vec3 df = (LightColor.rgb * LightColor.a);\n"
+
+		"vec3 am = AmbientColor.rgb * AmbientColor.a;\n"
+
+		"vec3 it = (am + df) * Att;\n"
+
+		"vec3 FinalC = DiffuseColor.rgb * it;\n"
+
+		"FColor = colore * vec4(FinalC,DiffuseColor.a);\n"
+	"}\n"
+};
+
 double inline __declspec (naked) __fastcall sqrt14(double n)
 {
 	_asm fld qword ptr [esp+4]
@@ -556,8 +605,8 @@ void Init()
 	glOrtho(0,st.screenx,st.screeny,0,0,1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
 	glDepthFunc(GL_ALWAYS);
 	//glEnable(GL_DEPTH_TEST);
@@ -571,7 +620,7 @@ void Init()
 		st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
 
 		glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
-		glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Texture_FShader,0);
+		glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Lighting_FShader,0);
 
 		glCompileShader(st.renderer.VShader[0]);
 		glCompileShader(st.renderer.FShader[0]);
@@ -1014,7 +1063,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	k=vbdt_num;
 
-	for(i=(mggf.num_frames-mggf.num_singletex)+1, j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
+	for(i=mggf.num_frames-mggf.num_singletex, j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
 	{
 		if(i==mggf.num_frames-1)
 		{
@@ -1026,7 +1075,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			}
 		}
 		else
-		if(i==(mggf.num_frames-mggf.num_singletex)+1 && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024))
+		if(i==mggf.num_frames-mggf.num_singletex && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024))
 		{
 			if(!vbdt_num)
 			{
@@ -2798,6 +2847,7 @@ void Renderer()
 	uint32 num_targets=0;
 	register uint32 i=0, j=0;
 	uint16 *k;
+	float m1, m2;
 
 #ifdef _VAO_RENDER
 
@@ -2888,6 +2938,27 @@ void Renderer()
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
 		glUniform1i(Tex,0);
+
+		m1=st.mouse.x;
+		m1/=(float)st.screenx;
+
+		m2=st.mouse.y;
+		m2/=(float)st.screeny;
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"LightPos");
+		glUniform3f(Tex, m1,m2,st.test);
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"LightColor");
+		glUniform4f(Tex, 1.0f,1.0f,1.0f,1.0f);
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"AmbientColor");
+		glUniform4f(Tex, 1.0f,1.0f,1.0f,0.0f);
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"Falloff");
+		glUniform3f(Tex, 0.4f,3.0f,st.test2);
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"Screen");
+		glUniform2f(Tex, 1600.0f, 900.0f);
 
 		for(i=0;i<vbdt_num;i++)
 		{

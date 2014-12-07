@@ -177,6 +177,9 @@ int main(int argc, char *argv[])
 
 	st.FPSYes=1;
 
+	st.test=0.075f;
+	st.test2=1.0;
+
 	char num[64];
 
 	while(!st.quit)
@@ -295,8 +298,34 @@ int main(int argc, char *argv[])
 				//DrawSprite(j*256,4096,256,256,0,255,255,255,mgg[0].frames[52],255,0);
 	//st.Camera.dimension.x=2;
 	//st.Camera.dimension.y=2;
-				DrawSprite(2048,4096,2048,2048,0,255,255,255,mgg[0].frames[49],255,0);
-				DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[59],255,2048);
+
+				
+	if(st.mouse_wheel>0)
+	{
+		st.test+=0.01;
+		st.mouse_wheel=0;
+	}
+	else
+	if(st.mouse_wheel<0)
+	{
+		st.test-=0.01;
+		st.mouse_wheel=0;
+	}
+
+	if(st.keys[4].state)
+	{
+		st.test2+=0.1;
+		st.keys[4].state=0;
+	}
+
+	if(st.keys[5].state)
+	{
+		st.test2-=0.1;
+		st.keys[5].state=0;
+	}
+
+				DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,0);
+				//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[59],255,2048);
 				//MAnim(8192,4096,2048,2048,0,255,255,255,mgg,1,1,255);
 				//DrawSprite(4096,4096,2048,2048,0,255,255,255,mgg[0].frames[52],255,2048);
 				//DrawSprite(6200,4096,2048,2048,0,255,255,255,mgg[0].frames[53],255,2048);

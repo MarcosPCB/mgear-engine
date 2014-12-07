@@ -602,6 +602,9 @@ struct _SETTINGS
 	
 	uint8 Developer_Mode;
 
+	float test;
+	float test2;
+
 	uint8 FPSYes;
 	uint32 FPSTime;
 	float FPS;
