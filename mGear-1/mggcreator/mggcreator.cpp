@@ -21,10 +21,13 @@ int main(int argc, char *argv[])
 	uint8 *imgatlas;
 	uint32 frameoffset[MAX_FRAMES];
 	uint32 framesize[MAX_FRAMES];
+	uint8 normals[MAX_FRAMES];
+	uint32 normalsize[MAX_FRAMES];
 	size_t totalsize;
 	register uint16 i=0, j=0, k=0;
 
 	memset(&mgg,0,sizeof(_MGGFORMAT));
+	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 
 	posx=(uint16*) malloc(sizeof(uint16));
 	posy=(uint16*) malloc(sizeof(uint16));
@@ -320,6 +323,21 @@ int main(int argc, char *argv[])
 					num_img_in_atlas+=val[1];
 				}
 			}
+			else
+			if(strcmp(str[0],"NORMALMAPRANGE")==NULL)
+			{
+				sscanf(tmp,"%s %d %d", str[0], &val[0], &val[1]);
+
+				for(i=val[0];i<=val[1];i++)
+					normals[i]=1;
+			}
+			else
+			if(strcmp(str[0],"NORMALMAP")==NULL)
+			{
+				sscanf(tmp,"%s %d", str[0], &val[0]);
+
+				normals[val[0]]=1;
+			}
 		}
 	}
 
@@ -399,10 +417,55 @@ int main(int argc, char *argv[])
 			}
 			
 			fwrite(buf,size,1,file);
-			frameoffset[i]=ftell(file);
 			fclose(file2);
 			free(buf);
+
+			frameoffset[i]=ftell(file);
+
 			printf("Wrote frame number %d\n",j);
+
+			if(normals[i])
+			{
+				strcpy(framename2,framename);
+				if(j<10) sprintf(filename,"//frame_n000%d.tga",j); else
+				if(j<100) sprintf(filename,"//frame_n00%d.tga",j); else
+				if(j<1000) sprintf(filename,"//frame_n0%d.tga",j); else
+				if(j<10000) sprintf(filename,"//frame_n0%d.tga",j); else
+				if(j<100000) sprintf(filename,"//frame_n%d.tga",j);
+
+				strcat(framename2,filename);
+
+				if((file2=fopen(framename2,"rb"))==NULL)
+				{
+					printf("Error: could not read normal mapping frame number %d\n",j);
+					fflush(stdin);
+					getch();
+				}
+				else
+				{
+					printf("Writing normal mapping frame number %d ...\n",j);
+					fseek(file2,0,SEEK_END);
+
+					size_t size=ftell(file2);
+					rewind(file2);
+
+					normalsize[i]=size;
+	
+					void *buf=(void*) malloc(size);
+					fread(buf,size,1,file2);
+					//rewind(file);
+			
+					fseek(file,frameoffset[i]+1,SEEK_SET);
+			
+					fwrite(buf,size,1,file);
+					fclose(file2);
+					free(buf);
+
+					frameoffset[i]=ftell(file);
+
+					printf("Wrote normal mapping frame number %d\n",j);
+				}
+			}
 		}
 		j++;
 	}
@@ -420,6 +483,10 @@ int main(int argc, char *argv[])
 	fwrite(framesize,sizeof(uint32),mgg.num_singletex,file);
 
 	fwrite(frameoffset,sizeof(uint32),mgg.num_singletex,file);
+
+	fwrite(normals,sizeof(uint8),mgg.num_singletex,file);
+
+	fwrite(normalsize,sizeof(uint32),mgg.num_singletex,file);
 
 	fseek(file,21,SEEK_SET);
 

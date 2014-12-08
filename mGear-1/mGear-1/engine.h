@@ -113,6 +113,8 @@ struct VB_DATAT
 	GLubyte *color;
 	GLushort *index;
 	GLuint texture;
+	GLuint Ntexture; //normal map
+	uint8 normal; //boolean for verification
 	uint16 num_elements;
 	int w, h;
 };
@@ -120,10 +122,12 @@ struct VB_DATAT
 struct _TEX_DATA
 {
 	GLuint data;
+	GLuint Ndata; //normal map
+	uint8 normal; //boolean for verification
 	int16 vb_id;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
-	int w, h; //texture dimensions
+	int w, h, channel; //texture dimensions
 };
 
 typedef struct _TEX_DATA TEX_DATA;

@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 	//createmap();
 
 	//createmgg();
-	LoadMGG(&mgg[0],"fulgore.mgg");
+	LoadMGG(&mgg[0],"tex01.mgg");
 	//LoadMGG(&mgg[1],"mEngUI.mgg");
 
 	int32 startmovie=1;

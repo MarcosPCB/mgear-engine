@@ -73,6 +73,8 @@ const char *Lighting_FShader[128]={
 
 	"uniform sampler2D texu;\n"
 
+	"uniform sampler2D texu2;\n"
+
 	"uniform vec3 LightPos;\n"
 
 	"uniform vec4 LightColor;\n"
@@ -89,17 +91,23 @@ const char *Lighting_FShader[128]={
 	"{\n"
 		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
 
+		"vec3 NormalMap = texture(texu2, TexCoord2).rgb;\n"
+
+		//"NormalMap.g = 1.0 - NormalMap.g;\n"
+
 		"vec3 LightDir = vec3(LightPos.xy - (gl_FragCoord.xy / Screen.xy), LightPos.z);\n"
 
 		"LightDir.x *= Screen.x / Screen.y;\n"
 
 		"float D = length(LightDir);\n"
 
+		"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
+
 		 "vec3 L = normalize(LightDir);\n"
 
-		 "float Att = 1.0 / (Falloff.z*D*D);\n"
+		 "float Att = 1.0 / (Falloff.z*D);\n"
 
-		"vec3 df = (LightColor.rgb * LightColor.a);\n"
+		 "vec3 df = (LightColor.rgb * LightColor.a) * max(dot(N, L), 0.0);\n"
 
 		"vec3 am = AmbientColor.rgb * AmbientColor.a;\n"
 
@@ -906,9 +914,15 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	char header[21];
 	register uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
 	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES];
-	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy;
+	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
 	uint8 *imgatlas;
 	int16 *w, *h, *currh;
+	int width, height, channel;
+	unsigned char *imgdata;
+	uint8 normals[MAX_FRAMES];
+	uint32 normalsize[MAX_FRAMES];
+
+	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 
 	if((file=DecompressFile(name))==NULL)
 	{
@@ -961,6 +975,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	fseek(file,mggf.framesize_offset,SEEK_CUR);
 	fread(framesize,sizeof(uint32),mggf.num_singletex,file);
 	fread(frameoffset,sizeof(uint32),mggf.num_singletex,file);
+	fread(normals,sizeof(uint8),mggf.num_singletex,file);
+	fread(normalsize,sizeof(uint32),mggf.num_singletex,file);
 
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 	mgg->atlas=(GLuint*) malloc(mggf.num_atlas*sizeof(GLuint));
@@ -984,19 +1000,56 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 		if(j<mggf.num_atlas)
 		{
-			mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+			mgg->atlas[i]=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS); //mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+			mgg->frames[i].channel=channel;
+			mgg->frames[i].w=width;
+			mgg->frames[i].h=height;
 
 			if(mgg->atlas[i]==NULL)
 				LogApp("Error loading texture from memory");
+
+			if (data)						
+				free(data);
+			if(imgdata)
+				SOIL_free_image_data(imgdata);
+
+			if(normals[i])
+			{
+				fseek(file,frameoffset[i]-normalsize[i],SEEK_SET);
+		
+				data=malloc(normalsize[i]);
+
+				if(data==NULL)
+				{
+					LogApp("Error allocating memory for normal mapping texture %d, size %d, file %s",i,normalsize[i],name);
+					continue;
+				}
+
+				fread(data,normalsize[i],1,file);
+
+				imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+				mgg->frames[i].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+				mgg->frames[i].normal=1;
+
+				if(mgg->frames[i].data==NULL)
+					LogApp("Error loading normal mapping texture from memory");
+			}
+			else
+				mgg->frames[i].normal=0;
 
 			j++;
 		}
 		else
 		{
-			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
-			glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_WIDTH,&mgg->frames[i+(mggf.num_texinatlas)].w);
-			glGetTexLevelParameteriv(GL_TEXTURE_2D,0,GL_TEXTURE_HEIGHT,&mgg->frames[i+(mggf.num_texinatlas)].h);
+			mgg->frames[i+(mggf.num_texinatlas)].w=width;
+			mgg->frames[i+(mggf.num_texinatlas)].h=height;
+			mgg->frames[i+(mggf.num_texinatlas)].channel=channel;
 
 			mgg->frames[i+(mggf.num_texinatlas)].posx=0;
 			mgg->frames[i+(mggf.num_texinatlas)].posy=0;
@@ -1004,10 +1057,37 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 			if(mgg->frames[i+(mggf.num_texinatlas)].data==NULL)
 				LogApp("Error loading texture from memory");
-		}
+
+			if (data)						
+				free(data);
+			if(imgdata)
+				SOIL_free_image_data(imgdata);
+
+			if(normals[i])
+			{
+				fseek(file,frameoffset[i]-normalsize[i],SEEK_SET);
 		
-		if (data)						
-			free(data);
+				data=malloc(normalsize[i]);
+
+				if(data==NULL)
+				{
+					LogApp("Error allocating memory for normal mapping texture %d, size %d, file %s",i,normalsize[i],name);
+					continue;
+				}
+
+				fread(data,normalsize[i],1,file);
+
+				imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+				mgg->frames[i+(mggf.num_texinatlas)].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+				mgg->frames[i+(mggf.num_texinatlas)].normal=1;
+
+				if(mgg->frames[i+(mggf.num_texinatlas)].data==NULL)
+					LogApp("Error loading normal mapping texture from memory");
+			}
+			else
+				mgg->frames[i+(mggf.num_texinatlas)].normal=0;
+		}
 	}
 		
 	if(mggf.num_atlas>0)
@@ -1031,6 +1111,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 			vbdt[vbdt_num-1].num_elements=0;
 			vbdt[vbdt_num-1].texture=mgg->atlas[i];
+
+			vbdt[vbdt_num-1].normal=mgg->frames[i].normal;
+
+			if(mgg->frames[i].normal)
+				vbdt[vbdt_num-1].Ntexture=mgg->frames[i].Ndata;
+
 			mgg->frames[i].vb_id=vbdt_num-1;
 #endif
 		}
@@ -1062,98 +1148,53 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	}
 
 	k=vbdt_num;
-
-	for(i=mggf.num_frames-mggf.num_singletex, j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
+	
+	if(mggf.num_frames>1)
 	{
-		if(i==mggf.num_frames-1)
-		{
-			for(n=k;n<vbdt_num;n++)
+		for(i=mggf.num_frames-mggf.num_singletex, j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
+		{	
+			if(i==mggf.num_frames-mggf.num_singletex && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024))
 			{
-				glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
-				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-			}
-		}
-		else
-		if(i==mggf.num_frames-mggf.num_singletex && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024))
-		{
-			if(!vbdt_num)
-			{
-				vbdt_num++;
-				l=vbdt_num-1;
-				vbdt=(VB_DATAT*) malloc(sizeof(VB_DATAT));
-
-				w=(int16*) calloc(vbdt_num,sizeof(int16));
-				h=(int16*) calloc(vbdt_num,sizeof(int16));
-				currh=(int16*) calloc(vbdt_num,sizeof(int16));
-
-				if(!vbdt)
-					LogApp("Error could not allocate memory for the Vertex Buffer");
-			}
-			else
-			{
-				vbdt_num++;
-				l=vbdt_num-1;
-				vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
-
-				w=(int16*) calloc(vbdt_num,sizeof(int16));
-				h=(int16*) calloc(vbdt_num,sizeof(int16));
-				currh=(int16*) calloc(vbdt_num,sizeof(int16));
-
-				if(vbdt_num>1)
+				if(!vbdt_num)
 				{
-					for(n=0;n<vbdt_num-2;n++)
-						currh[n]=w[n]=h[n]=-1;
+					vbdt_num++;
+					l=vbdt_num-1;
+					vbdt=(VB_DATAT*) malloc(sizeof(VB_DATAT));
+
+					w=(int16*) calloc(vbdt_num,sizeof(int16));
+					h=(int16*) calloc(vbdt_num,sizeof(int16));
+					currh=(int16*) calloc(vbdt_num,sizeof(int16));
+
+					if(!vbdt)
+						LogApp("Error could not allocate memory for the Vertex Buffer");
+				}
+				else
+				{
+					vbdt_num++;
+					l=vbdt_num-1;
+					vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
+
+					w=(int16*) calloc(vbdt_num,sizeof(int16));
+					h=(int16*) calloc(vbdt_num,sizeof(int16));
+					currh=(int16*) calloc(vbdt_num,sizeof(int16));
+
+					if(vbdt_num>1)
+					{
+						for(n=0;n<vbdt_num-2;n++)
+							currh[n]=w[n]=h[n]=-1;
+					}
+
+					currh[l]=w[l]=h[l]=0;
 				}
 
-				currh[l]=w[l]=h[l]=0;
-			}
+				vbdt[l].num_elements=0;
 
-			vbdt[l].num_elements=0;
+				glGenTextures(1,&vbdt[vbdt_num-1].texture);
 
-			glGenTextures(1,&vbdt[vbdt_num-1].texture);
+				glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
 
-			glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
+				glTexImage2D(GL_TEXTURE_2D,0,4,2048,2048,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
 
-			glTexImage2D(GL_TEXTURE_2D,0,4,2048,2048,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
-
-			glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
-
-			data=malloc(framesize[j]);
-
-			if(data==NULL)
-			{
-				LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
-				continue;
-			}
-
-			glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-
-			glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
-				
-			glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
-
-			mgg->frames[i].posx=(float)(w[l]*32768)/2048;
-			mgg->frames[i].posy=(float)(currh[l]*32768)/2048;
-
-			w[l]=mgg->frames[i].w;
-			h[l]=mgg->frames[i].h;
-
-			mgg->frames[i].sizex=(float)(mgg->frames[i].w*32768)/2048;
-			mgg->frames[i].sizey=(float)(mgg->frames[i].h*32768)/2048;
-
-			glDeleteTextures(1,&mgg->frames[i].data);
-
-			mgg->frames[i].data=vbdt[l].texture;
-
-			mgg->frames[i].vb_id=l;
-
-			free(data);
-		}
-		else
-		{
-			if((mgg->frames[i].w+w[l]<2048 && mgg->frames[i].h+currh[l]<2048) && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024))
-			{
 				glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
 				data=malloc(framesize[j]);
@@ -1164,22 +1205,31 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					continue;
 				}
 
-				glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-
 				glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
+			
+				fseek(file,mggf.textures_offset+1,SEEK_SET);
+				//fseek(file,frameoffset[i-1]+1,SEEK_SET);
 
-				glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
+				fread(data,framesize[j],1,file);
 
-				mgg->frames[i].posx=(w[l]*32768)/2048;
-				mgg->frames[i].posy=(currh[l]*32768)/2048;
+				imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
 
-				w[l]+=mgg->frames[i].w;
+				if(mgg->frames[i].channel==4)
+					channel2=GL_RGBA;
+				else
+				if(mgg->frames[i].channel==3)
+					channel2=GL_RGB;
 
-				if(currh[l]+mgg->frames[i].h>h[l])
-					h[l]+=mgg->frames[i].h;
+				glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,channel2,GL_UNSIGNED_BYTE,imgdata);
 
-				mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
-				mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
+				mgg->frames[i].posx=(float)(w[l]*32768)/2048;
+				mgg->frames[i].posy=(float)(currh[l]*32768)/2048;
+
+				w[l]=mgg->frames[i].w;
+				h[l]=mgg->frames[i].h;
+
+				mgg->frames[i].sizex=(float)(mgg->frames[i].w*32768)/2048;
+				mgg->frames[i].sizey=(float)(mgg->frames[i].h*32768)/2048;
 
 				glDeleteTextures(1,&mgg->frames[i].data);
 
@@ -1189,66 +1239,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				free(data);
 
-				if(2048-w[l]<128 && 2048-currh[l]>128)
-				{
-					w[l]=0;
-					currh[l]=h[l];
-				}
-				else
-				if(2048-w[l]<128 && 2048-currh[l]<128)
-				{
-					if(l==vbdt_num-1)
-					{
-						vbdt_num++;
-						vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
-
-						w=(int16*) realloc(w,vbdt_num*sizeof(int16));
-						h=(int16*) realloc(h,vbdt_num*sizeof(int16));
-
-						vbdt[vbdt_num-1].num_elements=0;
-
-						currh=(int16*) realloc(currh,vbdt_num*sizeof(int16));
-
-						currh[vbdt_num-1]=w[vbdt_num-1]=h[vbdt_num-1]=0;
-
-						l=vbdt_num-1;
-					}
-					else
-					{
-						for(n=0;n<vbdt_num;n++)
-						{
-							if(2048-w[n]>128 || 2048-currh[n]>128)
-							{
-								l=n;
-								break;
-							}
-						}
-					}
-				}
+				SOIL_free_image_data(imgdata);
 			}
 			else
-			if((mgg->frames[i].w<1024 && mgg->frames[i].h<1024) && (mgg->frames[i].w+w[l]>2048 && mgg->frames[i].h+currh[l]>2048))
 			{
-				if(l==vbdt_num-1)
+				if((mgg->frames[i].w+w[l]<2048 && mgg->frames[i].h+currh[l]<2048) && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024))
 				{
-					vbdt_num++;
-					vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
-
-					w=(int16*) realloc(w,vbdt_num*sizeof(int16));
-					h=(int16*) realloc(h,vbdt_num*sizeof(int16));
-
-					currh=(int16*) realloc(currh,vbdt_num*sizeof(int16));
-
-					currh[vbdt_num-1]=w[vbdt_num-1]=h[vbdt_num-1]=0;
-
-					vbdt[vbdt_num-1].num_elements=0;
-
-					glGenTextures(1,&vbdt[vbdt_num-1].texture);
-
-					glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
-
-					glTexImage2D(GL_TEXTURE_2D,0,4,2048,2048,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
-
 					glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
 					data=malloc(framesize[j]);
@@ -1259,80 +1255,52 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 						continue;
 					}
 
-					glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
+					fseek(file,frameoffset[j-1]+1,SEEK_SET);
 
-					glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
-				
-					glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],currh[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
+					fread(data,framesize[j],1,file);
 
-					mgg->frames[i].posx=(w[vbdt_num-1]*32768)/2048;
-					mgg->frames[i].posy=(currh[vbdt_num-1]*32768)/2048;
+					imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
 
-					w[vbdt_num-1]=mgg->frames[i].w;
-					h[vbdt_num-1]=mgg->frames[i].h;
+					if(mgg->frames[i].channel==4)
+						channel2=GL_RGBA;
+					else
+					if(mgg->frames[i].channel==3)
+						channel2=GL_RGB;
+
+					glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
+
+					glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,channel,GL_UNSIGNED_BYTE,imgdata);
+
+					mgg->frames[i].posx=(w[l]*32768)/2048;
+					mgg->frames[i].posy=(currh[l]*32768)/2048;
+
+					w[l]+=mgg->frames[i].w;
+
+					if(currh[l]+mgg->frames[i].h>h[l])
+						h[l]+=mgg->frames[i].h;
 
 					mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
 					mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
 
 					glDeleteTextures(1,&mgg->frames[i].data);
 
-					mgg->frames[i].data=vbdt[vbdt_num-1].texture;
+					mgg->frames[i].data=vbdt[l].texture;
 
-					mgg->frames[i].vb_id=vbdt_num-1;
+					mgg->frames[i].vb_id=l;
 
 					free(data);
-				}
-				else
-				{
-					for(n=l;n<vbdt_num;n++)
+
+					SOIL_free_image_data(imgdata);
+
+					if(2048-w[l]<128 && 2048-currh[l]>128)
 					{
-						if(mgg->frames[i].w+w[n]<2048 || mgg->frames[i].h+currh[n]<2048)
-						{
-							glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
-
-							data=malloc(framesize[j]);
-
-							if(data==NULL)
-							{
-								LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
-								continue;
-							}
-
-							glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-
-							glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
-				
-							glTexSubImage2D(GL_TEXTURE_2D,0,w[n],h[n],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
-	
-							mgg->frames[i].posx=(w[n]*32768)/2048;
-							mgg->frames[i].posy=(currh[n]*32768)/2048;
-
-							w[n]+=mgg->frames[i].w;
-
-							if(currh[n]+mgg->frames[i].h>h[n])
-								h[n]+=mgg->frames[i].h;
-
-							mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
-							mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
-
-							glDeleteTextures(1,&mgg->frames[i].data);
-
-							mgg->frames[i].data=vbdt[n].texture;
-
-							mgg->frames[i].vb_id=n;
-
-							free(data);
-
-							if(2048-w[n]<128 && 2048-currh[n]>128)
-							{
-								w[n]=0;
-								currh[n]=h[n];
-							}
-
-							break;
-						}
-						else
-						if(n==vbdt_num-1)
+						w[l]=0;
+						currh[l]=h[l];
+					}
+					else
+					if(2048-w[l]<128 && 2048-currh[l]<128)
+					{
+						if(l==vbdt_num-1)
 						{
 							vbdt_num++;
 							vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
@@ -1340,63 +1308,245 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 							w=(int16*) realloc(w,vbdt_num*sizeof(int16));
 							h=(int16*) realloc(h,vbdt_num*sizeof(int16));
 
+							vbdt[vbdt_num-1].num_elements=0;
+
 							currh=(int16*) realloc(currh,vbdt_num*sizeof(int16));
 
 							currh[vbdt_num-1]=w[vbdt_num-1]=h[vbdt_num-1]=0;
 
-							vbdt[vbdt_num-1].num_elements=0;
-
-							glGenTextures(1,&vbdt[vbdt_num-1].texture);
-
-							glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
-
-							glTexImage2D(GL_TEXTURE_2D,0,4,2048,2048,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
-
-							glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
-
-							data=malloc(framesize[j]);
-
-							if(data==NULL)
+							l=vbdt_num-1;
+						}
+						else
+						{
+							for(n=0;n<vbdt_num;n++)
 							{
-								LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
-								continue;
+								if(2048-w[n]>128 || 2048-currh[n]>128)
+								{
+									l=n;
+									break;
+								}
 							}
+						}
+					}
+				}
+				else
+				if((mgg->frames[i].w<1024 && mgg->frames[i].h<1024) && (mgg->frames[i].w+w[l]>2048 && mgg->frames[i].h+currh[l]>2048))
+				{
+					if(l==vbdt_num-1)
+					{
+						vbdt_num++;
+						vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
 
-							glGetTexImage(GL_TEXTURE_2D,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
+						w=(int16*) realloc(w,vbdt_num*sizeof(int16));
+						h=(int16*) realloc(h,vbdt_num*sizeof(int16));
 
-							glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
+						currh=(int16*) realloc(currh,vbdt_num*sizeof(int16));
+
+						currh[vbdt_num-1]=w[vbdt_num-1]=h[vbdt_num-1]=0;
+
+						vbdt[vbdt_num-1].num_elements=0;
+
+						glGenTextures(1,&vbdt[vbdt_num-1].texture);
+
+						glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
+
+						glTexImage2D(GL_TEXTURE_2D,0,4,2048,2048,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
+
+						glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+
+						data=malloc(framesize[j]);
+
+						if(data==NULL)
+						{
+							LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
+							continue;
+						}
+
+						fseek(file,frameoffset[j-1]+1,SEEK_SET);
+
+						fread(data,framesize[j],1,file);
+
+						imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
+
+						if(mgg->frames[i].channel==4)
+							channel2=GL_RGBA;
+						else
+						if(mgg->frames[i].channel==3)
+							channel2=GL_RGB;
+
+						glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
 				
-							glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],h[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,GL_RGBA,GL_UNSIGNED_BYTE,data);
+						glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],currh[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,channel,GL_UNSIGNED_BYTE,imgdata);
 
-							mgg->frames[i].posx=(w[vbdt_num-1]*32768)/2048;
-							mgg->frames[i].posy=(currh[vbdt_num-1]*32768)/2048;
+						mgg->frames[i].posx=(w[vbdt_num-1]*32768)/2048;
+						mgg->frames[i].posy=(currh[vbdt_num-1]*32768)/2048;
 
-							w[vbdt_num-1]=mgg->frames[i].w;
-							h[vbdt_num-1]=mgg->frames[i].h;
+						w[vbdt_num-1]=mgg->frames[i].w;
+						h[vbdt_num-1]=mgg->frames[i].h;
 
-							mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
-							mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
+						mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
+						mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
 
-							glDeleteTextures(1,&mgg->frames[i].data);
+						glDeleteTextures(1,&mgg->frames[i].data);
 
-							mgg->frames[i].data=vbdt[vbdt_num-1].texture;
+						mgg->frames[i].data=vbdt[vbdt_num-1].texture;
 
-							mgg->frames[i].vb_id=vbdt_num-1;
+						mgg->frames[i].vb_id=vbdt_num-1;
 
-							free(data);
+						free(data);
 
-							break;
+						SOIL_free_image_data(imgdata);
+					}
+					else
+					{
+						for(n=l;n<vbdt_num;n++)
+						{
+							if(mgg->frames[i].w+w[n]<2048 || mgg->frames[i].h+currh[n]<2048)
+							{
+								glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+
+								data=malloc(framesize[j]);
+
+								if(data==NULL)
+								{
+									LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
+									continue;
+								}
+
+								fseek(file,frameoffset[j-1]+1,SEEK_SET);
+
+								fread(data,framesize[j],1,file);
+
+								imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
+
+								if(mgg->frames[i].channel==4)
+									channel2=GL_RGBA;
+								else
+								if(mgg->frames[i].channel==3)
+									channel2=GL_RGB;
+
+								glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
+				
+								glTexSubImage2D(GL_TEXTURE_2D,0,w[n],h[n],mgg->frames[i].w,mgg->frames[i].h,channel,GL_UNSIGNED_BYTE,imgdata);
+	
+								mgg->frames[i].posx=(w[n]*32768)/2048;
+								mgg->frames[i].posy=(currh[n]*32768)/2048;
+
+								w[n]+=mgg->frames[i].w;
+
+								if(currh[n]+mgg->frames[i].h>h[n])
+									h[n]+=mgg->frames[i].h;
+
+								mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
+								mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
+
+								glDeleteTextures(1,&mgg->frames[i].data);
+
+								mgg->frames[i].data=vbdt[n].texture;
+
+								mgg->frames[i].vb_id=n;
+
+								free(data);
+
+								SOIL_free_image_data(imgdata);
+
+								if(2048-w[n]<128 && 2048-currh[n]>128)
+								{
+									w[n]=0;
+									currh[n]=h[n];
+								}
+
+								break;
+							}
+							else
+							if(n==vbdt_num-1)
+							{
+								vbdt_num++;
+								vbdt=(VB_DATAT*) realloc(vbdt,vbdt_num*sizeof(VB_DATAT));
+
+								w=(int16*) realloc(w,vbdt_num*sizeof(int16));
+								h=(int16*) realloc(h,vbdt_num*sizeof(int16));
+
+								currh=(int16*) realloc(currh,vbdt_num*sizeof(int16));
+
+								currh[vbdt_num-1]=w[vbdt_num-1]=h[vbdt_num-1]=0;
+
+								vbdt[vbdt_num-1].num_elements=0;
+
+								glGenTextures(1,&vbdt[vbdt_num-1].texture);
+
+								glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
+
+								glTexImage2D(GL_TEXTURE_2D,0,4,2048,2048,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
+
+								glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+
+								data=malloc(framesize[j]);
+
+								if(data==NULL)
+								{
+									LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
+									continue;
+								}
+
+								fseek(file,frameoffset[j-1]+1,SEEK_SET);
+
+								fread(data,framesize[j],1,file);
+
+								imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
+
+								if(mgg->frames[i].channel==4)
+									channel2=GL_RGBA;
+								else
+								if(mgg->frames[i].channel==3)
+									channel2=GL_RGB;
+
+								glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
+				
+								glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],h[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,channel,GL_UNSIGNED_BYTE,imgdata);
+
+								mgg->frames[i].posx=(w[vbdt_num-1]*32768)/2048;
+								mgg->frames[i].posy=(currh[vbdt_num-1]*32768)/2048;
+
+								w[vbdt_num-1]=mgg->frames[i].w;
+								h[vbdt_num-1]=mgg->frames[i].h;
+
+								mgg->frames[i].sizex=(mgg->frames[i].w*32768)/2048;
+								mgg->frames[i].sizey=(mgg->frames[i].h*32768)/2048;
+
+								glDeleteTextures(1,&mgg->frames[i].data);
+
+								mgg->frames[i].data=vbdt[vbdt_num-1].texture;
+
+								mgg->frames[i].vb_id=vbdt_num-1;
+
+								free(data);
+
+								SOIL_free_image_data(imgdata);
+
+								break;
+							}
 						}
 					}
 				}
 			}
+
+			if(i==mggf.num_frames-1)
+			{
+				for(n=k;n<vbdt_num;n++)
+				{
+					glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
+					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+				}
+			}
 		}
+
+		free(w);
+		free(h);
+		free(currh);
 	}
-
-	free(w);
-	free(h);
-	free(currh);
-
+	
 	free(posx);
 	free(posy);
 	free(sizex);
@@ -2934,16 +3084,17 @@ void Renderer()
 	{
 		glUseProgram(st.renderer.Program[0]);
 
-		glActiveTexture(GL_TEXTURE0);
-
-		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
-		glUniform1i(Tex,0);
-
 		m1=st.mouse.x;
 		m1/=(float)st.screenx;
 
 		m2=st.mouse.y;
 		m2/=(float)st.screeny;
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"texu2");
+		glUniform1i(Tex,1);
+
+		Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
+		glUniform1i(Tex,0);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"LightPos");
 		glUniform3f(Tex, m1,m2,st.test);
@@ -2952,13 +3103,13 @@ void Renderer()
 		glUniform4f(Tex, 1.0f,1.0f,1.0f,1.0f);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"AmbientColor");
-		glUniform4f(Tex, 1.0f,1.0f,1.0f,0.0f);
+		glUniform4f(Tex, 1.0f,1.0f,1.0f,0.2f);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"Falloff");
 		glUniform3f(Tex, 0.4f,3.0f,st.test2);
 
 		Tex=glGetUniformLocation(st.renderer.Program[0],"Screen");
-		glUniform2f(Tex, 1600.0f, 900.0f);
+		glUniform2f(Tex, 1024.0f, 768.0f);
 
 		for(i=0;i<vbdt_num;i++)
 		{
@@ -2967,7 +3118,16 @@ void Renderer()
 			{
 				CreateVAO(&vbdt[i],0);
 
+				glActiveTexture(GL_TEXTURE0);
+
 				glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
+
+				if(vbdt[i].normal)
+				{
+					glActiveTexture(GL_TEXTURE1);
+
+					glBindTexture(GL_TEXTURE_2D,vbdt[i].Ntexture);
+				}
 
 				glBindVertexArray(vbdt[i].vao_id);
 
@@ -2985,11 +3145,25 @@ void Renderer()
 
 		for(i=0;i<texone_num;i++)
 		{
+			glActiveTexture(GL_TEXTURE0);
+
 			if(i==0)
 				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
 			else 
 			if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
 				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+				
+
+			if(ent[texone_ids[i]].data.normal)
+			{
+				glActiveTexture(GL_TEXTURE1);
+
+				if(i==0)
+					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.Ndata);
+				else 
+				if(i>0 && ent[texone_ids[i]].data.Ndata!=ent[texone_ids[i-1]].data.Ndata)
+					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.Ndata);
+			}
 
 			glBindVertexArray(vbd.vao_id);
 
