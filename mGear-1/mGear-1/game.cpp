@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
 	//createmap();
 
 	//createmgg();
+	LoadMGG(&mgg[1],"fulgore.mgg");
 	LoadMGG(&mgg[0],"tex01.mgg");
-	//LoadMGG(&mgg[1],"mEngUI.mgg");
 
 	int32 startmovie=1;
 
@@ -302,31 +302,28 @@ int main(int argc, char *argv[])
 				
 	if(st.mouse_wheel>0)
 	{
-		st.test+=0.01;
+		st.Camera.dimension.x+=0.1;
+		st.Camera.dimension.y+=0.1;
 		st.mouse_wheel=0;
 	}
-	else
+	
 	if(st.mouse_wheel<0)
 	{
-		st.test-=0.01;
+		st.Camera.dimension.x-=0.1;
+		st.Camera.dimension.y-=0.1;
 		st.mouse_wheel=0;
 	}
+				
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,0.1f);
+				//DrawLight(2048,2048,32,0,255,0,128,POINT_LIGHT_MEDIUM,255,1.0f);
 
-	if(st.keys[4].state)
-	{
-		st.test2+=0.1;
-		st.keys[4].state=0;
-	}
-
-	if(st.keys[5].state)
-	{
-		st.test2-=0.1;
-		st.keys[5].state=0;
-	}
-
-				DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,0);
-				//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[59],255,2048);
-				//MAnim(8192,4096,2048,2048,0,255,255,255,mgg,1,1,255);
+				DrawSprite(4096,2048,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
+				DrawSprite(12288,2048,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
+				DrawSprite(4096,6144,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
+				DrawSprite(12288,6144,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
+				//DrawSprite(8192,2048,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
+				//DrawSprite(8192,4096,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
+				//MAnim(8192,4096,2048,2048,0,1,1,1,&mgg[1],1,1,255);
 				//DrawSprite(4096,4096,2048,2048,0,255,255,255,mgg[0].frames[52],255,2048);
 				//DrawSprite(6200,4096,2048,2048,0,255,255,255,mgg[0].frames[53],255,2048);
 				//DrawSprite(8248,4096,2048,2048,0,255,255,255,mgg[0].frames[54],255,2048);

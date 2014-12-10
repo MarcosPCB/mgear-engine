@@ -46,7 +46,7 @@
 #define MAX_OBJS 1024
 #define MAX_FONTS 8
 #define MAX_SECTORS 512
-#define MAX_LIGHT 64
+#define MAX_LIGHTS 16
 #define MAX_MAPMGG 32
 
 #define MAX_VERTEX MAX_GRAPHICS*8
@@ -146,6 +146,23 @@ struct _ENTITIES //To be rendered
 	float texcor[8];
 	GLubyte color[16];
 	Color Color;
+};
+
+enum LIGHT_TYPE
+{
+	AMBIENT_LIGHT,
+	POINT_LIGHT_MEDIUM,
+	POINT_LIGHT_STRONG,
+	SPOTLIGHT
+};
+
+struct _LIGHTS
+{
+	LIGHT_TYPE type;
+	PosF pos;
+	ColorF color;
+	float falloff;
+	int16 radius;
 };
 
 struct Key
@@ -448,7 +465,7 @@ struct _CAMERA
 {
 	Pos position;
 	int16 angle;
-	Pos dimension;
+	PosF dimension;
 };
 
 enum GAME_STATE
@@ -570,6 +587,7 @@ struct _SETTINGS
 	uint32 num_tex;
 	uint32 num_hud;
 	uint32 num_ui;
+	uint8 num_lights;
 
 	long long unsigned int time;
 
@@ -633,6 +651,7 @@ struct _SETTINGS
 extern _SETTINGS st;
 extern _ENTITIES ent[MAX_GRAPHICS];
 extern SDL_Event events;
+extern _LIGHTS game_lights[MAX_LIGHTS];
 
 extern _MGG mgg[MAX_MGG];
 
@@ -689,7 +708,7 @@ float mTan(int16 ang);
 
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
-int8 DrawLight(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a);
+int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff);
 int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
 int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth);
 int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
