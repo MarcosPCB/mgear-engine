@@ -74,7 +74,7 @@ const char *Normal_FShader[128]={
 
 	"uniform sampler2D texu;\n"
 
-	"uniform sampler2D texu2;\n"
+	//"uniform sampler2D texu2;\n"
 
 	"uniform vec3 LightPos;\n"
 
@@ -88,7 +88,7 @@ const char *Normal_FShader[128]={
 	"{\n"
 		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
 
-		"vec3 NormalMap = texture(texu2, TexCoord2).rgb;\n"
+		//"vec3 NormalMap = texture(texu2, TexCoord2).rgb;\n"
 
 		"vec3 LightDir = vec3(LightPos.xy - (gl_FragCoord.xy / Screen.xy), LightPos.z);\n"
 
@@ -98,17 +98,17 @@ const char *Normal_FShader[128]={
 
 		"vec3 L = normalize(LightDir);\n"
 
-		"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
+		//"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
 
 		"float Att = 1.0 / (Falloff*D);\n"
 
-		"vec3 df = (LightColor.rgb * LightColor.a) * max(dot(N, L), 0.0);\n"
+		"vec3 df = (LightColor.rgb * LightColor.a);\n" //* max(dot(N, L), 0.0);\n"
 
-		"vec3 it = (colore.rgb * df) * Att;\n"
+		"vec3 it = (DiffuseColor.rgb + df) * Att;\n"
 
 		"vec3 FinalC = DiffuseColor.rgb * it;\n"
 
-		"FColor = vec4(FinalC,DiffuseColor.a * colore.a);\n"
+		"FColor = vec4(FinalC,DiffuseColor.a);\n"
 	"}\n"
 };
 
@@ -147,11 +147,11 @@ const char *Lighting_FShader[128]={
 
 		"vec3 df = LightColor.rgb * LightColor.a;\n"
 
-		"vec3 it = (colore.rgb * df) * Att;\n"
+		"vec3 it =   df * Att;\n"
 
 		"vec3 FinalC = DiffuseColor.rgb * it;\n"
 
-		"FColor = vec4(FinalC,DiffuseColor.a * colore.a);\n"
+		"FColor = vec4(FinalC,DiffuseColor.a);\n"
 	"}\n"
 };
 
@@ -282,7 +282,7 @@ void Quit()
 }
 
 #ifdef _VAO_RENDER
-static void CreateVAO(VB_DATAT *data, uint8 type)
+static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 {
 	GLint pos, texc, col;
 
@@ -291,9 +291,9 @@ static void CreateVAO(VB_DATAT *data, uint8 type)
 	glGenVertexArrays(1,&data->vao_id);
 	glBindVertexArray(data->vao_id);
 
-	pos=glGetAttribLocation(st.renderer.Program[0],"Position");
-	texc=glGetAttribLocation(st.renderer.Program[0],"TexCoord");
-	col=glGetAttribLocation(st.renderer.Program[0],"Color");
+	pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
+	texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
+	col=glGetAttribLocation(st.renderer.Program[pr],"Color");
 
 	glEnableVertexAttribArray(pos);
 	glEnableVertexAttribArray(texc);
@@ -408,6 +408,8 @@ void Init()
 
 	int check;
 	FMOD_RESULT result;
+
+	GLenum checkfb;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	GLint status, status2, status3, status4, status5, status6, status7;
@@ -652,6 +654,27 @@ void Init()
 #ifdef _VAO_RENDER
 	if(st.renderer.VAO_ON)
 	{
+		
+		glGenFramebuffers(1,&st.renderer.FBO[0]);
+		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
+
+		glGenTextures(1,&st.renderer.FBTex[0]);
+		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,st.screenx/2,st.screeny/2,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,st.renderer.FBTex[0],0);
+
+		glGenTextures(1,&st.renderer.FBTex[1]);
+		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[1]);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,st.screenx/2,st.screeny/2,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,st.renderer.FBTex[1],0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER,0);
+		
+		st.renderer.Buffers[0]=GL_COLOR_ATTACHMENT0;
+		st.renderer.Buffers[1]=GL_COLOR_ATTACHMENT1;
+
 		st.renderer.VShader[0]=glCreateShader(GL_VERTEX_SHADER);
 		st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[1]=glCreateShader(GL_FRAGMENT_SHADER);
@@ -787,7 +810,7 @@ void Init()
 			}
 
 			//This is the main VAO, used for 1 Quad only objects
-			CreateVAO(&vbd,1);
+			CreateVAO(&vbd,1,2);
 		}
 	}
 
@@ -3092,6 +3115,20 @@ void Renderer()
 	uint16 *k, l=0;
 	float m1, m2;
 
+	float vertex[12]={
+		-1,-1,0, 1,-1,0,
+		1,1,0, -1,1,0 };
+
+	float texcoord[8]={
+		0,0, 1,0,
+		1,1, 0,1 };
+
+	GLubyte color[16]={
+		10,10,10,10, 10,10,10,10,
+		10,10,10,10, 10,10,10,10 };
+
+	GLuint fbo, fbr, txo, txr, cat[1]={ GL_COLOR_ATTACHMENT0 };
+
 #ifdef _VAO_RENDER
 
 	for(i=0;i<vbdt_num;i++)
@@ -3170,18 +3207,25 @@ void Renderer()
 
 	num_targets=st.num_entities;
 
+	glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
+	glDrawBuffers(1,&st.renderer.Buffers[0]);
+
+	glViewport(0,0,st.screenx/2,st.screeny/2);
+
 	glClear(GL_COLOR_BUFFER_BIT);
 
 #ifdef _VAO_RENDER
 	if(st.renderer.VAO_ON)
 	{
-		for(l=0;l<=st.num_lights;l++)
-		{
+		l=0;
+		//for(l=0;l<=st.num_lights;l++)
+		//{
 			if(l==0)
 			{
 				//glDisable(GL_BLEND);
 				//glEnable(GL_BLEND);
 				glBlendFunc(GL_ONE, GL_SRC_ALPHA);
+				//glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 			}
 			else
 			if(l==1)
@@ -3194,13 +3238,19 @@ void Renderer()
 			{
 				if(vbdt[i].num_elements>0)
 				{
-					if(l==0) CreateVAO(&vbdt[i],0);
+					if(l==0) CreateVAO(&vbdt[i],0,2);
 
 					glActiveTexture(GL_TEXTURE0);
 
 					glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
 
-					if(l==0) glUseProgram(st.renderer.Program[2]);
+					if(l==0)
+					{
+						glUseProgram(st.renderer.Program[2]);
+
+						Tex=glGetUniformLocation(st.renderer.Program[2],"texu");
+						glUniform1i(Tex,0);
+					}
 
 					if(vbdt[i].normal && l>0)
 					{
@@ -3255,14 +3305,14 @@ void Renderer()
 			
 					glBindVertexArray(0);
 
-					if(l==st.num_lights)
-					{ 
+					//if(l==st.num_lights)
+					//{ 
 						vbdt[i].num_elements=0;
 
 						glDeleteVertexArrays(1,&vbdt[i].vao_id);
 						glDeleteBuffers(1,&vbdt[i].vbo_id);
 						glDeleteBuffers(1,&vbdt[i].ibo_id);
-					}
+					//}
 
 					glUseProgram(0);
 				}
@@ -3278,7 +3328,13 @@ void Renderer()
 				if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
 					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
 				
-				if(l==0) glUseProgram(st.renderer.Program[2]);
+				if(l==0) 
+				{
+					glUseProgram(st.renderer.Program[2]);
+					Tex=glGetUniformLocation(st.renderer.Program[2],"texu");
+					glUniform1i(Tex,0);
+				}
+				
 
 				if(ent[texone_ids[i]].data.normal && l>0)
 				{
@@ -3347,9 +3403,135 @@ void Renderer()
 
 				glUseProgram(0);
 			}
-		}
-	}
+			
+			l=1;
 
+			//glDrawBuffers(1,&st.renderer.Buffers[1]);
+
+			//glViewport(0,0,st.screenx,st.screeny);
+
+			//glBlendFunc(GL_ONE, GL_ONE);
+
+			glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+			glViewport(0,0,st.screenx,st.screeny);
+
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
+
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+			glBlendFunc(GL_ONE, GL_ONE);
+
+			
+
+			glBindVertexArray(vbd.vao_id);
+
+			glBlendFunc(GL_ONE, GL_ONE);
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+
+			for(l=1;l<=st.num_lights;l++)
+			{
+				glUseProgram(st.renderer.Program[0]);
+
+				Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
+				glUniform1i(Tex,0);
+
+				Tex=glGetUniformLocation(st.renderer.Program[0],"LightPos");
+				glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
+
+				Tex=glGetUniformLocation(st.renderer.Program[0],"LightColor");
+				glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
+
+				Tex=glGetUniformLocation(st.renderer.Program[0],"Falloff");
+				glUniform1f(Tex,  game_lights[l-1].falloff);
+
+				Tex=glGetUniformLocation(st.renderer.Program[0],"Screen");
+				glUniform2f(Tex, st.screenx, st.screeny);
+
+				//glBindVertexArray(vbd.vao_id);
+
+				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+				//glBindVertexArray(0);
+				//glBindBuffer(GL_ARRAY_BUFFER,0);
+
+				glUseProgram(0);
+			}
+
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+
+			glUseProgram(0);
+
+			//glDeleteFramebuffers(1,&fbo);
+			//glDeleteTextures(1,&txo);
+			/*
+			l=2;
+
+			glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+			//glViewport(0,0,st.screenx,st.screeny);
+
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[1]);
+
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+			glUseProgram(st.renderer.Program[1]);
+
+			Tex=glGetUniformLocation(st.renderer.Program[1],"texu");
+			glUniform1i(Tex,0);
+
+			Tex=glGetUniformLocation(st.renderer.Program[1],"LightPos");
+			glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
+
+			Tex=glGetUniformLocation(st.renderer.Program[1],"LightColor");
+			glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
+
+			Tex=glGetUniformLocation(st.renderer.Program[1],"Falloff");
+			glUniform1f(Tex,  game_lights[l-1].falloff);
+
+			Tex=glGetUniformLocation(st.renderer.Program[1],"Screen");
+			glUniform2f(Tex, st.screenx, st.screeny);
+
+			glBindVertexArray(vbd.vao_id);
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+
+			glUseProgram(0);
+
+			//glDeleteFramebuffers(1,&fbo);
+			//glDeleteTextures(1,&txo);
+			//glDeleteFramebuffers(1,&fbr);
+			//glDeleteTextures(1,&txr);
+			*/
+		}
+	//}
+	
 #endif
 	
 #ifdef _IM_RENDER

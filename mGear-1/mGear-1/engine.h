@@ -559,6 +559,12 @@ struct Render
 	GLuint FShader[4];
 	GLuint GShader[4];
 	GLuint Program[4];
+
+	GLuint FBO[4];
+	GLuint FBTex[8];
+	GLuint RBO[8];
+
+	GLuint Buffers[2];
 };
 
 struct TFont

@@ -314,14 +314,16 @@ int main(int argc, char *argv[])
 		st.mouse_wheel=0;
 	}
 				
-				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,0.1f);
-				//DrawLight(2048,2048,32,0,255,0,128,POINT_LIGHT_MEDIUM,255,1.0f);
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,2.0f);
+				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f);
+				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,2.0f);
 
-				DrawSprite(4096,2048,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
-				DrawSprite(12288,2048,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
-				DrawSprite(4096,6144,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
-				DrawSprite(12288,6144,8192,4096,0,0,0,0,mgg[0].frames[0],255,0);
-				//DrawSprite(8192,2048,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,2.0f);
+				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f);
+				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,2.0f);
+
+				DrawSprite(8192,4096,16384,8192,0,10,10,10,mgg[0].frames[0],255,0);
+				DrawSprite(8192,4096,2048,2048,0,100,100,100,mgg[1].frames[59],255,2048);
 				//DrawSprite(8192,4096,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
 				//MAnim(8192,4096,2048,2048,0,1,1,1,&mgg[1],1,1,255);
 				//DrawSprite(4096,4096,2048,2048,0,255,255,255,mgg[0].frames[52],255,2048);
