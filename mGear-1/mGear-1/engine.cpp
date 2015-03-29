@@ -8,6 +8,11 @@ _SETTINGS st;
 _ENTITIES ent[MAX_GRAPHICS];
 SDL_Event events;
 _LIGHTS game_lights[MAX_LIGHTS];
+_ENTITIES lmp[MAX_LIGHTMAPS];
+unsigned char *DataN;
+GLuint DataNT;
+
+GLuint lm;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	VB_DATAT vbd;
@@ -50,6 +55,8 @@ const char *Texture_FShader[64]={
 
 	"uniform sampler2D texu;\n"
 
+	"uniform float normal;"
+
 	"in vec2 TexCoord2;\n"
 
 	"in vec4 colore;\n"
@@ -58,7 +65,93 @@ const char *Texture_FShader[64]={
 
 	"void main()\n"
 	"{\n"
-		"FColor = texture(texu, TexCoord2) * colore;\n"
+		"vec4 NormalColor = vec4(0.501, 0.501, 1.0, 1.0);\n"
+
+		"if(texture(texu,TexCoord2).a < 1.0)\n"
+			"discard;\n"
+
+		"if(normal == 0 || normal == 1)\n"
+			"FColor = texture(texu,TexCoord2);\n"
+		"else\n"
+		"if(normal == 2)\n"
+			"FColor = NormalColor;\n"
+	"};\n"
+
+};
+
+const char *TextureNoT_FShader[64]={
+	"#version 130\n"
+
+	"uniform sampler2D texu;\n"
+
+	"in vec2 TexCoord2;\n"
+
+	"in vec4 colore;\n"
+
+	"out vec4 FColor;\n"
+
+	"void main()\n"
+	"{\n"
+		"vec4 Diffuse = texture(texu, TexCoord2);\n"
+
+		"if(Diffuse.a < 1.0)\n"
+			"discard;\n"
+		//"else\n"
+		"FColor = Diffuse;\n"
+	"};\n"
+
+};
+
+const char *TextureT_FShader[64]={
+	"#version 130\n"
+
+	"uniform sampler2D texu;\n"
+
+	"uniform sampler2D texu2;\n"
+
+	"in vec2 TexCoord2;\n"
+
+	"in vec4 colore;\n"
+
+	"out vec4 FColor;\n"
+
+	"void main()\n"
+	"{\n"
+		"vec4 Diffuse = texture(texu, TexCoord2) * colore;\n"
+		"vec4 Bckg = texture(texu2, TexCoord2) * colore;\n"
+
+		"if(Diffuse.a == 1.0)\n"
+			"discard;\n"
+		//"else\n"
+		"if(Diffuse.a < 1.0 && Diffuse.a > 0.5)\n"
+		"{\n"
+			"FColor = vec4((Diffuse.a * Diffuse.rgb) * Bckg.rgb, 1.0);\n"
+		"}\n"
+
+		
+	"};\n"
+
+};
+
+const char *Blend_FShader[64]={
+	"#version 130\n"
+
+	"uniform sampler2D texu;\n"
+
+	"uniform sampler2D texu2;\n"
+
+	"in vec2 TexCoord2;\n"
+
+	"in vec4 colore;\n"
+
+	"out vec4 FColor;\n"
+
+	"void main()\n"
+	"{\n"
+		"vec4 Diffuse = texture(texu, TexCoord2);\n"
+		"vec4 Alpha = texture(texu2, TexCoord2);\n"
+
+		"FColor = vec4(Alpha.rgb * Diffuse.rgb,1.0);\n"
 	"};\n"
 
 };
@@ -112,7 +205,7 @@ const char *Normal_FShader[128]={
 	"}\n"
 };
 
-const char *Lighting_FShader[128]={
+const char *Lighting_FShader[196]={
 	"#version 130\n"
 
 	"in vec2 TexCoord2;\n"
@@ -123,6 +216,8 @@ const char *Lighting_FShader[128]={
 
 	"uniform sampler2D texu;\n"
 
+	"uniform sampler2D texu2;\n"
+
 	"uniform vec3 LightPos;\n"
 
 	"uniform vec4 LightColor;\n"
@@ -131,17 +226,19 @@ const char *Lighting_FShader[128]={
 
 	"uniform vec2 Screen;\n"
 
+	"uniform float Radius;\n"
+
 	"void main()\n"
 	"{\n"
-		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
-
 		"vec3 LightDir = vec3(LightPos.xy - (gl_FragCoord.xy / Screen.xy), LightPos.z);\n"
 
 		"LightDir.x *= Screen.x / Screen.y;\n"
 
 		"float D = length(LightDir);\n"
 
-		"vec3 L = normalize(LightDir);\n"
+		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
+
+		"vec4 LightMap = texture(texu2, TexCoord2);\n"
 
 		"float Att = 1.0 / (Falloff*D);\n"
 
@@ -149,9 +246,41 @@ const char *Lighting_FShader[128]={
 
 		"vec3 it =   df * Att;\n"
 
-		"vec3 FinalC = DiffuseColor.rgb * it;\n"
+		"vec3 FinalC = DiffuseColor.rgb * (it + LightMap.rgb);\n"
 
 		"FColor = vec4(FinalC,DiffuseColor.a);\n"
+	"}\n"
+};
+
+const char *Lightmap_FShader[128]={
+	"#version 130\n"
+	
+	"in vec2 TexCoord2;\n"
+
+	"in vec4 colore;\n"
+
+	"out vec4 FColor;\n"
+
+	"uniform sampler2D texu;\n"
+
+	"uniform sampler2D texu2;\n"
+
+	"uniform sampler2D texu3;\n"
+
+	"void main()\n"
+	"{\n"
+		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
+
+		"vec4 Lightmap = texture(texu2, TexCoord2);\n"
+
+		"vec3 NormalMap = texture(texu3, TexCoord2).rgb;\n"
+
+		"vec3 L = normalize(Lightmap.rgb);\n"
+
+		"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
+
+		"FColor = DiffuseColor * (Lightmap * max(dot(N, L), 0.0));\n"
+
 	"}\n"
 };
 
@@ -217,7 +346,7 @@ void FPSCounter()
 	}
 }
 
-void _fastcall STW(double *x, double *y)
+void _fastcall STW(int32 *x, int32 *y)
 {
 	*x=((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
 	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
@@ -239,7 +368,7 @@ uint32 POT(uint32 value)
 	return value;
 }
 
-void _fastcall WTS(double *x, double *y)
+void _fastcall WTS(int32 *x, int32 *y)
 {
 	*x-=st.Camera.position.x;
 	*y-=st.Camera.position.y;
@@ -279,6 +408,103 @@ void Quit()
 	FMOD_System_Release(st.sound_sys.Sound_System);
 	TTF_Quit();
 	exit(1);
+}
+
+unsigned char *GenerateLightmap(uint16 w, uint16 h)
+{
+	unsigned char *data;
+
+	data=(unsigned char*) calloc(w*h*3,sizeof(unsigned char));
+
+	if(!data)
+		return NULL;
+
+	return data;
+}
+
+uint8 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity)
+{
+	register uint16 i, j;
+	double d, att;
+	uint16 col;
+
+	if(!data)
+		return NULL;
+	
+	for(i=0;i<h;i++)
+	{
+		for(j=0;j<w;j++)
+		{
+			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
+			d=sqrt14(d);
+
+			if(d==0)
+				d=1;
+			att=1.0f/(d*falloff);
+
+			col=r*att*intensity;
+			if(col>255)
+				col=255;
+
+			if((data[(i*h*3)+(j*3)]+col)>255)
+				data[(i*h*3)+(j*3)]=255;
+			else
+				data[(i*h*3)+(j*3)]+=(unsigned char)col;
+
+			col=g*att*intensity;
+			if(col>255)
+				col=255;
+
+			if((data[(i*h*3)+(j*3)+1]+col)>255)
+				data[(i*h*3)+(j*3)+1]=255;
+			else
+				data[(i*h*3)+(j*3)+1]+=(unsigned char)col;
+
+			col=b*att*intensity;
+			if(col>255)
+				col=255;
+
+			if((data[(i*h*3)+(j*3)+2]+col)>255)
+				data[(i*h*3)+(j*3)+2]=255;
+			else
+				data[(i*h*3)+(j*3)+2]+=(unsigned char)col;
+		}
+	}
+
+	return 1;
+}
+
+GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h)
+{
+	GLuint tex;
+
+	if(!data)
+		return NULL;
+
+	glGenTextures(1,&tex);
+	glBindTexture(GL_TEXTURE_2D,tex);
+
+	glTexImage2D(GL_TEXTURE_2D,0,3,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,data);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	return tex;
+}
+
+uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h)
+{
+	if(!data)
+		return NULL;
+
+	glBindTexture(GL_TEXTURE_2D,*tex);
+
+	glTexImage2D(GL_TEXTURE_2D,0,3,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,data);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	return 1;
 }
 
 #ifdef _VAO_RENDER
@@ -401,7 +627,7 @@ static int VBBuffProcess(void *data)
 */
 void Init()
 {	
-	register uint16 i=0;
+	register uint16 i=0, j=0, l=0;
 	register float k=0;
 	
 	CreateLog();
@@ -412,8 +638,8 @@ void Init()
 	GLenum checkfb;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
-	GLint status, status2, status3, status4, status5, status6, status7;
-	GLchar logs[4][1024];
+	GLint statusCM[32], statusLK[32];
+	GLchar logs[32][1024];
 
 	vbd.vertex=(float*) malloc(12*sizeof(float));
 	vbd.texcoord=(float*) malloc(8*sizeof(float));
@@ -637,18 +863,35 @@ void Init()
 		st.renderer.IM_ON=1;
 #endif
 
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_framebuffer")==NULL)
+	{
+#ifdef _VA_RENDER
+		st.renderer.VA_ON=1;
+		LogApp("Framebuffer object not support, check your video's card driver for updates... Usign VA instead!");
+#elif _IM_RENDER
+		st.renderer.IM_ON=1;
+		LogApp("Framebuffer object not support, check your video's card driver for updates... Usign IM instead!");
+#else
+		LogApp("Your video card is not adequate to play this game... Goodbye!!");
+		Quit();
+	}
+#endif
+#endif
+
 	//Initialize OpenGL
 	glClearColor(0,0,0,0);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0,st.screenx,st.screeny,0,0,1);
+	//glMatrixMode(GL_PROJECTION);
+	//glLoadIdentity();
+	//glOrtho(0,st.screenx,st.screeny,0,0,1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	glViewport(0,0,st.screenx,st.screeny);
 	glEnable(GL_TEXTURE_2D);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_DEPTH_TEST);
+	glClearDepth(1.0);
 	glEnable(GL_BLEND);
-	glDepthFunc(GL_ALWAYS);
-	//glEnable(GL_DEPTH_TEST);
-	glShadeModel(GL_SMOOTH);
 	SDL_GL_SetSwapInterval(st.vsync);
 
 #ifdef _VAO_RENDER
@@ -658,11 +901,19 @@ void Init()
 		glGenFramebuffers(1,&st.renderer.FBO[0]);
 		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
 
+		glGenRenderbuffers(1,&st.renderer.RBO[0]);
+		glBindRenderbuffer(GL_RENDERBUFFER,st.renderer.RBO[0]);
+		glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT,st.screenx/2,st.screeny/2);
+
+		glBindRenderbuffer(GL_RENDERBUFFER,0);
+
 		glGenTextures(1,&st.renderer.FBTex[0]);
 		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
 		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,st.screenx/2,st.screeny/2,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0,GL_TEXTURE_2D,st.renderer.FBTex[0],0);
+
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,st.renderer.RBO[0]);
 
 		glGenTextures(1,&st.renderer.FBTex[1]);
 		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[1]);
@@ -670,43 +921,80 @@ void Init()
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT1,GL_TEXTURE_2D,st.renderer.FBTex[1],0);
 
+		glGenTextures(1,&st.renderer.FBTex[2]);
+		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[2]);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,st.screenx/2,st.screeny/2,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT2,GL_TEXTURE_2D,st.renderer.FBTex[2],0);
+
+		glGenTextures(1,&st.renderer.FBTex[3]);
+		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[3]);
+		glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,st.screenx/2,st.screeny/2,0,GL_RGBA,GL_UNSIGNED_BYTE,NULL);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT3,GL_TEXTURE_2D,st.renderer.FBTex[3],0);
+
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 		
 		st.renderer.Buffers[0]=GL_COLOR_ATTACHMENT0;
 		st.renderer.Buffers[1]=GL_COLOR_ATTACHMENT1;
+		st.renderer.Buffers[2]=GL_COLOR_ATTACHMENT2;
+		st.renderer.Buffers[3]=GL_COLOR_ATTACHMENT3;
 
 		st.renderer.VShader[0]=glCreateShader(GL_VERTEX_SHADER);
 		st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[1]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[2]=glCreateShader(GL_FRAGMENT_SHADER);
+		st.renderer.FShader[3]=glCreateShader(GL_FRAGMENT_SHADER);
+		st.renderer.FShader[4]=glCreateShader(GL_FRAGMENT_SHADER);
+		st.renderer.FShader[5]=glCreateShader(GL_FRAGMENT_SHADER);
+		st.renderer.FShader[6]=glCreateShader(GL_FRAGMENT_SHADER);
 
 		glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
 		glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Lighting_FShader,0);
 		glShaderSource(st.renderer.FShader[1],1,(const GLchar**) Normal_FShader,0);
 		glShaderSource(st.renderer.FShader[2],1,(const GLchar**) Texture_FShader,0);
+		glShaderSource(st.renderer.FShader[3],1,(const GLchar**) Lightmap_FShader,0);
+		glShaderSource(st.renderer.FShader[4],1,(const GLchar**) TextureNoT_FShader,0);
+		glShaderSource(st.renderer.FShader[5],1,(const GLchar**) TextureT_FShader,0);
+		glShaderSource(st.renderer.FShader[6],1,(const GLchar**) Blend_FShader,0);
 
 		glCompileShader(st.renderer.VShader[0]);
 		glCompileShader(st.renderer.FShader[0]);
 		glCompileShader(st.renderer.FShader[1]);
 		glCompileShader(st.renderer.FShader[2]);
+		glCompileShader(st.renderer.FShader[3]);
+		glCompileShader(st.renderer.FShader[4]);
+		glCompileShader(st.renderer.FShader[5]);
+		glCompileShader(st.renderer.FShader[6]);
 
-		glGetShaderiv(st.renderer.VShader[0],GL_COMPILE_STATUS,&status);
-		glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&status2);
-		glGetShaderiv(st.renderer.FShader[1],GL_COMPILE_STATUS,&status4);
-		glGetShaderiv(st.renderer.FShader[2],GL_COMPILE_STATUS,&status6);
+		glGetShaderiv(st.renderer.VShader[0],GL_COMPILE_STATUS,&statusCM[0]);
+		glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&statusCM[1]);
+		glGetShaderiv(st.renderer.FShader[1],GL_COMPILE_STATUS,&statusCM[2]);
+		glGetShaderiv(st.renderer.FShader[2],GL_COMPILE_STATUS,&statusCM[3]);
+		glGetShaderiv(st.renderer.FShader[3],GL_COMPILE_STATUS,&statusCM[4]);
+		glGetShaderiv(st.renderer.FShader[4],GL_COMPILE_STATUS,&statusCM[5]);
+		glGetShaderiv(st.renderer.FShader[5],GL_COMPILE_STATUS,&statusCM[6]);
+		glGetShaderiv(st.renderer.FShader[6],GL_COMPILE_STATUS,&statusCM[7]);
 
-		if(!status || !status2 || !status4 || !status6)
+		if(!statusCM[0] || !statusCM[1] || !statusCM[2] || !statusCM[3] || !statusCM[4] || !statusCM[5] || !statusCM[6] || !statusCM[7])
 		{
-			glGetShaderInfoLog(st.renderer.VShader[0],1024,NULL,logs[0]);
-			glGetShaderInfoLog(st.renderer.FShader[0],1024,NULL,logs[1]);
-			glGetShaderInfoLog(st.renderer.FShader[1],1024,NULL,logs[2]);
-			glGetShaderInfoLog(st.renderer.FShader[2],1024,NULL,logs[3]);
+			
+			for(i=0;i<8;i++)
+			{
+				if(!statusCM[i])
+				{
+					if(i==1)
+						glGetShaderInfoLog(st.renderer.FShader[0],1024,NULL,logs[0]);
+					else
+					if(i==0)
+						glGetShaderInfoLog(st.renderer.VShader[0],1024,NULL,logs[0]);
+					else
+						glGetShaderInfoLog(st.renderer.FShader[i-1],1024,NULL,logs[0]);
 
-			LogApp("Vertex Shader: %s",logs[0]);
-			LogApp("Fragment Shader: %s",logs[1]);
-			LogApp("Fragment Shader: %s",logs[2]);
-			LogApp("Fragment Shader: %s",logs[3]);
-			LogApp("Could not compile shader");
+					LogApp("Shader: %s",logs[0]);
+					LogApp("Counld not compile shader");
+				}
+			}
 
 #ifdef _VBO_RENDER
 			LogApp("Changing to VBO...");
@@ -750,11 +1038,15 @@ void Init()
 			}
 		}
 		else
-		if(status && status2 && status4 && status6)
+		if(statusCM[0] && statusCM[1] && statusCM[2] && statusCM[3] && statusCM[4] && statusCM[5] && statusCM[6] && statusCM[7])
 		{
 			st.renderer.Program[0]=glCreateProgram();
 			st.renderer.Program[1]=glCreateProgram();
 			st.renderer.Program[2]=glCreateProgram();
+			st.renderer.Program[3]=glCreateProgram();
+			st.renderer.Program[4]=glCreateProgram();
+			st.renderer.Program[5]=glCreateProgram();
+			st.renderer.Program[6]=glCreateProgram();
 
 			glAttachShader(st.renderer.Program[0],st.renderer.VShader[0]);
 			glAttachShader(st.renderer.Program[0],st.renderer.FShader[0]);
@@ -765,15 +1057,35 @@ void Init()
 			glAttachShader(st.renderer.Program[2],st.renderer.VShader[0]);
 			glAttachShader(st.renderer.Program[2],st.renderer.FShader[2]);
 
+			glAttachShader(st.renderer.Program[3],st.renderer.VShader[0]);
+			glAttachShader(st.renderer.Program[3],st.renderer.FShader[3]);
+
+			glAttachShader(st.renderer.Program[4],st.renderer.VShader[0]);
+			glAttachShader(st.renderer.Program[4],st.renderer.FShader[4]);
+
+			glAttachShader(st.renderer.Program[5],st.renderer.VShader[0]);
+			glAttachShader(st.renderer.Program[5],st.renderer.FShader[5]);
+
+			glAttachShader(st.renderer.Program[6],st.renderer.VShader[0]);
+			glAttachShader(st.renderer.Program[6],st.renderer.FShader[6]);
+
 			glLinkProgram(st.renderer.Program[0]);
 			glLinkProgram(st.renderer.Program[1]);
 			glLinkProgram(st.renderer.Program[2]);
+			glLinkProgram(st.renderer.Program[3]);
+			glLinkProgram(st.renderer.Program[4]);
+			glLinkProgram(st.renderer.Program[5]);
+			glLinkProgram(st.renderer.Program[6]);
 
-			glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&status3);
-			glGetProgramiv(st.renderer.Program[1],GL_LINK_STATUS,&status4);
-			glGetProgramiv(st.renderer.Program[2],GL_LINK_STATUS,&status7);
+			glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&statusLK[0]);
+			glGetProgramiv(st.renderer.Program[1],GL_LINK_STATUS,&statusLK[1]);
+			glGetProgramiv(st.renderer.Program[2],GL_LINK_STATUS,&statusLK[2]);
+			glGetProgramiv(st.renderer.Program[3],GL_LINK_STATUS,&statusLK[3]);
+			glGetProgramiv(st.renderer.Program[4],GL_LINK_STATUS,&statusLK[4]);
+			glGetProgramiv(st.renderer.Program[5],GL_LINK_STATUS,&statusLK[5]);
+			glGetProgramiv(st.renderer.Program[6],GL_LINK_STATUS,&statusLK[6]);
 
-			if(!status3)
+			if(!statusLK[0])
 			{
 				glDeleteProgram(st.renderer.Program[0]);
 				glDeleteShader(st.renderer.VShader[0]);
@@ -785,7 +1097,7 @@ void Init()
 				glDetachShader(st.renderer.Program[0],st.renderer.FShader[0]);
 			}
 
-			if(!status4)
+			if(!statusLK[1])
 			{
 				glDeleteProgram(st.renderer.Program[1]);
 				glDeleteShader(st.renderer.VShader[0]);
@@ -797,7 +1109,7 @@ void Init()
 				glDetachShader(st.renderer.Program[1],st.renderer.FShader[1]);
 			}
 
-			if(!status7)
+			if(!statusLK[2])
 			{
 				glDeleteProgram(st.renderer.Program[2]);
 				glDeleteShader(st.renderer.VShader[0]);
@@ -807,6 +1119,58 @@ void Init()
 			{
 				glDetachShader(st.renderer.Program[2],st.renderer.VShader[0]);
 				glDetachShader(st.renderer.Program[2],st.renderer.FShader[2]);
+			}
+
+			if(!statusLK[3])
+			{
+				glGetProgramInfoLog(st.renderer.Program[3],1024,NULL,logs[0]);
+				glDeleteProgram(st.renderer.Program[3]);
+				glDeleteShader(st.renderer.VShader[0]);
+				glDeleteShader(st.renderer.FShader[3]);
+			}
+			else
+			{
+				glDetachShader(st.renderer.Program[3],st.renderer.VShader[0]);
+				glDetachShader(st.renderer.Program[3],st.renderer.FShader[3]);
+			}
+
+			if(!statusLK[4])
+			{
+				glGetProgramInfoLog(st.renderer.Program[4],1024,NULL,logs[0]);
+				glDeleteProgram(st.renderer.Program[4]);
+				glDeleteShader(st.renderer.VShader[0]);
+				glDeleteShader(st.renderer.FShader[4]);
+			}
+			else
+			{
+				glDetachShader(st.renderer.Program[4],st.renderer.VShader[0]);
+				glDetachShader(st.renderer.Program[4],st.renderer.FShader[4]);
+			}
+
+			if(!statusLK[5])
+			{
+				glGetProgramInfoLog(st.renderer.Program[5],1024,NULL,logs[0]);
+				glDeleteProgram(st.renderer.Program[5]);
+				glDeleteShader(st.renderer.VShader[0]);
+				glDeleteShader(st.renderer.FShader[5]);
+			}
+			else
+			{
+				glDetachShader(st.renderer.Program[5],st.renderer.VShader[0]);
+				glDetachShader(st.renderer.Program[5],st.renderer.FShader[5]);
+			}
+
+			if(!statusLK[6])
+			{
+				glGetProgramInfoLog(st.renderer.Program[6],1024,NULL,logs[0]);
+				glDeleteProgram(st.renderer.Program[6]);
+				glDeleteShader(st.renderer.VShader[0]);
+				glDeleteShader(st.renderer.FShader[6]);
+			}
+			else
+			{
+				glDetachShader(st.renderer.Program[6],st.renderer.VShader[0]);
+				glDetachShader(st.renderer.Program[6],st.renderer.FShader[6]);
 			}
 
 			//This is the main VAO, used for 1 Quad only objects
@@ -861,6 +1225,7 @@ void Init()
 	st.num_sprites=0;
 
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
+	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 
 	//Calculates Cos, Sin and Tan tables
 	for(k=0.0;k<360.0;k+=0.1)
@@ -870,6 +1235,56 @@ void Init()
 		st.SinTable[i]=sin((k*pi)/180);
 		st.TanTable[i]=tan((k*pi)/180);
 	}
+
+	st.game_lightmaps[0].W_w=16384;
+	st.game_lightmaps[0].W_h=8192;
+
+	st.game_lightmaps[0].T_w=256;
+	st.game_lightmaps[0].T_h=256;
+
+	st.game_lightmaps[0].num_lights=1;
+	st.game_lightmaps[0].w_pos.x=8192;
+	st.game_lightmaps[0].w_pos.y=4096;
+	st.game_lightmaps[0].w_pos.z=0;
+
+	st.game_lightmaps[0].t_pos[0].x=128;
+	st.game_lightmaps[0].t_pos[0].y=128;
+	st.game_lightmaps[0].t_pos[0].z=0;
+
+	st.game_lightmaps[0].t_pos[1].x=0;
+	st.game_lightmaps[0].t_pos[1].y=0;
+	st.game_lightmaps[0].t_pos[1].z=0;
+
+	st.game_lightmaps[0].t_pos[2].x=200;
+	st.game_lightmaps[0].t_pos[2].y=95;
+	st.game_lightmaps[0].t_pos[2].z=0;
+
+	st.game_lightmaps[0].data=GenerateLightmap(st.game_lightmaps[0].W_w, st.game_lightmaps[0].W_h);
+	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255);
+	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[1].x,st.game_lightmaps[0].t_pos[1].y,st.game_lightmaps[0].t_pos[1].z,128);
+	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
+
+	st.game_lightmaps[0].tex=GenerateLightmapTexture(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h);
+
+	DataN=(unsigned char*) calloc(64*64*3,sizeof(unsigned char));
+
+	for(i=0;i<64;i++)
+	{
+		for(j=0;j<64;j++)
+		{
+			DataN[(i*64*3)+(j*3)]=128;
+			DataN[(i*64*3)+(j*3)+1]=128;
+			DataN[(i*64*3)+(j*3)+2]=255;
+		}
+	}
+
+	glGenTextures(1,&DataNT);
+	glBindTexture(GL_TEXTURE_2D,DataNT);
+
+	glTexImage2D(GL_TEXTURE_2D,0,3,64,64,0,GL_RGB,GL_UNSIGNED_BYTE,DataN);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 }
 
@@ -907,7 +1322,7 @@ void RestartVideo()
 
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 
-	glViewport(0,0,st.screenx,st.screeny);
+	glViewport(0,0,st.screenx/2,st.screeny/2);
 
 	glClearColor(0,0,0,0);
 	glMatrixMode(GL_PROJECTION);
@@ -2190,7 +2605,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	return 0;
 }
 
-int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff)
+int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius)
 {
 	register uint16 i=0;
 
@@ -2237,6 +2652,7 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 	*/
 	//for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	//{
+
 	i=st.num_lights;
 
 	if(i==MAX_LIGHTS-1)
@@ -2247,6 +2663,8 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 	game_lights[i].pos.y*=-1.0f;
 	game_lights[i].pos.y+=1.0f;
 	game_lights[i].pos.z=(float) z/4096;
+
+	game_lights[i].radius=(float) radius/8192;
 	
 	game_lights[i].color.r=(float) r/255;
 	game_lights[i].color.g=(float) g/255;
@@ -2257,6 +2675,96 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 	game_lights[i].falloff=falloff;
 
 	st.num_lights++;
+
+	return 0;
+}
+
+int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type)
+{
+	float tmp, ax, ay, az;
+
+	uint8 val=0;
+
+	int16 ang=0;
+
+	register uint32 i=0, j=0, k=0;
+	
+	PosF dim=st.Camera.dimension;
+	
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
+	i=st.num_lightmap;
+
+	if(i==MAX_LIGHTMAPS)
+		return 2;
+
+	sizex*=st.Camera.dimension.x;
+	sizey*=st.Camera.dimension.y;
+
+	if(dim.x<0) dim.x*=-1;
+	if(dim.y<0) dim.y*=-1;
+
+	if(dim.x<10) dim.x=16384/dim.x;
+	else dim.x*=16384;
+	if(dim.y<10) dim.y=8192/dim.y;
+	else dim.y*=8192;
+
+	lmp[i].data.data=data;
+
+			lmp[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			lmp[i].vertex[2]=z;
+
+			lmp[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			lmp[i].vertex[5]=z;
+
+			lmp[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			lmp[i].vertex[8]=z;
+
+			lmp[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			lmp[i].vertex[11]=z;
+
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			lmp[i].texcor[0]=0;
+			lmp[i].texcor[1]=0;
+			lmp[i].texcor[2]=1;
+			lmp[i].texcor[3]=0;
+			lmp[i].texcor[4]=1;
+			lmp[i].texcor[5]=1;
+			lmp[i].texcor[6]=0;
+			lmp[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				lmp[i].vertex[j]*=ax;
+				lmp[i].vertex[j]-=1;
+
+				lmp[i].vertex[j+1]*=ay;
+				lmp[i].vertex[j+1]+=1;
+				
+				lmp[i].vertex[j+2]*=az;
+				lmp[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				lmp[i].color[j]=1;
+				lmp[i].color[j+1]=1;
+				lmp[i].color[j+2]=1;
+				lmp[i].color[j+3]=1;
+			}
+
+				st.num_lightmap++;
 
 	return 0;
 }
@@ -3107,7 +3615,7 @@ void Renderer()
 	uint32 j=0, k=0, l=0, t=0;
 #endif
 
-	GLint Tex, texcat, vertat;
+	GLint unif, texcat, vertat;
 	GLenum error;
 
 	uint32 num_targets=0;
@@ -3124,8 +3632,13 @@ void Renderer()
 		1,1, 0,1 };
 
 	GLubyte color[16]={
-		10,10,10,10, 10,10,10,10,
-		10,10,10,10, 10,10,10,10 };
+		255,255,255,255, 255,255,255,255,
+		255,255,255,255, 255,255,255,255 };
+
+		
+	GLubyte colorN[16]={
+		128,128,255,255, 128,128,255,255,
+		128,128,255,255, 128,128,255,255 };
 
 	GLuint fbo, fbr, txo, txr, cat[1]={ GL_COLOR_ATTACHMENT0 };
 
@@ -3207,216 +3720,307 @@ void Renderer()
 
 	num_targets=st.num_entities;
 
-	glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
-	glDrawBuffers(1,&st.renderer.Buffers[0]);
-
-	glViewport(0,0,st.screenx/2,st.screeny/2);
-
-	glClear(GL_COLOR_BUFFER_BIT);
-
 #ifdef _VAO_RENDER
 	if(st.renderer.VAO_ON)
 	{
-		l=0;
-		//for(l=0;l<=st.num_lights;l++)
-		//{
-			if(l==0)
+		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
+		glDrawBuffers(1,&st.renderer.Buffers[0]);
+
+		glViewport(0,0,st.screenx/2,st.screeny/2);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+
+		for(i=0;i<vbdt_num;i++)
+		{
+			if(vbdt[i].num_elements>0)
 			{
-				//glDisable(GL_BLEND);
-				//glEnable(GL_BLEND);
-				glBlendFunc(GL_ONE, GL_SRC_ALPHA);
-				//glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
-			}
-			else
-			if(l==1)
-			{
-				//glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-			}
+				if(l==0) CreateVAO(&vbdt[i],0,2);
 
-			for(i=0;i<vbdt_num;i++)
-			{
-				if(vbdt[i].num_elements>0)
-				{
-					if(l==0) CreateVAO(&vbdt[i],0,2);
-
-					glActiveTexture(GL_TEXTURE0);
-
-					glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
-
-					if(l==0)
-					{
-						glUseProgram(st.renderer.Program[2]);
-
-						Tex=glGetUniformLocation(st.renderer.Program[2],"texu");
-						glUniform1i(Tex,0);
-					}
-
-					if(vbdt[i].normal && l>0)
-					{
-						glActiveTexture(GL_TEXTURE1);
-
-						glBindTexture(GL_TEXTURE_2D,vbdt[i].Ntexture);
-
-						glUseProgram(st.renderer.Program[1]);
-
-						Tex=glGetUniformLocation(st.renderer.Program[1],"texu2");
-						glUniform1i(Tex,1);
-
-						Tex=glGetUniformLocation(st.renderer.Program[1],"texu");
-						glUniform1i(Tex,0);
-
-						Tex=glGetUniformLocation(st.renderer.Program[1],"LightPos");
-						glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
-
-						Tex=glGetUniformLocation(st.renderer.Program[1],"LightColor");
-						glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
-
-						Tex=glGetUniformLocation(st.renderer.Program[1],"Falloff");
-						glUniform1f(Tex,  game_lights[l-1].falloff);
-
-						Tex=glGetUniformLocation(st.renderer.Program[1],"Screen");
-						glUniform2f(Tex, st.screenx, st.screeny);
-					}
-					else
-					if(l>0 && !vbdt[i].normal)
-					{
-						glUseProgram(st.renderer.Program[0]);
-
-						Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
-						glUniform1i(Tex,0);
-
-						Tex=glGetUniformLocation(st.renderer.Program[0],"LightPos");
-						glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
-
-						Tex=glGetUniformLocation(st.renderer.Program[0],"LightColor");
-						glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
-
-						Tex=glGetUniformLocation(st.renderer.Program[0],"Falloff");
-						glUniform1f(Tex,  game_lights[l-1].falloff);
-
-						Tex=glGetUniformLocation(st.renderer.Program[0],"Screen");
-						glUniform2f(Tex, st.screenx, st.screeny);
-					}
-
-					glBindVertexArray(vbdt[i].vao_id);
-
-					glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
-			
-					glBindVertexArray(0);
-
-					//if(l==st.num_lights)
-					//{ 
-						vbdt[i].num_elements=0;
-
-						glDeleteVertexArrays(1,&vbdt[i].vao_id);
-						glDeleteBuffers(1,&vbdt[i].vbo_id);
-						glDeleteBuffers(1,&vbdt[i].ibo_id);
-					//}
-
-					glUseProgram(0);
-				}
-			}
-
-			for(i=0;i<texone_num;i++)
-			{
 				glActiveTexture(GL_TEXTURE0);
 
-				if(i==0)
-					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
-				else 
-				if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
-					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+				glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
+
+				glUseProgram(st.renderer.Program[4]);
+
+				unif=glGetUniformLocation(st.renderer.Program[4],"texu");
+				glUniform1i(unif,0);
+
+				glBindVertexArray(vbdt[i].vao_id);
+
+				glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+			
+				glBindVertexArray(0);
+
+				//glUseProgram(0);
+			}
+		}
+
+		for(i=0;i<texone_num;i++)
+		{
+			glActiveTexture(GL_TEXTURE0);
+
+			if(i==0)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+			else 
+			if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+
+			glUseProgram(st.renderer.Program[4]);
+			unif=glGetUniformLocation(st.renderer.Program[4],"texu");
+			glUniform1i(unif,0);
 				
-				if(l==0) 
+			glBindVertexArray(vbd.vao_id);
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),ent[texone_ids[i]].vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[texone_ids[i]].texcor);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[texone_ids[i]].color);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+
+			//glUseProgram(0);
+		}
+
+		glDrawBuffers(1,&st.renderer.Buffers[1]);
+
+		glViewport(0,0,st.screenx/2,st.screeny/2);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+		glBindVertexArray(vbd.vao_id);
+
+		glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+		glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
+		glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
+		glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
+		glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+
+		glUseProgram(st.renderer.Program[2]);
+
+		unif=glGetUniformLocation(st.renderer.Program[2],"texu");
+		glUniform1i(unif,1);
+
+		unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+		glUniform1f(unif,0);
+
+		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+		//glUseProgram(0);
+
+		for(i=0;i<vbdt_num;i++)
+		{
+			if(vbdt[i].num_elements>0)
+			{
+				//if(l==0) CreateVAO(&vbdt[i],0,2);
+
+				glActiveTexture(GL_TEXTURE0);
+
+				glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
+
+				glUseProgram(st.renderer.Program[5]);
+
+				unif=glGetUniformLocation(st.renderer.Program[5],"texu");
+				glUniform1i(unif,0);
+
+				unif=glGetUniformLocation(st.renderer.Program[5],"texu2");
+				glUniform1i(unif,1);
+
+				glBindVertexArray(vbdt[i].vao_id);
+
+				glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+			
+				glBindVertexArray(0);
+			
+				//glUseProgram(0);
+			}
+		}
+
+		for(i=0;i<texone_num;i++)
+		{
+			glActiveTexture(GL_TEXTURE0);
+
+			if(i==0)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+			else 
+			if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+
+			glUseProgram(st.renderer.Program[5]);
+
+			unif=glGetUniformLocation(st.renderer.Program[5],"texu");
+			glUniform1i(unif,0);
+
+			unif=glGetUniformLocation(st.renderer.Program[5],"texu2");
+			glUniform1i(unif,1);
+				
+			glBindVertexArray(vbd.vao_id);
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),ent[texone_ids[i]].vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[texone_ids[i]].texcor);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[texone_ids[i]].color);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+
+			//glUseProgram(0);
+		}
+
+		glDrawBuffers(1,&st.renderer.Buffers[0]);
+
+		glViewport(0,0,st.screenx/2,st.screeny/2);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		for(i=0;i<vbdt_num;i++)
+		{
+			if(vbdt[i].num_elements>0)
+			{
+				//if(l==0) CreateVAO(&vbdt[i],0,2);
+
+				glUseProgram(st.renderer.Program[2]);
+
+				unif=glGetUniformLocation(st.renderer.Program[2],"texu");
+				glUniform1i(unif,0);
+
+				glActiveTexture(GL_TEXTURE0);
+
+				if(vbdt[i].normal)
 				{
-					glUseProgram(st.renderer.Program[2]);
-					Tex=glGetUniformLocation(st.renderer.Program[2],"texu");
-					glUniform1i(Tex,0);
-				}
-				
-
-				if(ent[texone_ids[i]].data.normal && l>0)
-				{
-					glActiveTexture(GL_TEXTURE1);
-				
-					if(i==0)
-						glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.Ndata);
-					else 
-					if(i>0 && ent[texone_ids[i]].data.Ndata!=ent[texone_ids[i-1]].data.Ndata)
-						glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.Ndata);
-						
-					glUseProgram(st.renderer.Program[1]);
-
-					Tex=glGetUniformLocation(st.renderer.Program[1],"texu2");
-					glUniform1i(Tex,1);
-
-					Tex=glGetUniformLocation(st.renderer.Program[1],"texu");
-					glUniform1i(Tex,0);
-
-					Tex=glGetUniformLocation(st.renderer.Program[1],"LightPos");
-					glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
-
-					Tex=glGetUniformLocation(st.renderer.Program[1],"LightColor");
-					glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
-
-					Tex=glGetUniformLocation(st.renderer.Program[1],"Falloff");
-					glUniform1f(Tex,  game_lights[l-1].falloff);
-
-					Tex=glGetUniformLocation(st.renderer.Program[1],"Screen");
-					glUniform2f(Tex, st.screenx, st.screeny);
+					glBindTexture(GL_TEXTURE_2D,vbdt[i].Ntexture);
+					unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+					glUniform1f(unif,1);
 				}
 				else
-				if(!ent[texone_ids[i]].data.normal && l>0)
 				{
-					glUseProgram(st.renderer.Program[0]);
+					glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
 
-					Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
-					glUniform1i(Tex,0);
-
-					Tex=glGetUniformLocation(st.renderer.Program[0],"LightPos");
-					glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
-
-					Tex=glGetUniformLocation(st.renderer.Program[0],"LightColor");
-					glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
-
-					Tex=glGetUniformLocation(st.renderer.Program[0],"Falloff");
-					glUniform1f(Tex,  game_lights[l-1].falloff);
-
-					Tex=glGetUniformLocation(st.renderer.Program[0],"Screen");
-					glUniform2f(Tex, st.screenx, st.screeny);
+					unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+					glUniform1f(unif,2);
 				}
+
+				glBindVertexArray(vbdt[i].vao_id);
+
+				glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,0);
+			
+				glBindVertexArray(0);
+
+				vbdt[i].num_elements=0;
+
+				glDeleteVertexArrays(1,&vbdt[i].vao_id);
+				glDeleteBuffers(1,&vbdt[i].vbo_id);
+				glDeleteBuffers(1,&vbdt[i].ibo_id);
+
+				//glUseProgram(0);
+			}
+		}
+
+		for(i=0;i<texone_num;i++)
+		{
+			glActiveTexture(GL_TEXTURE0);
+
+			glUseProgram(st.renderer.Program[2]);
+
+			if(ent[texone_ids[i]].data.normal)
+			{
+				unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+				glUniform1f(unif,1);
+
+				if(i==0)
+					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.Ndata);
+				else 
+				if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.Ndata)
+					glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.Ndata);
+			}
+			else
+			{
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+
+				unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+				glUniform1f(unif,2);
+			}
+			
+			unif=glGetUniformLocation(st.renderer.Program[2],"texu");
+			glUniform1i(unif,0);
+				
+			glBindVertexArray(vbd.vao_id);
+
+			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
+			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),ent[texone_ids[i]].vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[texone_ids[i]].texcor);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[texone_ids[i]].color);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+			glBindVertexArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER,0);
+
+			//glUseProgram(0);
+		}
+
+		if(st.num_lightmap>0)
+		{
+			glDrawBuffers(1,&st.renderer.Buffers[2]);
+
+			glViewport(0,0,st.screenx/2,st.screeny/2);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			for(i=0;i<st.num_lightmap;i++)
+			{
+				glUseProgram(st.renderer.Program[2]);
+				unif=glGetUniformLocation(st.renderer.Program[2],"texu");
+				glUniform1i(unif,0);
+
+				unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+				glUniform1f(unif,0);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
 
 				glBindVertexArray(vbd.vao_id);
 
 				glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
 
 				glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
-				glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),ent[texone_ids[i]].vertex);
-				glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[texone_ids[i]].texcor);
-				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[texone_ids[i]].color);
+				glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
+				glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
+				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
 
 				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
 				glBindVertexArray(0);
 				glBindBuffer(GL_ARRAY_BUFFER,0);
 
-				glUseProgram(0);
+				//glUseProgram(0);
 			}
-			
-			l=1;
-
-			//glDrawBuffers(1,&st.renderer.Buffers[1]);
-
-			//glViewport(0,0,st.screenx,st.screeny);
-
-			//glBlendFunc(GL_ONE, GL_ONE);
+		}
 
 			glBindFramebuffer(GL_FRAMEBUFFER,0);
 
 			glViewport(0,0,st.screenx,st.screeny);
 
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
@@ -3424,89 +4028,19 @@ void Renderer()
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-			glBlendFunc(GL_ONE, GL_ONE);
-
-			
-
-			glBindVertexArray(vbd.vao_id);
-
-			glBlendFunc(GL_ONE, GL_ONE);
-
-			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
-
-			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
-			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
-			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
-
-			for(l=1;l<=st.num_lights;l++)
-			{
-				glUseProgram(st.renderer.Program[0]);
-
-				Tex=glGetUniformLocation(st.renderer.Program[0],"texu");
-				glUniform1i(Tex,0);
-
-				Tex=glGetUniformLocation(st.renderer.Program[0],"LightPos");
-				glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
-
-				Tex=glGetUniformLocation(st.renderer.Program[0],"LightColor");
-				glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
-
-				Tex=glGetUniformLocation(st.renderer.Program[0],"Falloff");
-				glUniform1f(Tex,  game_lights[l-1].falloff);
-
-				Tex=glGetUniformLocation(st.renderer.Program[0],"Screen");
-				glUniform2f(Tex, st.screenx, st.screeny);
-
-				//glBindVertexArray(vbd.vao_id);
-
-				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
-
-				//glBindVertexArray(0);
-				//glBindBuffer(GL_ARRAY_BUFFER,0);
-
-				glUseProgram(0);
-			}
-
-
-			glBindVertexArray(0);
-			glBindBuffer(GL_ARRAY_BUFFER,0);
-
-			glUseProgram(0);
-
-			//glDeleteFramebuffers(1,&fbo);
-			//glDeleteTextures(1,&txo);
-			/*
-			l=2;
-
-			glBindFramebuffer(GL_FRAMEBUFFER,0);
-
-			//glViewport(0,0,st.screenx,st.screeny);
-
-			glClear(GL_COLOR_BUFFER_BIT);
-
-			glActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[1]);
 
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-			glUseProgram(st.renderer.Program[1]);
+		if(st.num_lightmap>0)
+		{
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[2]);
 
-			Tex=glGetUniformLocation(st.renderer.Program[1],"texu");
-			glUniform1i(Tex,0);
-
-			Tex=glGetUniformLocation(st.renderer.Program[1],"LightPos");
-			glUniform3f(Tex, game_lights[l-1].pos.x, game_lights[l-1].pos.y, game_lights[l-1].pos.z);
-
-			Tex=glGetUniformLocation(st.renderer.Program[1],"LightColor");
-			glUniform4f(Tex, game_lights[l-1].color.r, game_lights[l-1].color.g, game_lights[l-1].color.b, game_lights[l-1].color.a);
-
-			Tex=glGetUniformLocation(st.renderer.Program[1],"Falloff");
-			glUniform1f(Tex,  game_lights[l-1].falloff);
-
-			Tex=glGetUniformLocation(st.renderer.Program[1],"Screen");
-			glUniform2f(Tex, st.screenx, st.screeny);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 			glBindVertexArray(vbd.vao_id);
 
@@ -3517,23 +4051,32 @@ void Renderer()
 			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
 			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
 
+			glUseProgram(st.renderer.Program[3]);
+
+			unif=glGetUniformLocation(st.renderer.Program[3],"texu2");
+			glUniform1i(unif,2);
+
+			unif=glGetUniformLocation(st.renderer.Program[3],"texu");
+			glUniform1i(unif,1);
+
+			unif=glGetUniformLocation(st.renderer.Program[3],"texu3");
+			glUniform1i(unif,0);
+
 			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
-			glBindVertexArray(0);
-			glBindBuffer(GL_ARRAY_BUFFER,0);
-
 			glUseProgram(0);
-
-			//glDeleteFramebuffers(1,&fbo);
-			//glDeleteTextures(1,&txo);
-			//glDeleteFramebuffers(1,&fbr);
-			//glDeleteTextures(1,&txr);
-			*/
 		}
-	//}
+	}
 	
 #endif
 	
+#ifdef _VBO_RENDER
+	if(st.renderer.VBO_ON)
+	{
+
+	}
+#endif
+
 #ifdef _IM_RENDER
 	if(st.renderer.IM_ON)
 	{
@@ -3740,6 +4283,7 @@ void Renderer()
 	st.num_entities=0;
 	texone_num=0;
 	st.num_lights=0;
+	st.num_lightmap=0;
 	memset(&ent,0,MAX_GRAPHICS);
 
 	SDL_GL_SwapWindow(wn);

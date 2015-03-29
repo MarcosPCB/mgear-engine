@@ -313,17 +313,37 @@ int main(int argc, char *argv[])
 		st.Camera.dimension.y-=0.1;
 		st.mouse_wheel=0;
 	}
+				/*
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				/*
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+
+				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				*/
 				
-				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,2.0f);
-				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f);
-				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,2.0f);
+				//DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
+				DrawLight(4096,2048,1,0,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f,600);
 
-				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,2.0f);
-				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f);
-				DrawLight(12555,4096,32,0,0,128,255,POINT_LIGHT_MEDIUM,255,2.0f);
+				DrawLightmap(st.game_lightmaps[0].w_pos.x,st.game_lightmaps[0].w_pos.y,st.game_lightmaps[0].w_pos.z,st.game_lightmaps[0].W_w,st.game_lightmaps[0].W_h,st.game_lightmaps[0].tex,POINT_LIGHT_MEDIUM);
 
-				DrawSprite(8192,4096,16384,8192,0,10,10,10,mgg[0].frames[0],255,0);
-				DrawSprite(8192,4096,2048,2048,0,100,100,100,mgg[1].frames[59],255,2048);
+				int32 x2, y2;
+
+				x2=st.mouse.x;
+				y2=st.mouse.y;
+				STW(&x2,&y2);
+
+				DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,2048);
+				DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
 				//DrawSprite(8192,4096,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
 				//MAnim(8192,4096,2048,2048,0,1,1,1,&mgg[1],1,1,255);
 				//DrawSprite(4096,4096,2048,2048,0,255,255,255,mgg[0].frames[52],255,2048);

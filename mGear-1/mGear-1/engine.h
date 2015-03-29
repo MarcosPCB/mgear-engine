@@ -47,6 +47,7 @@
 #define MAX_FONTS 8
 #define MAX_SECTORS 512
 #define MAX_LIGHTS 16
+#define MAX_LIGHTMAPS 128
 #define MAX_MAPMGG 32
 
 #define MAX_VERTEX MAX_GRAPHICS*8
@@ -156,13 +157,19 @@ enum LIGHT_TYPE
 	SPOTLIGHT
 };
 
+enum LIGHTENG_TYPE
+{
+	STATIC_LIGHT,
+	DYNAMIC_LIGHT
+};
+
 struct _LIGHTS
 {
 	LIGHT_TYPE type;
 	PosF pos;
 	ColorF color;
 	float falloff;
-	int16 radius;
+	float radius;
 };
 
 struct Key
@@ -555,22 +562,41 @@ struct Render
 	uint8 IM_ON;
 #endif
 
-	GLuint VShader[4];
-	GLuint FShader[4];
-	GLuint GShader[4];
-	GLuint Program[4];
+	GLuint VShader[16];
+	GLuint FShader[16];
+	GLuint GShader[16];
+	GLuint Program[16];
 
 	GLuint FBO[4];
 	GLuint FBTex[8];
 	GLuint RBO[8];
 
-	GLuint Buffers[2];
+	GLuint Buffers[4];
 };
 
 struct TFont
 {
 	char name[64];
 	TTF_Font *font;
+};
+
+struct _GAME_LIGHTMAPS
+{
+	Pos w_pos;
+
+	uint16 W_w;
+	uint16 W_h;
+
+	uint16 T_w;
+	uint16 T_h;
+
+	uPos16 t_pos[16];
+
+	unsigned char *data;
+
+	uint8 num_lights;
+
+	GLuint tex;
 };
 
 //The main structure
@@ -594,6 +620,15 @@ struct _SETTINGS
 	uint32 num_hud;
 	uint32 num_ui;
 	uint8 num_lights;
+	uint8 num_lightmap;
+
+	_GAME_LIGHTMAPS game_lightmaps[128];
+
+	struct
+	{
+		GLuint lightmap;
+
+	} Lightmaps;
 
 	long long unsigned int time;
 
@@ -658,6 +693,7 @@ extern _SETTINGS st;
 extern _ENTITIES ent[MAX_GRAPHICS];
 extern SDL_Event events;
 extern _LIGHTS game_lights[MAX_LIGHTS];
+extern _ENTITIES lpm[MAX_LIGHTMAPS]; 
 
 extern _MGG mgg[MAX_MGG];
 
@@ -697,11 +733,11 @@ void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
 
 void RestartVideo();
 
-void _fastcall STW(float *x, float *y);
+void _fastcall STW(int32 *x, int32 *y);
 
 uint32 POT(uint32 value);
 
-void _fastcall WTS(float *x, float *y);
+void _fastcall WTS(int32 *x, int32 *y);
 
 uint32 PlayMovie(const char *name);
 
@@ -714,7 +750,8 @@ float mTan(int16 ang);
 
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
-int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff);
+int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius);
+int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type);
 int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a);
 int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth);
 int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
