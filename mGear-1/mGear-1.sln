@@ -8,9 +8,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mgvcreator", "mgvcreator\mgvcreator.vcxproj", "{F4485EBF-CCF3-4B09-91A2-3774CE322143}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mEngineer", "mEngineer\mEngineer.vcxproj", "{29FD5AF9-8F9B-49A2-96EC-7F91D32250CB}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1AF6406A-CDBE-49E6-9E8C-82F23656A750} = {1AF6406A-CDBE-49E6-9E8C-82F23656A750}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

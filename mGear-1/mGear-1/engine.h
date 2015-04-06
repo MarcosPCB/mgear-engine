@@ -103,10 +103,7 @@ enum Stat
 
 struct VB_DATAT
 {
-#ifdef _VAO_RENDER 
 	GLuint vao_id;
-#endif
-
 	GLuint ibo_id;
 	GLuint vbo_id;
 	float *vertex;
@@ -226,7 +223,7 @@ struct _MGG
 	char name[32];
 	uint16 num_frames;
 	_MGGTYPE type;
-	TEX_DATA frames[8192]; //single-texture and atlas objects data
+	TEX_DATA *frames; //single-texture and atlas objects data
 	GLuint *atlas; //texture atlas data
 	Pos *size;
 	//Pos *sizefix;
@@ -538,15 +535,11 @@ typedef _VBO_PACKET VBO_PACKET;
 struct Render
 {
 
-#ifdef _VAO_RENDER
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	uint8 VAO_ON;
 
 	GLuint VAO_1Q;
 	GLuint *VAO;
-
-#endif
-
-#ifdef _VBO_RENDER
 	uint8 VBO_ON;
 
 	VBO_PACKET VBO_1Q;
