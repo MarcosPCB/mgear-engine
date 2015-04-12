@@ -565,6 +565,8 @@ struct Render
 	GLuint RBO[8];
 
 	GLuint Buffers[4];
+
+	uint16 shader_version;
 };
 
 struct TFont

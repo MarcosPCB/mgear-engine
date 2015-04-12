@@ -36,6 +36,12 @@
     <ClInclude Include="dirent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="shader110.c">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shader130.c">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="engine.cpp">

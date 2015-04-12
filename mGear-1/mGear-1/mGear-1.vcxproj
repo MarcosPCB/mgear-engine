@@ -98,6 +98,8 @@
     <ClInclude Include="input.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="quicklz.h" />
+    <ClInclude Include="shader110.c" />
+    <ClInclude Include="shader130.c" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <ItemGroup>

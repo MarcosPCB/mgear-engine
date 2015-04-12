@@ -4,6 +4,14 @@
 #include <math.h>
 #include <SDL_image.h>
 
+#ifdef _VBO_RENDER
+	#include "shader110.c"
+#endif
+
+#ifdef _VAO_RENDER
+	#include "shader130.c"
+#endif
+
 _SETTINGS st;
 _ENTITIES ent[MAX_GRAPHICS];
 SDL_Event events;
@@ -31,258 +39,6 @@ SDL_Window *wn;
 const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 
 #define timer SDL_Delay
-
-const char *Texture_VShader[64]={
-	"#version 130\n"
-
-	"in vec3 Position;\n"
-	"in vec2 TexCoord;\n"
-	"in vec4 Color;\n"
-
-	"out vec2 TexCoord2;\n"
-	"out vec4 colore;\n"
-
-	"void main()\n"
-	"{\n"
-	   "gl_Position = vec4(Position, 1.0);\n"
-	   "TexCoord2 = TexCoord;\n"
-	   "colore = Color;\n"
-	"};\n"
-};
-
-const char *Texture_FShader[64]={
-	"#version 130\n"
-
-	"uniform sampler2D texu;\n"
-
-	"uniform float normal;"
-
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec4 NormalColor = vec4(0.501, 0.501, 1.0, 1.0);\n"
-
-		"if(texture(texu,TexCoord2).a < 1.0)\n"
-			"discard;\n"
-
-		"if(normal == 0 || normal == 1)\n"
-			"FColor = texture(texu,TexCoord2);\n"
-		"else\n"
-		"if(normal == 2)\n"
-			"FColor = NormalColor;\n"
-	"};\n"
-
-};
-
-const char *TextureNoT_FShader[64]={
-	"#version 130\n"
-
-	"uniform sampler2D texu;\n"
-
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec4 Diffuse = texture(texu, TexCoord2);\n"
-
-		"if(Diffuse.a < 1.0)\n"
-			"discard;\n"
-		//"else\n"
-		"FColor = Diffuse;\n"
-	"};\n"
-
-};
-
-const char *TextureT_FShader[64]={
-	"#version 130\n"
-
-	"uniform sampler2D texu;\n"
-
-	"uniform sampler2D texu2;\n"
-
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec4 Diffuse = texture(texu, TexCoord2) * colore;\n"
-		"vec4 Bckg = texture(texu2, TexCoord2) * colore;\n"
-
-		"if(Diffuse.a == 1.0)\n"
-			"discard;\n"
-		//"else\n"
-		"if(Diffuse.a < 1.0 && Diffuse.a > 0.5)\n"
-		"{\n"
-			"FColor = vec4((Diffuse.a * Diffuse.rgb) * Bckg.rgb, 1.0);\n"
-		"}\n"
-
-		
-	"};\n"
-
-};
-
-const char *Blend_FShader[64]={
-	"#version 130\n"
-
-	"uniform sampler2D texu;\n"
-
-	"uniform sampler2D texu2;\n"
-
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec4 Diffuse = texture(texu, TexCoord2);\n"
-		"vec4 Alpha = texture(texu2, TexCoord2);\n"
-
-		"FColor = vec4(Alpha.rgb * Diffuse.rgb,1.0);\n"
-	"};\n"
-
-};
-
-const char *Normal_FShader[128]={
-	"#version 130\n"
-
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"uniform sampler2D texu;\n"
-
-	//"uniform sampler2D texu2;\n"
-
-	"uniform vec3 LightPos;\n"
-
-	"uniform vec4 LightColor;\n"
-
-	"uniform float Falloff;\n"
-
-	"uniform vec2 Screen;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
-
-		//"vec3 NormalMap = texture(texu2, TexCoord2).rgb;\n"
-
-		"vec3 LightDir = vec3(LightPos.xy - (gl_FragCoord.xy / Screen.xy), LightPos.z);\n"
-
-		"LightDir.x *= Screen.x / Screen.y;\n"
-
-		"float D = length(LightDir);\n"
-
-		"vec3 L = normalize(LightDir);\n"
-
-		//"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
-
-		"float Att = 1.0 / (Falloff*D);\n"
-
-		"vec3 df = (LightColor.rgb * LightColor.a);\n" //* max(dot(N, L), 0.0);\n"
-
-		"vec3 it = (DiffuseColor.rgb + df) * Att;\n"
-
-		"vec3 FinalC = DiffuseColor.rgb * it;\n"
-
-		"FColor = vec4(FinalC,DiffuseColor.a);\n"
-	"}\n"
-};
-
-const char *Lighting_FShader[196]={
-	"#version 130\n"
-
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"uniform sampler2D texu;\n"
-
-	"uniform sampler2D texu2;\n"
-
-	"uniform vec3 LightPos;\n"
-
-	"uniform vec4 LightColor;\n"
-
-	"uniform float Falloff;\n"
-
-	"uniform vec2 Screen;\n"
-
-	"uniform float Radius;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec3 LightDir = vec3(LightPos.xy - (gl_FragCoord.xy / Screen.xy), LightPos.z);\n"
-
-		"LightDir.x *= Screen.x / Screen.y;\n"
-
-		"float D = length(LightDir);\n"
-
-		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
-
-		"vec4 LightMap = texture(texu2, TexCoord2);\n"
-
-		"float Att = 1.0 / (Falloff*D);\n"
-
-		"vec3 df = LightColor.rgb * LightColor.a;\n"
-
-		"vec3 it =   df * Att;\n"
-
-		"vec3 FinalC = DiffuseColor.rgb * (it + LightMap.rgb);\n"
-
-		"FColor = vec4(FinalC,DiffuseColor.a);\n"
-	"}\n"
-};
-
-const char *Lightmap_FShader[128]={
-	"#version 130\n"
-	
-	"in vec2 TexCoord2;\n"
-
-	"in vec4 colore;\n"
-
-	"out vec4 FColor;\n"
-
-	"uniform sampler2D texu;\n"
-
-	"uniform sampler2D texu2;\n"
-
-	"uniform sampler2D texu3;\n"
-
-	"void main()\n"
-	"{\n"
-		"vec4 DiffuseColor = texture(texu, TexCoord2);\n"
-
-		"vec4 Lightmap = texture(texu2, TexCoord2);\n"
-
-		"vec3 NormalMap = texture(texu3, TexCoord2).rgb;\n"
-
-		"vec3 L = normalize(Lightmap.rgb);\n"
-
-		"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
-
-		"FColor = DiffuseColor * (Lightmap * max(dot(N, L), 0.0));\n"
-
-	"}\n"
-};
 
 double inline __declspec (naked) __fastcall sqrt14(double n)
 {
@@ -898,6 +654,14 @@ void Init()
 	glEnable(GL_BLEND);
 	SDL_GL_SetSwapInterval(st.vsync);
 
+	if(st.renderer.VAO_ON)
+		st.renderer.shader_version=130;
+	else
+	if(st.renderer.VBO_ON)
+		st.renderer.shader_version=110;
+	else
+		st.renderer.shader_version=0;
+
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	if(st.renderer.VAO_ON || st.renderer.VBO_ON)
 	{
@@ -943,27 +707,48 @@ void Init()
 		st.renderer.Buffers[2]=GL_COLOR_ATTACHMENT2;
 		st.renderer.Buffers[3]=GL_COLOR_ATTACHMENT3;
 
+SHADER_CREATION:
+
 		st.renderer.VShader[0]=glCreateShader(GL_VERTEX_SHADER);
-		st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
-		st.renderer.FShader[1]=glCreateShader(GL_FRAGMENT_SHADER);
+		//st.renderer.FShader[0]=glCreateShader(GL_FRAGMENT_SHADER);
+		//st.renderer.FShader[1]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[2]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[3]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[4]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[5]=glCreateShader(GL_FRAGMENT_SHADER);
 		st.renderer.FShader[6]=glCreateShader(GL_FRAGMENT_SHADER);
 
-		glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
-		glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Lighting_FShader,0);
-		glShaderSource(st.renderer.FShader[1],1,(const GLchar**) Normal_FShader,0);
-		glShaderSource(st.renderer.FShader[2],1,(const GLchar**) Texture_FShader,0);
-		glShaderSource(st.renderer.FShader[3],1,(const GLchar**) Lightmap_FShader,0);
-		glShaderSource(st.renderer.FShader[4],1,(const GLchar**) TextureNoT_FShader,0);
-		glShaderSource(st.renderer.FShader[5],1,(const GLchar**) TextureT_FShader,0);
-		glShaderSource(st.renderer.FShader[6],1,(const GLchar**) Blend_FShader,0);
+#ifdef _VAO_RENDER
+
+		if(st.renderer.shader_version==130)
+		{
+			glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader,0);
+			//glShaderSource(st.renderer.FShader[0],1,(const GLchar**) Lighting_FShader,0);
+			//glShaderSource(st.renderer.FShader[1],1,(const GLchar**) Normal_FShader,0);
+			glShaderSource(st.renderer.FShader[2],1,(const GLchar**) Texture_FShader,0);
+			glShaderSource(st.renderer.FShader[3],1,(const GLchar**) Lightmap_FShader,0);
+			glShaderSource(st.renderer.FShader[4],1,(const GLchar**) TextureNoT_FShader,0);
+			glShaderSource(st.renderer.FShader[5],1,(const GLchar**) TextureT_FShader,0);
+			glShaderSource(st.renderer.FShader[6],1,(const GLchar**) Blend_FShader,0);
+		}
+#endif
+		//else
+#ifdef _VBO_RENDER
+		if(st.renderer.shader_version==110)
+		{
+			
+			glShaderSource(st.renderer.VShader[0],1,(const GLchar**) Texture_VShader110,0);
+			glShaderSource(st.renderer.FShader[2],1,(const GLchar**) Texture_FShader110,0);
+			glShaderSource(st.renderer.FShader[3],1,(const GLchar**) Lightmap_FShader110,0);
+			glShaderSource(st.renderer.FShader[4],1,(const GLchar**) TextureNoT_FShader110,0);
+			glShaderSource(st.renderer.FShader[5],1,(const GLchar**) TextureT_FShader110,0);
+			glShaderSource(st.renderer.FShader[6],1,(const GLchar**) Blend_FShader110,0);
+		}
+#endif
 
 		glCompileShader(st.renderer.VShader[0]);
-		glCompileShader(st.renderer.FShader[0]);
-		glCompileShader(st.renderer.FShader[1]);
+		//glCompileShader(st.renderer.FShader[0]);
+		//glCompileShader(st.renderer.FShader[1]);
 		glCompileShader(st.renderer.FShader[2]);
 		glCompileShader(st.renderer.FShader[3]);
 		glCompileShader(st.renderer.FShader[4]);
@@ -971,19 +756,21 @@ void Init()
 		glCompileShader(st.renderer.FShader[6]);
 
 		glGetShaderiv(st.renderer.VShader[0],GL_COMPILE_STATUS,&statusCM[0]);
-		glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&statusCM[1]);
-		glGetShaderiv(st.renderer.FShader[1],GL_COMPILE_STATUS,&statusCM[2]);
+		//glGetShaderiv(st.renderer.FShader[0],GL_COMPILE_STATUS,&statusCM[1]);
+		//glGetShaderiv(st.renderer.FShader[1],GL_COMPILE_STATUS,&statusCM[2]);
 		glGetShaderiv(st.renderer.FShader[2],GL_COMPILE_STATUS,&statusCM[3]);
 		glGetShaderiv(st.renderer.FShader[3],GL_COMPILE_STATUS,&statusCM[4]);
 		glGetShaderiv(st.renderer.FShader[4],GL_COMPILE_STATUS,&statusCM[5]);
 		glGetShaderiv(st.renderer.FShader[5],GL_COMPILE_STATUS,&statusCM[6]);
 		glGetShaderiv(st.renderer.FShader[6],GL_COMPILE_STATUS,&statusCM[7]);
 
-		if(!statusCM[0] || !statusCM[1] || !statusCM[2] || !statusCM[3] || !statusCM[4] || !statusCM[5] || !statusCM[6] || !statusCM[7])
+		if(!statusCM[0] || !statusCM[3] || !statusCM[4] || !statusCM[5] || !statusCM[6] || !statusCM[7])
 		{
 			
 			for(i=0;i<8;i++)
 			{
+				if(i==1 || i==2) continue;
+
 				if(!statusCM[i])
 				{
 					if(i==1)
@@ -994,35 +781,50 @@ void Init()
 					else
 						glGetShaderInfoLog(st.renderer.FShader[i-1],1024,NULL,logs[0]);
 
-					LogApp("Shader: %s",logs[0]);
+					LogApp("Shader %d: %s",i ,logs[0]);
 					LogApp("Counld not compile shader");
 				}
 			}
 
 #ifdef _VBO_RENDER
-			LogApp("Changing to VBO...");
-
-			if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_buffer_object")==NULL)
+			if(st.renderer.shader_version==130)
 			{
+				LogApp("Changing to VBO...");
+
+				if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_buffer_object")==NULL)
+				{
 #ifdef _VA_RENDER
-				st.renderer.VA_ON=1;
-				LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
+					st.renderer.VA_ON=1;
+					LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
 #elif defined (_IM_RENDER)
-				st.renderer.IM_ON=1;
-				LogApp("VBO not supported, check your video's card driver for updates... Using IM instead!!");
+					st.renderer.IM_ON=1;
+					LogApp("VBO not supported, check your video's card driver for updates... Using IM instead!!");
 #elif !defined (_IM_RENDER)
-				LogApp("Your video card is not adequate to play this game... Goodbye!!");
-				Quit();
+					LogApp("Your video card is not adequate to play this game... Goodbye!!");
+					Quit();
 #endif
+				}
+				else
+				{
+					st.renderer.VBO_ON=1;
+					st.renderer.shader_version=110;
+
+					glDeleteShader(st.renderer.VShader[0]);
+					glDeleteShader(st.renderer.VShader[3]);
+					glDeleteShader(st.renderer.VShader[4]);
+					glDeleteShader(st.renderer.VShader[5]);
+					glDeleteShader(st.renderer.VShader[6]);
+					glDeleteShader(st.renderer.VShader[7]);
+
+					goto SHADER_CREATION;
+				}
 			}
 			else
-				st.renderer.VBO_ON=1;
-#endif
+			if(st.renderer.shader_version==110)
+			{
 
 #ifdef _VA_RENDER
-			
-			if(st.renderer.VA_ON==1)
-			{
+
 				LogApp("Changing to VA...");
 
 				if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
@@ -1036,30 +838,50 @@ void Init()
 #endif
 				}
 				else
+				{
 					st.renderer.VA_ON=1;
-#endif
+
+					glDeleteShader(st.renderer.VShader[0]);
+					glDeleteShader(st.renderer.VShader[3]);
+					glDeleteShader(st.renderer.VShader[4]);
+					glDeleteShader(st.renderer.VShader[5]);
+					glDeleteShader(st.renderer.VShader[6]);
+					glDeleteShader(st.renderer.VShader[7]);
+				}
 			}
+#endif
+
+#ifdef _IM_RENDER
+
+				if(!st.renderer.VA_ON && !st.renderer.VBO_ON && !st.renderer.VAO_ON)
+				{
+					LogApp("Changing to IM...");
+					st.renderer.IM_ON=1;
+				}
+#endif
+
+#endif
 		}
 		else
 		if(statusCM[0] && statusCM[1] && statusCM[2] && statusCM[3] && statusCM[4] && statusCM[5] && statusCM[6] && statusCM[7])
 		{
-			st.renderer.Program[0]=glCreateProgram();
-			st.renderer.Program[1]=glCreateProgram();
+			//st.renderer.Program[0]=glCreateProgram();
+			//st.renderer.Program[1]=glCreateProgram();
 			st.renderer.Program[2]=glCreateProgram();
 			st.renderer.Program[3]=glCreateProgram();
 			st.renderer.Program[4]=glCreateProgram();
 			st.renderer.Program[5]=glCreateProgram();
 			st.renderer.Program[6]=glCreateProgram();
 
-			glAttachShader(st.renderer.Program[0],st.renderer.VShader[0]);
-			glAttachShader(st.renderer.Program[0],st.renderer.FShader[0]);
-
-			glAttachShader(st.renderer.Program[1],st.renderer.VShader[0]);
-			glAttachShader(st.renderer.Program[1],st.renderer.FShader[1]);
+			//glAttachShader(st.renderer.Program[0],st.renderer.VShader[0]);
+			//glAttachShader(st.renderer.Program[0],st.renderer.FShader[0]);
+			
+			//glAttachShader(st.renderer.Program[1],st.renderer.VShader[0]);
+			//glAttachShader(st.renderer.Program[1],st.renderer.FShader[1]);
 
 			glAttachShader(st.renderer.Program[2],st.renderer.VShader[0]);
 			glAttachShader(st.renderer.Program[2],st.renderer.FShader[2]);
-
+			
 			glAttachShader(st.renderer.Program[3],st.renderer.VShader[0]);
 			glAttachShader(st.renderer.Program[3],st.renderer.FShader[3]);
 
@@ -1072,22 +894,22 @@ void Init()
 			glAttachShader(st.renderer.Program[6],st.renderer.VShader[0]);
 			glAttachShader(st.renderer.Program[6],st.renderer.FShader[6]);
 
-			glLinkProgram(st.renderer.Program[0]);
-			glLinkProgram(st.renderer.Program[1]);
+			//glLinkProgram(st.renderer.Program[0]);
+			//glLinkProgram(st.renderer.Program[1]);
 			glLinkProgram(st.renderer.Program[2]);
 			glLinkProgram(st.renderer.Program[3]);
 			glLinkProgram(st.renderer.Program[4]);
 			glLinkProgram(st.renderer.Program[5]);
 			glLinkProgram(st.renderer.Program[6]);
 
-			glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&statusLK[0]);
-			glGetProgramiv(st.renderer.Program[1],GL_LINK_STATUS,&statusLK[1]);
+			//glGetProgramiv(st.renderer.Program[0],GL_LINK_STATUS,&statusLK[0]);
+			//glGetProgramiv(st.renderer.Program[1],GL_LINK_STATUS,&statusLK[1]);
 			glGetProgramiv(st.renderer.Program[2],GL_LINK_STATUS,&statusLK[2]);
 			glGetProgramiv(st.renderer.Program[3],GL_LINK_STATUS,&statusLK[3]);
 			glGetProgramiv(st.renderer.Program[4],GL_LINK_STATUS,&statusLK[4]);
 			glGetProgramiv(st.renderer.Program[5],GL_LINK_STATUS,&statusLK[5]);
 			glGetProgramiv(st.renderer.Program[6],GL_LINK_STATUS,&statusLK[6]);
-
+			/*
 			if(!statusLK[0])
 			{
 				glDeleteProgram(st.renderer.Program[0]);
@@ -1099,7 +921,7 @@ void Init()
 				glDetachShader(st.renderer.Program[0],st.renderer.VShader[0]);
 				glDetachShader(st.renderer.Program[0],st.renderer.FShader[0]);
 			}
-
+			
 			if(!statusLK[1])
 			{
 				glDeleteProgram(st.renderer.Program[1]);
@@ -1111,7 +933,7 @@ void Init()
 				glDetachShader(st.renderer.Program[1],st.renderer.VShader[0]);
 				glDetachShader(st.renderer.Program[1],st.renderer.FShader[1]);
 			}
-
+			*/
 			if(!statusLK[2])
 			{
 				glDeleteProgram(st.renderer.Program[2]);
@@ -1123,7 +945,7 @@ void Init()
 				glDetachShader(st.renderer.Program[2],st.renderer.VShader[0]);
 				glDetachShader(st.renderer.Program[2],st.renderer.FShader[2]);
 			}
-
+			
 			if(!statusLK[3])
 			{
 				glGetProgramInfoLog(st.renderer.Program[3],1024,NULL,logs[0]);
@@ -1176,12 +998,47 @@ void Init()
 				glDetachShader(st.renderer.Program[6],st.renderer.FShader[6]);
 			}
 
+			if(!statusLK[2] || !statusLK[3] || !statusLK[4] || !statusLK[5] || !statusLK[6])
+			{
+#ifdef _VA_RENDER
+
+				LogApp("Changing to VA...");
+
+				if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
+				{
+#ifdef _IM_RENDER
+					st.renderer.IM_ON=1;
+					LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
+#else
+					LogApp("Your video card is not adequate to play this game... Goodbye!!");
+					Quit();
+#endif
+				}
+				else
+					st.renderer.VA_ON=1;
+#endif
+
+#ifdef _IM_RENDER
+
+				if(!st.renderer.VA_ON && !st.renderer.VBO_ON && !st.renderer.VAO_ON)
+				{
+					LogApp("Changing to IM...");
+					st.renderer.IM_ON=1;
+				}
+#endif
+
+			}
+
 			//This is the main VAO/VBO, used for 1 Quad only objects
+
+			if(statusLK[0] || statusLK[3] || statusLK[4] || statusLK[5] || statusLK[6])
+			{
 #ifdef _VAO_RENDER
 			CreateVAO(&vbd,1,2);
 #elif _VBO_RENDER
 			CreateVBO(&vbd);
 #endif 
+			}
 		}
 	}
 
