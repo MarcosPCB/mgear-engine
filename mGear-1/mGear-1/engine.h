@@ -520,40 +520,20 @@ struct Joy
 	} axis[6];
 }
 */
-#ifdef _VBO_RENDER
-
-struct _VBO_PACKET
-{
-	GLuint VBO, IBO;
-	uint16 elements;
-};
-
-typedef _VBO_PACKET VBO_PACKET;
-
-#endif
 
 struct Render
 {
 
-#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+
 	uint8 VAO_ON;
 
 	GLuint VAO_1Q;
 	GLuint *VAO;
 	uint8 VBO_ON;
 
-	VBO_PACKET VBO_1Q;
-	VBO_PACKET *VBO;
-#endif
-
-#ifdef _VA_RENDER
 	uint8 VA_ON;
-#endif
 
-
-#ifdef _IM_RENDER
 	uint8 IM_ON;
-#endif
 
 	GLuint VShader[16];
 	GLuint FShader[16];

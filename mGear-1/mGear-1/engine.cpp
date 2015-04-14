@@ -22,7 +22,7 @@ GLuint DataNT;
 
 GLuint lm;
 
-#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 	VB_DATAT vbd;
 	VB_DATAT *vbdt;
 	uint16 vbdt_num=0;
@@ -397,6 +397,8 @@ void Init()
 
 	GLenum checkfb;
 
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 	GLint statusCM[32], statusLK[32];
 	GLchar logs[32][1024];
@@ -404,8 +406,11 @@ void Init()
 	vbd.vertex=(float*) malloc(12*sizeof(float));
 	vbd.texcoord=(float*) malloc(8*sizeof(float));
 	vbd.color=(GLubyte*) malloc(16*sizeof(GLubyte));
+#endif
 	vbd.index=(GLushort*) malloc(6*sizeof(GLushort));
 	
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+
 	vbd.vertex[0]=-0.90;
 	vbd.vertex[1]=-0.90;
 	vbd.vertex[2]=0;
@@ -428,13 +433,6 @@ void Init()
 	vbd.texcoord[6]=1;
 	vbd.texcoord[7]=0;
 
-	vbd.index[0]=0;
-	vbd.index[1]=1;
-	vbd.index[2]=2;
-	vbd.index[3]=2;
-	vbd.index[4]=3;
-	vbd.index[5]=0;
-
 	vbd.color[0]=255;
 	vbd.color[1]=255;
 	vbd.color[2]=255;
@@ -451,6 +449,15 @@ void Init()
 	vbd.color[13]=255;
 	vbd.color[14]=255;
 	vbd.color[15]=255;
+
+#endif
+
+	vbd.index[0]=0;
+	vbd.index[1]=1;
+	vbd.index[2]=2;
+	vbd.index[3]=2;
+	vbd.index[4]=3;
+	vbd.index[5]=0;
 	
 	vbdt_num=0;
 
@@ -1475,7 +1482,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		for(i=0;i<mggf.num_atlas;i++)
 		{
 
-#ifdef _VAO_RENDER
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 			if(!vbdt_num)
 			{
 				vbdt_num++;
@@ -2575,19 +2582,19 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 			lmp[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-			lmp[i].vertex[2]=z;
+			lmp[i].vertex[2]=0;
 
 			lmp[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-			lmp[i].vertex[5]=z;
+			lmp[i].vertex[5]=0;
 
 			lmp[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-			lmp[i].vertex[8]=z;
+			lmp[i].vertex[8]=0;
 
 			lmp[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-			lmp[i].vertex[11]=z;
+			lmp[i].vertex[11]=0;
 
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
@@ -3503,7 +3510,7 @@ void Renderer()
 
 	GLuint fbo, fbr, txo, txr, cat[1]={ GL_COLOR_ATTACHMENT0 };
 
-#if defined (_VAO_RENDER) || defined (_VBO_RENDER)
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
 	for(i=0;i<vbdt_num;i++)
 	{
@@ -4450,10 +4457,153 @@ void Renderer()
 	}
 #endif
 
+#ifdef _VA_RENDER
+
+	if(st.renderer.VA_ON)
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+
+		glEnable(GL_ALPHA_TEST);
+		glAlphaFunc(GL_EQUAL,1.0);
+
+		for(i=0;i<vbdt_num;i++)
+		{
+			if(vbdt[i].num_elements>0)
+			{
+				glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
+
+				glEnableClientState(GL_VERTEX_ARRAY);
+				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				glEnableClientState(GL_COLOR_ARRAY);
+
+				glVertexPointer(3,GL_FLOAT,0,vbdt[i].vertex);
+				glTexCoordPointer(2,GL_FLOAT,0,vbdt[i].texcoord);
+				glColorPointer(4,GL_UNSIGNED_BYTE,0,vbdt[i].color);
+
+				glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,vbdt[i].index);
+
+				glDisableClientState(GL_VERTEX_ARRAY);
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+				glDisableClientState(GL_COLOR_ARRAY);
+			}
+		}
+
+		for(i=0;i<texone_num;i++)
+		{
+			if(i==0)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+			else 
+			if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glEnableClientState(GL_COLOR_ARRAY);
+
+			glVertexPointer(3,GL_FLOAT,0,ent[texone_ids[i]].vertex);
+			glTexCoordPointer(2,GL_FLOAT,0,ent[texone_ids[i]].texcor);
+			glColorPointer(4,GL_UNSIGNED_BYTE,0,ent[texone_ids[i]].color);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,vbd.index);
+
+			glDisableClientState(GL_VERTEX_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_COLOR_ARRAY);
+
+		}
+
+		glAlphaFunc(GL_GREATER,0.5);
+
+		for(i=0;i<vbdt_num;i++)
+		{
+			if(vbdt[i].num_elements>0)
+			{
+				glBindTexture(GL_TEXTURE_2D,vbdt[i].texture);
+
+				glEnableClientState(GL_VERTEX_ARRAY);
+				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				glEnableClientState(GL_COLOR_ARRAY);
+
+				glVertexPointer(3,GL_FLOAT,0,vbdt[i].vertex);
+				glTexCoordPointer(2,GL_FLOAT,0,vbdt[i].texcoord);
+				glColorPointer(4,GL_UNSIGNED_BYTE,0,vbdt[i].color);
+
+				glDrawRangeElements(GL_TRIANGLES,0,vbdt[i].num_elements*6,vbdt[i].num_elements*6,GL_UNSIGNED_SHORT,vbdt[i].index);
+
+				glDisableClientState(GL_VERTEX_ARRAY);
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+				glDisableClientState(GL_COLOR_ARRAY);
+
+				free(vbdt[i].vertex);
+				free(vbdt[i].texcoord);
+				free(vbdt[i].color);
+				free(vbdt[i].index);
+
+				vbdt[i].num_elements=0;
+			}
+		}
+
+		for(i=0;i<texone_num;i++)
+		{
+			if(i==0)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+			else 
+			if(i>0 && ent[texone_ids[i]].data.data!=ent[texone_ids[i-1]].data.data)
+				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
+
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glEnableClientState(GL_COLOR_ARRAY);
+
+			glVertexPointer(3,GL_FLOAT,0,ent[texone_ids[i]].vertex);
+			glTexCoordPointer(2,GL_FLOAT,0,ent[texone_ids[i]].texcor);
+			glColorPointer(4,GL_UNSIGNED_BYTE,0,ent[texone_ids[i]].color);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,vbd.index);
+
+			glDisableClientState(GL_VERTEX_ARRAY);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_COLOR_ARRAY);
+
+		}
+
+		glDisable(GL_ALPHA_TEST);
+
+		glDisable(GL_DEPTH_TEST);
+		
+		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+
+		if(st.num_lightmap>0)
+		{
+			for(i=0;i<st.num_lightmap;i++)
+			{
+				glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
+
+				glEnableClientState(GL_VERTEX_ARRAY);
+				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				glEnableClientState(GL_COLOR_ARRAY);
+
+				glVertexPointer(3,GL_FLOAT,0,lmp[i].vertex);
+				glTexCoordPointer(2,GL_FLOAT,0,texcoord);
+				glColorPointer(4,GL_UNSIGNED_BYTE,0,color);
+
+				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,vbd.index);
+
+				glDisableClientState(GL_VERTEX_ARRAY);
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+				glDisableClientState(GL_COLOR_ARRAY);
+			}
+		}
+
+		glEnable(GL_DEPTH_TEST);
+	}
+
+#endif
+
 #ifdef _IM_RENDER
 	if(st.renderer.IM_ON)
 	{
-
 		for(register uint32 i=0;i<num_targets;i++)
 		{	
 			if(ent[i].stat==USED)
