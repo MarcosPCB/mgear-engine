@@ -405,8 +405,8 @@ void Init()
 
 	vbd.vertex=(float*) malloc(12*sizeof(float));
 	vbd.texcoord=(float*) malloc(8*sizeof(float));
-	vbd.color=(GLubyte*) malloc(16*sizeof(GLubyte));
 #endif
+	vbd.color=(GLubyte*) malloc(16*sizeof(GLubyte));
 	vbd.index=(GLushort*) malloc(6*sizeof(GLushort));
 	
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
@@ -433,6 +433,8 @@ void Init()
 	vbd.texcoord[6]=1;
 	vbd.texcoord[7]=0;
 
+#endif
+
 	vbd.color[0]=255;
 	vbd.color[1]=255;
 	vbd.color[2]=255;
@@ -449,8 +451,6 @@ void Init()
 	vbd.color[13]=255;
 	vbd.color[14]=255;
 	vbd.color[15]=255;
-
-#endif
 
 	vbd.index[0]=0;
 	vbd.index[1]=1;
@@ -545,10 +545,6 @@ void Init()
 	st.renderer.VA_ON=0;
 #endif
 
-#ifdef _IM_RENDER
-	st.renderer.IM_ON=0;
-#endif
-
 #ifdef _VAO_RENDER
 	if(!GLEE_VERSION_3_0 || strstr((char const*) glGetString(GL_EXTENSIONS),"GL_ARB_vertex_array_object")==NULL)
 	{
@@ -562,10 +558,7 @@ void Init()
 #ifdef _VA_RENDER
 			st.renderer.VA_ON=1;
 			LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
-#elif defined (_IM_RENDER)
-			st.renderer.IM_ON=1;
-			LogApp("VBOs not supported, check your video's card driver for updates... Using IM instead!!");
-#elif !defined (_IM_RENDER)
+#else 
 			LogApp("Your video card is not adequate to play this game... Goodbye!!");
 			Quit();
 #endif
@@ -577,13 +570,8 @@ void Init()
 #ifdef _VA_RENDER
 		if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
 		{
-#ifdef _IM_RENDER
-			st.renderer.IM_ON=1;
-			LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
-#else
 			LogApp("Your video card is not adequate to play this game... Goodbye!!");
 			Quit();
-#endif
 		}
 #endif
 	}
@@ -597,10 +585,7 @@ void Init()
 #ifdef _VA_RENDER
 		st.renderer.VA_ON=1;
 		LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
-#elif defined (_IM_RENDER)
-		st.renderer.IM_ON=1;
-		LogApp("VBOs not supported, check your video's card driver for updates... Using IM instead!!");
-#elif !defined (_IM_RENDER)
+#else
 		LogApp("Your video card is not adequate to play this game... Goodbye!!");
 		Quit();
 #endif
@@ -613,21 +598,11 @@ void Init()
 #if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && defined (_VA_RENDER)
 	if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
 	{
-#ifdef _IM_RENDER
-		st.renderer.IM_ON=1;
-		LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
-#else
 		LogApp("Your video card is not adequate to play this game... Goodbye!!");
 		Quit();
-#endif
-
 	}
 	else
 		st.renderer.VA_ON=1;
-#endif
-
-#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && defined (_IM_RENDER)
-		st.renderer.IM_ON=1;
 #endif
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
@@ -636,9 +611,6 @@ void Init()
 #ifdef _VA_RENDER
 		st.renderer.VA_ON=1;
 		LogApp("Framebuffer object not support, check your video's card driver for updates... Usign VA instead!");
-#elif _IM_RENDER
-		st.renderer.IM_ON=1;
-		LogApp("Framebuffer object not support, check your video's card driver for updates... Usign IM instead!");
 #else
 		LogApp("Your video card is not adequate to play this game... Goodbye!!");
 		Quit();
@@ -648,9 +620,6 @@ void Init()
 
 	//Initialize OpenGL
 	glClearColor(0,0,0,0);
-	//glMatrixMode(GL_PROJECTION);
-	//glLoadIdentity();
-	//glOrtho(0,st.screenx,st.screeny,0,0,1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glViewport(0,0,st.screenx,st.screeny);
@@ -803,10 +772,7 @@ SHADER_CREATION:
 #ifdef _VA_RENDER
 					st.renderer.VA_ON=1;
 					LogApp("VBOs not supported, check your video's card driver for updates... Using VA instead!!");
-#elif defined (_IM_RENDER)
-					st.renderer.IM_ON=1;
-					LogApp("VBO not supported, check your video's card driver for updates... Using IM instead!!");
-#elif !defined (_IM_RENDER)
+#else
 					LogApp("Your video card is not adequate to play this game... Goodbye!!");
 					Quit();
 #endif
@@ -836,13 +802,8 @@ SHADER_CREATION:
 
 				if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
 				{
-#ifdef _IM_RENDER
-					st.renderer.IM_ON=1;
-					LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
-#else
 					LogApp("Your video card is not adequate to play this game... Goodbye!!");
 					Quit();
-#endif
 				}
 				else
 				{
@@ -856,15 +817,6 @@ SHADER_CREATION:
 					glDeleteShader(st.renderer.VShader[7]);
 				}
 			}
-#endif
-
-#ifdef _IM_RENDER
-
-				if(!st.renderer.VA_ON && !st.renderer.VBO_ON && !st.renderer.VAO_ON)
-				{
-					LogApp("Changing to IM...");
-					st.renderer.IM_ON=1;
-				}
 #endif
 
 #endif
@@ -1013,27 +965,12 @@ SHADER_CREATION:
 
 				if(strstr((char const*) glGetString(GL_EXTENSIONS),"GL_EXT_vertex_array")==NULL)
 				{
-#ifdef _IM_RENDER
-					st.renderer.IM_ON=1;
-					LogApp("VA not supported, check your video's card driver for updates... Using IM instead!!");
-#else
 					LogApp("Your video card is not adequate to play this game... Goodbye!!");
 					Quit();
-#endif
 				}
 				else
 					st.renderer.VA_ON=1;
 #endif
-
-#ifdef _IM_RENDER
-
-				if(!st.renderer.VA_ON && !st.renderer.VBO_ON && !st.renderer.VAO_ON)
-				{
-					LogApp("Changing to IM...");
-					st.renderer.IM_ON=1;
-				}
-#endif
-
 			}
 
 			//This is the main VAO/VBO, used for 1 Quad only objects
@@ -1477,12 +1414,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		}
 	}
 		
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 	if(mggf.num_atlas>0)
 	{
 		for(i=0;i<mggf.num_atlas;i++)
 		{
-
-#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 			if(!vbdt_num)
 			{
 				vbdt_num++;
@@ -1505,10 +1441,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				vbdt[vbdt_num-1].Ntexture=mgg->frames[i].Ndata;
 
 			mgg->frames[i].vb_id=vbdt_num-1;
-#endif
 		}
 
 	}
+#endif
 
 	fseek(file,mggf.possize_offset,SEEK_SET);
 
@@ -1533,6 +1469,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].sizey=sizey[i-1];
 		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
 	}
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
 	k=vbdt_num;
 	
@@ -1943,6 +1881,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		free(h);
 		free(currh);
 	}
+
+#endif
 	
 	free(posx);
 	free(posy);
@@ -2354,27 +2294,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 		i=st.num_entities;
 	
 			ent[i].data=data;
-			
-#ifdef _IM_RENDER
 
-			ent[i].ang=ang;
-			ent[i].type=SPRITE;
-
-			ent[i].Color.r=(float)r/255;
-			ent[i].Color.g=(float)g/255;
-			ent[i].Color.b=(float)b/255;
-			ent[i].Color.a=a;
-
-			ent[i].pos.x=x;
-			ent[i].pos.y=y;
-			ent[i].pos.z=z;
-
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
-
-#endif
-
-#if defined (_VA_RENDER) || defined (_VBO_RENDER) || defined (_VAO_RENDER)
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
@@ -3478,16 +3399,12 @@ void DrawMap()
 
 void Renderer()
 {
-#ifdef _IM_RENDER
-	_ENTITIES tmp[MAX_GRAPHICS];
-	uint32 j=0, k=0, l=0, t=0;
-#endif
 
 	GLint unif, texcat, vertat, pos, col, texc;
 	GLenum error;
 
 	uint32 num_targets=0;
-	register uint32 i=0, j=0;
+	register uint32 i=0, j=0, m=0;
 	uint16 *k, l=0;
 	float m1, m2;
 
@@ -3499,16 +3416,7 @@ void Renderer()
 		0,0, 1,0,
 		1,1, 0,1 };
 
-	GLubyte color[16]={
-		255,255,255,255, 255,255,255,255,
-		255,255,255,255, 255,255,255,255 };
-
-		
-	GLubyte colorN[16]={
-		128,128,255,255, 128,128,255,255,
-		128,128,255,255, 128,128,255,255 };
-
-	GLuint fbo, fbr, txo, txr, cat[1]={ GL_COLOR_ATTACHMENT0 };
+	GLuint fbo, fbr, txo=0, txr, cat[1]={ GL_COLOR_ATTACHMENT0 };
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
@@ -3556,34 +3464,6 @@ void Renderer()
 
 	free(k);
 
-#endif
-
-#ifdef _IM_RENDER
-	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
-
-	for(register uint16 i=0, j=0, k=0, l=0;i<st.num_entities;i++)
-	{
-		if(ent[i].type==TEXTURE || ent[i].type==LINE || ent[i].type==SPRITE)
-		{
-			tmp[j]=ent[i];
-			j++;
-		}
-		else 
-		if(ent[i].type==HUD || ent[i].type==TEXT)
-		{
-			tmp[st.num_tex+k]=ent[i];
-			k++;
-		}
-		else 
-		if(ent[i].type==UI || ent[i].type==TEXT_UI)
-		{
-			tmp[st.num_tex+st.num_hud+l]=ent[i];
-			l++;
-		}
-	}
-
-	memcpy(&ent,&tmp,MAX_GRAPHICS*sizeof(_ENTITIES));
-	memset(&tmp,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 #endif
 
 	num_targets=st.num_entities;
@@ -3675,7 +3555,7 @@ void Renderer()
 		glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
 		glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
 		glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-		glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+		glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 		glUseProgram(st.renderer.Program[2]);
 
@@ -3875,7 +3755,7 @@ void Renderer()
 				glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
 				glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
 				glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
@@ -3919,7 +3799,7 @@ void Renderer()
 			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
 			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
 			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 			glUseProgram(st.renderer.Program[3]);
 
@@ -4062,7 +3942,7 @@ void Renderer()
 		glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
 		glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
 		glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-		glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+		glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*sizeof(GLushort)),vbd.index,GL_STREAM_DRAW);
 
@@ -4355,7 +4235,7 @@ void Renderer()
 				glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
 				glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
 				glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 				glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*sizeof(GLushort)),vbd.index,GL_STREAM_DRAW);
 
@@ -4416,7 +4296,7 @@ void Renderer()
 			glBufferData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),NULL,GL_STREAM_DRAW);
 			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
 			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),color);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER,(6*sizeof(GLushort)),vbd.index,GL_STREAM_DRAW);
 
@@ -4586,7 +4466,7 @@ void Renderer()
 
 				glVertexPointer(3,GL_FLOAT,0,lmp[i].vertex);
 				glTexCoordPointer(2,GL_FLOAT,0,texcoord);
-				glColorPointer(4,GL_UNSIGNED_BYTE,0,color);
+				glColorPointer(4,GL_UNSIGNED_BYTE,0,vbd.color);
 
 				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,vbd.index);
 
@@ -4601,210 +4481,14 @@ void Renderer()
 
 #endif
 
-#ifdef _IM_RENDER
-	if(st.renderer.IM_ON)
-	{
-		for(register uint32 i=0;i<num_targets;i++)
-		{	
-			if(ent[i].stat==USED)
-			{
-				if(ent[i].type==TEXTURE || ent[i].type==LINE)
-				{
-					//glLoadIdentity();
-
-					glPushMatrix();
-
-					//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
-
-					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-				
-					glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-
-					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-					glRotatef(ent[i].ang,0.0,0.0,1.0);
-					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-				
-					if(ent[i].type==LINE)
-					{
-						glDisable(GL_TEXTURE_2D);
-						glLineWidth(ent[i].data);
-						glBegin(GL_LINES);
-							glVertex2d(ent[i].pos.x, ent[i].pos.y);
-							glVertex2d(ent[i].size.x, ent[i].size.y);
-						glEnd();
-						glEnable(GL_TEXTURE_2D);
-					}
-					else
-					{
-						if(st.tex_bound!=ent[i].data)
-						{
-							glBindTexture(GL_TEXTURE_2D,ent[i].data);
-							st.tex_bound=ent[i].data;
-						}
-							glBegin(GL_TRIANGLES);
-								glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
-								glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-								glTexCoord2f(ent[i].x2y2.x,ent[i].x1y1.y);
-								glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-								glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
-								glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-								glTexCoord2f(ent[i].x2y2.x,ent[i].x2y2.y);
-								glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-								glTexCoord2f(ent[i].x1y1.x,ent[i].x2y2.y);
-								glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-								glTexCoord2f(ent[i].x1y1.x,ent[i].x1y1.y);
-								glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glEnd();
-					}
-					glPopMatrix();
-
-					ent[i].data=-1;
-					ent[i].stat=DEAD;
-					st.num_entities--;
-				}
-				else
-				if(ent[i].type==SPRITE)
-				{
-					//glLoadIdentity();
-				
-					glPushMatrix();
-
-					//glBlendFunc(GL_DST_COLOR, GL_MAX);
-					//glBlendEquation(GL_FUNC_ADD);
-				
-					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-
-					glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-
-					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-					glRotatef(ent[i].ang,0.0,0.0,1.0);
-					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-
-					//glTranslated(-((st.Camera.position.x*st.screenx)/16384),-((st.Camera.position.y*st.screeny)/8192),0);
-				
-					if(st.tex_bound!=ent[i].data)
-					{
-						glBindTexture(GL_TEXTURE_2D,ent[i].data);
-						st.tex_bound=ent[i].data;
-					}
-						glBegin(GL_TRIANGLES);
-							glTexCoord2i(0,0);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2i(1,0);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2i(1,1);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-							glTexCoord2i(1,1);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2i(0,1);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2i(0,0);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glEnd();
-					
-					glPopMatrix();
-				
-					ent[i].data=-1;
-					ent[i].stat=DEAD;
-					st.num_entities--;
-				
-				}
-				else
-				if(ent[i].type==HUD || ent[i].type==TEXT)
-				{
-					//glLoadIdentity();
-
-					glPushMatrix();
-
-					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-					glRotatef(ent[i].ang,0.0,0.0,1.0);
-					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-					//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-				
-					if(st.tex_bound!=ent[i].data)
-					{
-						glBindTexture(GL_TEXTURE_2D,ent[i].data);
-						st.tex_bound=ent[i].data;
-					}
-						glBegin(GL_TRIANGLES);
-							glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2d(ent[i].x2y2.x,ent[i].x1y1.y);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2d(ent[i].x2y2.x,ent[i].x2y2.y);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-							glTexCoord2d(ent[i].x2y2.x,ent[i].x2y2.y);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2d(ent[i].x1y1.x,ent[i].x2y2.y);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2d(ent[i].x1y1.x,ent[i].x1y1.y);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glEnd();
-
-					glPopMatrix();
-
-				
-
-					if(ent[i].type==TEXT) glDeleteTextures(1,&ent[i].data);
-					ent[i].data=-1;
-					ent[i].stat=DEAD;
-					st.num_entities--;
-				
-				}
-				else
-				if(ent[i].type==UI || ent[i].type==TEXT_UI)
-				{
-					//glLoadIdentity();
-
-					glPushMatrix();
-
-					glColor4f(ent[i].color.r,ent[i].color.g,ent[i].color.b,ent[i].color.a);
-
-					glTranslated(ent[i].pos.x,ent[i].pos.y,0);
-					glRotatef(ent[i].ang,0.0,0.0,1.0);
-					glTranslated(-ent[i].pos.x,-ent[i].pos.y,0);
-					//glScalef(st.Camera.dimension.x,st.Camera.dimension.y,0);
-				
-					if(st.tex_bound!=ent[i].data)
-					{
-						glBindTexture(GL_TEXTURE_2D,ent[i].data);
-						st.tex_bound=ent[i].data;
-					}
-						glBegin(GL_TRIANGLES);
-							glTexCoord2i(0,0);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2i(1,0);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-							glTexCoord2i(1,1);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-
-							glTexCoord2i(1,1);
-							glVertex2d(ent[i].pos.x+(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2i(0,1);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y+(ent[i].size.y/2));
-							glTexCoord2i(0,0);
-							glVertex2d(ent[i].pos.x-(ent[i].size.x/2),ent[i].pos.y-(ent[i].size.y/2));
-						glEnd();
-					glPopMatrix();
-
-					if(ent[i].type==TEXT_UI) glDeleteTextures(1,&ent[i].data);
-					ent[i].data=-1;
-					ent[i].stat=DEAD;
-					st.num_entities--;
-				}
-			}
-		}
-	}
-
-#endif
 	st.num_hud=0;
 	st.num_ui=0;
 	st.num_entities=0;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 	texone_num=0;
+#endif
+
 	st.num_lights=0;
 	st.num_lightmap=0;
 	memset(&ent,0,MAX_GRAPHICS);

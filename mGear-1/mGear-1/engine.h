@@ -26,9 +26,9 @@
 	#include "types.h"
 #endif
 
-#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && !defined (_IM_RENDER) && !defined (_DOS_BUILD)
+#if !defined (_VAO_RENDER) && !defined (_VBO_RENDER) && !defined (_VA_RENDER) && !defined (_DOS_BUILD)
 	#error Rendering type not defined
-	#error Use _VAO_RENDER or _VBO_RENDER or _VA_RENDER or _IM_RENDER or all together
+	#error Use _VAO_RENDER or _VBO_RENDER or _VA_RENDER or all together
 #endif
 
 
@@ -143,7 +143,7 @@ struct _ENTITIES //To be rendered
 	float vertex[12];
 	float texcor[8];
 	GLubyte color[16];
-	Color Color;
+	ColorF Color;
 };
 
 enum LIGHT_TYPE
@@ -532,8 +532,6 @@ struct Render
 	uint8 VBO_ON;
 
 	uint8 VA_ON;
-
-	uint8 IM_ON;
 
 	GLuint VShader[16];
 	GLuint FShader[16];
