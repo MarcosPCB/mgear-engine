@@ -721,6 +721,25 @@ float mCos(int16 ang);
 float mSin(int16 ang);
 float mTan(int16 ang);
 
+//Calculates the Cos, Sin and Tan values for you in signed integers
+void CalCos16s(int16 ang, int16 *val);
+void CalSin16s(int16 ang, int16 *val);
+void CalTan16s(int16 ang, int16 *val);
+
+void CalCos32s(int16 ang, int32 *val);
+void CalSin32s(int16 ang, int32 *val);
+void CalTan32s(int16 ang, int32 *val);
+
+//Calculates the Cos, Sin and Tan values for you in unsigned integers
+void CalCos16u(int16 ang, uint16 *val);
+void CalSin16u(int16 ang, uint16 *val);
+void CalTan16u(int16 ang, uint16 *val);
+
+void CalCos32u(int16 ang, uint32 *val);
+void CalSin32u(int16 ang, uint32 *val);
+void CalTan32u(int16 ang, uint32 *val);
+
+
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
 int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius);

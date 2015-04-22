@@ -154,6 +154,107 @@ float mTan(int16 ang)
 	return st.TanTable[ang];
 }
 
+
+//Signed
+void CalCos16(int16 ang, int16 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(int16)(st.CosTable[ang]*100);
+	*val/=100;
+}
+
+void CalSin16(int16 ang, int16 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(int16)(st.SinTable[ang]*100);
+	*val/=100;
+}
+
+void CalTan16(int16 ang, int16 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(int16)(st.TanTable[ang]*100);
+	*val/=100;
+}
+
+void CalCos32(int16 ang, int32 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(int32)(st.CosTable[ang]*100);
+	*val/=100;
+}
+
+void CalSin32(int16 ang, int32 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(int32)(st.SinTable[ang]*100);
+	*val/=100;
+}
+
+void CalTan32(int16 ang, int32 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(int32)(st.TanTable[ang]*100);
+	*val/=100;
+}
+
+
+//Unsigned
+void CalCos16(int16 ang, uint16 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(uint16)(st.CosTable[ang]*100);
+	*val/=100;
+}
+
+void CalSin16(int16 ang, uint16 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(uint16)(st.SinTable[ang]*100);
+	*val/=100;
+}
+
+void CalTan16(int16 ang, uint16 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(uint16)(st.TanTable[ang]*100);
+	*val/=100;
+}
+
+void CalCos32(int16 ang, uint32 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(uint32)(st.CosTable[ang]*100);
+	*val/=100;
+}
+
+void CalSin32(int16 ang, uint32 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(uint32)(st.SinTable[ang]*100);
+	*val/=100;
+}
+
+void CalTan32(int16 ang, uint32 *val)
+{
+	if(ang>3600) ang-=3600;
+
+	*val*=(uint32)(st.TanTable[ang]*100);
+	*val/=100;
+}
+
+
 void Quit()
 {
 	//ResetVB();
@@ -2248,6 +2349,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 	uint8 val=0;
 	register uint32 i=0, j=0, k=0;
+	register int32 t1, t2, t3, t4;
 	
 	PosF dim=st.Camera.dimension;
 	
@@ -2262,32 +2364,462 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	if(dim.y<10) dim.y=8192/dim.y;
 	else dim.y*=8192;
 
-	tmp=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
-	if(tmp>dim.x) val++;
+	t3=(int32) dim.x;
+	t4=(int32) dim.y;
 
-	tmp=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-	if(tmp>dim.y) val++;
+	az=mCos(ang);
+	az*=100;
+	j=(int32) az;
 
-	tmp=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
-	if(tmp>dim.x) val++;
+	ay=mSin(ang);
+	ay*=100;
+	k=(int32) ay;
 
-	tmp=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-	if(tmp>dim.y) val++;
 
-	tmp=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
-	if(tmp>dim.x) val++;
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		sub t1, eax
+		mov ebx, x
+		sub t1, ebx
 
-	tmp=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-	if(tmp>dim.y) val++;
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		sub t2, eax
+		mov ebx, y
+		sub t2, ebx
 
-	tmp=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
-	if(tmp>dim.x) val++;
+		mov eax, t1
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
 
-	tmp=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-	if(tmp>dim.y) val++;
+		mov eax, t2
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
 
-	if(val==8) return 1;
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, x
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t3
+		cmp ecx, eax
+		ja VALL1
+		jna P2
+	}
+
+VALL1:
+	_asm
+		inc val
+
+
+P2:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		sub t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		sub t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, y
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t4
+		cmp ecx, eax
+		ja VALL2
+		jna P3
+	}
+
+VALL2:
+	_asm
+		inc val
+
+P3:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		add t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		sub t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, x
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t3
+		cmp ecx, eax
+		ja VALL3
+		jna P4
+	}
+
+VALL3:
+	_asm
+		inc val
+
+P4:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		add t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		sub t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, y
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t4
+		cmp ecx, eax
+		ja VALL4
+		jna P5
+	}
+
+VALL4:
+	_asm
+		inc val
+		
+
+P5:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		add t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		add t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, y
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t3
+		cmp ecx, eax
+		ja VALL5
+		jna P6
+	}
+
+VALL5:
+	_asm
+		inc val
+
+
+P6:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		add t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		add t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, y
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t4
+		cmp ecx, eax
+		ja VALL6
+		jna P7
+	}
+
+VALL6:
+	_asm
+		inc val
+		
+
+P7:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		sub t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		add t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, x
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t3
+		cmp ecx, eax
+		ja VALL7
+		jna P8
+	}
+
+VALL7:
+	_asm
+		inc val
 	
+
+P8:
+	_asm
+	{
+		mov edx, 0
+		mov eax, sizex
+		mov ecx, 2
+		idiv ecx
+		mov ebx, x
+		mov t1, ebx
+		sub t1, eax
+		mov ebx, x
+		sub t1, ebx
+
+		mov edx, 0
+		mov eax, sizey
+		mov ecx, 2
+		idiv ecx
+		mov ebx, y
+		mov t2, ebx
+		add t2, eax
+		mov ebx, y
+		sub t2, ebx
+
+		mov eax, t1
+		mov ebx, k
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t1, eax
+
+		mov eax, t2
+		mov ebx, j
+		imul ebx
+		mov ecx, 100
+		idiv ecx
+		mov t2, eax
+
+		mov eax, t1
+		mov ebx, t2
+		mov ecx, y
+		add eax, ebx
+		add ecx, eax
+
+		mov eax, t4
+		cmp ecx, eax
+		ja VALL8
+		jna CONTINUEVAL
+	}
+
+VALL8:
+	_asm
+		inc val
+
+
+CONTINUEVAL:
+
+		_asm
+		{
+			mov al, 8
+			cmp val, al
+			je NODRAW
+			jne DRAW
+		}
+
+NODRAW:
+		return 1;
+
+DRAW:
+			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 	else
