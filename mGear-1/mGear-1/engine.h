@@ -8,6 +8,7 @@
 	#include <fmod_errors.h>
 	#include <SDL_ttf.h>
 	#include <SOIL.h>
+	#include "a.h" 
 #else
 	#include <dos.h>
 	#include <conio.h>
@@ -692,6 +693,8 @@ void InitMGG(); //Inits all MGG structs
 	uint32 SaveMap(const char *name);
 #endif
 
+
+
 uint32 LoadMap(const char *name);
 void FreeMap();
 
@@ -738,7 +741,6 @@ void CalTan16u(int16 ang, uint16 *val);
 void CalCos32u(int16 ang, uint32 *val);
 void CalSin32u(int16 ang, uint32 *val);
 void CalTan32u(int16 ang, uint32 *val);
-
 
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, GLuint data, uint8 a, int16 texpanX, int16 texpanY, int16 texsizeX, int16 texsizeY);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);

@@ -343,11 +343,12 @@ int main(int argc, char *argv[])
 
 				DrawLightmap(st.game_lightmaps[0].w_pos.x,st.game_lightmaps[0].w_pos.y,st.game_lightmaps[0].w_pos.z,st.game_lightmaps[0].W_w,st.game_lightmaps[0].W_h,st.game_lightmaps[0].tex,POINT_LIGHT_MEDIUM);
 				
-				for(x2=0;x2<50;x2++)
-					for(y2=0;y2<50;y2++)
-					{
-						DrawSprite(x2*64,y2*64,512,512,0,255,255,255,mgg[1].frames[10],255,0);
-					}
+				//for(x2=0;x2<50;x2++)
+					//for(y2=0;y2<50;y2++)
+					//{
+						DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
+						DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,0);
+					//}
 				
 				//DrawSprite(8192,4096,4096,4096,0,255,255,255,mgg[1].frames[58],255,100);
 				//DrawSprite(8192,4096,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
