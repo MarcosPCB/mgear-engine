@@ -136,6 +136,7 @@ void _fastcall WTS(int32 *x, int32 *y)
 float mCos(int16 ang)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	return st.CosTable[ang];
 }
@@ -143,6 +144,7 @@ float mCos(int16 ang)
 float mSin(int16 ang)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	return st.SinTable[ang];
 }
@@ -150,6 +152,7 @@ float mSin(int16 ang)
 float mTan(int16 ang)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	return st.TanTable[ang];
 }
@@ -159,6 +162,7 @@ float mTan(int16 ang)
 void CalCos16(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(int16)(st.CosTable[ang]*100);
 	*val/=100;
@@ -167,6 +171,7 @@ void CalCos16(int16 ang, int16 *val)
 void CalSin16(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(int16)(st.SinTable[ang]*100);
 	*val/=100;
@@ -175,6 +180,7 @@ void CalSin16(int16 ang, int16 *val)
 void CalTan16(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(int16)(st.TanTable[ang]*100);
 	*val/=100;
@@ -183,6 +189,7 @@ void CalTan16(int16 ang, int16 *val)
 void CalCos32(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(int32)(st.CosTable[ang]*100);
 	*val/=100;
@@ -191,6 +198,7 @@ void CalCos32(int16 ang, int32 *val)
 void CalSin32(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(int32)(st.SinTable[ang]*100);
 	*val/=100;
@@ -199,6 +207,7 @@ void CalSin32(int16 ang, int32 *val)
 void CalTan32(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(int32)(st.TanTable[ang]*100);
 	*val/=100;
@@ -209,6 +218,7 @@ void CalTan32(int16 ang, int32 *val)
 void CalCos16(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(uint16)(st.CosTable[ang]*100);
 	*val/=100;
@@ -217,6 +227,7 @@ void CalCos16(int16 ang, uint16 *val)
 void CalSin16(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(uint16)(st.SinTable[ang]*100);
 	*val/=100;
@@ -225,6 +236,7 @@ void CalSin16(int16 ang, uint16 *val)
 void CalTan16(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(uint16)(st.TanTable[ang]*100);
 	*val/=100;
@@ -233,6 +245,7 @@ void CalTan16(int16 ang, uint16 *val)
 void CalCos32(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(uint32)(st.CosTable[ang]*100);
 	*val/=100;
@@ -241,6 +254,7 @@ void CalCos32(int16 ang, uint32 *val)
 void CalSin32(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(uint32)(st.SinTable[ang]*100);
 	*val/=100;
@@ -249,6 +263,7 @@ void CalSin32(int16 ang, uint32 *val)
 void CalTan32(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
+	else if(ang<0) ang*=-1;
 
 	*val*=(uint32)(st.TanTable[ang]*100);
 	*val/=100;
@@ -1153,7 +1168,7 @@ SHADER_CREATION:
 
 	st.game_lightmaps[0].t_pos[0].x=128;
 	st.game_lightmaps[0].t_pos[0].y=128;
-	st.game_lightmaps[0].t_pos[0].z=0;
+	st.game_lightmaps[0].t_pos[0].z=128;
 
 	st.game_lightmaps[0].t_pos[1].x=0;
 	st.game_lightmaps[0].t_pos[1].y=0;
@@ -1164,7 +1179,7 @@ SHADER_CREATION:
 	st.game_lightmaps[0].t_pos[2].z=0;
 
 	st.game_lightmaps[0].data=GenerateLightmap(st.game_lightmaps[0].T_w, st.game_lightmaps[0].T_h);
-	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255);
+	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[1].x,st.game_lightmaps[0].t_pos[1].y,st.game_lightmaps[0].t_pos[1].z,128);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
 
@@ -2355,7 +2370,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
-
+	
 	if(dim.x<0) dim.x*=-1;
 	if(dim.y<0) dim.y*=-1;
 
@@ -2392,22 +2407,29 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[2]=z;
 
-			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[5]=z;
 
-			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[8]=z;
 
-			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[11]=z;
 
+			//ang=1000;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 
@@ -2803,9 +2825,19 @@ int8 DrawUI(float x, float y, float sizex, float sizey, float ang, uint8 r, uint
 	return 0;
 }
 
-int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth)
+int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth, int32 z)
 {
-	uint8 val=0;
+	uint8 valx=0, valy=0;
+
+	uint16 i=0, j=0, k=0;
+
+	int32 x3, y3;
+
+	uint32 a1;
+
+	int16 ang;
+
+	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2;
 
 	PosF dim=st.Camera.dimension;
 
@@ -2823,39 +2855,99 @@ int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, f
 	x2-=st.Camera.position.x;
 	y2-=st.Camera.position.y;
 
-	if(x>dim.x) val++;
-	if(y>dim.y) val++;
+	if(x>dim.x) valx++;
+	if(y>dim.y) valy++;
 
-	if(x2>dim.x) val++;
-	if(y2>dim.y) val++;
+	if(x2>dim.x) valx++;
+	if(y2>dim.y) valy++;
 
-	if(val==4) return 1;
+	if(valx==2 || valy==2) return 1;
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	i=st.num_entities;
+
+	if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+		return 2;
+
+	if(ent[i].stat==DEAD)
 	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
+		ent[i].stat=USED;
+		st.num_entities++;
+		ent[i].data.data=6;
+		ent[i].data.vb_id=-1;
 
-		if(ent[i].stat==DEAD)
+		x3=x2-x;
+		y3=y2-y;
+
+		ang2=atan2((float)y3,(float)x3);
+		ang2+=pi;
+		ang2=(180/pi)*ang2;
+		ang=ang2;
+		ang*=10;
+
+		linewidth/=2;
+		
+		ent[i].vertex[0]=(float) x-(linewidth*mSin(ang));
+		ent[i].vertex[1]=(float) y+(linewidth*mCos(ang));
+		ent[i].vertex[2]=z;
+
+		ent[i].vertex[3]=(float) x2-(linewidth*mSin(ang));
+		ent[i].vertex[4]=(float) y2+(linewidth*mCos(ang));
+		ent[i].vertex[5]=z;
+
+		ent[i].vertex[6]=(float) x2+(linewidth*mSin(ang));
+		ent[i].vertex[7]=(float) y2-(linewidth*mCos(ang));
+		ent[i].vertex[8]=z;
+
+		ent[i].vertex[9]=(float) x+(linewidth*mSin(ang));
+		ent[i].vertex[10]=(float) y-(linewidth*mCos(ang));
+		ent[i].vertex[11]=z;
+
+		ax=(float) 1/(16384/2);
+		ay=(float) 1/(8192/2);
+
+		ay*=-1.0f;
+
+		az=(float) 1/(4096/2);
+
+		ent[i].texcor[0]=0;
+		ent[i].texcor[1]=0;
+		ent[i].texcor[2]=1;
+		ent[i].texcor[3]=0;
+		ent[i].texcor[4]=1;
+		ent[i].texcor[5]=1;
+		ent[i].texcor[6]=0;
+		ent[i].texcor[7]=1;
+
+		for(j=0;j<12;j+=3)
 		{
-			/*
-			ent[i].stat=USED;
-			ent[i].ang=0;
-			ent[i].pos.x=(st.screenx*x)/16384;
-			ent[i].pos.y=(st.screeny*y)/8192;
-			ent[i].size.x=(x2*st.screenx)/16384;
-			ent[i].size.y=(y2*st.screeny)/8192;
-			ent[i].type=LINE;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-			ent[i].data=linewidth;
-			st.num_tex++;
-			st.num_entities++;
-			*/
-			break;
+			ent[i].vertex[j]*=ax;
+			ent[i].vertex[j]-=1;
+
+			ent[i].vertex[j+1]*=ay;
+			ent[i].vertex[j+1]+=1;
+				
+			ent[i].vertex[j+2]*=az;
+			ent[i].vertex[j+2]-=1;
+				
+			if(j<8)
+			{
+				ent[i].texcor[j]/=(float)32768;
+				ent[i].texcor[j+1]/=(float)32768;
+				ent[i].texcor[j+2]/=(float)32768;
+			}
+				
 		}
+
+		for(j=0;j<16;j+=4)
+		{
+			ent[i].color[j]=r;
+			ent[i].color[j+1]=g;
+			ent[i].color[j+2]=b;
+			ent[i].color[j+3]=a;
+		}
+
+		texone_ids[texone_num]=i;
+		texone_num++;
 	}
 
 	return 0;
@@ -3596,7 +3688,7 @@ void Renderer()
 
 		for(i=0;i<texone_num;i++)
 		{
-			//glActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE0);
 
 			if(i==0)
 				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
@@ -3690,7 +3782,7 @@ void Renderer()
 
 		for(i=0;i<texone_num;i++)
 		{
-			//glActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE0);
 
 			if(i==0)
 				glBindTexture(GL_TEXTURE_2D,ent[texone_ids[i]].data.data);
@@ -3740,7 +3832,7 @@ void Renderer()
 				unif=glGetUniformLocation(st.renderer.Program[2],"texu");
 				glUniform1i(unif,0);
 
-				//glActiveTexture(GL_TEXTURE0);
+				glActiveTexture(GL_TEXTURE0);
 
 				if(vbdt[i].normal)
 				{
@@ -3774,7 +3866,7 @@ void Renderer()
 
 		for(i=0;i<texone_num;i++)
 		{
-			//glActiveTexture(GL_TEXTURE0);
+			glActiveTexture(GL_TEXTURE0);
 
 			glUseProgram(st.renderer.Program[2]);
 

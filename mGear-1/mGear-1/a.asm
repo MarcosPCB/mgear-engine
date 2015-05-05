@@ -82,7 +82,7 @@ _CheckBounds proc near
 	mov eax, t1
 	mov ebx, t2
 	mov ecx, x
-	add eax, ebx
+	sub eax, ebx
 	add ecx, eax
 
 	mov eax, dimx
@@ -176,7 +176,7 @@ P3:
 		mov eax, t1
 		mov ebx, t2
 		mov ecx, x
-		add eax, ebx
+		sub eax, ebx
 		add ecx, eax
 
 		mov eax, dimx
@@ -270,7 +270,7 @@ P5:
 		mov eax, t1
 		mov ebx, t2
 		mov ecx, x
-		add eax, ebx
+		sub eax, ebx
 		add ecx, eax
 
 		mov eax, dimx
@@ -364,7 +364,7 @@ P7:
 		mov eax, t1
 		mov ebx, t2
 		mov ecx, x
-		add eax, ebx
+		sub eax, ebx
 		add ecx, eax
 
 		mov eax, dimx
@@ -441,7 +441,6 @@ DRAW:
 		pop ebp
 		mov eax, 0
 		ret
-
 
 _CheckBounds ENDP
 

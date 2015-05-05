@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
 	long long unsigned int time=st.time;
 
 	int32 anim=0;
+	int16 ang=0;
 
 	Pos fulg;
 	fulg.x=6840;
@@ -299,20 +300,23 @@ int main(int argc, char *argv[])
 	//st.Camera.dimension.x=2;
 	//st.Camera.dimension.y=2;
 
-				
+		
 	if(st.mouse_wheel>0)
 	{
-		st.Camera.dimension.x+=0.1;
-		st.Camera.dimension.y+=0.1;
+		//st.Camera.dimension.x+=0.1;
+		//st.Camera.dimension.y+=0.1;
+		ang+=100;
 		st.mouse_wheel=0;
 	}
 	
 	if(st.mouse_wheel<0)
 	{
-		st.Camera.dimension.x-=0.1;
-		st.Camera.dimension.y-=0.1;
+		//st.Camera.dimension.x-=0.1;
+		//st.Camera.dimension.y-=0.1;
+		ang-=100;
 		st.mouse_wheel=0;
 	}
+	
 				/*
 				DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
 				DrawLight(2048,2048,32,255,255,255,255,POINT_LIGHT_MEDIUM,255,5.0f,600);
@@ -347,7 +351,9 @@ int main(int argc, char *argv[])
 					//for(y2=0;y2<50;y2++)
 					//{
 						DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
-						DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,0);
+						DrawLine(8192,4096,x2,y2,255,255,255,255,128,1);
+						//DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,0);
+						
 					//}
 				
 				//DrawSprite(8192,4096,4096,4096,0,255,255,255,mgg[1].frames[58],255,100);
