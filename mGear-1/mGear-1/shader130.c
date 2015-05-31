@@ -36,15 +36,14 @@ const char *Texture_FShader[64]={
 	"{\n"
 		"vec4 NormalColor = vec4(0.501, 0.501, 1.0, 1.0);\n"
 
-		"if(texture(texu,TexCoord2).a < 1.0)\n"
-			"discard;\n"
-
+		"vec4 Diffuse = texture(texu, TexCoord2);\n"
+		
 		"if(normal == 0 || normal == 1)\n"
-			"FColor = texture(texu,TexCoord2);\n"
+			"FColor = Diffuse;\n"
 		"else\n"
 		"if(normal == 2)\n"
 			"FColor = NormalColor;\n"
-	"};\n"
+	"};"
 
 };
 
@@ -61,11 +60,11 @@ const char *TextureNoT_FShader[64]={
 
 	"void main()\n"
 	"{\n"
-		"vec4 Diffuse = texture(texu, TexCoord2);\n"
+		"vec4 Diffuse = texture(texu, TexCoord2) * colore;\n"
 
 		"if(Diffuse.a < 1.0)\n"
 			"discard;\n"
-		//"else\n"
+		"else\n"
 		"FColor = Diffuse;\n"
 	"};\n"
 
@@ -87,14 +86,17 @@ const char *TextureT_FShader[64]={
 	"void main()\n"
 	"{\n"
 		"vec4 Diffuse = texture(texu, TexCoord2) * colore;\n"
-		"vec4 Bckg = texture(texu2, TexCoord2) * colore;\n"
+		"vec4 Bckg = texture(texu2, TexCoord2);\n"
 
 		"if(Diffuse.a == 1.0)\n"
 			"discard;\n"
 		//"else\n"
-		"if(Diffuse.a < 1.0 && Diffuse.a > 0.5)\n"
+		//"if(Diffuse.a < 0.5)\n"
+			//"discard;\n"
+		"else\n"
+		//"if(Diffuse.a < 1.0 && Diffuse.a > 0.4)\n"
 		"{\n"
-			"FColor = vec4((Diffuse.a * Diffuse.rgb) * Bckg.rgb, 1.0);\n"
+			"FColor = vec4((Diffuse.a * Diffuse.rgb) + ((1.0 - Diffuse.a) * Bckg.rgb), 1.0);\n"
 		"}\n"
 
 		
@@ -250,7 +252,7 @@ const char *Lightmap_FShader[128]={
 
 		"vec3 N = normalize(NormalMap * 2.0 - 1.0);\n"
 
-		"FColor = DiffuseColor * (Lightmap * max(dot(N, L), 0.0));\n"
+		"FColor = DiffuseColor * (Lightmap);\n" //* max(dot(N, L), 0.0));\n"
 
 	"}\n"
 };

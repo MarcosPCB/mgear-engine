@@ -36,8 +36,8 @@
 #ifndef _ENGINE_H
 #define _ENGINE_H
 
-#define MAX_SPRITES 512
-#define MAX_GRAPHICS 6656
+#define MAX_SPRITES 256
+#define MAX_GRAPHICS 2048
 #define TICSPERSECOND 100
 #define MAX_CHANNELS 32
 #define MUSIC_CHANNEL MAX_CHANNELS-1
@@ -115,6 +115,9 @@ struct VB_DATAT
 	GLuint Ntexture; //normal map
 	uint8 normal; //boolean for verification
 	uint16 num_elements;
+	//uint16 quad_loc[MAX_GRAPHICS];
+	GLint imgdata;
+	//uint8 imgNdata;
 	int w, h;
 };
 
@@ -124,6 +127,7 @@ struct _TEX_DATA
 	GLuint Ndata; //normal map
 	uint8 normal; //boolean for verification
 	int16 vb_id;
+	uint16 loc;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
 	int w, h, channel; //texture dimensions
@@ -225,7 +229,8 @@ struct _MGG
 	uint16 num_frames;
 	_MGGTYPE type;
 	TEX_DATA *frames; //single-texture and atlas objects data
-	GLuint *atlas; //texture atlas data
+	GLint *atlas;
+
 	Pos *size;
 	//Pos *sizefix;
 	uint32 num_anims;
