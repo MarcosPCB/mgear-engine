@@ -1335,7 +1335,7 @@ SHADER_CREATION:
 	st.game_lightmaps[0].t_pos[2].z=0;
 
 	st.game_lightmaps[0].data=GenerateLightmap(st.game_lightmaps[0].T_w, st.game_lightmaps[0].T_h);
-	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255);
+	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,0.1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[1].x,st.game_lightmaps[0].t_pos[1].y,st.game_lightmaps[0].t_pos[1].z,128);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
 
@@ -2565,7 +2565,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	ay*=100;
 	k=(int32) ay;
 
-	//if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+	if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
 
 	if(valx == 4 || valy == 4)
 		return 1;
@@ -3071,6 +3071,11 @@ int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, f
 		st.num_entities++;
 		ent[i].data.data=6;
 		ent[i].data.vb_id=-1;
+
+		if(z>23) z=23;
+
+		z_buffer[z][z_slot[z]]=i;
+		z_slot[z]++;
 
 		x3=x2-x;
 		y3=y2-y;
@@ -3984,7 +3989,7 @@ void Renderer()
 					unif=glGetUniformLocation(st.renderer.Program[2],"normal");
 					glUniform1f(unif,0);
 					*/
-					//glActiveTexture(GL_TEXTURE0);
+					glActiveTexture(GL_TEXTURE0);
 
 					if(tex_bound[0]!=vbdt[m].texture)
 					{

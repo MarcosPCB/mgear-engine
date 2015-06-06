@@ -343,23 +343,23 @@ int main(int argc, char *argv[])
 
 				int32 x2, y2;
 
-				//x2=st.mouse.x;
-				//y2=st.mouse.y;
-				//STW(&x2,&y2);
+				x2=st.mouse.x;
+				y2=st.mouse.y;
+				STW(&x2,&y2);
 				//x2=GetTicks();
 				DrawLightmap(st.game_lightmaps[0].w_pos.x,st.game_lightmaps[0].w_pos.y,st.game_lightmaps[0].w_pos.z,st.game_lightmaps[0].W_w,st.game_lightmaps[0].W_h,st.game_lightmaps[0].tex,POINT_LIGHT_MEDIUM);
 				//y2=GetTicks() - x2;
 
 				//timej=GetTicks();
-				for(x2=0;x2<2048;x2+=2)
-					for(y2=0;y2<2048;y2+=2)
+				//for(x2=0;x2<2048;x2+=32)
+					//for(y2=0;y2<2048;y2+=32)
 					//{
-						DrawSprite(x2,y2,512,512,0,255,255,255,mgg[1].frames[1],255,0);
+						//DrawSprite(x2,y2,512,512,0,255,255,255,mgg[1].frames[1],255,0);
 						//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
-						//DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,2);
+						DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,2);
 						//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
 						//DrawSprite(8192,8192,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
-						//DrawLine(8192,4096,x2,y2,255,255,255,255,128,1);
+						DrawLine(8192,4096,x2,y2,255,255,255,255,16,0);
 						
 					//}
 				//timel=GetTicks() - timej;
