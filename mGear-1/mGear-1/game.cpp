@@ -183,13 +183,15 @@ int main(int argc, char *argv[])
 
 	char num[64];
 
+	uint32 timej, timel;
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
 			FPSCounter();
-
+		//timej=GetTicks();
 		InputProcess();
-
+		//timel=GetTicks() - timej;
 		if(startmovie==0)
 		{
 			PlayMovie("LOGOHD.MGV");
@@ -290,7 +292,7 @@ int main(int argc, char *argv[])
 		//MAnim(fulg.x-st.Camera.position.x,fulg.y-st.Camera.position.y,3048,3048,0,255,255,255,&mgg[0],1,0.3,2);
 
 	
-	uint32 timej, timel;
+	
 
 	//timej=GetTicks();
 
@@ -336,7 +338,7 @@ int main(int argc, char *argv[])
 				*/
 				
 				//DrawLight(8192,2048,1,0,255,128,32,POINT_LIGHT_MEDIUM,255,5.0f,600);
-				DrawLight(4096,2048,1,0,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f,600);
+				//DrawLight(4096,2048,1,0,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f,600);
 
 
 				int32 x2, y2;
@@ -344,13 +346,15 @@ int main(int argc, char *argv[])
 				//x2=st.mouse.x;
 				//y2=st.mouse.y;
 				//STW(&x2,&y2);
-
+				//x2=GetTicks();
 				DrawLightmap(st.game_lightmaps[0].w_pos.x,st.game_lightmaps[0].w_pos.y,st.game_lightmaps[0].w_pos.z,st.game_lightmaps[0].W_w,st.game_lightmaps[0].W_h,st.game_lightmaps[0].tex,POINT_LIGHT_MEDIUM);
-				
-				for(x2=0;x2<2048;x2+=50)
-					for(y2=0;y2<2048;y2+=50)
+				//y2=GetTicks() - x2;
+
+				//timej=GetTicks();
+				for(x2=0;x2<2048;x2+=2)
+					for(y2=0;y2<2048;y2+=2)
 					//{
-						DrawSprite(x2,y2,512,512,0,255,255,255,mgg[1].frames[59],255,0);
+						DrawSprite(x2,y2,512,512,0,255,255,255,mgg[1].frames[1],255,0);
 						//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
 						//DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,2);
 						//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
@@ -358,7 +362,7 @@ int main(int argc, char *argv[])
 						//DrawLine(8192,4096,x2,y2,255,255,255,255,128,1);
 						
 					//}
-				
+				//timel=GetTicks() - timej;
 				//DrawSprite(8192,4096,4096,4096,0,255,255,255,mgg[1].frames[58],255,100);
 				//DrawSprite(8192,4096,2048,2048,0,1,1,1,mgg[1].frames[59],255,2048);
 				//MAnim(8192,4096,2048,2048,0,1,1,1,&mgg[1],1,1,255);
@@ -389,8 +393,10 @@ int main(int argc, char *argv[])
 		//MainSound();
 
 		//timej=GetTicks();
-
+//x2=GetTicks();
 		Renderer();
+		//y2=GetTicks() - x2;
+		//x2=0;
 
 		//timel=GetTicks();
 		//LogApp("Render Time: %d",timel-timej);

@@ -115,6 +115,8 @@ struct VB_DATAT
 	GLuint Ntexture; //normal map
 	uint8 normal; //boolean for verification
 	uint16 num_elements;
+	uint16 buffer_elements;
+	uint16 num_elements2;
 	//uint16 quad_loc[MAX_GRAPHICS];
 	GLint imgdata;
 	//uint8 imgNdata;
