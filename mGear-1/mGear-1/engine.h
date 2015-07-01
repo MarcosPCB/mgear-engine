@@ -528,11 +528,29 @@ struct Joy
 	} axis[6];
 }
 */
+/*
+struct UNIFORM_SHADER
+{
+	GLenum type;
+	GLint loc;
+	GLint vali;
+	GLfloat valf;
+	GLfloat valv2[2];
+	GLfloat valv3[3];
+	GLfloat valv4[4];
+	GLdouble vald;
+};
 
+struct PROGRAM_SHADER
+{
+	GLuint VShader, FShader, GShader, Program;
+	UNIFORM_SHADER *uniforms;
+
+	int8 num_uniforms;
+};
+*/
 struct Render
 {
-
-
 	uint8 VAO_ON;
 
 	GLuint VAO_1Q;
@@ -541,10 +559,18 @@ struct Render
 
 	uint8 VA_ON;
 
+	//Basic shaders
 	GLuint VShader[16];
 	GLuint FShader[16];
 	GLuint GShader[16];
 	GLuint Program[16];
+
+	//Custom shaders
+	/*
+	PROGRAM_SHADER Custom_Shader[8];
+	uint8 use_custom_shader;
+	uint8 num_custom_shaders;
+	*/
 
 	GLuint FBO[4];
 	GLuint FBTex[8];
