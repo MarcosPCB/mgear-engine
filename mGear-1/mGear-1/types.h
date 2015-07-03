@@ -13,15 +13,22 @@ typedef struct
 {
 	int32 x;
 	int32 y;
+	int32 z;
 } Pos;
 
 typedef struct
 {
-	float r;
-	float g;
-	float b;
-	float a;
-} Color;
+	uint16 x;
+	uint16 y;
+	uint16 z;
+} uPos16;
+
+typedef struct
+{
+	float x;
+	float y;
+	float z;
+} PosF;
 
 typedef struct
 {
@@ -29,6 +36,14 @@ typedef struct
 	uint8 g;
 	uint8 b;
 	uint8 a;
-} Colori;
+} Color;
+
+typedef struct
+{
+	float r;
+	float g;
+	float b;
+	float a;
+} ColorF;
 
 #endif

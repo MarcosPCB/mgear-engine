@@ -9,7 +9,7 @@ uint16 WriteCFG()
 	FILE *file;
 
 	if((file=fopen("settings.cfg","w"))==NULL)
-		return false;
+		return 0;
 
 	st.screenx=800;
 	st.screeny=600;
@@ -29,7 +29,7 @@ uint16 WriteCFG()
 
 	fclose(file);
 
-	return true;
+	return 1;
 }
 
 uint16 LoadCFG()
@@ -38,8 +38,8 @@ uint16 LoadCFG()
 	char buf[128], str[128];
 	int value=0;
 	if((file=fopen("settings.cfg","r"))==NULL)
-		if(WriteCFG()==false)
-			return false;
+		if(WriteCFG()==0)
+			return 0;
 
 	while(!feof(file))
 	{
@@ -57,13 +57,13 @@ uint16 LoadCFG()
 	if(!st.screenx || !st.screeny || !st.bpp || !st.audioc || !st.audioc || st.vsync>1)
 	{
 		fclose(file);
-		if(WriteCFG()==false)
-			return false;
+		if(WriteCFG()==0)
+			return 0;
 	}
 
 	fclose(file);
 
-	return true;
+	return 1;
 
 }
 /*
@@ -133,8 +133,24 @@ int main(int argc, char *argv[])
 {
 
 	register uint32 i=0, j=0;
+	int32 startmovie=1;
+	long long unsigned int time=st.time;
 
-	if(LoadCFG()==false)
+	char num[64];
+
+	uint32 timej, timel;
+
+	int32 anim=0;
+	int16 ang=0;
+
+	int32 x2, y2;
+
+	st.FPSYes=1;
+
+	st.test=0.075f;
+	st.test2=1.0;
+
+	if(LoadCFG()==0)
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
 
@@ -152,38 +168,9 @@ int main(int argc, char *argv[])
 	LoadMGG(&mgg[1],"fulgore.mgg");
 	LoadMGG(&mgg[0],"tex01.mgg");
 
-	int32 startmovie=1;
-
 	//LoadMap("TEST.MAP");
 	//LoadMGG(&mgg[3],st.Current_Map.MGG_FILES[0]);
 	//LoadMGG(&mgg[4],st.Current_Map.MGG_FILES[1]);
-	
-	long long unsigned int time=st.time;
-
-	int32 anim=0;
-	int16 ang=0;
-
-	Pos fulg;
-	fulg.x=6840;
-	fulg.y=4096;
-	Pos fulgsize;
-	fulgsize.x=3048;
-	fulgsize.y=3048;
-
-	Pos fulg1;
-	fulg1.x=14000;
-	fulg1.y=4096;
-	fulgsize.x=3048;
-	fulgsize.y=3048;
-
-	st.FPSYes=1;
-
-	st.test=0.075f;
-	st.test2=1.0;
-
-	char num[64];
-
-	uint32 timej, timel;
 
 	while(!st.quit)
 	{
@@ -341,7 +328,7 @@ int main(int argc, char *argv[])
 				//DrawLight(4096,2048,1,0,255,255,255,POINT_LIGHT_MEDIUM,255,2.0f,600);
 
 
-				int32 x2, y2;
+				
 
 				x2=st.mouse.x;
 				y2=st.mouse.y;
@@ -355,8 +342,9 @@ int main(int argc, char *argv[])
 					//for(y2=0;y2<2048;y2+=32)
 					//{
 						//DrawSprite(x2,y2,512,512,0,255,255,255,mgg[1].frames[1],255,0);
-						DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
+						
 						DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,2);
+						DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0);
 						//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
 						//DrawSprite(8192,8192,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
 						DrawLine(8192,4096,x2,y2,255,255,255,255,16,0);
@@ -405,5 +393,5 @@ int main(int argc, char *argv[])
 	StopAllSounds();
 	//FreeMGG(&mgg[0]);
 	Quit();
-	return true;
+	return 1;
 }

@@ -72,7 +72,7 @@ typedef FMOD_CHANNEL Channel;
 #define MGG_MAP_START 3 //The first slot to be used for loading map MGGs
 #define MGG_SPRITE_START MGG_MAP_START+MAX_MAPMGG
 
-double inline __declspec () __fastcall sqrt14(double n);
+//double inline  sqrt14(double n)
 
 #define LogApp SDL_Log
 #define LogErr SDL_LogError
@@ -82,7 +82,7 @@ double inline __declspec () __fastcall sqrt14(double n);
 
 //#define MAX_MGVFRAMES 65536
 
-enum Enttype
+enum _Enttype
 {
 	SPRITE,
 	HUD,
@@ -96,13 +96,17 @@ enum Enttype
 	ent_none
 };
 
-enum Stat
+typedef enum _Enttype Enttype;
+
+enum _Stat
 {
 	DEAD,
 	USED
 };
 
-struct VB_DATAT
+typedef enum _Stat Stat;
+
+struct _VB_DATAT
 {
 	GLuint vao_id;
 	GLuint ibo_id;
@@ -123,6 +127,8 @@ struct VB_DATAT
 	int w, h;
 };
 
+typedef struct _VB_DATAT VB_DATAT;
+
 struct _TEX_DATA
 {
 	GLuint data;
@@ -132,12 +138,14 @@ struct _TEX_DATA
 	uint16 loc;
 	uint16 posx, posy; //position in atlas
 	uint16 sizex, sizey; //size in atlas
-	int w, h, channel; //texture dimensions
+	int w; 
+	int h; 
+	int channel; //texture dimensions
 };
 
 typedef struct _TEX_DATA TEX_DATA;
 
-struct _ENTITIES //To be rendered
+struct _ENTITIES_ //To be rendered
 {
 	Enttype type;
 	Pos pos;
@@ -153,7 +161,9 @@ struct _ENTITIES //To be rendered
 	ColorF Color;
 };
 
-enum LIGHT_TYPE
+typedef struct _ENTITIES_ _ENTITIES;
+
+enum _LIGHT_TYPE
 {
 	AMBIENT_LIGHT,
 	POINT_LIGHT_MEDIUM,
@@ -161,13 +171,17 @@ enum LIGHT_TYPE
 	SPOTLIGHT
 };
 
-enum LIGHTENG_TYPE
+typedef enum _LIGHT_TYPE LIGHT_TYPE;
+
+enum _LIGHTENG_TYPE
 {
 	STATIC_LIGHT,
 	DYNAMIC_LIGHT
 };
 
-struct _LIGHTS
+typedef enum _LIGHT_TYPE LIGHT_TYPE;
+
+struct _LIGHTS_
 {
 	LIGHT_TYPE type;
 	PosF pos;
@@ -176,14 +190,18 @@ struct _LIGHTS
 	float radius;
 };
 
-struct Key
+typedef struct _LIGHTS_ _LIGHTS;
+
+struct _Key
 {
 	SDL_Scancode key;
 	uint8 state;
 };
 
+typedef struct _Key Key;
+
 //FMOD sound system
-struct _SOUNDSYS
+struct _SOUNDSYS_
 {
 	FMOD_SYSTEM *Sound_System;
 	Sound *slots[MAX_SOUNDS];
@@ -192,14 +210,18 @@ struct _SOUNDSYS
 	int16 slotch_ID[MAX_CHANNELS];
 };
 
-enum _MGGTYPE
+typedef struct _SOUNDSYS_ _SOUNDSYS;
+
+enum _MGGTYPE_
 {
 	SPRITEM,
 	TEXTUREM,
 	NONE
 };
 
-struct _MGGANIM
+typedef enum _MGGTYPE_ _MGGTYPE;
+
+struct _MGGANIM_
 {
 	char name[32];
 	uint16 num_frames;
@@ -209,8 +231,10 @@ struct _MGGANIM
 	int8 speed;
 };
 
+typedef struct _MGGANIM_ _MGGANIM;
+
 //File header
-struct _MGGFORMAT
+struct _MGGFORMAT_
 {
 	char name[32];
 	uint16 num_frames;
@@ -224,8 +248,10 @@ struct _MGGFORMAT
 	size_t framesize_offset;
 };
 
+typedef struct _MGGFORMAT_ _MGGFORMAT;
+
 //MGG -> MGear Graphics
-struct _MGG
+struct _MGG_
 {
 	char name[32];
 	uint16 num_frames;
@@ -239,15 +265,19 @@ struct _MGG
 	_MGGANIM *anim;
 };
 
+typedef struct _MGG_ _MGG;
+
 //File header for the video
-struct _MGVFORMAT
+struct _MGVFORMAT_
 {
 	uint32 num_frames;
 	uint8 fps;
 	uint32 sound_buffer_lenght;
 };
 
-struct _MGVTEX
+typedef struct _MGVFORMAT_ _MGVFORMAT;
+
+struct _MGVTEX_
 {
 	GLuint ID;
 	SDL_Surface *data;
@@ -255,8 +285,10 @@ struct _MGVTEX
 	SDL_RWops *rw;
 };
 
+typedef struct _MGVTEX_ _MGVTEX;
+
 //MGV -> MGear Video
-struct _MGV
+struct _MGV_
 {
 	uint32 num_frames;
 	_MGVTEX *frames;
@@ -268,17 +300,21 @@ struct _MGV
 	uint32 *seeker;
 };
 
+typedef struct _MGV_ _MGV;
+
 //This is where all map textures information stays
 //Each map has it's on set of MGG that can be shared between the other maps
 //Some MGGs that contains the menu and some UI textures are basic and contain it's own structure
-struct _TEXTURES
+struct _TEXTURES_
 {
 	uint32 ID;
 	uint16 MGG_ID;
 	char name[32];
 };
 
-enum _SPRITE_G
+typedef struct _TEXTURES_ _TEXTURES;
+
+enum _SPRITE_G_
 {
 	GAME_LOGICAL,
 	ENEMY,
@@ -287,7 +323,9 @@ enum _SPRITE_G
 	dead
 };
 
-enum Material
+typedef enum _SPRITE_G_ _SPRITE_G;
+
+enum _Material
 {
 	METAL,
 	WOOD,
@@ -296,6 +334,8 @@ enum Material
 	ORGANIC,
 	MATERIAL_END
 };
+
+typedef enum _Material Material;
 
 struct _BODY
 {
@@ -318,7 +358,7 @@ struct _BODY
 
 typedef struct _BODY Body;
 
-enum _OBJTYPE
+enum _OBJTYPE_
 {
 	BACKGROUND1,
 	BACKGROUND2,
@@ -328,10 +368,12 @@ enum _OBJTYPE
 	BLANK
 };
 
+typedef enum _OBJTYPE_ _OBJTYPE;
+
 //Structure for the sprites in the game
 //When you create a sprite in the source code
 //You must add it to the structure
-struct _SPRITES
+struct _SPRITES_
 {
 	char name[64];
 	int16 MGG_ID;
@@ -347,7 +389,9 @@ struct _SPRITES
 	Body body;
 };
 
-enum _OBJBLOCK
+typedef struct _SPRITES_ _SPRITES;
+
+enum _OBJBLOCK_
 {
 	ALL,
 	PLAYER,
@@ -356,7 +400,9 @@ enum _OBJBLOCK
 	none
 };
 
-enum _SPRITE_T
+typedef enum _OBJBLOCK_ _OBJBLOCK;
+
+enum _SPRITE_T_
 {
 	ANIMATED,
 	TEXTURED,
@@ -364,7 +410,9 @@ enum _SPRITE_T
 	non
 };
 
-struct _SECTOR
+typedef enum _SPRITE_T_ _SPRITE_T;
+
+struct _SECTOR_
 {
 	Pos position;
 	Pos vertex[4];
@@ -381,7 +429,9 @@ struct _SECTOR
 	int16 id;
 };
 
-struct _MGMLIGHT
+typedef struct _SECTOR_ _SECTOR;
+
+struct _MGMLIGHT_
 {
 	Pos position;
 	Pos size;
@@ -391,7 +441,9 @@ struct _MGMLIGHT
 	int16 tag;
 };
 
-struct _MGMOBJ
+typedef struct _MGMLIGHT_ _MGMLIGHT;
+
+struct _MGMOBJ_
 {
 	Pos position;
 	Pos size;
@@ -407,8 +459,10 @@ struct _MGMOBJ
 	uint8 amblight;
 };
 
+typedef struct _MGMOBJ_ _MGMOBJ;
+
 //Map sprites
-struct _MGMSPRITE
+struct _MGMSPRITE_
 {
 	//if it's just a texture, you MUST inform the frame ID
 	uint16 MGG_ID;
@@ -445,9 +499,11 @@ struct _MGMSPRITE
 	Color color;
 };
 
+typedef struct _MGMSPRITE_ _MGMSPRITE;
+
 
 //MGM -> MGear Map
-struct _MGM
+struct _MGM_
 {
 	char name[32];
 	_MGMSPRITE *sprites;
@@ -462,7 +518,9 @@ struct _MGM
 	char MGG_FILES[32][256];
 };
 
-struct _MGMFORMAT
+typedef struct _MGM_ _MGM;
+
+struct _MGMFORMAT_
 {
 	char name[32];
 	uint16 num_sprites;
@@ -473,14 +531,18 @@ struct _MGMFORMAT
 	char MGG_FILES[32][256];
 };
 
-struct _CAMERA
+typedef struct _MGMFORMAT_ _MGMFORMAT;
+
+struct _CAMERA_
 {
 	Pos position;
 	int16 angle;
 	PosF dimension;
 };
 
-enum GAME_STATE
+typedef struct _CAMERA_ _CAMERA;
+
+enum _GAME_STATE
 {
 	MAIN_MENU,
 	INGAME,
@@ -489,14 +551,16 @@ enum GAME_STATE
 	LOADING
 };
 
-struct Control
+typedef enum _GAME_STATE GAME_STATE;
+
+struct _Control
 {
 	SDL_GameController *device;
 
 	struct Button
 	{
 		SDL_GameControllerButton name;
-		uint8 state;;
+		uint8 state;
 	} button[15];
 
 	struct Axis
@@ -510,6 +574,9 @@ struct Control
 
 	SDL_Joystick *joystick;
 };
+
+typedef struct _Control Control;
+
 /*
 struct Joy
 {
@@ -549,7 +616,7 @@ struct PROGRAM_SHADER
 	int8 num_uniforms;
 };
 */
-struct Render
+struct _Render
 {
 	uint8 VAO_ON;
 
@@ -581,13 +648,17 @@ struct Render
 	uint16 shader_version;
 };
 
-struct TFont
+typedef struct _Render Render;
+
+struct _TFont
 {
 	char name[64];
 	TTF_Font *font;
 };
 
-struct _GAME_LIGHTMAPS
+typedef struct _TFont TFont;
+
+struct _GAME_LIGHTMAPS_
 {
 	Pos w_pos;
 
@@ -606,9 +677,11 @@ struct _GAME_LIGHTMAPS
 	GLuint tex;
 };
 
+typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
+
 //The main structure
 //Contais all the information about the game
-struct _SETTINGS
+struct _SETTINGS_
 {
 	uint32 backtrack;
 	char typetext[128];
@@ -693,6 +766,8 @@ struct _SETTINGS
 	float SinTable[3600];
 	float TanTable[3600];
 };
+
+typedef struct _SETTINGS_ _SETTINGS;
 
 #endif
 

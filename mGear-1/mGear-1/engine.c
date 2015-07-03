@@ -50,14 +50,7 @@ const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 
 #define timer SDL_Delay
 
-double inline __declspec (naked) __fastcall sqrt14(double n)
-{
-	_asm fld qword ptr [esp+4]
-	_asm fsqrt
-	_asm ret 8
-} 
-
-void LogIn(void *userdata, int category, SDL_LogPriority, const char *message)
+void LogIn(void *userdata, int category, SDL_LogPriority log, const char *message)
 {
 	FILE *file;
 	size_t size;
@@ -169,7 +162,7 @@ float mTan(int16 ang)
 
 
 //Signed
-void CalCos16(int16 ang, int16 *val)
+void CalCos16s(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -178,7 +171,7 @@ void CalCos16(int16 ang, int16 *val)
 	*val/=100;
 }
 
-void CalSin16(int16 ang, int16 *val)
+void CalSin16s(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -187,7 +180,7 @@ void CalSin16(int16 ang, int16 *val)
 	*val/=100;
 }
 
-void CalTan16(int16 ang, int16 *val)
+void CalTan16s(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -196,7 +189,7 @@ void CalTan16(int16 ang, int16 *val)
 	*val/=100;
 }
 
-void CalCos32(int16 ang, int32 *val)
+void CalCos32s(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -205,7 +198,7 @@ void CalCos32(int16 ang, int32 *val)
 	*val/=100;
 }
 
-void CalSin32(int16 ang, int32 *val)
+void CalSin32s(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -214,7 +207,7 @@ void CalSin32(int16 ang, int32 *val)
 	*val/=100;
 }
 
-void CalTan32(int16 ang, int32 *val)
+void CalTan32s(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -225,7 +218,7 @@ void CalTan32(int16 ang, int32 *val)
 
 
 //Unsigned
-void CalCos16(int16 ang, uint16 *val)
+void CalCos16u(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -234,7 +227,7 @@ void CalCos16(int16 ang, uint16 *val)
 	*val/=100;
 }
 
-void CalSin16(int16 ang, uint16 *val)
+void CalSin16u(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -243,7 +236,7 @@ void CalSin16(int16 ang, uint16 *val)
 	*val/=100;
 }
 
-void CalTan16(int16 ang, uint16 *val)
+void CalTan16u(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -252,7 +245,7 @@ void CalTan16(int16 ang, uint16 *val)
 	*val/=100;
 }
 
-void CalCos32(int16 ang, uint32 *val)
+void CalCos32u(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -261,7 +254,7 @@ void CalCos32(int16 ang, uint32 *val)
 	*val/=100;
 }
 
-void CalSin32(int16 ang, uint32 *val)
+void CalSin32u(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -270,7 +263,7 @@ void CalSin32(int16 ang, uint32 *val)
 	*val/=100;
 }
 
-void CalTan32(int16 ang, uint32 *val)
+void CalTan32u(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
 	else if(ang<0) ang*=-1;
@@ -304,21 +297,21 @@ unsigned char *GenerateLightmap(uint16 w, uint16 h)
 	return data;
 }
 
-uint8 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity)
+uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity)
 {
-	register uint16 i, j;
+	uint16 i, j;
 	double d, att;
 	uint16 col;
 
 	if(!data)
-		return NULL;
+		return 0;
 	
 	for(i=0;i<h;i++)
 	{
 		for(j=0;j<w;j++)
 		{
 			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
-			d=sqrt14(d);
+			d=sqrt(d);
 
 			if(d==0)
 				d=1;
@@ -361,7 +354,7 @@ GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h)
 	GLuint tex;
 
 	if(!data)
-		return NULL;
+		return 0;
 
 	glGenTextures(1,&tex);
 	glBindTexture(GL_TEXTURE_2D,tex);
@@ -379,7 +372,7 @@ GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h)
 uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h)
 {
 	if(!data)
-		return NULL;
+		return 0;
 
 	glBindTexture(GL_TEXTURE_2D,*tex);
 
@@ -754,7 +747,7 @@ static int16 UpdateVBO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 /*
 static int VBBuffProcess(void *data)
 {
-	register uint16 i=0;
+	 uint16 i=0;
 	uint16 current_ent=0;
 	uint8 done=0;
 
@@ -773,10 +766,8 @@ static int VBBuffProcess(void *data)
 
 void Init()
 {	
-	register uint16 i=0, j=0, l=0;
-	register float k=0;
-	
-	CreateLog();
+	 uint16 i=0, j=0, l=0;
+	 float k=0;
 
 	int check;
 	FMOD_RESULT result;
@@ -789,6 +780,8 @@ void Init()
 	GLint statusCM[32], statusLK[32];
 	GLchar logs[32][1024];
 
+	CreateLog();
+
 	vbd.vertex=(float*) malloc(12*sizeof(float));
 	vbd.texcoord=(float*) malloc(8*sizeof(float));
 #endif
@@ -797,27 +790,27 @@ void Init()
 	
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 
-	vbd.vertex[0]=-0.90;
-	vbd.vertex[1]=-0.90;
-	vbd.vertex[2]=0;
-	vbd.vertex[3]=-1;
-	vbd.vertex[4]=-0.90;
-	vbd.vertex[5]=0;
-	vbd.vertex[6]=-1;
-	vbd.vertex[7]=-1;
-	vbd.vertex[8]=0;
-	vbd.vertex[9]=-0.90;
-	vbd.vertex[10]=-1;
-	vbd.vertex[11]=0;
+	vbd.vertex[0]=-0.90f;
+	vbd.vertex[1]=-0.90f;
+	vbd.vertex[2]=0.0f;
+	vbd.vertex[3]=-1.0f;
+	vbd.vertex[4]=-0.90f;
+	vbd.vertex[5]=0.0f;
+	vbd.vertex[6]=-1.0f;
+	vbd.vertex[7]=-1.0f;
+	vbd.vertex[8]=0.0f;
+	vbd.vertex[9]=-0.90f;
+	vbd.vertex[10]=-1.0f;
+	vbd.vertex[11]=0.0f;
 
-	vbd.texcoord[0]=1;
-	vbd.texcoord[1]=1;
-	vbd.texcoord[2]=0;
-	vbd.texcoord[3]=1;
-	vbd.texcoord[4]=0;
-	vbd.texcoord[5]=0;
-	vbd.texcoord[6]=1;
-	vbd.texcoord[7]=0;
+	vbd.texcoord[0]=1.0f;
+	vbd.texcoord[1]=1.0f;
+	vbd.texcoord[2]=0.0f;
+	vbd.texcoord[3]=1.0f;
+	vbd.texcoord[4]=0.0f;
+	vbd.texcoord[5]=0.0f;
+	vbd.texcoord[6]=1.0f;
+	vbd.texcoord[7]=0.0f;
 
 #endif
 
@@ -873,10 +866,10 @@ void Init()
 
 	LogApp("FMOD system initialzed, %d channels",MAX_CHANNELS);
 	
-	for(register uint8 i=0;i<MAX_SOUNDS;i++)
+	for(i=0;i<MAX_SOUNDS;i++)
 		st.sound_sys.slot_ID[i]=-1;
 
-	for(register uint8 i=0;i<MAX_CHANNELS;i++)
+	for(i=0;i<MAX_CHANNELS;i++)
 		st.sound_sys.slotch_ID[i]=-1;
 
 	if(TTF_Init()==-1)
@@ -1431,7 +1424,7 @@ SHADER_CREATION:
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 
 	//Calculates Cos, Sin and Tan tables
-	for(k=0.0;k<360.0;k+=0.1)
+	for(k=0.0f;k<360.0f;k+=0.1f)
 	{
 		i=k*10;
 		st.CosTable[i]=cos((k*pi)/180);
@@ -1442,16 +1435,16 @@ SHADER_CREATION:
 	st.game_lightmaps[0].W_w=16384;
 	st.game_lightmaps[0].W_h=8192;
 
-	st.game_lightmaps[0].T_w=256;
-	st.game_lightmaps[0].T_h=256;
+	st.game_lightmaps[0].T_w=8;
+	st.game_lightmaps[0].T_h=8;
 
 	st.game_lightmaps[0].num_lights=1;
 	st.game_lightmaps[0].w_pos.x=8192;
 	st.game_lightmaps[0].w_pos.y=4096;
 	st.game_lightmaps[0].w_pos.z=0;
 
-	st.game_lightmaps[0].t_pos[0].x=128;
-	st.game_lightmaps[0].t_pos[0].y=128;
+	st.game_lightmaps[0].t_pos[0].x=4;
+	st.game_lightmaps[0].t_pos[0].y=4;
 	st.game_lightmaps[0].t_pos[0].z=0;
 
 	st.game_lightmaps[0].t_pos[1].x=0;
@@ -1513,7 +1506,7 @@ void RestartVideo()
 
 	SDL_DestroyWindow(wn);
 
-	wn=SDL_CreateWindow(st.WINDOW_NAME,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,st.screenx,st.screeny, st.fullscreen==1 ? SDL_WINDOW_FULLSCREEN : NULL | SDL_WINDOW_OPENGL);
+	//wn=SDL_CreateWindow(st.WINDOW_NAME,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,st.screenx,st.screeny, st.fullscreen==1 ? SDL_WINDOW_FULLSCREEN : NULL | SDL_WINDOW_OPENGL);
 
 	if(wn==NULL)
 	{
@@ -1552,15 +1545,19 @@ static FILE *DecompressFile(const char *name)
 {
 	FILE *f;
 
-	if((f=fopen(name,"rb"))==NULL)
-		return NULL;
-
-	FILE *file=tmpfile();
+	FILE *file;
 	size_t len;
 
 	char *buf, *buf2;
 
-	qlz_state_decompress *decomp=(qlz_state_decompress*) malloc(sizeof(qlz_state_decompress));
+	qlz_state_decompress *decomp;
+
+	if((f=fopen(name,"rb"))==NULL)
+		return NULL;
+
+	file=tmpfile();
+
+	decomp=(qlz_state_decompress*) malloc(sizeof(qlz_state_decompress));
 
 	fseek(f,0,SEEK_END);
 	len=ftell(f);
@@ -1585,13 +1582,13 @@ uint32 CheckMGGFile(const char *name)
 	FILE *file;
 	char header[21];
 
+	_MGGFORMAT mggf;
+
 	if((file=DecompressFile(name))==NULL)
 	{
 		LogApp("Error reading MGG file %s",name);
-			return false;
+			return 0;
 	}
-
-	_MGGFORMAT mggf;
 
 	rewind(file);
 
@@ -1601,7 +1598,7 @@ uint32 CheckMGGFile(const char *name)
 	{
 		LogApp("Invalid MGG file header %s",name);
 		fclose(file);
-		return false;
+		return 0;
 	}
 
 	rewind(file);
@@ -1612,11 +1609,11 @@ uint32 CheckMGGFile(const char *name)
 	{
 		fclose(file);
 		LogApp("Invalid MGG file %s",name);
-		return false;
+		return 0;
 	}
 
 	fclose(file);
-	return true;
+	return 1;
 }
 
 uint32 LoadMGG(_MGG *mgg, const char *name)
@@ -1625,7 +1622,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	void *data;
 	_MGGFORMAT mggf;
 	char header[21];
-	register uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
+	 uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
 	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES];
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
 	uint8 *imgatlas;
@@ -1634,13 +1631,14 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	unsigned char *imgdata;
 	uint8 normals[MAX_FRAMES];
 	uint32 normalsize[MAX_FRAMES];
+	_MGGANIM *mga;
 
 	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 
 	if((file=DecompressFile(name))==NULL)
 	{
 		LogApp("Error reading MGG file %s",name);
-			return false;
+			return 0;
 	}
 
 	rewind(file);
@@ -1651,7 +1649,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	{
 		LogApp("Invalid MGG file header %s",header);
 		fclose(file);
-		return false;
+		return 0;
 	}
 
 	fread(&mggf,sizeof(_MGGFORMAT),1,file);
@@ -1660,7 +1658,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	{
 		fclose(file);
 		LogApp("Invalid MGG file info %s",name);
-		return false;
+		return 0;
 	}
 
 	strcpy(mgg->name,mggf.name);
@@ -1672,8 +1670,6 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	mgg->num_anims=mggf.num_animations;
 
 	mgg->frames=(TEX_DATA*) calloc(mgg->num_frames,sizeof(TEX_DATA));
-
-	_MGGANIM *mga;
 
 	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
@@ -2327,15 +2323,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fclose(file);
 
-	return true;
+	return 1;
 		
 }
 
 void FreeMGG(_MGG *file)
 {
+	uint32 i;
+
 	file->type=NONE;
 
-	for(register uint32 i=0; i<file->num_frames; i++)
+	for(i=0; i<file->num_frames; i++)
 	{
 		//glDeleteTextures(1, &file->frames[i]);
 		file->size[i].x=NULL;
@@ -2355,7 +2353,9 @@ void FreeMGG(_MGG *file)
 
 void InitMGG()
 {
-	for(register uint16 i=0; i<MAX_MGG; i++)
+	uint16 i;
+
+	for(i=0; i<MAX_MGG; i++)
 	{
 		memset(&mgg[i],0,sizeof(_MGG));
 		mgg[i].type=NONE;
@@ -2364,6 +2364,8 @@ void InitMGG()
 
 uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4])
 {
+	uint8 i;
+
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	x-=st.Camera.position.x;
@@ -2381,7 +2383,7 @@ uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang
 	vert[3].x-=st.Camera.position.x;
 	vert[3].y-=st.Camera.position.y;
 
-	for(register uint8 i=0;i<4;i++)
+	for(i=0;i<4;i++)
 	{
 			if(i==0)
 			{
@@ -2425,7 +2427,7 @@ uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang
 			}
 	}
 
-	for(register uint8 i=0;i<4;i++)
+	for(i=0;i<4;i++)
 	{
 		if(i==0)
 		{
@@ -2450,6 +2452,8 @@ uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang
 
 uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt)
 {
+	uint8 i;
+
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	x-=st.Camera.position.x;
@@ -2458,7 +2462,7 @@ uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float 
 	tx-=st.Camera.position.x;
 	ty-=st.Camera.position.y;
 
-	for(register uint8 i=0;i<8;i++)
+	for(i=0;i<8;i++)
 	{
 		if(i<4)
 		{
@@ -2558,10 +2562,11 @@ uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float 
 
 uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 {
+	uint8 i;
 
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
-	for(register uint8 i=0;i<4;i++)
+	for(i=0;i<4;i++)
 	{
 			if(i==0)
 			{
@@ -2614,6 +2619,7 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 
 uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang)
 {
+	uint8 i;
 
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
@@ -2626,7 +2632,7 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	xsize=((xsize*st.screenx)/16384)*st.Camera.dimension.x;
 	ysize=((ysize*st.screeny)/8192)*st.Camera.dimension.y;
 
-	for(register uint8 i=0;i<4;i++)
+	for(i=0;i<4;i++)
 	{
 			if(i==0)
 			{
@@ -2682,8 +2688,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	float tmp, ax, ay, az;
 
 	uint8 valx=0, valy=0;
-	register uint32 i=0, j=0, k=0;
-	register int32 t1, t2, t3, t4, timej, timel;
+	 uint32 i=0, j=0, k=0;
+	 int32 t1, t2, t3, t4, timej, timel;
 	
 	PosF dim=st.Camera.dimension;
 	
@@ -2849,7 +2855,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius)
 {
-	register uint16 i=0;
+	 uint16 i=0;
 
 	uint8 val=0;
 	/*
@@ -2892,7 +2898,7 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 
 	if(val==8) return 1;
 	*/
-	//for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	//for( uint32 i=0;i<MAX_GRAPHICS+1;i++)
 	//{
 
 	i=st.num_lights;
@@ -2929,7 +2935,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 	int16 ang=0;
 
-	register uint32 i=0, j=0, k=0;
+	 uint32 i=0, j=0, k=0;
 	
 	PosF dim=st.Camera.dimension;
 	
@@ -3013,6 +3019,8 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY)
 {
+	uint32 i;
+
 	float tmp;
 
 	PosF dim=st.Camera.dimension;
@@ -3056,7 +3064,7 @@ int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r,
 
 	if(val==8) return 1;
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	for(i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(ent[i].stat==DEAD)
 		{
@@ -3091,10 +3099,12 @@ int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r,
 
 int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a)
 {
+	uint32 i;
+
 	float tmp;
 	uint8 val=0;
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	for(i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
@@ -3130,10 +3140,12 @@ int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uin
 
 int8 DrawUI(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a)
 {
+	uint32 i;
+
 	float tmp;
 	uint8 val=0;
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	for(i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
@@ -3323,17 +3335,20 @@ int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-	uint16 formatt;
+	uint16 formatt, i;
 
 	float tmp;
 
 	uint8 val=0;
 	
-	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
+	SDL_Surface *msg;
+
+	co.r=255;
+	co.g=255;
+	co.b=255;
+	co.a=255;
+	
+	msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 	if(msg->format->BytesPerPixel==4)
 	{
@@ -3345,7 +3360,7 @@ int8 DrawString(const char *text, float x, float y, float sizex, float sizey, fl
 		else formatt=GL_BGR_EXT;
 	}
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	for(i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
@@ -3389,17 +3404,20 @@ int8 DrawString(const char *text, float x, float y, float sizex, float sizey, fl
 int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-	uint16 formatt;
+	uint16 formatt, i;
 
 	float tmp;
 
 	uint8 val=0;
-	
-	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
+
+	SDL_Surface *msg;
+
+	co.r=255;
+	co.g=255;
+	co.b=255;
+	co.a=255;
+
+	msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 	if(msg->format->BytesPerPixel==4)
 	{
@@ -3411,7 +3429,7 @@ int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, 
 		else formatt=GL_BGR_EXT;
 	}
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	for(i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
@@ -3455,13 +3473,17 @@ int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, 
 int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
 {	
 	SDL_Color co;
+	
+	uint16 formatt, i;
+
+	SDL_Surface *msg;
+
 	co.r=255;
 	co.g=255;
 	co.b=255;
 	co.a=255;
-	uint16 formatt;
 
-	SDL_Surface *msg=TTF_RenderUTF8_Blended(f,text,co);
+	msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 	if(msg->format->BytesPerPixel==4)
 	{
@@ -3473,7 +3495,7 @@ int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey,
 		else formatt=GL_BGR_EXT;
 	}
 
-	for(register uint32 i=0;i<MAX_GRAPHICS+1;i++)
+	for(i=0;i<MAX_GRAPHICS+1;i++)
 	{
 		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
 			return 2;
@@ -3519,12 +3541,16 @@ uint32 PlayMovie(const char *name)
 {
 	SDL_Thread *t;
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
-	unsigned int ms, ms1, ms2;
+	unsigned int ms, ms1, ms2, o;
 	int ms3;
-	register uint32 i=0;
+	 uint32 i=0;
 	char header[21];
 
+	void *buffer;
+
 	FMOD_RESULT y;
+	FMOD_CREATESOUNDEXINFO info;
+	FMOD_CHANNEL *ch;
 
 	uint8 id;
 
@@ -3538,7 +3564,7 @@ uint32 PlayMovie(const char *name)
 	if((mgv->file=fopen(name,"rb"))==NULL)
 	{
 		LogApp("Error opening MGV file %s",name);
-				return false;
+				return 0;
 	}
 
 	rewind(mgv->file);
@@ -3548,7 +3574,7 @@ uint32 PlayMovie(const char *name)
 	{
 		LogApp("Invalid MGV file header %s",name);
 		fclose(mgv->file);
-		return false;
+		return 0;
 	}
 
 	rewind(mgv->file);
@@ -3570,7 +3596,7 @@ uint32 PlayMovie(const char *name)
 	mgv->frames=(_MGVTEX*) malloc(mgv->num_frames*sizeof(_MGVTEX)); 
 	mgv->seeker=(uint32*) malloc(mgv->num_frames*sizeof(uint32));
 
-	for(register uint32 o=0;o<mgv->num_frames;o++)
+	for(o=0;o<mgv->num_frames;o++)
 	{
 		
 		if(o==0)
@@ -3587,10 +3613,9 @@ uint32 PlayMovie(const char *name)
 	rewind(mgv->file);
 	fseek(mgv->file,mgv->totalsize+512,SEEK_CUR);
 
-	void *buffer=(void*) malloc(mgvt.sound_buffer_lenght);
+	buffer=(void*) malloc(mgvt.sound_buffer_lenght);
 	fread(buffer,mgvt.sound_buffer_lenght,1,mgv->file);
 	
-	FMOD_CREATESOUNDEXINFO info;
 	memset(&info,0,sizeof(info));
 	info.length=mgvt.sound_buffer_lenght;
 	info.cbsize=sizeof(info);
@@ -3600,10 +3625,8 @@ uint32 PlayMovie(const char *name)
 	if(y!=FMOD_OK)
 	{
 		LogApp("Error while creating sound: %s",FMOD_ErrorString(y));
-		return false;
+		return 0;
 	}
-	
-	FMOD_CHANNEL *ch;
 
 	StopAllSounds();
 	
@@ -3615,7 +3638,7 @@ uint32 PlayMovie(const char *name)
 	if(y!=FMOD_OK)
 	{
 		LogApp("Error while playing sound: %s",FMOD_ErrorString(y));
-		return false;
+		return 0;
 	}
 	
 	//Here's the video part!!
@@ -3653,7 +3676,7 @@ uint32 PlayMovie(const char *name)
 		rewind(mgv->file);
 		fseek(mgv->file,mgv->seeker[i],SEEK_SET);
 
-			mgv->frames[i].buffer=(void*) malloc(mgv->framesize[i]);
+			mgv->frames[i].buffer=malloc(mgv->framesize[i]);
 
 			if(mgv->frames[i].buffer==NULL)
 			{
@@ -3729,7 +3752,7 @@ uint32 PlayMovie(const char *name)
 	FMOD_Sound_Release(mgv->sound);
 	st.PlayingVideo=0;
 
-	return true;
+	return 1;
 	
 }
 
@@ -3746,7 +3769,7 @@ uint32 SaveMap(const char *name)
 	if((file=fopen(name,"wb"))==NULL)
 	{
 		LogApp("Could not save file");
-				return false;
+				return 0;
 	}
 
 	strcpy(header,"V1 mGear-1");
@@ -3792,7 +3815,7 @@ uint32 LoadMap(const char *name)
 	if((file=fopen(name,"rb"))==NULL)
 	{
 		LogApp("Could not open file %s",name);
-				return false;
+				return 0;
 	}
 
 	//Tries to read 13 byte header
@@ -3803,7 +3826,7 @@ uint32 LoadMap(const char *name)
 	if(strcmp(header,"V1 mGear-1")!=NULL)
 	{
 		LogApp("Invalid map format or version: %s", header);
-				return false;
+				return 0;
 	}
 
 					if(st.Current_Map.obj)
@@ -3851,14 +3874,16 @@ uint32 LoadMap(const char *name)
 
 void FreeMap()
 {
+	uint8 i, j;
+
 	if(st.Current_Map.num_mgg>0)
 	{
 		free(st.Current_Map.obj);
 		free(st.Current_Map.sprites);
 
-		register uint8 j=MGG_MAP_START;
+		j=MGG_MAP_START;
 
-		for(register uint8 i=0;i<st.Current_Map.num_mgg;i++)
+		for(i=0;i<st.Current_Map.num_mgg;i++)
 		{
 			FreeMGG(&mgg[j]);
 			j++;
@@ -3874,35 +3899,37 @@ void DrawMap()
 	//Draw the objects first
 
 	float x, y, sizex, sizey, ang, size;
+
+	uint32 i;
 	
 
-	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+	for(i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==FOREGROUND)
 			DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==MIDGROUND)
 				DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 				st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r*st.Current_Map.obj[i].amblight,st.Current_Map.obj[i].color.g*st.Current_Map.obj[i].amblight,st.Current_Map.obj[i].color.b*st.Current_Map.obj[i].amblight,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 
-	//for(register uint16 i=0;i<st.Current_Map.num_lights;i++)
+	//for( uint16 i=0;i<st.Current_Map.num_lights;i++)
 		//	DrawLight(st.Current_Map.light[i].position.x-st.Camera.position.x,st.Current_Map.light[i].position.y-st.Camera.position.y,st.Current_Map.light[i].size.x,st.Current_Map.light[i].size.y,
 			//st.Current_Map.light[i].angle,st.Current_Map.light[i].color.r,st.Current_Map.light[i].color.g,st.Current_Map.light[i].color.b,st.MapTex[st.Current_Map.light[i].TextureID].ID,st.Current_Map.light[i].color.a);
-	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==BACKGROUND3)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==BACKGROUND2)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
-	for(register uint16 i=0;i<st.Current_Map.num_obj;i++)
+	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==BACKGROUND1)
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	if(st.Developer_Mode)
 	{
-		for(register uint16 i=0;i<st.Current_Map.num_sector;i++)
+		for(i=0;i<st.Current_Map.num_sector;i++)
 			if(st.Current_Map.sector[i].id>-1)
 			{
 				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,255,255,1,2);
@@ -3933,7 +3960,7 @@ void Renderer()
 	GLenum error;
 
 	uint32 num_targets=0;
-	register int32 i=0, j=0, m=0, timej, timel;
+	 int32 i=0, j=0, m=0, timej, timel;
 	uint16 *k, l=0;
 
 	static uint32 tesg=0;
@@ -4161,7 +4188,7 @@ void Renderer()
 
 					glActiveTexture(GL_TEXTURE1);
 
-					if(vbdt[i].normal)
+					if(vbdt[m].normal)
 						{
 							if(tex_bound[1]!=vbdt[m].texture)
 							{
@@ -4703,8 +4730,8 @@ void PlayMusic(const char *filename, uint8 loop)
 
 void PlaySound(const char *filename, uint8 loop)
 {
-	int16 id=0, idc=0;
-	for(register uint16 i=0;i<MAX_SOUNDS-1;i++)
+	int16 id=0, idc=0, i;
+	for(i=0;i<MAX_SOUNDS-1;i++)
 	{
 		if(i==MAX_SOUNDS-1 && st.sound_sys.slot_ID[i]==1)
 		{
@@ -4721,7 +4748,7 @@ void PlaySound(const char *filename, uint8 loop)
 		}
 	}
 
-	for(register uint16 i=0;i<MAX_CHANNELS-1;i++)
+	for(i=0;i<MAX_CHANNELS-1;i++)
 	{
 		if(i==MAX_CHANNELS-1 && st.sound_sys.slotch_ID[i]!=-1)
 		{
@@ -4758,11 +4785,11 @@ static void FinishMusic()
 */
 void MainSound()
 {
+	int p, i;
+
 	FMOD_System_Update(st.sound_sys.Sound_System);
 
-	int p;
-
-	for(register uint32 i=0;i<MAX_CHANNELS;i++)
+	for(i=0;i<MAX_CHANNELS;i++)
 	{
 		if(st.sound_sys.slotch_ID[i]>-1)
 		{
@@ -4780,7 +4807,9 @@ void MainSound()
 
 void StopAllSounds()
 {
-	for(register uint32 i=0;i<MAX_CHANNELS-1;i++)
+	uint8 i;
+
+	for(i=0;i<MAX_CHANNELS-1;i++)
 	{
 		if(st.sound_sys.slotch_ID[i]>-1)
 		{

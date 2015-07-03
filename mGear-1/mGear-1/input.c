@@ -2,7 +2,7 @@
 
 void InputInit()
 {
-	uint32 num, j;
+	uint32 num, j, i;
 
 	st.keys[ESC_KEY].key=SDL_SCANCODE_ESCAPE;
 	st.keys[RETURN_KEY].key=SDL_SCANCODE_RETURN;
@@ -87,7 +87,7 @@ void InputInit()
 	if(num>4) num=4; //Max number of joysticks is 4
 	j=0;
 
-	for(register uint8 i=0;i<num;i++)
+	for(i=0;i<num;i++)
 	{
 		if(SDL_IsGameController(i))
 		{
@@ -113,7 +113,7 @@ void InputInit()
 
 		st.control_num=j;
 
-		for(register uint8 i=0;i<j;i++)
+		for(i=0;i<j;i++)
 		{
 			if((st.controller[i].force=SDL_HapticOpenFromJoystick(st.controller[i].joystick))==NULL)
 				LogApp("Controller %d does not support force feedback: %s",j,SDL_GetError());
@@ -150,11 +150,12 @@ void InputInit()
 void InputProcess()
 {
 	size_t len;
+	uint16 i, j;
 		while(SDL_PollEvent(&events))
 		{
 				if(events.type==SDL_QUIT) st.quit=1;
 
-				for(register uint16 i=0;i<MAX_KEYS;i++)
+				for(i=0;i<MAX_KEYS;i++)
 				{
 				
 					if(events.type==SDL_KEYUP)
@@ -175,9 +176,9 @@ void InputProcess()
 				{
 					SDL_GameControllerUpdate();
 
-					for(register uint8 j=0;j<st.control_num;j++)
+					for(j=0;j<st.control_num;j++)
 					{		
-						for(register uint16 i=0;i<15;i++)
+						for(i=0;i<15;i++)
 						{
 							st.controller[j].button[i].state=SDL_GameControllerGetButton(st.controller[j].device,st.controller[j].button[i].name);
 
@@ -244,9 +245,11 @@ void InputProcess()
 
 void InputClose()
 {
+	uint16 i;
+
 	if(st.control_num>0)
 	{
-		for(register uint8 i=0;i<st.control_num;i++)
+		for(i=0;i<st.control_num;i++)
 		{
 			SDL_HapticClose(st.controller[i].force);
 			SDL_JoystickClose(st.controller[i].joystick);

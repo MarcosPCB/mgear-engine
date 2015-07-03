@@ -17,7 +17,7 @@ void Physics(_SPRITES actor)
 	if(actor.body.position.y<Layer.y)
 		actor.body.total_vel+=GRAVITY;
 	else
-	if(CheckColisionHitbox(actor.body.position,actor.body.size,Layer,Layer_size))
+	if(CheckColision(actor.body.position,actor.body.size,Layer,Layer_size))
 	{
 		actor.body.energy=(actor.body.mass*pow(actor.body.total_vel,2))/2;
 		deformation=actor.body.energy/actor.body.max_elasticy;

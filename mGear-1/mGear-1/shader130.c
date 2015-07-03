@@ -39,7 +39,7 @@ const char *Texture_FShader[64]={
 		"vec4 Diffuse = texture(texu, TexCoord2);\n"
 		
 		"if(normal == 0 || normal == 1)\n"
-			"FColor = Diffuse;\n"
+			"FColor = Diffuse * colore;\n"
 		"else\n"
 		"if(normal == 2)\n"
 			"FColor = NormalColor;\n"
@@ -224,7 +224,7 @@ const char *Lighting_FShader[196]={
 	"}\n"
 };
 */
-
+/*
 const char *Lightmap_FShader[128]={
 	"#version 130\n"
 	
@@ -254,6 +254,45 @@ const char *Lightmap_FShader[128]={
 
 		"FColor = DiffuseColor * (Lightmap);\n" //* max(dot(N, L), 0.0));\n"
 
+	"}\n"
+};
+*/
+
+const char *Lightmap_FShader[128]={
+	"#version 130\n"
+	
+	"in vec2 TexCoord2;\n"
+
+	"in vec4 colore;\n"
+
+	"out vec4 FColor;\n"
+
+	"uniform sampler2D texu;\n"
+
+	"uniform sampler2D texu2;\n"
+
+	"uniform sampler2D texu3;\n"
+
+	"uniform float normal;\n"
+
+	"void main()\n"
+	"{\n"
+		"vec4 Lightmap = texture(texu2, TexCoord2);\n"
+
+		"vec3 L = normalize(Lightmap.rgb);\n"
+
+		"if(normal == 1)\n"
+		"{\n"
+			"vec3 N = normalize((texture(texu3, TexCoord2).rgb) * 2.0 - 1.0);\n"
+
+			"FColor = (texture(texu, TexCoord2) * colore) * ((Lightmap) * max(dot(N, L), 0.0));\n"
+		"}\n"
+		"else\n"
+		"{\n"
+			"vec3 NormalColor = vec3(0.501, 0.501, 1.0);\n"
+
+			"FColor = (texture(texu, TexCoord2) * colore) * ((Lightmap) * max(dot(NormalColor, L), 0.0));\n"
+		"}\n"
 	"}\n"
 };
 
