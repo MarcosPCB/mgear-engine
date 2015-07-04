@@ -3017,9 +3017,9 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	return 0;
 }
 
-int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int16 x1, int16 y1, int16 x2, int16 y2, int8 z)
+int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
 {
-	float tmp, ax, ay, az;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
@@ -3118,33 +3118,36 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			}
 			else
 			{
-				ent[i].texcor[0]=data.posx-x1;
-				ent[i].texcor[1]=data.posy-y1;
+				tx1=(float) x1/32768;
+				ty1=(float) y1/32768;
+				tx2=(float) x2/32768;
+				ty2=(float) y2/32768;
 
-				ent[i].texcor[2]=data.posx+data.sizex+x2;
-				ent[i].texcor[3]=data.posy-y1;
+				ent[i].texcor[0]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[1]=data.posy+(ty1*data.sizey);
 
-				ent[i].texcor[4]=data.posx+data.sizex+x2;
-				ent[i].texcor[5]=data.posy+data.sizey+y2;
+				ent[i].texcor[2]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[3]=data.posy+(ty1*data.sizey);
 
-				ent[i].texcor[6]=data.posx-x1;
-				ent[i].texcor[7]=data.posy+data.sizey+x2;
+				ent[i].texcor[4]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[5]=data.posy+(ty2*data.sizey);
+
+				ent[i].texcor[6]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[7]=data.posy+(ty2*data.sizey);
 			}
-
-			//timej=GetTicks();
 
 			for(j=0;j<12;j+=3)
 			{
 				ent[i].vertex[j]*=ax;
 				ent[i].vertex[j]-=1;
 
-				ent[i].vertex[j+1]*=ay;
+		 		ent[i].vertex[j+1]*=ay;
 				ent[i].vertex[j+1]+=1;
 				
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8)
+				if(j<8 && data.vb_id!=-1)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
@@ -3152,6 +3155,17 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 				}
 				
 			}
+
+			/*
+			ent[i].texcor[0]/=tx1;
+			ent[i].texcor[1]/=ty1;
+			ent[i].texcor[2]*=tx2;
+			ent[i].texcor[3]/=ty1;
+			ent[i].texcor[4]*=tx2;
+			ent[i].texcor[5]*=ty2;
+			ent[i].texcor[6]/=tx1;
+			ent[i].texcor[7]*=ty2;
+			*/
 
 			for(j=0;j<16;j+=4)
 			{
@@ -3179,9 +3193,9 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 	return 0;
 }
 
-int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int16 x1, int16 y1, int16 x2, int16 y2, TEX_DATA data, uint8 a, int8 layer)
+int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
-	float tmp, ax, ay, az;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
@@ -3267,33 +3281,36 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			}
 			else
 			{
-				ent[i].texcor[0]=data.posx-x1;
-				ent[i].texcor[1]=data.posy-y1;
+				tx1=(float) x1/32768;
+				ty1=(float) y1/32768;
+				tx2=(float) x2/32768;
+				ty2=(float) y2/32768;
 
-				ent[i].texcor[2]=data.posx+data.sizex+x2;
-				ent[i].texcor[3]=data.posy-y1;
+				ent[i].texcor[0]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[1]=data.posy+(ty1*data.sizey);
 
-				ent[i].texcor[4]=data.posx+data.sizex+x2;
-				ent[i].texcor[5]=data.posy+data.sizey+y2;
+				ent[i].texcor[2]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[3]=data.posy+(ty1*data.sizey);
 
-				ent[i].texcor[6]=data.posx-x1;
-				ent[i].texcor[7]=data.posy+data.sizey+x2;
+				ent[i].texcor[4]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[5]=data.posy+(ty2*data.sizey);
+
+				ent[i].texcor[6]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[7]=data.posy+(ty2*data.sizey);
 			}
-
-			//timej=GetTicks();
 
 			for(j=0;j<12;j+=3)
 			{
 				ent[i].vertex[j]*=ax;
 				ent[i].vertex[j]-=1;
 
-				ent[i].vertex[j+1]*=ay;
+		 		ent[i].vertex[j+1]*=ay;
 				ent[i].vertex[j+1]+=1;
 				
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8)
+				if(j<8 && data.vb_id!=-1)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
@@ -3328,9 +3345,9 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	return 0;
 }
 
-int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int16 x1, int16 y1, int16 x2, int16 y2, TEX_DATA data, uint8 a, int8 layer)
+int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
-	float tmp, ax, ay, az;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
@@ -3416,33 +3433,36 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 			}
 			else
 			{
-				ent[i].texcor[0]=data.posx-x1;
-				ent[i].texcor[1]=data.posy-y1;
+				tx1=(float) x1/32768;
+				ty1=(float) y1/32768;
+				tx2=(float) x2/32768;
+				ty2=(float) y2/32768;
 
-				ent[i].texcor[2]=data.posx+data.sizex+x2;
-				ent[i].texcor[3]=data.posy-y1;
+				ent[i].texcor[0]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[1]=data.posy+(ty1*data.sizey);
 
-				ent[i].texcor[4]=data.posx+data.sizex+x2;
-				ent[i].texcor[5]=data.posy+data.sizey+y2;
+				ent[i].texcor[2]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[3]=data.posy+(ty1*data.sizey);
 
-				ent[i].texcor[6]=data.posx-x1;
-				ent[i].texcor[7]=data.posy+data.sizey+x2;
+				ent[i].texcor[4]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[5]=data.posy+(ty2*data.sizey);
+
+				ent[i].texcor[6]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[7]=data.posy+(ty2*data.sizey);
 			}
-
-			//timej=GetTicks();
 
 			for(j=0;j<12;j+=3)
 			{
 				ent[i].vertex[j]*=ax;
 				ent[i].vertex[j]-=1;
 
-				ent[i].vertex[j+1]*=ay;
+		 		ent[i].vertex[j+1]*=ay;
 				ent[i].vertex[j+1]+=1;
 				
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8)
+				if(j<8 && data.vb_id!=-1)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
