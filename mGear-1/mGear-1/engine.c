@@ -2688,8 +2688,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	float tmp, ax, ay, az;
 
 	uint8 valx=0, valy=0;
-	 uint32 i=0, j=0, k=0;
-	 int32 t1, t2, t3, t4, timej, timel;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
 	
 	PosF dim=st.Camera.dimension;
 	
@@ -3017,169 +3017,467 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	return 0;
 }
 
-int8 DrawGraphic(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, GLuint data, float a, float texpanX, float texpanY, float texsizeX, float texsizeY)
+int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int16 x1, int16 y1, int16 x2, int16 y2, int8 z)
 {
-	uint32 i;
+	float tmp, ax, ay, az;
 
-	float tmp;
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
 
 	PosF dim=st.Camera.dimension;
-
-	uint8 val=0;
-
+	
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
-
+	
 	if(dim.x<0) dim.x*=-1;
 	if(dim.y<0) dim.y*=-1;
 
-	if(dim.x<1) dim.x=16384/dim.x;
+	if(dim.x<10) dim.x=16384/dim.x;
 	else dim.x*=16384;
-	if(dim.y<1) dim.y=8192/dim.y;
+	if(dim.y<10) dim.y=8192/dim.y;
 	else dim.y*=8192;
 
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
+	t3=(int32) dim.x;
+	t4=(int32) dim.y;
 
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
+	az=mCos(ang);
+	az*=100;
+	j=(int32) az;
 
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
+	ay=mSin(ang);
+	ay*=100;
+	k=(int32) ay;
 
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
-
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
-
-	if(val==8) return 1;
-
-	for(i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(ent[i].stat==DEAD)
-		{
-			if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-				return 2;
-			/*
-			ent[i].stat=USED;
-			ent[i].ang=ang;
-			ent[i].pos.x=(st.screenx*x)/16384;
-			ent[i].pos.y=(st.screeny*y)/8192;
-			ent[i].size.x=(sizex*st.screenx)/16384;
-			ent[i].size.y=(sizey*st.screeny)/8192;
-			ent[i].type=TEXTURE;
+	if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+	
 			ent[i].data=data;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-			ent[i].x1y1.x=texsizeX+texpanX;
-			ent[i].x1y1.y=texsizeY+texpanY;
-			ent[i].x2y2.x=texsizeX;
-			ent[i].x2y2.y=texsizeY;
-			st.num_tex++;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(z>40) z=40;
+			else if(z<16) z+=16;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			//timel=GetTicks() - timej;
+
+			//ang=1000;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			if(data.vb_id==-1)
+			{
+				ent[i].texcor[0]=x1;
+				ent[i].texcor[1]=y1;
+				ent[i].texcor[2]=x2;
+				ent[i].texcor[3]=y1;
+				ent[i].texcor[4]=x2;
+				ent[i].texcor[5]=y2;
+				ent[i].texcor[6]=x1;
+				ent[i].texcor[7]=y2;
+			}
+			else
+			{
+				ent[i].texcor[0]=data.posx-x1;
+				ent[i].texcor[1]=data.posy-y1;
+
+				ent[i].texcor[2]=data.posx+data.sizex+x2;
+				ent[i].texcor[3]=data.posy-y1;
+
+				ent[i].texcor[4]=data.posx+data.sizex+x2;
+				ent[i].texcor[5]=data.posy+data.sizey+y2;
+
+				ent[i].texcor[6]=data.posx-x1;
+				ent[i].texcor[7]=data.posy+data.sizey+x2;
+			}
+
+			//timej=GetTicks();
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+				
+				if(j<8)
+				{
+					ent[i].texcor[j]/=(float)32768;
+					ent[i].texcor[j+1]/=(float)32768;
+					ent[i].texcor[j+2]/=(float)32768;
+				}
+				
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			if(data.vb_id!=-1)
+			{
+				vbdt[data.vb_id].num_elements++;
+				ent[i].data.loc=vbdt[data.vb_id].num_elements-1;
+			}
+			else
+			{
+				texone_ids[texone_num]=i;
+				texone_num++;
+			}
+
+#endif
+
 			st.num_entities++;
-			*/
-			break;
-		}
-	}
 
 	return 0;
 }
 
-int8 DrawHud(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a)
+int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int16 x1, int16 y1, int16 x2, int16 y2, TEX_DATA data, uint8 a, int8 layer)
 {
-	uint32 i;
+	float tmp, ax, ay, az;
 
-	float tmp;
-	uint8 val=0;
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
 
-	for(i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
+	t3=16384;
+	t4=8192;
 
-		if(ent[i].stat==DEAD)
-		{
-			/*
-			ent[i].stat=USED;
-			ent[i].ang=ang;
-			ent[i].pos.x=x;
-			ent[i].pos.y=y;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
-			ent[i].type=HUD;
+	az=mCos(ang);
+	az*=100;
+	j=(int32) az;
+
+	ay=mSin(ang);
+	ay*=100;
+	k=(int32) ay;
+
+	if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+	
 			ent[i].data=data;
-			ent[i].x1y1.x=x1;
-			ent[i].x1y1.y=y1;
-			ent[i].x2y2.x=x2;
-			ent[i].x2y2.y=y2;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-			st.num_hud++;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(layer>16) layer=16;
+			else if(layer<8) layer+=8;
+
+			z_buffer[layer][z_slot[layer]]=i;
+			z_slot[layer]++;
+
+			if(layer>z_used) z_used=layer;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=layer;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=layer;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=layer;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=layer;
+
+			//timel=GetTicks() - timej;
+
+			//ang=1000;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			if(data.vb_id==-1)
+			{
+				ent[i].texcor[0]=x1;
+				ent[i].texcor[1]=y1;
+				ent[i].texcor[2]=x2;
+				ent[i].texcor[3]=y1;
+				ent[i].texcor[4]=x2;
+				ent[i].texcor[5]=y2;
+				ent[i].texcor[6]=x1;
+				ent[i].texcor[7]=y2;
+			}
+			else
+			{
+				ent[i].texcor[0]=data.posx-x1;
+				ent[i].texcor[1]=data.posy-y1;
+
+				ent[i].texcor[2]=data.posx+data.sizex+x2;
+				ent[i].texcor[3]=data.posy-y1;
+
+				ent[i].texcor[4]=data.posx+data.sizex+x2;
+				ent[i].texcor[5]=data.posy+data.sizey+y2;
+
+				ent[i].texcor[6]=data.posx-x1;
+				ent[i].texcor[7]=data.posy+data.sizey+x2;
+			}
+
+			//timej=GetTicks();
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+				
+				if(j<8)
+				{
+					ent[i].texcor[j]/=(float)32768;
+					ent[i].texcor[j+1]/=(float)32768;
+					ent[i].texcor[j+2]/=(float)32768;
+				}
+				
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			if(data.vb_id!=-1)
+			{
+				vbdt[data.vb_id].num_elements++;
+				ent[i].data.loc=vbdt[data.vb_id].num_elements-1;
+			}
+			else
+			{
+				texone_ids[texone_num]=i;
+				texone_num++;
+			}
+
+#endif
+
 			st.num_entities++;
-			*/
-			break;
-		}
-	}
 
 	return 0;
 }
 
-int8 DrawUI(float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float x1, float y1, float x2, float y2, GLuint data, float a)
+int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int16 x1, int16 y1, int16 x2, int16 y2, TEX_DATA data, uint8 a, int8 layer)
 {
-	uint32 i;
+	float tmp, ax, ay, az;
 
-	float tmp;
-	uint8 val=0;
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
 
-	for(i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
+	t3=16384;
+	t4=8192;
 
-		if(ent[i].stat==DEAD)
-		{
-			/*
-			ent[i].stat=USED;
-			ent[i].ang=ang;
-			ent[i].pos.x=x;
-			ent[i].pos.y=y;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
-			ent[i].type=UI;
+	az=mCos(ang);
+	az*=100;
+	j=(int32) az;
+
+	ay=mSin(ang);
+	ay*=100;
+	k=(int32) ay;
+
+	if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+	
 			ent[i].data=data;
-			ent[i].x1y1.x=x1;
-			ent[i].x1y1.y=y1;
-			ent[i].x2y2.x=x2;
-			ent[i].x2y2.y=y2;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-			st.num_ui++;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(layer>8) layer=8;
+			//else if(layer<0) layer+=8;
+
+			z_buffer[layer][z_slot[layer]]=i;
+			z_slot[layer]++;
+
+			if(layer>z_used) z_used=layer;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=layer;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=layer;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=layer;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=layer;
+
+			//timel=GetTicks() - timej;
+
+			//ang=1000;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			if(data.vb_id==-1)
+			{
+				ent[i].texcor[0]=x1;
+				ent[i].texcor[1]=y1;
+				ent[i].texcor[2]=x2;
+				ent[i].texcor[3]=y1;
+				ent[i].texcor[4]=x2;
+				ent[i].texcor[5]=y2;
+				ent[i].texcor[6]=x1;
+				ent[i].texcor[7]=y2;
+			}
+			else
+			{
+				ent[i].texcor[0]=data.posx-x1;
+				ent[i].texcor[1]=data.posy-y1;
+
+				ent[i].texcor[2]=data.posx+data.sizex+x2;
+				ent[i].texcor[3]=data.posy-y1;
+
+				ent[i].texcor[4]=data.posx+data.sizex+x2;
+				ent[i].texcor[5]=data.posy+data.sizey+y2;
+
+				ent[i].texcor[6]=data.posx-x1;
+				ent[i].texcor[7]=data.posy+data.sizey+x2;
+			}
+
+			//timej=GetTicks();
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+				
+				if(j<8)
+				{
+					ent[i].texcor[j]/=(float)32768;
+					ent[i].texcor[j+1]/=(float)32768;
+					ent[i].texcor[j+2]/=(float)32768;
+				}
+				
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			if(data.vb_id!=-1)
+			{
+				vbdt[data.vb_id].num_elements++;
+				ent[i].data.loc=vbdt[data.vb_id].num_elements-1;
+			}
+			else
+			{
+				texone_ids[texone_num]=i;
+				texone_num++;
+			}
+
+#endif
+
 			st.num_entities++;
-			*/
-			break;
-		}
-	}
 
 	return 0;
 }
 
-int8 DrawLine(float x, float y, float x2, float y2, uint8 r, uint8 g, uint8 b, float a, float linewidth, int32 z)
+int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z)
 {
 	uint8 valx=0, valy=0;
 
