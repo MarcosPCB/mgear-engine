@@ -29,6 +29,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -53,9 +54,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;ENGINEER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/D "ENGINEER" %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4996;4005;4101;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -63,6 +65,9 @@
       <AdditionalDependencies>SDL2.lib;SDL2main.lib;SOIL.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
+    <ProjectReference>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -72,9 +77,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_VERTARRAY;ENGINEER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalOptions>/D "ENGINEER" %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -86,14 +90,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\mGear-1\engine.cpp" />
-    <ClCompile Include="..\mGear-1\input.cpp" />
-    <ClCompile Include="..\mGear-1\physics.cpp" />
+    <ClCompile Include="..\mGear-1\engine.c" />
+    <ClCompile Include="..\mGear-1\input.c" />
+    <ClCompile Include="..\mGear-1\physics.c" />
     <ClCompile Include="..\mGear-1\quicklz.c" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="menu.cpp" />
+    <ClCompile Include="..\mGear-1\shader110.h" />
+    <ClCompile Include="..\mGear-1\shader130.h" />
+    <ClCompile Include="main.c" />
+    <ClCompile Include="menu.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\mGear-1\a.h" />
     <ClInclude Include="..\mGear-1\dirent.h" />
     <ClInclude Include="..\mGear-1\engine.h" />
     <ClInclude Include="..\mGear-1\input.h" />
@@ -102,7 +109,13 @@
     <ClInclude Include="..\mGear-1\types.h" />
     <ClInclude Include="main.h" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\mGear-1\a.asm">
+      <FileType>Document</FileType>
+    </MASM>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
   </ImportGroup>
 </Project>
