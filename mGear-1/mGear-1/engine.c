@@ -5066,6 +5066,12 @@ void Renderer()
 
 					glBindBuffer(GL_ARRAY_BUFFER,0);
 					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+					if(ent[z_buffer[i][j]].data.channel==63)
+					{
+						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
+						ent[i].data.channel=0;
+					}
 				}
 			}
 
@@ -5178,6 +5184,12 @@ void Renderer()
 					glDisableClientState(GL_VERTEX_ARRAY);
 					glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 					glDisableClientState(GL_COLOR_ARRAY);
+
+					if(ent[z_buffer[i][j]].data.channel==63)
+					{
+						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
+						ent[i].data.channel=0;
+					}
 				}
 			}
 		}
