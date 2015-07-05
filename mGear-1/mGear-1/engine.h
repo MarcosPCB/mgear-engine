@@ -45,7 +45,7 @@
 #define MUSIC_SLOT MAX_SOUNDS-1
 #define MAX_KEYS 128
 #define MAX_OBJS 1024
-#define MAX_FONTS 8
+#define MAX_FONTS 16
 #define MAX_SECTORS 512
 #define MAX_LIGHTS 16
 #define MAX_LIGHTMAPS 128
@@ -61,6 +61,9 @@
 
 typedef FMOD_SOUND Sound;
 typedef FMOD_CHANNEL Channel;
+
+#define FONT_SIZE 1024 //Used for overriding the size draw functions
+#define TEX_PAN_RANGE 32768 //tex panning ranges from 0 to 32768
 
 //MGG format
 #define MAX_FRAMES 8192
@@ -783,7 +786,7 @@ extern const char WindowTitle[32];
 
 void Init();
 
-uint8 OpenFont(const char *file,const char *name, uint8 index);
+uint8 OpenFont(const char *file,const char *name, uint8 index, size_t font_size);
 
 void Quit();
 
@@ -856,9 +859,9 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type);
 int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
-int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
-int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
-int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f);
+int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z);
+int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z);
+int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z);
 int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 
 int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a);

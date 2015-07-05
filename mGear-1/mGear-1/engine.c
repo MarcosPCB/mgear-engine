@@ -1486,9 +1486,9 @@ SHADER_CREATION:
 	
 }
 
-uint8 OpenFont(const char *file,const char *name, uint8 index)
+uint8 OpenFont(const char *file,const char *name, uint8 index, size_t font_size)
 {
-	if((st.fonts[index].font=TTF_OpenFont(file,64))==NULL)
+	if((st.fonts[index].font=TTF_OpenFont(file,font_size))==NULL)
 	{
 		LogApp("Error while opening TTF font : %s",TTF_GetError());
 		return 0;
@@ -3511,30 +3511,6 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2;
 
-	PosF dim=st.Camera.dimension;
-
-	if(dim.x<0) dim.x*=-1;
-	if(dim.y<0) dim.y*=-1;
-
-	if(dim.x<1) dim.x=16384/dim.x;
-	else dim.x*=16384;
-	if(dim.y<1) dim.y=8192/dim.y;
-	else dim.y*=8192;
-
-	x-=st.Camera.position.x;
-	y-=st.Camera.position.y;
-
-	x2-=st.Camera.position.x;
-	y2-=st.Camera.position.y;
-
-	if(x>dim.x) valx++;
-	if(y>dim.y) valy++;
-
-	if(x2>dim.x) valx++;
-	if(y2>dim.y) valy++;
-
-	if(valx==2 || valy==2) return 1;
-
 	i=st.num_entities;
 
 	if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
@@ -3650,12 +3626,18 @@ int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	return mgf->anim[id].current_frame/10;
 }
 
-int8 DrawString(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
+int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
 {	
-	SDL_Color co;
-	uint16 formatt, i;
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
+	
+	PosF dim=st.Camera.dimension;
 
-	float tmp;
+	SDL_Color co;
+	uint16 formatt;
+
+	float tmp, ax, ay, az;
 
 	uint8 val=0;
 	
@@ -3677,179 +3659,399 @@ int8 DrawString(const char *text, float x, float y, float sizex, float sizey, fl
 		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
 		else formatt=GL_BGR_EXT;
 	}
-
-	for(i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
-		
-		if(ent[i].stat==DEAD)
-		{
-			/*
-			glGenTextures(1,&ent[i].data);
-			glBindTexture(GL_TEXTURE_2D,ent[i].data);
-			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			ent[i].ang=ang;
-			ent[i].stat=USED;
-			ent[i].type=TEXT;
-			ent[i].pos.x=x;
-			ent[i].pos.y=y;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
-			ent[i].x1y1.x=0;
-			ent[i].x1y1.y=0;
-			ent[i].x2y2.x=1;
-			ent[i].x2y2.y=1;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-
-			SDL_FreeSurface(msg);
-			st.num_hud++;
-			st.num_entities++;
-			*/
-			break;
-		}
-	}
-
-	return 0;
-
-}
-
-int8 DrawStringUI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
-{	
-	SDL_Color co;
-	uint16 formatt, i;
-
-	float tmp;
-
-	uint8 val=0;
-
-	SDL_Surface *msg;
-
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-
-	msg=TTF_RenderUTF8_Blended(f,text,co);
-	
-	if(msg->format->BytesPerPixel==4)
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
-		else formatt=GL_BGRA_EXT;
-	} else
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
-		else formatt=GL_BGR_EXT;
-	}
-
-	for(i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
-		
-		if(ent[i].stat==DEAD)
-		{
-			/*
-			glGenTextures(1,&ent[i].data);
-			glBindTexture(GL_TEXTURE_2D,ent[i].data);
-			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			ent[i].ang=ang;
-			ent[i].stat=USED;
-			ent[i].type=TEXT_UI;
-			ent[i].pos.x=x;
-			ent[i].pos.y=y;
-			ent[i].size.x=sizex;
-			ent[i].size.y=sizey;
-			ent[i].x1y1.x=0;
-			ent[i].x1y1.y=0;
-			ent[i].x2y2.x=1;
-			ent[i].x2y2.y=1;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
-
-			SDL_FreeSurface(msg);
-			st.num_hud++;
-			st.num_entities++;
-			*/
-			break;
-		}
-	}
-
-	return 0;
-
-}
-
-int8 DrawString2UI(const char *text, float x, float y, float sizex, float sizey, float ang, uint8 r, uint8 g, uint8 b, float a, TTF_Font *f)
-{	
-	SDL_Color co;
-	
-	uint16 formatt, i;
-
-	SDL_Surface *msg;
-
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-
-	msg=TTF_RenderUTF8_Blended(f,text,co);
-	
-	if(msg->format->BytesPerPixel==4)
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
-		else formatt=GL_BGRA_EXT;
-	} else
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
-		else formatt=GL_BGR_EXT;
-	}
-
-	for(i=0;i<MAX_GRAPHICS+1;i++)
-	{
-		if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
-			return 2;
-
-		if(ent[i].stat==DEAD)
-		{
-			/*
-			glGenTextures(1,&ent[i].data);
-			glBindTexture(GL_TEXTURE_2D,ent[i].data);
-			glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			ent[i].ang=ang;
-			ent[i].stat=USED;
-			ent[i].type=TEXT_UI;
 			
-			ent[i].pos.x=x;
-			ent[i].pos.y=y;
-			ent[i].size.x=(msg->w*sizex);
-			ent[i].size.y=(msg->h*sizey);
-			ent[i].x1y1.x=0;
-			ent[i].x1y1.y=0;
-			ent[i].x2y2.x=1;
-			ent[i].x2y2.y=1;
-			ent[i].color.r=(float)r/255;
-			ent[i].color.g=(float)g/255;
-			ent[i].color.b=(float)b/255;
-			ent[i].color.a=a;
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+
+	glGenTextures(1,&ent[i].data.data);
+	glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+	glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	ent[i].data.channel=63; //magical number only used for rendering
+
+	ent[i].data.normal=0;
+	ent[i].data.vb_id=-1;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(override_sizex!=0)
+				sizex=msg->w*(override_sizex/1024);
+
+			if(override_sizey!=0)
+				sizey=msg->h*(override_sizey/1024);
 
 			SDL_FreeSurface(msg);
-			st.num_ui++;
+
+			sizex*=st.Camera.dimension.x;
+			sizey*=st.Camera.dimension.y;
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(z>40) z=40;
+			else if(z<16) z+=16;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			
+				ent[i].texcor[0]=0;
+				ent[i].texcor[1]=0;
+				ent[i].texcor[2]=1;
+				ent[i].texcor[3]=0;
+				ent[i].texcor[4]=1;
+				ent[i].texcor[5]=1;
+				ent[i].texcor[6]=0;
+				ent[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			
+				texone_ids[texone_num]=i;
+				texone_num++;
+
+#endif
+
 			st.num_entities++;
-			*/
-			break;
-		}
+
+	return 0;
+
+}
+
+int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+{	
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
+
+	SDL_Color co;
+	uint16 formatt;
+
+	float tmp, ax, ay, az;
+
+	uint8 val=0;
+	
+	SDL_Surface *msg;
+
+	co.r=255;
+	co.g=255;
+	co.b=255;
+	co.a=255;
+	
+	msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+	if(msg->format->BytesPerPixel==4)
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+		else formatt=GL_BGRA_EXT;
+	} else
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+		else formatt=GL_BGR_EXT;
 	}
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+
+	glGenTextures(1,&ent[i].data.data);
+	glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+	glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	ent[i].data.channel=63; //magical number only used for rendering
+
+	ent[i].data.normal=0;
+	ent[i].data.vb_id=-1;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(override_sizex!=0)
+				sizex=msg->w*(override_sizex/1024);
+
+			if(override_sizey!=0)
+				sizey=msg->h*(override_sizey/1024);
+
+			SDL_FreeSurface(msg);
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(z>8) z=8;
+			//else if(z<0) z+=8;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			
+				ent[i].texcor[0]=0;
+				ent[i].texcor[1]=0;
+				ent[i].texcor[2]=1;
+				ent[i].texcor[3]=0;
+				ent[i].texcor[4]=1;
+				ent[i].texcor[5]=1;
+				ent[i].texcor[6]=0;
+				ent[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			
+				texone_ids[texone_num]=i;
+				texone_num++;
+
+#endif
+
+			st.num_entities++;
+
+	return 0;
+
+}
+
+int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+{	
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
+
+	SDL_Color co;
+	uint16 formatt;
+
+	float tmp, ax, ay, az;
+
+	uint8 val=0;
+	
+	SDL_Surface *msg;
+
+	co.r=255;
+	co.g=255;
+	co.b=255;
+	co.a=255;
+	
+	msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+	if(msg->format->BytesPerPixel==4)
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+		else formatt=GL_BGRA_EXT;
+	} else
+	{
+		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+		else formatt=GL_BGR_EXT;
+	}
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+
+	glGenTextures(1,&ent[i].data.data);
+	glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+	glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	ent[i].data.channel=63; //magical number only used for rendering
+
+	ent[i].data.normal=0;
+	ent[i].data.vb_id=-1;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(override_sizex!=0)
+				sizex=msg->w*(override_sizex/1024);
+
+			if(override_sizey!=0)
+				sizey=msg->h*(override_sizey/1024);
+
+			SDL_FreeSurface(msg);
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(z>16) z=16;
+			else if(z<8) z+=8;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			
+				ent[i].texcor[0]=0;
+				ent[i].texcor[1]=0;
+				ent[i].texcor[2]=1;
+				ent[i].texcor[3]=0;
+				ent[i].texcor[4]=1;
+				ent[i].texcor[5]=1;
+				ent[i].texcor[6]=0;
+				ent[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			
+				texone_ids[texone_num]=i;
+				texone_num++;
+
+#endif
+
+			st.num_entities++;
 
 	return 0;
 
@@ -4122,6 +4324,7 @@ uint32 SaveMap(const char *name)
 
 	return 1;
 }
+
 #endif
 
 uint32 LoadMap(const char *name)
@@ -4596,6 +4799,12 @@ void Renderer()
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[z_buffer[i][j]].color);
 
 					glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+					if(ent[z_buffer[i][j]].data.channel==63)
+					{
+						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
+						ent[i].data.channel=0;
+					}
 				}
 			}
 

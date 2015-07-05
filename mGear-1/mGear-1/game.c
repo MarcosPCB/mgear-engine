@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	OpenFont("font01.ttf","font01",0);
+	OpenFont("font01.ttf","font01",0,128);
 
 	InitMGG();
 
@@ -345,6 +345,7 @@ int main(int argc, char *argv[])
 						
 						DrawSprite(8192,4096,16384,8192,0,255,255,255,mgg[0].frames[0],255,2);
 						DrawGraphic(8192,4096,2048,2048,0,255,255,255,mgg[1].frames[59],255,0,0,32768,32768,0);
+						DrawString("Testing",8192,7168,0,0,0,255,255,255,255,st.fonts[0].font,8192,8192,0);
 						//DrawSprite(8192,4096,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
 						//DrawSprite(8192,8192,2048,2048,0,255,255,255,mgg[0].frames[0],255,2);
 						//DrawLine(8192,4096,x2,y2,255,255,255,255,16,0);
