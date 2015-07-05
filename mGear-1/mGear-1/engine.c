@@ -5,11 +5,11 @@
 #include <SDL_image.h>
 
 #ifdef _VBO_RENDER
-	#include "shader110.c"
+	#include "shader110.h"
 #endif
 
 #ifdef _VAO_RENDER
-	#include "shader130.c"
+	#include "shader130.h"
 #endif
 
 _SETTINGS st;
@@ -2566,6 +2566,8 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
+	int32 mx, my;
+
 	for(i=0;i<4;i++)
 	{
 			if(i==0)
@@ -2610,7 +2612,12 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 			}
 	}
 
-	if(st.mouse.x>xl && st.mouse.x<xb && st.mouse.y>yl && st.mouse.y<yb)
+	mx=st.mouse.x;
+	my=st.mouse.y;
+
+	STW(&mx, &my);
+
+	if(mx>xl && mx<xb && my>yl && my<yb)
 		return 1; //Collided
 	else
 		return 0; //No collision
@@ -3015,6 +3022,72 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 				st.num_lightmap++;
 
 	return 0;
+}
+
+void BASICBKD()
+{
+	float tmp, ax, ay, az;
+
+	uint32 i=0, j=0, k=0;
+
+	i=0;
+
+	lmp[i].data.data=st.game_lightmaps[0].tex;
+
+			lmp[i].vertex[0]=0.0f;
+			lmp[i].vertex[1]=0.0f;
+			lmp[i].vertex[2]=0.0f;
+
+			lmp[i].vertex[3]=16384.0f;
+			lmp[i].vertex[4]=0.0f;
+			lmp[i].vertex[5]=0.0f;
+
+			lmp[i].vertex[6]=16384.0f;
+			lmp[i].vertex[7]=8192.0f;
+			lmp[i].vertex[8]=0.0f;
+
+			lmp[i].vertex[9]=0.0f;
+			lmp[i].vertex[10]=8192.0f;
+			lmp[i].vertex[11]=0.0f;
+
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			lmp[i].texcor[0]=0;
+			lmp[i].texcor[1]=0;
+			lmp[i].texcor[2]=1;
+			lmp[i].texcor[3]=0;
+			lmp[i].texcor[4]=1;
+			lmp[i].texcor[5]=1;
+			lmp[i].texcor[6]=0;
+			lmp[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				lmp[i].vertex[j]*=ax;
+				lmp[i].vertex[j]-=1;
+
+				lmp[i].vertex[j+1]*=ay;
+				lmp[i].vertex[j+1]+=1;
+				
+				lmp[i].vertex[j+2]*=az;
+				lmp[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				lmp[i].color[j]=1;
+				lmp[i].color[j+1]=1;
+				lmp[i].color[j+2]=1;
+				lmp[i].color[j+3]=1;
+			}
+
+			st.num_lightmap++;
+
 }
 
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
@@ -4640,38 +4713,36 @@ void Renderer()
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
 
-		if(st.num_lightmap>0)
+		glDrawBuffers(1,&st.renderer.Buffers[2]);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		for(i=0;i<st.num_lightmap;i++)
 		{
-			glDrawBuffers(1,&st.renderer.Buffers[2]);
+			glUseProgram(st.renderer.Program[2]);
+			unif=glGetUniformLocation(st.renderer.Program[2],"texu");
+			glUniform1i(unif,0);
 
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+			glUniform1f(unif,0);
 
-			for(i=0;i<st.num_lightmap;i++)
-			{
-				glUseProgram(st.renderer.Program[2]);
-				unif=glGetUniformLocation(st.renderer.Program[2],"texu");
-				glUniform1i(unif,0);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
 
-				unif=glGetUniformLocation(st.renderer.Program[2],"normal");
-				glUniform1f(unif,0);
+			glBindVertexArray(vbd.vao_id);
 
-				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
+			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
 
-				glBindVertexArray(vbd.vao_id);
+			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
 
-				glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
-
-				glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
-
-				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
-			}
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 		}
 
 		//if(st.renderer.use_custom_shader)
 			//glDrawBuffers(1,&st.renderer.Buffers[0]);
 		//else
-			glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER,0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

@@ -853,6 +853,10 @@ void CalCos32u(int16 ang, uint32 *val);
 void CalSin32u(int16 ang, uint32 *val);
 void CalTan32u(int16 ang, uint32 *val);
 
+//Draws the main lightmap
+//THIS MUST GO BEFORE ANY DRAWING COMMAND
+void BASICBKD(); 
+
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
 int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius);

@@ -178,6 +178,7 @@ int main(int argc, char *argv[])
 			FPSCounter();
 		//timej=GetTicks();
 		InputProcess();
+		BASICBKD();
 		//timel=GetTicks() - timej;
 		if(startmovie==0)
 		{
@@ -334,7 +335,7 @@ int main(int argc, char *argv[])
 				y2=st.mouse.y;
 				STW(&x2,&y2);
 				//x2=GetTicks();
-				DrawLightmap(st.game_lightmaps[0].w_pos.x,st.game_lightmaps[0].w_pos.y,st.game_lightmaps[0].w_pos.z,st.game_lightmaps[0].W_w,st.game_lightmaps[0].W_h,st.game_lightmaps[0].tex,POINT_LIGHT_MEDIUM);
+				//DrawLightmap(st.game_lightmaps[0].w_pos.x,st.game_lightmaps[0].w_pos.y,st.game_lightmaps[0].w_pos.z,st.game_lightmaps[0].W_w,st.game_lightmaps[0].W_h,st.game_lightmaps[0].tex,POINT_LIGHT_MEDIUM);
 				//y2=GetTicks() - x2;
 
 				//timej=GetTicks();

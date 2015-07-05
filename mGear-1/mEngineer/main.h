@@ -1,6 +1,6 @@
-#pragma once
-
 #include "engine.h"
+
+#pragma once
 
 #define ARIAL 0
 #define ARIAL_BOULD 1
@@ -35,7 +35,7 @@
 #define EDIT_SPRITE_TYPE 20
 #define SPRITE_EDIT_BOX 21
 
-struct mEng
+struct _mEng
 {
 	char mgg_list[32][256];
 	uint16 num_mgg;
@@ -46,8 +46,8 @@ struct mEng
 	uint16 command2;
 	uint16 sub_com;
 	uint16 com_id;
-	GLuint tex_selection;
-	GLuint tex2_sel;
+	TEX_DATA tex_selection;
+	TEX_DATA tex2_sel;
 	uint32 tex2_ID;
 	int16 tex2_MGGID;
 	uint32 tex_ID;
@@ -58,7 +58,7 @@ struct mEng
 	struct ObjEN
 	{
 		_OBJTYPE type;
-		Colori color;
+		Color color;
 		float amblight;
 		Pos texsize;
 		Pos texpan;
@@ -67,7 +67,7 @@ struct mEng
 	struct SpriteEN
 	{
 		_OBJTYPE type;
-		Colori color;
+		Color color;
 		int16 tag;
 		int16 health;
 		uint16 anim; //if the game actor is animated than leave it NULL
@@ -77,10 +77,12 @@ struct mEng
 
 	uint32 palette[256][256];
 
-	Colori tmp_color;
+	Color tmp_color;
 
 	char *path;
 };
+
+typedef struct _mEng mEng;
 
 extern mEng meng;
 
