@@ -358,16 +358,16 @@ static void PannelLeft()
 	uint16 i=0, j=0;
 	Pos p;
 
-	DrawUI(455,4096,455*2,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[4],255,0);
+	DrawUI(455,4096,455*2,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[4],255,7);
 
 	if(!CheckColisionMouse(227,227,455,455,0))
 	{
-		DrawUI(227,227,455,455,0,255,255,255,0,0,32768,32768,mgg[0].frames[0],255,0);
+		DrawUI(227,227,455,455,0,255,255,255,0,0,32768,32768,mgg[0].frames[0],255,7);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawUI(227,227,445,445,0,255,128,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[0],255,0);
+		DrawUI(227,227,445,445,0,255,128,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[0],255,7);
 		//time++;
 		//if((st.time-time)==1000)
 		//{
@@ -379,12 +379,12 @@ static void PannelLeft()
 
 	if(!CheckColisionMouse(682,227,448,448,0))
 	{
-		DrawUI(682,227,448,448,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[2],255,0);
+		DrawUI(682,227,448,448,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[2],255,7);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawUI(682,227,448,448,0,255,128,32,0,0,32768,32768,mgg[0].frames[2],255,0);
+		DrawUI(682,227,448,448,0,255,128,32,0,0,32768,32768,mgg[0].frames[2],255,7);
 		//if((st.time-time)==1000)
 		//{
 		DrawStringUI("Select and edit",8192,8192-455,1820,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
@@ -395,12 +395,12 @@ static void PannelLeft()
 	
 	if(!CheckColisionMouse(227,682,448,448,0))
 	{
-		DrawUI(227,682,448,448,0,255,255,255,0,0,32768,32768,mgg[0].frames[1],255,0);
+		DrawUI(227,682,448,448,0,255,255,255,0,0,32768,32768,mgg[0].frames[1],255,7);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawUI(227,682,448,448,0,255,128,32,0,0,32768,32768,mgg[0].frames[1],255,0);
+		DrawUI(227,682,448,448,0,255,128,32,0,0,32768,32768,mgg[0].frames[1],255,7);
 		//if((st.time-time)==1000)
 		//{
 		DrawStringUI("Add an OBJ",8192,8192-455,1820,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
@@ -418,12 +418,12 @@ static void PannelLeft()
 	
 	if(!CheckColisionMouse(682,682,448,448,0))
 	{
-		DrawUI(682,682,448,448,0,255,255,255,0,0,32768,32768,mgg[0].frames[3],255,0);
+		DrawUI(682,682,448,448,0,255,255,255,0,0,32768,32768,mgg[0].frames[3],255,7);
 		//if(st.mouse1) mouse=0;
 	}
 	else
 	{
-		DrawUI(682,682,448,448,0,255,128,32,0,0,32768,32768,mgg[0].frames[3],255,0);
+		DrawUI(682,682,448,448,0,255,128,32,0,0,32768,32768,mgg[0].frames[3],255,7);
 		//if((st.time-time)==1000)
 		//{
 		DrawStringUI("Add a sprite",8192,8192-455,1820,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
@@ -482,15 +482,15 @@ static void PannelLeft()
 		}
 	}
 
-	if(!CheckColisionMouse(458,8192-227,490,223,0))
+	if(!CheckColisionMouse(458,(8192)-227,490,223,0))
 	{
 		DrawStringUI("Load MGG",458,8192-227,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 	}
 	else
 	{
-		DrawStringUI("Load MGG",458,8192-227,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+		DrawStringUI("Load MGG",458,(8192)-227,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
-		DrawStringUI("Load an MGG file and adds it to the map list",8192,8192-455,5460,455,0,255,128,32,1,st.fonts[ARIAL].font,0,0,0);
+		DrawStringUI("Load an MGG file and adds it to the map list",8192,(8192)-455,5460,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(st.mouse1)
 		{
@@ -529,9 +529,9 @@ static void PannelLeft()
 
 		if(meng.obj.type==FOREGROUND)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Foreground",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Foreground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=16;
@@ -539,14 +539,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Foreground",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Foreground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==BACKGROUND1)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background1",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background1",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=16;
@@ -554,14 +554,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background1",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background1",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==BACKGROUND2)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background2",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background2",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=16;
@@ -569,14 +569,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background2",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background2",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==BACKGROUND3)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background3",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background3",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=16;
@@ -584,14 +584,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background3",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background3",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		sprintf(str,"alpha %.2f", meng.spr.color.a);
 
-		if(CheckColisionMouse(51,267,90,24,0))
+		if(CheckColisionMouse(465,2445,810,217,0))
 		{
-			DrawStringUI(str,51,267,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -600,11 +600,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,267,90,24,0, 255, 255, 255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0, 255, 255, 255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==RGB_SPRITE)
 		{
-			DrawStringUI(str,51,267,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[RIGHT_KEY].state)
 			{
@@ -618,7 +618,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,267,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -627,9 +627,9 @@ static void PannelLeft()
 
 		sprintf(str,"Actor %d",meng.spr.gid);
 
-		if(CheckColisionMouse(51,315,90,24,0))
+		if(CheckColisionMouse(465,2880,810,217,0))
 		{
-			DrawStringUI(str,51,315,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -639,21 +639,21 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,315,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		
 		if(meng.command==ACTOR_SPRITE)
 		{
 			DrawUI(8192,4096,100,8192,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
 
 			i=0;
-			for(j=25+meng.scroll;j<8192;j+=50)
+			for(j=227+meng.scroll;j<8192;j+=455)
 			{
 				if(i==st.num_sprites)
 					break;
 				else
-				if(CheckColisionMouse(8192,j+meng.scroll,90,50,0))
+				if(CheckColisionMouse(8192,j+meng.scroll,810,455,0))
 				{
-					DrawStringUI(st.Game_Sprites[i].name,8192,j+meng.scroll,90,50,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+					DrawStringUI(st.Game_Sprites[i].name,8192,j+meng.scroll,810,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 					if(st.mouse1)
 					{
@@ -672,20 +672,20 @@ static void PannelLeft()
 					}
 				}
 				else
-					DrawStringUI(st.Game_Sprites[i].name,8192,j+meng.scroll,90,50,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+					DrawStringUI(st.Game_Sprites[i].name,8192,j+meng.scroll,810,455,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 				i++;
 			}
 
 			if(st.mouse_wheel>0)
 			{
-				meng.scroll+=50;
+				meng.scroll+=455;
 				st.mouse_wheel=0;
 			}
 
 			if(st.mouse_wheel<0)
 			{
-				meng.scroll-=50;
+				meng.scroll-=455;
 				st.mouse_wheel=0;
 			}
 
@@ -699,9 +699,9 @@ static void PannelLeft()
 
 		sprintf(str,"Tag %d",meng.spr.tag);
 
-		if(CheckColisionMouse(51,345,90,24,0))
+		if(CheckColisionMouse(455,3135,810,217,0))
 		{
-			DrawStringUI(str,51,345,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3135,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1 && !StartText())
 			{
@@ -711,11 +711,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,345,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3135,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		
 		if(meng.command==SPRITE_TAG)
 		{
-			DrawStringUI(str,51,345,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3135,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 			meng.spr.tag=atoi(st.TextInput);
 
 			if(st.keys[ESC_KEY].state)
@@ -728,9 +728,9 @@ static void PannelLeft()
 
 		sprintf(str,"Health %d",meng.spr.health);
 
-		if(CheckColisionMouse(51,375,90,24,0))
+		if(CheckColisionMouse(465,3435,810,217,0))
 		{
-			DrawStringUI(str,51,375,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3435,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1 && !StartText())
 			{
@@ -740,11 +740,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,375,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3435,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==SPRITE_HEALTH)
 		{
-			DrawStringUI(str,51,375,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3435,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 			meng.spr.health=atoi(st.TextInput);
 
 			if(st.keys[ESC_KEY].state)
@@ -757,9 +757,9 @@ static void PannelLeft()
 
 		sprintf(str,"Physics");
 
-		if(CheckColisionMouse(51,405,90,24,0))
+		if(CheckColisionMouse(465,3690,810,217,0))
 		{
-			DrawStringUI(str,51,405,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3690,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -768,17 +768,17 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,405,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3690,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==SPRITE_PHY)
 		{
-			DrawUI(8192, 4096, 230,200,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
+			DrawUI(8192, 4096, 2120,1820,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
 
 			sprintf(str,"Physics? %d",meng.spr.body.physics_on);
 
-			if(CheckColisionMouse(8192, 4096-80,90,20,0))
+			if(CheckColisionMouse(8192, 4096-710,810,200,0))
 			{
-				DrawString2UI(str,8192, 4096-80,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096-710,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -789,13 +789,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawString2UI(str,8192, 4096-80,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096-710,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 			sprintf(str,"Mass %.2f",meng.spr.body.mass);
 
-			if(CheckColisionMouse(8192, 4096-40,90,40,0))
+			if(CheckColisionMouse(8192, 4096-1420,810,1420,0))
 			{
-				DrawString2UI(str,8192, 4096-40,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096-1420,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 				if(st.mouse1 && !StartText())
 				{
@@ -808,11 +808,11 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawString2UI(str,8192, 4096-40,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096-1420,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 			if(meng.sub_com==10)
 			{
-				DrawString2UI(str,8192, 4096-40,0,0,0,255,32,32,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096-1420,0,0,0,255,32,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 				meng.spr.body.mass=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -824,9 +824,9 @@ static void PannelLeft()
 
 			sprintf(str,"Flammable? %d",meng.spr.body.flamable);
 
-			if(CheckColisionMouse(8192, 4096,90,40,0))
+			if(CheckColisionMouse(8192, 4096,810,1420,0))
 			{
-				DrawString2UI(str,8192, 4096,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -837,13 +837,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawString2UI(str,8192, 4096,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 			sprintf(str,"Explosive? %d",meng.spr.body.explosive);
 
-			if(CheckColisionMouse(8192, 4096+40,90,40,0))
+			if(CheckColisionMouse(8192, 4096+1420,90,40,0))
 			{
-				DrawString2UI(str,8192, 4096+40,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096+1420,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -854,7 +854,7 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawString2UI(str,8192, 4096+40,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512,512,0);
+				DrawString2UI(str,8192, 4096+1420,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
 		}
 	}
 
@@ -874,14 +874,14 @@ static void PannelLeft()
 		WTS(&p.x,&p.y);
 
 		sprintf(str,"%.2f",st.Current_Map.obj[i].size.x);
-		DrawString(str,p.x,p.y-25,90,24,0,255,255,255,1,st.fonts[ARIAL].font,0,0,0);
+		DrawString(str,p.x,p.y-227,810,217,0,255,255,255,1,st.fonts[ARIAL].font,0,0,0);
 
 		p.x=st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2);
 		p.y=st.Current_Map.obj[i].position.y;
 		WTS(&p.x,&p.y);
 
 		sprintf(str,"%.2f",st.Current_Map.obj[i].size.y);
-		DrawString(str,p.x-50,p.y,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		DrawString(str,p.x-455,p.y,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(st.keys[RETURN_KEY].state)
 		{
@@ -891,13 +891,13 @@ static void PannelLeft()
 
 		if(meng.command==OBJ_EDIT_BOX)
 		{
-			DrawUI(8192,4096,200,200,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
+			DrawUI(8192,4096,1820,1820,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
 
 			sprintf(str,"X %.2f",st.Current_Map.obj[i].position.x);
 
-			if(CheckColisionMouse(8192,(4096)-75,190,50,0) && !meng.sub_com)
+			if(CheckColisionMouse(8192,(4096)-681,1720,455,0) && !meng.sub_com)
 			{
-				DrawStringUI(str,8192,(4096)-75,190,50,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)-681,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=1;
@@ -910,7 +910,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==1)
 			{
-				DrawStringUI(str,8192,(4096)-75,190,50,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)-681,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 				st.Current_Map.obj[i].position.x=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -921,13 +921,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI(str,8192,(4096)-75,190,50,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)-681,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 			sprintf(str,"Y %.2f",st.Current_Map.obj[i].position.y);
 
-			if(CheckColisionMouse(8192,(4096)-25,190,50,0) && !meng.sub_com)
+			if(CheckColisionMouse(8192,(4096)-227,1720,455,0) && !meng.sub_com)
 			{
-				DrawStringUI(str,8192,(4096)-25,190,50,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)-227,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=2;
@@ -940,7 +940,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==2)
 			{
-				DrawStringUI(str,8192,(4096)-25,190,50,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)-227,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 				st.Current_Map.obj[i].position.y=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -951,13 +951,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI(str,8192,(4096)-25,190,50,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)-227,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 			sprintf(str,"SX %.2f",st.Current_Map.obj[i].size.x);
 
-			if(CheckColisionMouse(8192,(4096)+25,190,50,0) && !meng.sub_com)
+			if(CheckColisionMouse(8192,(4096)+227,1720,455,0) && !meng.sub_com)
 			{
-				DrawStringUI(str,8192,(4096)+25,190,50,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)+227,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=3;
@@ -970,7 +970,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==3)
 			{
-				DrawStringUI(str,8192,(4096)+25,190,50,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)+227,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 				st.Current_Map.obj[i].size.x=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -981,13 +981,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI(str,8192,(4096)+25,190,50,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)+227,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 			sprintf(str,"SY %.2f",st.Current_Map.obj[i].size.y);
 
-			if(CheckColisionMouse(8192,(4096)+75,190,50,0) && !meng.sub_com)
+			if(CheckColisionMouse(8192,(4096)+681,1720,455,0) && !meng.sub_com)
 			{
-				DrawStringUI(str,8192,(4096)+75,190,50,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)+681,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=4;
@@ -1000,7 +1000,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==4)
 			{
-				DrawStringUI(str,8192,(4096)+75,190,50,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)+681,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 				st.Current_Map.obj[i].size.y=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -1011,7 +1011,7 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI(str,8192,(4096)+75,190,50,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI(str,8192,(4096)+681,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[ESC_KEY].state && !meng.sub_com)
 			{
@@ -1022,9 +1022,9 @@ static void PannelLeft()
 
 		if(meng.obj2.type==MIDGROUND)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Midground",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Midground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=14;
@@ -1032,14 +1032,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Midground",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Midground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj2.type==FOREGROUND)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Foreground",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Foreground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=14;
@@ -1047,14 +1047,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Foreground",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Foreground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj2.type==BACKGROUND1)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background1",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background1",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=14;
@@ -1062,14 +1062,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background1",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background1",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj2.type==BACKGROUND2)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background2",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background2",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=14;
@@ -1077,14 +1077,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background2",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background2",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj2.type==BACKGROUND3)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background3",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background3",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=14;
@@ -1092,14 +1092,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background3",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background3",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		sprintf(str,"alpha %.2f", meng.obj2.color.a);
 
-		if(CheckColisionMouse(51,267,90,24,0))
+		if(CheckColisionMouse(465,2445,810,217,0))
 		{
-			DrawStringUI(str,51,267,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1108,11 +1108,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,267,90,24,0, 255, 255, 255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0, 255, 255, 255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==RGB_OBJ)
 		{
-			DrawStringUI(str,51,267,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[RIGHT_KEY].state)
 			{
@@ -1126,7 +1126,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,267,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1135,9 +1135,9 @@ static void PannelLeft()
 
 		sprintf(str,"Light %.2f",meng.obj2.amblight);
 
-		if(CheckColisionMouse(51,315,90,24,0))
+		if(CheckColisionMouse(465,2887,810,217,0))
 		{
-			DrawStringUI(str,51,315,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1146,11 +1146,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,315,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==OBJ_AMBL)
 		{
-			DrawStringUI(str,51,315,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[RIGHT_KEY].state)
 			{
@@ -1164,7 +1164,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,315,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,2887,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1173,9 +1173,9 @@ static void PannelLeft()
 
 		sprintf(str,"Tex.Size %.2f %.2f",meng.obj2.texsize.x, meng.obj2.texsize.y);
 
-		if(CheckColisionMouse(51,363,90,24,0))
+		if(CheckColisionMouse(465,3315,810,217,0))
 		{
-			DrawStringUI(str,51,363,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3315,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1184,11 +1184,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,363,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3315,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==TEX_SIZE_OBJ)
 		{
-			DrawStringUI(str,51,363,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3315,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[UP_KEY].state)
 			{
@@ -1214,7 +1214,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,363,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,3315,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1223,9 +1223,9 @@ static void PannelLeft()
 
 		sprintf(str,"Tex.Pan %.2f %.2f",meng.obj2.texpan.x, meng.obj2.texpan.y);
 
-		if(CheckColisionMouse(51,411,90,24,0))
+		if(CheckColisionMouse(465,3640,810,217,0))
 		{
-			DrawStringUI(str,51,411,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3640,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1234,11 +1234,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,411,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3640,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==TEX_PAN_OBJ)
 		{
-			DrawStringUI(str,51,411,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3640,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[UP_KEY].state)
 			{
@@ -1264,7 +1264,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,411,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,3640,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1276,39 +1276,39 @@ static void PannelLeft()
 		{
 							if(st.keys[UP_KEY].state)
 							{
-								st.Current_Map.obj[meng.com_id].size.y+=128;
+								st.Current_Map.obj[meng.com_id].size.y+=1165;
 								st.keys[UP_KEY].state=0;
 							}
 
 							if(st.keys[DOWN_KEY].state)
 							{
-								st.Current_Map.obj[meng.com_id].size.y-=128;
+								st.Current_Map.obj[meng.com_id].size.y-=1165;
 								st.keys[DOWN_KEY].state=0;
 							}
 
 							if(st.keys[RIGHT_KEY].state)
 							{
-								st.Current_Map.obj[meng.com_id].size.x+=128;
+								st.Current_Map.obj[meng.com_id].size.x+=1165;
 								st.keys[RIGHT_KEY].state=0;
 							}
 
 							if(st.keys[LEFT_KEY].state)
 							{
-								st.Current_Map.obj[meng.com_id].size.x-=128;
+								st.Current_Map.obj[meng.com_id].size.x-=1165;
 								st.keys[LEFT_KEY].state=0;
 							}
 
 							if(st.mouse_wheel>0 && st.mouse2)
 							{
-								st.Current_Map.obj[meng.com_id].size.x+=256;
-								st.Current_Map.obj[meng.com_id].size.y+=256;
+								st.Current_Map.obj[meng.com_id].size.x+=2330;
+								st.Current_Map.obj[meng.com_id].size.y+=2330;
 								st.mouse_wheel=0;
 							}
 
 							if(st.mouse_wheel<0 && st.mouse2)
 							{
-								st.Current_Map.obj[meng.com_id].size.x-=256;
-								st.Current_Map.obj[meng.com_id].size.y-=256;
+								st.Current_Map.obj[meng.com_id].size.x-=2330;
+								st.Current_Map.obj[meng.com_id].size.y-=2330;
 								st.mouse_wheel=0;
 							}
 		}
@@ -1322,13 +1322,13 @@ static void PannelLeft()
 
 	if(meng.pannel_choice==3)
 	{
-		DrawUI(27,75,48,48,0,128,32,32,0,0,32768,32768,mgg[0].frames[1],255,0);
+		DrawUI(247,681,435,435,0,128,32,32,0,0,32768,32768,mgg[0].frames[1],255,0);
 
 		if(meng.obj.type==MIDGROUND)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Midground",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Midground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=8;
@@ -1336,14 +1336,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Midground",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Midground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==FOREGROUND)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Foreground",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Foreground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=8;
@@ -1351,14 +1351,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Foreground",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Foreground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==BACKGROUND1)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background1",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background1",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=8;
@@ -1366,14 +1366,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background1",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background1",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==BACKGROUND2)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background2",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background2",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=8;
@@ -1381,14 +1381,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background2",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background2",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		if(meng.obj.type==BACKGROUND3)
 		{
-			if(CheckColisionMouse(51,219,90,24,0))
+			if(CheckColisionMouse(465,2010,810,217,0))
 			{
-				DrawStringUI("Background3",51,219,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background3",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 				if(st.mouse1)
 				{
 					meng.command=8;
@@ -1396,14 +1396,14 @@ static void PannelLeft()
 				}
 			}
 			else
-				DrawStringUI("Background3",51,219,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+				DrawStringUI("Background3",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
 
 		sprintf(str,"alpha %.2f", meng.obj.color.a);
 
-		if(CheckColisionMouse(51,267,90,24,0))
+		if(CheckColisionMouse(465,2445,810,217,0))
 		{
-			DrawStringUI(str,51,267,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1412,11 +1412,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,267,90,24,0, 255, 255, 255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0, 255, 255, 255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==RGB_OBJ)
 		{
-			DrawStringUI(str,51,267,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[RIGHT_KEY].state)
 			{
@@ -1430,7 +1430,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,267,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1439,9 +1439,9 @@ static void PannelLeft()
 
 		sprintf(str,"Light %.2f",meng.obj.amblight);
 
-		if(CheckColisionMouse(51,315,90,24,0))
+		if(CheckColisionMouse(465,2887,810,217,0))
 		{
-			DrawStringUI(str,51,315,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1450,11 +1450,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,315,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==OBJ_AMBL)
 		{
-			DrawStringUI(str,51,315,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,2887,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[RIGHT_KEY].state)
 			{
@@ -1468,7 +1468,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,315,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,2887,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1477,9 +1477,9 @@ static void PannelLeft()
 
 		sprintf(str,"Tex.Size %.2f %.2f",meng.obj.texsize.x, meng.obj.texsize.y);
 
-		if(CheckColisionMouse(51,363,90,24,0))
+		if(CheckColisionMouse(465,3315,810,217,0))
 		{
-			DrawStringUI(str,51,363,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3315,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1488,11 +1488,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,363,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3315,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==TEX_SIZE_OBJ)
 		{
-			DrawStringUI(str,51,363,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3315,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[UP_KEY].state)
 			{
@@ -1518,7 +1518,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,363,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,3315,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1527,9 +1527,9 @@ static void PannelLeft()
 
 		sprintf(str,"Tex.Pan %.2f %.2f",meng.obj.texpan.x, meng.obj.texpan.y);
 
-		if(CheckColisionMouse(51,411,90,24,0))
+		if(CheckColisionMouse(465,3640,810,217,0))
 		{
-			DrawStringUI(str,51,411,90,24,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3640,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1538,11 +1538,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI(str,51,411,90,24,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3640,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(meng.command==TEX_PAN_OBJ)
 		{
-			DrawStringUI(str,51,411,90,24,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI(str,465,3640,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.keys[UP_KEY].state)
 			{
@@ -1568,7 +1568,7 @@ static void PannelLeft()
 				st.keys[LEFT_KEY].state=0;
 			}
 
-			if(!CheckColisionMouse(51,411,90,24,0) && st.mouse1)
+			if(!CheckColisionMouse(465,3640,810,217,0) && st.mouse1)
 			{
 				meng.command=meng.pannel_choice;
 				st.mouse1=0;
@@ -1579,11 +1579,11 @@ static void PannelLeft()
 
 	if(meng.command==ADD_OBJ_TYPE)
 	{
-		DrawUI(150,185,100,130,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
+		DrawUI(1365,1715,910,1185,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
 
-		if(CheckColisionMouse(150,135,90,25,0))
+		if(CheckColisionMouse(1365,1765,810,227,0))
 		{
-			DrawStringUI("Background1",150,135,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background1",1365,1765,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1593,11 +1593,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Background1",150,135,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background1",1365,1765,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,160,90,25,0))
+		if(CheckColisionMouse(1365,1465,810,227,0))
 		{
-			DrawStringUI("Background2",150,160,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background2",1365,1465,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1607,11 +1607,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Background2",150,160,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background2",1365,1465,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,185,90,25,0))
+		if(CheckColisionMouse(1365,1715,810,227,0))
 		{
-			DrawStringUI("Background3",150,185,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background3",1365,1715,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1621,11 +1621,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Background3",150,185,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background3",1365,1715,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,210,90,25,0))
+		if(CheckColisionMouse(1365,1920,810,227,0))
 		{
-			DrawStringUI("Midground",150,210,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Midground",1365,1920,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1635,11 +1635,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Midground",150,210,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Midground",1365,1920,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,235,90,25,0))
+		if(CheckColisionMouse(1365,2170,810,227,0))
 		{
-			DrawStringUI("Foreground",150,235,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Foreground",1365,2170,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1649,16 +1649,16 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Foreground",150,235,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Foreground",1365,2170,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 	}
 
 	if(meng.command==EDIT_OBJ_TYPE)
 	{
-		DrawUI(150,185,100,130,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
+		DrawUI(1365,1715,910,1210,0,255,255,255,0,0,32768,32768,mgg[0].frames[4],255,0);
 
-		if(CheckColisionMouse(150,135,90,25,0))
+		if(CheckColisionMouse(1365,1715,810,227,0))
 		{
-			DrawStringUI("Background1",150,135,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background1",1365,1715,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1668,11 +1668,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Background1",150,135,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background1",1365,1715,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,160,90,25,0))
+		if(CheckColisionMouse(1365,1465,810,227,0))
 		{
-			DrawStringUI("Background2",150,160,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background2",1365,1465,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1682,11 +1682,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Background2",150,160,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background2",1365,1465,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,185,90,25,0))
+		if(CheckColisionMouse(1365,1715,810,227,0))
 		{
-			DrawStringUI("Background3",150,185,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background3",1365,1715,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1696,11 +1696,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Background3",150,185,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Background3",1365,1715,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,210,90,25,0))
+		if(CheckColisionMouse(1365,1920,810,227,0))
 		{
-			DrawStringUI("Midground",150,210,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Midground",1365,1920,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1710,11 +1710,11 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Midground",150,210,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Midground",1365,1920,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 
-		if(CheckColisionMouse(150,235,90,25,0))
+		if(CheckColisionMouse(1365,2170,810,227,0))
 		{
-			DrawStringUI("Foreground",150,235,90,25,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Foreground",1365,2170,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 			if(st.mouse1)
 			{
@@ -1724,7 +1724,7 @@ static void PannelLeft()
 			}
 		}
 		else
-			DrawStringUI("Foreground",150,235,90,25,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+			DrawStringUI("Foreground",1365,2170,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 	}
 
 }
@@ -1737,7 +1737,7 @@ static void ViewPortCommands()
 	uint16 i, j;
 	Pos p;
 
-	if(!CheckColisionMouse(50,4096,100,8192,0))
+	if(!CheckColisionMouse(455,4096,910,8192,0))
 	{
 		if(meng.command==DRAW_SECTOR)
 		{
