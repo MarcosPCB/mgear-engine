@@ -4730,6 +4730,8 @@ void Renderer()
 			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
 
 			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
+			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),vbd.texcoord);
+			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
 
 			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 		}

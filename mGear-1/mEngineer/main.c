@@ -101,10 +101,10 @@ int16 DirFiles(const char *path, char content[512][512])
 static void MGGList()
 {
 	uint16 j=0, i;
-	DrawUI(8192,4096,2275,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[4],255,0);
+	DrawUI(8192,4096,2275,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[4],255,6);
 	if(st.Current_Map.num_mgg>0)
 	{
-		for(i=227;i<9080;i+=454)
+		for(i=227;i<454*st.Current_Map.num_mgg;i+=454)
 		{
 			if(j==st.Current_Map.num_mgg)
 				break;
@@ -148,14 +148,17 @@ void ImageList(uint8 id)
 {
 	uint32 m=0, i, j;
 
-	for(i=728;i<98944;i+=1546)
+	if(meng.scroll<0)
+			m=(meng.scroll/1546)*(-10);
+
+	for(i=728;i<(8192/1546)*1546;i+=1546)
 	{
 		if(m>=mgg[id].num_frames) break;
-		for(j=728;j<98944;j+=1546)
+		for(j=728;j<(16384/1546)*1546;j+=1546)
 		{
 			if(m<mgg[id].num_frames)
 			{
-				if((CheckColisionMouse(j,i+meng.scroll,1638,1456,0) && st.mouse1) || meng.tex_selection.data==mgg[id].frames[m].data)
+				if((CheckColisionMouse(j,i+meng.scroll,1638,1456,0) && st.mouse1) || (meng.tex_selection.data==mgg[id].frames[m].data && meng.tex_selection.posx==mgg[id].frames[m].posx && meng.tex_selection.posy==mgg[id].frames[m].posy))
 				{
 					DrawUI(j,i+meng.scroll,1638,1456,0,255,128,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[id].frames[m],255,0);
 					meng.tex_selection=mgg[id].frames[m];
@@ -218,7 +221,7 @@ static int16 MGGLoad()
 
 	num_files=DirFiles(meng.path,files);
 
-	for(i=227;i<9100;i+=455)
+	for(i=227;i<num_files*455;i+=455)
 	{
 		if(j==num_files) break;
 
@@ -317,7 +320,7 @@ static int16 MGGLoad()
 		}
 		else
 		{
-			DrawString2UI(files[j],8192,i+meng.scroll,0,0,0,255,255,255,1,st.fonts[ARIAL].font,FONT_SIZE*2,FONT_SIZE*2,0);
+			DrawString2UI(files[j],8192,i+meng.scroll,0,0,0,255,255,255,255,st.fonts[ARIAL].font,FONT_SIZE*2,FONT_SIZE*2,0);
 		}
 
 		j++;
@@ -338,9 +341,12 @@ static int16 MGGLoad()
 	
 	if(st.keys[ESC_KEY].state)
 	{
-		free(meng.path);
-		meng.path=(char*) malloc(2);
-		strcpy(meng.path,".");
+		if(meng.path)
+		{
+			free(meng.path);
+			meng.path=(char*) malloc(2);
+			strcpy(meng.path,".");
+		}
 
 		if(path2) free(path2);
 
