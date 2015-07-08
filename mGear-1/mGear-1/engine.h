@@ -249,6 +249,7 @@ struct _MGGFORMAT_
 	size_t textures_offset;
 	size_t possize_offset;
 	size_t framesize_offset;
+	size_t framealone_offset;
 };
 
 typedef struct _MGGFORMAT_ _MGGFORMAT;

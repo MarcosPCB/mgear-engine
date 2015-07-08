@@ -45,4 +45,5 @@ struct _MGGFORMAT
 	size_t textures_offset;
 	size_t possize_offset;
 	size_t framesize_offset;
+	size_t framealone_offset;
 };

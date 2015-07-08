@@ -227,7 +227,7 @@ static int16 MGGLoad()
 
 		if(CheckColisionMouse(8192,i+meng.scroll,2730,455,0))
 		{
-			DrawString2UI(files[j],8192,i+meng.scroll,0,0,0,255,128,32,255,st.fonts[ARIAL].font,FONT_SIZE*2,FONT_SIZE*2,0);
+			DrawString2UI(files[j],8192,i+meng.scroll,0,0,0,255,128,32,255,st.fonts[GEOMET].font,FONT_SIZE*2,FONT_SIZE*2,0);
 
 			if(st.mouse1)
 			{
@@ -320,7 +320,7 @@ static int16 MGGLoad()
 		}
 		else
 		{
-			DrawString2UI(files[j],8192,i+meng.scroll,0,0,0,255,255,255,255,st.fonts[ARIAL].font,FONT_SIZE*2,FONT_SIZE*2,0);
+			DrawString2UI(files[j],8192,i+meng.scroll,0,0,0,255,255,255,255,st.fonts[GEOMET].font,FONT_SIZE*2,FONT_SIZE*2,0);
 		}
 
 		j++;

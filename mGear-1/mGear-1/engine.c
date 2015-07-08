@@ -1635,7 +1635,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	_MGGFORMAT mggf;
 	char header[21];
 	 uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
-	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES];
+	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES], *framealone;
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
 	uint8 *imgatlas;
 	int16 *w, *h, *currh;
@@ -1682,6 +1682,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	mgg->num_anims=mggf.num_animations;
 
 	mgg->frames=(TEX_DATA*) calloc(mgg->num_frames,sizeof(TEX_DATA));
+
+	framealone=calloc(mgg->num_frames,sizeof(uint32));
 
 	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
@@ -1774,6 +1776,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		{
 			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+			//glGenerateMipmap(GL_TEXTURE_2D);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 			mgg->frames[i+(mggf.num_texinatlas)].w=width;
 			mgg->frames[i+(mggf.num_texinatlas)].h=height;
@@ -1890,6 +1896,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
 	}
 	
+	fseek(file,mggf.framealone_offset,SEEK_SET);
+
+	fread(framealone,sizeof(uint32),mgg->num_frames,file);
+
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
 	k=vbdt_num;
@@ -1898,6 +1908,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	{
 		for(i=(mggf.num_atlas+mggf.num_texinatlas), j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
 		{	
+			if(framealone[i] && i==mggf.num_frames-1) 
+				break;
+
+			if(framealone[i]) 
+				continue;
+
 			if(i==(mggf.num_atlas+mggf.num_texinatlas) && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024) && !mgg->frames[i].normal)
 			{
 				if(!vbdt_num)
@@ -2227,6 +2243,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 									currh[n]=h[n];
 								}
 
+								free(w);
+								free(h);
+								free(currh);
+
 								break;
 							}
 							else
@@ -2297,6 +2317,10 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 								SOIL_free_image_data(imgdata);
 
+								free(w);
+								free(h);
+								free(currh);
+
 								break;
 							}
 						}
@@ -2319,10 +2343,6 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				}
 			}
 		}
-
-		free(w);
-		free(h);
-		free(currh);
 	}
 
 #endif
@@ -2332,6 +2352,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	free(sizex);
 	free(sizey);
 	free(imgatlas);
+
+	free(framealone);
 
 	fclose(file);
 
@@ -2627,7 +2649,10 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 	mx=st.mouse.x;
 	my=st.mouse.y;
 
-	STW(&mx, &my);
+	//STW(&mx, &my);
+
+	mx=((((mx*16384)/st.screenx)));
+	my=((((my*8192)/st.screeny)));
 
 	if(mx>xl && mx<xb && my>yl && my<yb)
 		return 1; //Collided
@@ -3148,6 +3173,9 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
+			sizex*=st.Camera.dimension.x;
+			sizey*=st.Camera.dimension.y;
+
 			if(z>40) z=40;
 			else if(z<16) z+=16;
 
@@ -3232,7 +3260,7 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8 && data.vb_id!=-1)
+				if(j<8)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
@@ -3395,7 +3423,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8 && data.vb_id!=-1)
+				if(j<8)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
@@ -3547,7 +3575,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8 && data.vb_id!=-1)
+				if(j<8)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
@@ -3628,6 +3656,20 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ang2=(180/pi)*ang2;
 		ang=ang2;
 		ang*=10;
+
+		if(z>16)
+		{
+			x-=st.Camera.position.x;
+			y-=st.Camera.position.y;
+
+			x2-=st.Camera.position.x;
+			y2-=st.Camera.position.y;
+
+			x3*=st.Camera.dimension.x;
+			y3*=st.Camera.dimension.y;
+
+			linewidth*=st.Camera.dimension.x;
+		}
 
 		linewidth/=2;
 		
@@ -4540,15 +4582,15 @@ void DrawMap()
 		for(i=0;i<st.Current_Map.num_sector;i++)
 			if(st.Current_Map.sector[i].id>-1)
 			{
-				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,255,255,255,32,16);
-				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,255,255,255,32,16);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,255,255,255,32,17);
+				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,255,255,255,32,17);
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,255,255,255,32,17);
-				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,255,255,255,32,16);
+				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,255,255,255,32,17);
 
-				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,16);
-				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,16);
-				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,16);
-				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,16);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
 
 				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,16);
 				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,16);

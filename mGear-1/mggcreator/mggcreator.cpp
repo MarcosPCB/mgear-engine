@@ -24,8 +24,10 @@ int main(int argc, char *argv[])
 	uint8 normals[MAX_FRAMES];
 	uint32 normalsize[MAX_FRAMES];
 	size_t totalsize;
-	register uint16 i=0, j=0, k=0;
+	uint16 i=0, j=0, k=0;
+	uint32 framealone[MAX_FRAMES];
 
+	memset(&framealone,0,MAX_FRAMES*sizeof(uint32));
 	memset(&mgg,0,sizeof(_MGGFORMAT));
 	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 
@@ -159,6 +161,12 @@ int main(int argc, char *argv[])
 			{
 				value=atoi(str[1]);
 				mgg.num_frames=value;
+			}
+			else
+			if(strcmp(str[0],"FRAMESALONE")==NULL)
+			{
+				value=atoi(str[1]);
+				framealone[value]=1;
 			}
 			else
 			if(strcmp(str[0],"ANIMS")==NULL)
@@ -487,6 +495,10 @@ int main(int argc, char *argv[])
 	fwrite(normals,sizeof(uint8),mgg.num_singletex,file);
 
 	fwrite(normalsize,sizeof(uint32),mgg.num_singletex,file);
+
+	mgg.framealone_offset=ftell(file);
+
+	fwrite(framealone,sizeof(uint32),mgg.num_frames,file);
 
 	fseek(file,21,SEEK_SET);
 
