@@ -3945,11 +3945,12 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[11]=z;
 
+			/*
 			ang/=10;
 
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
-	
+	*/
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 
@@ -4061,7 +4062,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>16) z=16;
+			if(z>16) z=8;
 			else if(z<8) z+=8;
 
 			z_buffer[z][z_slot[z]]=i;
@@ -4086,12 +4087,12 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[11]=z;
-
+			/*
 			ang/=10;
 
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
-	
+	*/
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 
@@ -4889,7 +4890,7 @@ void Renderer()
 					if(ent[z_buffer[i][j]].data.channel==63)
 					{
 						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
-						ent[i].data.channel=0;
+						ent[z_buffer[i][j]].data.channel=0;
 					}
 				}
 			}
@@ -5156,7 +5157,7 @@ void Renderer()
 					if(ent[z_buffer[i][j]].data.channel==63)
 					{
 						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
-						ent[i].data.channel=0;
+						ent[z_buffer[i][j]].data.channel=0;
 					}
 				}
 			}
@@ -5274,7 +5275,7 @@ void Renderer()
 					if(ent[z_buffer[i][j]].data.channel==63)
 					{
 						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
-						ent[i].data.channel=0;
+						ent[z_buffer[i][j]].data.channel=0;
 					}
 				}
 			}
