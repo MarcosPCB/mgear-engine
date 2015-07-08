@@ -87,9 +87,9 @@ void Menu()
 					meng.obj.color.r=255;
 					meng.obj.color.g=255;
 					meng.obj.color.b=255;
-					meng.obj.color.a=1;
-					meng.obj.texsize.x=-1;
-					meng.obj.texsize.y=-1;
+					meng.obj.color.a=255;
+					meng.obj.texsize.x=32768;
+					meng.obj.texsize.y=32768;
 					meng.obj.texpan.x=0;
 					meng.obj.texpan.y=0;
 					meng.obj.type=MIDGROUND;
@@ -240,9 +240,9 @@ void Menu()
 									meng.obj.color.r=255;
 									meng.obj.color.g=255;
 									meng.obj.color.b=255;
-									meng.obj.color.a=1;
-									meng.obj.texsize.x=1;
-									meng.obj.texsize.y=1;
+									meng.obj.color.a=255;
+									meng.obj.texsize.x=32768;
+									meng.obj.texsize.y=32768;
 									meng.obj.texpan.x=0;
 									meng.obj.texpan.y=0;
 									meng.obj.type=MIDGROUND;

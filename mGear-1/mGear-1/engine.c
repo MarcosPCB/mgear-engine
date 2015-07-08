@@ -84,11 +84,23 @@ void CreateLog()
 
 	fclose(file);
 }
-
+/*
+void StartTimer()
+{
+	GetTicks();
+}
+*/
 void Timer()
 {
+	int time=GetTicks() - st.FPSTime;
+
+	if(time<10)
+	{
+		time=10-time;
+		timer(time);
+	}
+
 	st.time++;
-	timer(1000/TICSPERSECOND);
 }
 
 void FPSCounter()
@@ -1424,7 +1436,7 @@ SHADER_CREATION:
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 
 	//Calculates Cos, Sin and Tan tables
-	for(k=0.0f;k<360.0f;k+=0.1f)
+	for(k=0.0f;k<360.1f;k+=0.1f)
 	{
 		i=k*10;
 		st.CosTable[i]=cos((k*pi)/180);
@@ -1468,8 +1480,8 @@ SHADER_CREATION:
 	{
 		for(j=0;j<64;j++)
 		{
-			DataN[(i*64*3)+(j*3)]=128;
-			DataN[(i*64*3)+(j*3)+1]=128;
+			DataN[(i*64*3)+(j*3)]=255;
+			DataN[(i*64*3)+(j*3)+1]=255;
 			DataN[(i*64*3)+(j*3)+2]=255;
 		}
 	}
@@ -3480,12 +3492,12 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 			//timel=GetTicks() - timej;
 
 			//ang=1000;
-
+			/*
 			ang/=10;
 
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
-	
+	*/
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 
@@ -3593,8 +3605,10 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 	//{
 		ent[i].stat=USED;
 		st.num_entities++;
-		ent[i].data.data=6;
+		ent[i].data.data=DataNT;
 		ent[i].data.vb_id=-1;
+		ent[i].data.channel=0;
+		ent[i].data.normal=0;
 
 		if(z>40) z=40;
 		//else if(z<16) z+=16;
@@ -3608,6 +3622,8 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		y3=y2-y;
 
 		ang2=atan2((float)y3,(float)x3);
+		if(ang2==pi)
+			ang2=0;
 		ang2+=pi;
 		ang2=(180/pi)*ang2;
 		ang=ang2;
@@ -4491,11 +4507,12 @@ void DrawMap()
 
 	uint32 i;
 	
-	/*
+	
 	for(i=0;i<st.Current_Map.num_obj;i++)
-		if(st.Current_Map.obj[i].type==FOREGROUND)
+		//if(st.Current_Map.obj[i].type==FOREGROUND)
 			DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,st.Current_Map.obj[i].position.z);
+			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z);
+	/*
 	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==MIDGROUND)
 				DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
@@ -4640,7 +4657,7 @@ void Renderer()
 					UpdateVAO(&vbdt[i],1,1,4);
 				}
 				else
-				if(vbdt[i].num_elements>vbdt[i].buffer_elements)
+				if(vbdt[i].num_elements>=vbdt[i].buffer_elements)
 				{
 					vbdt[i].buffer_elements=vbdt[i].num_elements+8;
 					UpdateVAO(&vbdt[i],1,1,4);

@@ -765,9 +765,9 @@ struct _SETTINGS_
 	Render renderer;
 
 	//Math content
-	float CosTable[3600];
-	float SinTable[3600];
-	float TanTable[3600];
+	float CosTable[3601];
+	float SinTable[3601];
+	float TanTable[3601];
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
