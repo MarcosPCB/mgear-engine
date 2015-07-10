@@ -1915,6 +1915,7 @@ static void ViewPortCommands()
 						if(st.Current_Map.obj[i].type==BLANK)
 						{
 							st.Current_Map.obj[i].type=meng.obj.type;
+								
 							st.Current_Map.obj[i].amblight=meng.obj.amblight;
 							st.Current_Map.obj[i].color=meng.obj.color;
 							st.Current_Map.obj[i].tex.ID=meng.tex_ID;
@@ -1926,6 +1927,16 @@ static void ViewPortCommands()
 							st.Current_Map.obj[i].size.x=2048;
 							st.Current_Map.obj[i].size.y=2048;
 							st.Current_Map.obj[i].angle=0;
+
+							if(meng.obj.type==BACKGROUND1 || meng.obj.type==BACKGROUND2 || meng.obj.type==BACKGROUND3)
+								st.Current_Map.obj[i].position.z=33;
+							else
+							if(meng.obj.type==MIDGROUND)
+								st.Current_Map.obj[i].position.z=25;
+							else
+							if(meng.obj.type==FOREGROUND)
+								st.Current_Map.obj[i].position.z=17;
+
 							st.Current_Map.num_obj++;
 							break;
 						}

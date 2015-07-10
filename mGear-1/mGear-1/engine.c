@@ -2667,15 +2667,15 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
-	x-=st.Camera.position.x;
-	y-=st.Camera.position.y;
+	int32 mx, my;
 
+	/*
 	x=((x*st.screenx)/16384)*st.Camera.dimension.x;
 	y=((y*st.screeny)/8192)*st.Camera.dimension.y;
 
 	xsize=((xsize*st.screenx)/16384)*st.Camera.dimension.x;
 	ysize=((ysize*st.screeny)/8192)*st.Camera.dimension.y;
-
+	*/
 	for(i=0;i<4;i++)
 	{
 			if(i==0)
@@ -2720,7 +2720,12 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 			}
 	}
 
-	if(st.mouse.x>xl && st.mouse.x<xb && st.mouse.y>yl && st.mouse.y<yb)
+	mx=st.mouse.x;
+	my=st.mouse.y;
+
+	STW(&mx, &my);
+
+	if(mx>xl && mx<xb && my>yl && my<yb)
 		return 1; //Collided
 	else
 		return 0; //No collision
@@ -2775,6 +2780,9 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
+
+			x*=st.Camera.dimension.x;
+			y*=st.Camera.dimension.y;
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -3177,12 +3185,15 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			sizey*=st.Camera.dimension.y;
 
 			if(z>40) z=40;
-			else if(z<16) z+=16;
+			else if(z<17) z+=17;
 
 			z_buffer[z][z_slot[z]]=i;
 			z_slot[z]++;
 
 			if(z>z_used) z_used=z;
+
+			x*=st.Camera.dimension.x;
+			y*=st.Camera.dimension.y;
 
 			//timej=GetTicks();
 
@@ -3646,6 +3657,23 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 		if(z>z_used) z_used=z;
 
+		if(z>16)
+		{
+			x-=st.Camera.position.x;
+			y-=st.Camera.position.y;
+
+			x2-=st.Camera.position.x;
+			y2-=st.Camera.position.y;
+
+			x*=st.Camera.dimension.x;
+			y*=st.Camera.dimension.y;
+
+			x2*=st.Camera.dimension.x;
+			y2*=st.Camera.dimension.y;
+
+			linewidth*=st.Camera.dimension.x;
+		}
+
 		x3=x2-x;
 		y3=y2-y;
 
@@ -3656,20 +3684,6 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ang2=(180/pi)*ang2;
 		ang=ang2;
 		ang*=10;
-
-		if(z>16)
-		{
-			x-=st.Camera.position.x;
-			y-=st.Camera.position.y;
-
-			x2-=st.Camera.position.x;
-			y2-=st.Camera.position.y;
-
-			x3*=st.Camera.dimension.x;
-			y3*=st.Camera.dimension.y;
-
-			linewidth*=st.Camera.dimension.x;
-		}
 
 		linewidth/=2;
 		
@@ -3815,6 +3829,9 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
+
+			x*=st.Camera.dimension.x;
+			y*=st.Camera.dimension.y;
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -4550,11 +4567,13 @@ void DrawMap()
 
 	uint32 i;
 	
+			for(i=0;i<st.Current_Map.num_obj;i++)
+				DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
+					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,
+					mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,
+					st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z);
+
 	
-	for(i=0;i<st.Current_Map.num_obj;i++)
-		//if(st.Current_Map.obj[i].type==FOREGROUND)
-			DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-			st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z);
 	/*
 	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
 		if(st.Current_Map.obj[i].type==MIDGROUND)
@@ -4592,14 +4611,16 @@ void DrawMap()
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
 				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
 
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,16);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,16);
-				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,16);
-				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,16);
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
 
-				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg[0].frames[0],255,0,0,32768,32768,16);
+				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg[0].frames[0],255,0,0,32768,32768,17);
 			}
 	}
+
+
 	
 }
 
@@ -4940,8 +4961,8 @@ void Renderer()
 			if(i==0) break;
 		}
 
-		memset(z_buffer,0,(5*8)*(2048));
-		memset(z_slot,0,5*8);
+		memset(z_buffer,0,(5*8)*(2048)*sizeof(int16));
+		memset(z_slot,0,5*8*sizeof(int16));
 		z_used=0;
 		
 		for(i=0;i<vbdt_num;i++)
