@@ -55,6 +55,9 @@ struct _mEng
 	uint16 mgg_sel;
 	uint16 menu_sel;
 
+	Pos p;
+	int32 got_it;
+
 	struct ObjEN
 	{
 		_OBJTYPE type;

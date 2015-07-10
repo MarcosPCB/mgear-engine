@@ -26,8 +26,8 @@ GLuint DataNT;
 //z_slots keeps track of the current number of sub-layers
 //DO NOT ALTER Z_BUFFER WITHOUT ALTERING Z_SLOTS
 
-int16 z_buffer[5*8][2048];
-int16 z_slot[5*8];
+int16 z_buffer[(5*8)+1][2048];
+int16 z_slot[(5*8)+1];
 int8 z_used;
 
 GLuint lm;
@@ -1778,8 +1778,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
 			//glGenerateMipmap(GL_TEXTURE_2D);
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 			mgg->frames[i+(mggf.num_texinatlas)].w=width;
 			mgg->frames[i+(mggf.num_texinatlas)].h=height;
@@ -3184,8 +3184,11 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
 
-			if(z>40) z=40;
-			else if(z<17) z+=17;
+			if(z>40) 
+				z=40;
+			else 
+				if(z<17) 
+					z+=17;
 
 			z_buffer[z][z_slot[z]]=i;
 			z_slot[z]++;
