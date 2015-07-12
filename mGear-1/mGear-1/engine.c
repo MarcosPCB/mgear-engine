@@ -26,8 +26,8 @@ GLuint DataNT;
 //z_slots keeps track of the current number of sub-layers
 //DO NOT ALTER Z_BUFFER WITHOUT ALTERING Z_SLOTS
 
-int16 z_buffer[(5*8)+1][2048];
-int16 z_slot[(5*8)+1];
+int16 z_buffer[(7*8)+1][2048];
+int16 z_slot[(7*8)+1];
 int8 z_used;
 
 GLuint lm;
@@ -802,27 +802,27 @@ void Init()
 	
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER)
 
-	vbd.vertex[0]=-0.90f;
-	vbd.vertex[1]=-0.90f;
+	vbd.vertex[0]=-1.0f;
+	vbd.vertex[1]=-1.0f;
 	vbd.vertex[2]=0.0f;
-	vbd.vertex[3]=-1.0f;
-	vbd.vertex[4]=-0.90f;
+	vbd.vertex[3]=1.0f;
+	vbd.vertex[4]=-1.0f;
 	vbd.vertex[5]=0.0f;
-	vbd.vertex[6]=-1.0f;
-	vbd.vertex[7]=-1.0f;
+	vbd.vertex[6]=1.0f;
+	vbd.vertex[7]=1.0f;
 	vbd.vertex[8]=0.0f;
-	vbd.vertex[9]=-0.90f;
-	vbd.vertex[10]=-1.0f;
+	vbd.vertex[9]=-1.0f;
+	vbd.vertex[10]=1.0f;
 	vbd.vertex[11]=0.0f;
 
-	vbd.texcoord[0]=1.0f;
-	vbd.texcoord[1]=1.0f;
-	vbd.texcoord[2]=0.0f;
-	vbd.texcoord[3]=1.0f;
-	vbd.texcoord[4]=0.0f;
-	vbd.texcoord[5]=0.0f;
-	vbd.texcoord[6]=1.0f;
-	vbd.texcoord[7]=0.0f;
+	vbd.texcoord[0]=0.0f;
+	vbd.texcoord[1]=0.0f;
+	vbd.texcoord[2]=1.0f;
+	vbd.texcoord[3]=0.0f;
+	vbd.texcoord[4]=1.0f;
+	vbd.texcoord[5]=1.0f;
+	vbd.texcoord[6]=0.0f;
+	vbd.texcoord[7]=1.0f;
 
 #endif
 
@@ -1038,8 +1038,8 @@ void Init()
 	//z_buffer=(int16**) calloc((3*8)*32,sizeof(int16));
 	//z_slots=32;
 
-	memset(z_buffer,0,((3*8)*2048)*sizeof(int16));
-	memset(z_slot,0,(3*8)*sizeof(int16));
+	memset(z_buffer,0,((7*8)*2048)*sizeof(int16));
+	memset(z_slot,0,(7*8)*sizeof(int16));
 
 	z_used=0;
 
@@ -2787,7 +2787,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>40) z=40;
+			if(z>56) z=56;
 			else if(z<16) z+=16;
 
 			z_buffer[z][z_slot[z]]=i;
@@ -3184,11 +3184,11 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
 
-			if(z>40) 
-				z=40;
+			if(z>56) 
+				z=56;
 			else 
-				if(z<17) 
-					z+=17;
+				if(z<16) 
+					z+=16;
 
 			z_buffer[z][z_slot[z]]=i;
 			z_slot[z]++;
@@ -3353,7 +3353,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(layer>16) layer=16;
+			if(layer>15) layer=15;
 			else if(layer<8) layer+=8;
 
 			z_buffer[layer][z_slot[layer]]=i;
@@ -3505,7 +3505,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(layer>8) layer=8;
+			if(layer>7) layer=7;
 			//else if(layer<0) layer+=8;
 
 			z_buffer[layer][z_slot[layer]]=i;
@@ -3839,7 +3839,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>40) z=40;
+			if(z>56) z=56;
 			else if(z<16) z+=16;
 
 			z_buffer[z][z_slot[z]]=i;
@@ -3981,7 +3981,7 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>8) z=8;
+			if(z>7) z=7;
 			//else if(z<0) z+=8;
 
 			z_buffer[z][z_slot[z]]=i;
@@ -4124,7 +4124,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>16) z=8;
+			if(z>15) z=15;
 			else if(z<8) z+=8;
 
 			z_buffer[z][z_slot[z]]=i;
@@ -4212,6 +4212,7 @@ uint32 PlayMovie(const char *name)
 	int ms3;
 	 uint32 i=0;
 	char header[21];
+	GLint unif;
 
 	void *buffer;
 
@@ -4225,6 +4226,14 @@ uint32 PlayMovie(const char *name)
 	
 	_MGVFORMAT mgvt;
 	_MGV *mgv;
+
+	float vertex[12]={
+		-1,-1,0, 1,-1,0,
+		1,1,0, -1,1,0 };
+
+	float texcoord[8]={
+		0,1, 1,1,
+		1,0, 0,0 };
 
 	mgv=(_MGV*) malloc(sizeof(_MGV));
 
@@ -4313,18 +4322,39 @@ uint32 PlayMovie(const char *name)
 
 	st.PlayingVideo=1;
 
+	//glDisable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+	glUseProgram(st.renderer.Program[2]);
+	glBindVertexArray(vbd.vao_id);
+
+	unif=glGetUniformLocation(st.renderer.Program[2],"texu");
+	glUniform1i(unif,0);
+
+	unif=glGetUniformLocation(st.renderer.Program[2],"normal");
+	glUniform1f(unif,0);
+
+	glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+	glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
+	glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
+	glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
+
+	glActiveTexture(GL_TEXTURE0);
+
 	while(st.PlayingVideo)
 	{
 		InputProcess();
 
 		if(st.quit) break;
-		glClearColor(0.0,0.0,0.0,0.0);
+		//glClearColor(0.0,0.0,0.0,0.0);
+		
 		glClear(GL_COLOR_BUFFER_BIT);
-		glLoadIdentity();
+		//glLoadIdentity();
 
-		glPushMatrix();
+		//glPushMatrix();
 
-		glColor4f(1.0,1.0,1.0,1.0f);
+		//glColor4f(1.0,1.0,1.0,1.0f);
 		
 		FMOD_System_Update(st.sound_sys.Sound_System);
 		
@@ -4357,11 +4387,17 @@ uint32 PlayMovie(const char *name)
 
 			mgv->frames[i].data=IMG_LoadJPG_RW(mgv->frames[i].rw);
 
-			glEnable(GL_TEXTURE_RECTANGLE);
+			//glEnable(GL_TEXTURE_RECTANGLE);
 
 			glGenTextures(1,&mgv->frames[i].ID);
-			glBindTexture(GL_TEXTURE_RECTANGLE,mgv->frames[i].ID);
-			glTexImage2D(GL_TEXTURE_RECTANGLE,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
+			glBindTexture(GL_TEXTURE_2D,mgv->frames[i].ID);
+			glTexImage2D(GL_TEXTURE_2D,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
+
+			glGenerateMipmap(GL_TEXTURE_2D);
+
+			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+			/*
 			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
 			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
@@ -4384,6 +4420,7 @@ uint32 PlayMovie(const char *name)
 			glEnd();
 
 			glPopMatrix();
+			*/
 
 			SDL_GL_SwapWindow(wn);
 			
@@ -4410,7 +4447,13 @@ uint32 PlayMovie(const char *name)
 		
 	}
 
-	glDisable(GL_TEXTURE_RECTANGLE);
+	//glDisable(GL_TEXTURE_RECTANGLE);
+
+	//glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+
+	glUseProgram(0);
+	glBindVertexArray(0);
 
 	free(mgv->framesize);
 	free(mgv->frames);
@@ -4604,22 +4647,22 @@ void DrawMap()
 		for(i=0;i<st.Current_Map.num_sector;i++)
 			if(st.Current_Map.sector[i].id>-1)
 			{
-				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,255,255,255,32,17);
-				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,255,255,255,32,17);
-				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,255,255,255,32,17);
-				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,255,255,255,32,17);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,32,32,255,32,17);
+				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,32,32,255,32,17);
+				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,32,32,255,32,17);
+				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,32,32,255,32,17);
 
-				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
-				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
-				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
-				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,255,255,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
+				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,255,255,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
 
-				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg[0].frames[0],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,128,32,mgg[0].frames[0],255,0,0,32768,32768,17);
 			}
 	}
 
@@ -4964,8 +5007,8 @@ void Renderer()
 			if(i==0) break;
 		}
 
-		memset(z_buffer,0,(5*8)*(2048)*sizeof(int16));
-		memset(z_slot,0,5*8*sizeof(int16));
+		memset(z_buffer,0,(7*8)*(2048)*sizeof(int16));
+		memset(z_slot,0,(7*8)*sizeof(int16));
 		z_used=0;
 		
 		for(i=0;i<vbdt_num;i++)
