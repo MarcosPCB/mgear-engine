@@ -348,9 +348,8 @@ struct _BODY
 	Pos size;
 	uint16 max_elasticy;
 	Material material;
-	uint8 conductor : 2;
-	uint8 flamable : 2;
-	uint8 explosive : 2;
+	uint8 flamable;
+	uint8 explosive;
 	Pos position;
 	int16 total_vel;
 	Pos velxy;
@@ -374,6 +373,7 @@ enum _OBJTYPE_
 
 typedef enum _OBJTYPE_ _OBJTYPE;
 
+#ifdef ENGINEER
 //Structure for the sprites in the game
 //When you create a sprite in the source code
 //You must add it to the structure
@@ -381,19 +381,20 @@ struct _SPRITES_
 {
 	char name[64];
 	int16 MGG_ID;
-	int32 frame;
-	_OBJTYPE type_s;
-	int32 ID;
-	int32 GameID;
-	int16 tag;
+	int16 num_frames;
+	int16 num_start_frames;
+	int32 *frame;
+	int8 num_tags;
+	int16 tags[8];
+	char tag_names[8][16];
 	int16 health;
 	_SPRITE_G type;
-	int16 current_sector;
-	int8 current_layer;
 	Body body;
 };
 
 typedef struct _SPRITES_ _SPRITES;
+
+#endif
 
 enum _OBJBLOCK_
 {
@@ -471,9 +472,6 @@ struct _MGMSPRITE_
 	//if it's just a texture, you MUST inform the frame ID
 	uint16 MGG_ID;
 
-	//Leave it blank if it's not animated
-	uint16 animation;
-
 	//Leave it blank if it's not a texture
 	int32 frame_ID;
 	_SPRITE_T type;
@@ -488,7 +486,9 @@ struct _MGMSPRITE_
 
 	Body body;
 
-	int16 tag;
+	int8 num_tags;
+
+	int16 tags[8];
 
 	int16 health;
 
@@ -706,6 +706,8 @@ struct _SETTINGS_
 	uint8 num_lights;
 	uint8 num_lightmap;
 
+	uint8 num_mgg;
+
 	_GAME_LIGHTMAPS game_lightmaps[128];
 
 	struct
@@ -735,8 +737,10 @@ struct _SETTINGS_
 
 	_MGM Current_Map;
 
+#ifdef ENGINEER
 	_SPRITES Game_Sprites[MAX_SPRITES];
 	uint16 num_sprites;
+#endif
 
 	_CAMERA Camera;
 	GAME_STATE gt;
@@ -805,7 +809,8 @@ void InitMGG(); //Inits all MGG structs
 	uint32 SaveMap(const char *name);
 #endif
 
-
+int32 LoadSpriteCFG(char *filename, int id);
+int32 LoadSpriteList(char *filename);
 
 uint32 LoadMap(const char *name);
 void FreeMap();

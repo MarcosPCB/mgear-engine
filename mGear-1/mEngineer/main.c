@@ -204,7 +204,7 @@ static int16 MGGLoad()
 
 	size_t size;
 
-	for(i=MGG_MAP_START;i<MGG_MAP_START+MAX_MAPMGG;i++)
+	for(i=MGG_MAP_START+st.num_mgg;i<MGG_MAP_START+MAX_MAPMGG;i++)
 	{
 		if(i==MGG_MAP_START+MAX_MAPMGG && mgg[i].type!=NONE)
 		{
@@ -268,7 +268,7 @@ static int16 MGGLoad()
 					if(CheckMGGFile(path2))
 					{
 						DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[4],255,0);
-						DrawString2UI("Loading...",8192,4096,1,1,1,255,255,255,1,st.fonts[GEOMET].font,FONT_SIZE*3,FONT_SIZE*3,0);
+						DrawString2UI("Loading...",8192,4096,1,1,0,255,255,255,255,st.fonts[GEOMET].font,FONT_SIZE*3,FONT_SIZE*3,0);
 						Renderer();
 						LoadMGG(&mgg[id],path2);
 
@@ -296,6 +296,7 @@ static int16 MGGLoad()
 							strcpy(meng.mgg_list[st.Current_Map.num_mgg],mgg[id].name);
 							meng.num_mgg++;
 							st.Current_Map.num_mgg++;
+							st.num_mgg++;
 							LogApp("MGG %s loaded",path2);
 							meng.scroll=0;
 							meng.pannel_choice=2;
@@ -672,6 +673,7 @@ static void PannelLeft()
 					if(st.mouse1)
 					{
 						meng.spr.gid=i;
+						/*
 						if(st.Game_Sprites[i].frame>-1)
 						{
 							meng.tex2_sel=meng.tex_selection;
@@ -681,6 +683,7 @@ static void PannelLeft()
 							meng.tex_ID=st.Game_Sprites[i].frame;
 							meng.tex_MGGID=st.Game_Sprites[i].MGG_ID;
 						}
+						*/
 						st.mouse1=0;
 						meng.command=meng.pannel_choice;
 					}
@@ -2698,7 +2701,7 @@ static void MGGListLoad()
 	LogApp("MGGs loaded");
 
 }
-
+/*
 static void SpriteListLoad()
 {
 	FILE *file;
@@ -2776,7 +2779,7 @@ static void SpriteListLoad()
 
 	LogApp("%d Sprites loaded",st.num_sprites);
 }
-
+*/
 int main(int argc, char *argv[])
 {
 
@@ -2805,7 +2808,12 @@ int main(int argc, char *argv[])
 	st.num_sprites=0;
 	meng.got_it=-1;
 
-	SpriteListLoad();
+	//SpriteListLoad();
+
+	BASICBKD();
+	DrawStringUI("Loading sprites...",8192,4096,0,0,0,255,255,255,255,st.fonts[GEOMET].font,2048,2048,6);
+
+	LoadSpriteList("sprite.list");
 
 	st.FPSYes=1;
 

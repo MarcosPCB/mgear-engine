@@ -4517,6 +4517,313 @@ uint32 SaveMap(const char *name)
 
 #endif
 
+int32 LoadSpriteCFG(char *filename, int id)
+{
+	FILE *file;
+	int value, value2, value3;
+	uint16 i, id2, skip, num_frames;
+	char buf[1024], str[16], str2[16], str3[16], str4[8][16];
+
+	for(i=MGG_MAP_START+st.num_mgg;i<MGG_MAP_START+MAX_MAPMGG;i++)
+	{
+		if(i==MGG_MAP_START+MAX_MAPMGG && mgg[i].type!=NONE)
+		{
+			LogApp("Cannot load MGG, reached max number of map MGGs loaded");
+			return 0;
+		}
+
+		if(mgg[i].type==NONE)
+		{
+			id2=i;
+			break;
+		}
+	}
+
+	if((file=fopen(filename,"r"))==NULL)
+	{
+		LogApp("error reading sprite cfg file: %s",filename);
+		return 0;
+	}
+
+	while(!feof(file))
+	{
+		memset(str,0,16);
+		fgets(buf,1024,file);
+
+		sscanf(buf,"%s %s",str, str2);
+
+		if(strcmp(str,"\0")==NULL)
+			continue;
+
+		if(strcmp(str,"NAME")==NULL)
+		{
+			strcpy(st.Game_Sprites[id].name,str2);
+			continue;
+		}
+		else
+		if(strcmp(str,"MGG")==NULL)
+		{
+			sscanf(buf,"%s %s %s",str, str2, str3);
+
+			if(strcmp(str2,"NONE")==NULL)
+			{
+				st.Game_Sprites[id].MGG_ID=-1;
+				continue;
+			}
+
+			if(CheckMGGFile(str2))
+			{
+				LoadMGG(&mgg[id2],str2);
+				st.num_mgg++;
+				st.Game_Sprites[id].MGG_ID=id2;
+			}
+			else
+			{
+				LogApp("Error loading sprite MGG: %s",str2);
+				return 0;
+			}
+
+			if(strcmp(str3,"ALL")==NULL)
+			{
+				st.Game_Sprites[id].num_frames=mgg[id2].num_frames;
+
+				skip=2;
+			}
+			else
+			if(strcmp(str3,"PART")==NULL)
+			{
+				skip=1;
+			}
+
+			continue;
+		}
+		else
+		if(strcmp(str,"NUM_FRAMES")==NULL)
+		{
+			num_frames=atoi(str2);
+
+			st.Game_Sprites[id].num_start_frames=st.Game_Sprites[id].num_frames=num_frames;
+
+			skip=3;
+
+			continue;
+		}
+		else
+		if(strcmp(str,"FRAMES")==NULL)
+		{
+			if(skip==1)
+			{
+				LogApp("Error: number of start frames not declared: %s", filename);
+				FreeMGG(&mgg[id2]);
+				st.num_mgg--;
+				return 0;
+			}
+			else
+			if(skip==2)
+			{
+				LogApp("Warning: declaring start frames after ALL declared: %s", filename);
+				continue;
+			}
+			else
+			if(skip==4)
+			{
+				LogApp("Warning: start frames already declared: %s", filename);
+				continue;
+			}
+			else
+			if(skip==3)
+			{
+
+				st.Game_Sprites[id].frame=malloc(num_frames*sizeof(int32));
+
+				for(i=0;i<num_frames;i++)
+				{
+					if(i==0 || i%2==0)
+					{
+						sscanf(str2,"%d %s", &value, str3);
+
+						st.Game_Sprites[id].frame[i]=value;
+					}
+					else
+					if(i%2!=0)
+					{
+						sscanf(str3,"%d %s", &value, str2);
+
+						st.Game_Sprites[id].frame[i]=value;
+					}
+				}
+
+				skip=4;
+
+				continue;
+			}
+		}
+		else
+		if(strcmp(str,"HEALTH")==NULL)
+		{
+			st.Game_Sprites[id].health=atoi(str2);
+
+			continue;
+		}
+		else
+		if(strcmp(str,"MASS")==NULL)
+		{
+			st.Game_Sprites[id].body.mass=atoi(str2);
+
+			continue;
+		}
+		else
+		if(strcmp(str,"MATERIAL")==NULL)
+		{
+			if(strcmp(str2,"METAL")==NULL)
+				st.Game_Sprites[id].body.material=METAL;
+			else
+			if(strcmp(str2,"CONCRETE")==NULL)
+				st.Game_Sprites[id].body.material=CONCRETE;
+			else
+			if(strcmp(str2,"PLASTIC")==NULL)
+				st.Game_Sprites[id].body.material=PLASTIC;
+			else
+			if(strcmp(str2,"ORGANIC")==NULL)
+				st.Game_Sprites[id].body.material=ORGANIC;
+			else
+			if(strcmp(str2,"NONE")==NULL)
+				st.Game_Sprites[id].body.material=MATERIAL_END;
+			else
+			if(strcmp(str2,"WOOD")==NULL)
+				st.Game_Sprites[id].body.material=WOOD;
+			else
+			{
+				LogApp("Error: MATERIAL declaration undefined: %s", filename);
+				return 0;
+			}
+
+			continue;
+		}
+		else
+		if(strcmp(str,"SIZE")==NULL)
+		{
+			sscanf(str2,"%d %d", &value, &value2);
+
+			st.Game_Sprites[id].body.size.x=value;
+			st.Game_Sprites[id].body.size.y=value2;
+
+			continue;
+		}
+		else
+		if(strcmp(str,"FLAMABLE")==NULL)
+		{
+			st.Game_Sprites[id].body.flamable=atoi(str2);
+
+			continue;
+		}
+		else
+		if(strcmp(str,"EXPLOSIVE")==NULL)
+		{
+			st.Game_Sprites[id].body.explosive=atoi(str2);
+
+			continue;
+		}
+		else
+		if(strcmp(str,"TYPE")==NULL)
+		{
+			if(strcmp(str2,"GAME_LOGICAL")==NULL)
+				st.Game_Sprites[id].body.material=GAME_LOGICAL;
+			else
+			if(strcmp(str2,"ENEMY")==NULL)
+				st.Game_Sprites[id].body.material=ENEMY;
+			else
+			if(strcmp(str2,"FRIEND")==NULL)
+				st.Game_Sprites[id].body.material=FRIEND;
+			else
+			if(strcmp(str2,"NORMAL")==NULL)
+				st.Game_Sprites[id].body.material=NORMAL;
+			else
+			{
+				LogApp("Error: TYPE declaration undefined: %s", filename);
+				return 0;
+			}
+		}
+	}
+
+	fclose(file);
+
+	st.num_sprites++;
+
+	return 1;
+}
+
+int32 LoadSpriteList(char *filename)
+{
+	FILE *file;
+	int value, value2, value3;
+	uint16 i;
+	char buf[1024], str[16], str2[32], str3[64], str4[8][16];
+
+	if((file=fopen(filename,"r"))==NULL)
+	{
+		LogApp("error reading sprite list file: %s",filename);
+		return 0;
+	}
+
+	while(!feof(file))
+	{
+		memset(str,0,16);
+		memset(buf,0,1024);
+		memset(str2,0,32);
+		memset(str3,0,64);
+		memset(str4,0,8*16);
+
+		fgets(buf,1024,file);
+
+		if(buf[0]=='/0')
+			continue;
+
+		if(buf[0]=='/' && buf[1]=='/')
+			continue;
+
+		sscanf(buf,"%s %s %d %s %d %s %s %s %s %s %s %s %s",str, str2, &value, str3, &value2, str4[0], str4[1], str4[2], str4[3], str4[4], str4[5], str4[6], str4[7]);
+
+		if(strcmp(str,"\0")==NULL)
+			continue;
+
+		if(strcmp(str,"SPRITE")==NULL)
+		{
+			strcpy(st.Game_Sprites[value].name,str2);
+
+			if(strcmp(str3,"NONE")!=NULL)
+			{
+				if(!LoadSpriteCFG(str3,value))
+				{
+					LogApp("failed loading sprite cfg");
+
+					return 0;
+				}
+			}
+
+			if(value2>0)
+			{
+				st.Game_Sprites[value].num_tags=value2;
+
+				for(i=0;i<value2;i++)
+					strcpy(st.Game_Sprites[value].tag_names[i], str4[i]);
+			}
+
+			continue;
+		}
+	}
+
+	fclose(file);
+
+	memset(str,0,16);
+	memset(buf,0,1024);
+	memset(str2,0,32);
+	memset(str3,0,64);
+	memset(str4,0,8*16);
+
+	return 1;
+}
+
 uint32 LoadMap(const char *name)
 {
 	FILE *file;
