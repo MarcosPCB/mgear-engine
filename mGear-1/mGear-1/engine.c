@@ -41,7 +41,10 @@ GLuint lm;
 #endif
 
 _MGG movie;
-_MGG mgg[MAX_MGG];
+
+_MGG mgg_sys[3];
+_MGG mgg_map[MAX_MAP_MGG];
+_MGG mgg_game[MAX_GAME_MGG];
 
 SDL_Window *wn;
 
@@ -284,6 +287,47 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
+int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 dimx, int32 dimy)
+{
+	int32 vertex[8];
+	uint8 valx=0, valy=0;
+
+	if(x>(dimx-16384) && x<dimx && y>(dimy-8192) && y<dimy)
+		return 0;
+	else
+	{
+
+		vertex[0]=x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+		vertex[1]=y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+
+		vertex[2]=x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+		vertex[3]=y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+
+		vertex[4]=x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+		vertex[5]=y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+
+		vertex[6]=x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+		vertex[7]=y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+
+		if(vertex[0]<(dimx-16384) || vertex[0]>dimx) valx++;
+		if(vertex[2]<(dimx-16384) || vertex[2]>dimx) valx++;
+		if(vertex[4]<(dimx-16384) || vertex[4]>dimx) valx++;
+		if(vertex[6]<(dimx-16384) || vertex[6]>dimx) valx++;
+
+		if(valx==4)
+			return 1;
+
+		if(vertex[1]<(dimy-8192) || vertex[1]>dimy) valy++;
+		if(vertex[3]<(dimy-8192) || vertex[3]>dimy) valy++;
+		if(vertex[5]<(dimy-8192) || vertex[5]>dimy) valy++;
+		if(vertex[7]<(dimy-8192) || vertex[7]>dimy) valy++;
+
+		if(valy==4)
+			return 1;
+
+		return 0;
+	}
+}
 
 void Quit()
 {
@@ -1434,6 +1478,7 @@ SHADER_CREATION:
 
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
+	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
 
 	//Calculates Cos, Sin and Tan tables
 	for(k=0.0f;k<360.1f;k+=0.1f)
@@ -1589,6 +1634,72 @@ static FILE *DecompressFile(const char *name)
 	return file;
 }
 
+int32 CheckMGGInSystem(const char *name)
+{
+	FILE *file;
+	char header[21];
+	int8 i;
+
+	_MGGFORMAT mggf;
+	/*
+	if((file=DecompressFile(name))==NULL)
+	{
+		LogApp("Error reading MGG file %s",name);
+			return -2;
+	}
+	*/
+
+	if((file=fopen(name,"rb"))==NULL)
+	{
+		LogApp("Error reading MGG file %s",name);
+			return -2;
+	}
+
+	rewind(file);
+
+	fread(header,21,1,file);
+
+	if(strcmp(header,"MGG File Version 1.1")!=NULL)
+	{
+		LogApp("Invalid MGG file header %s",header);
+		fclose(file);
+		return -2;
+	}
+
+	fread(&mggf,sizeof(_MGGFORMAT),1,file);
+
+	for(i=0;i<st.num_mgg_basic;i++)
+	{
+		if(strcmp(mggf.name,mgg_sys[i].name)==NULL)
+		{
+			fclose(file);
+			return i+1000;
+		}
+	}
+
+	for(i=0;i<st.num_mgg;i++)
+	{
+		if(strcmp(mggf.name,mgg_game[i].name)==NULL)
+		{
+			fclose(file);
+			return i+10000;
+		}
+	}
+
+	for(i=0;i<st.Current_Map.num_mgg;i++)
+	{
+		if(strcmp(mggf.name,mgg_map[i].name)==NULL)
+		{
+			fclose(file);
+			return i+100000;
+		}
+	}
+
+	fclose(file);
+
+	return -1;
+}
+
 uint32 CheckMGGFile(const char *name)
 {
 	FILE *file;
@@ -1596,10 +1707,19 @@ uint32 CheckMGGFile(const char *name)
 
 	_MGGFORMAT mggf;
 
+	/*
 	if((file=DecompressFile(name))==NULL)
 	{
 		LogApp("Error reading MGG file %s",name);
 			return 0;
+	}
+	*/
+
+	
+	if((file=fopen(name,"rb"))==NULL)
+	{
+		LogApp("Error reading MGG file %s",name);
+			return -2;
 	}
 
 	rewind(file);
@@ -1644,13 +1764,34 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	uint8 normals[MAX_FRAMES];
 	uint32 normalsize[MAX_FRAMES];
 	_MGGANIM *mga;
+	int32 checkmgg;
+
+	checkmgg=CheckMGGInSystem(name);
+
+	if(checkmgg==-2)
+		return 0;
+	else
+	if(checkmgg>0)
+	//{
+		//LogApp("This MGG is already loaded
+		return 0;
+	//}
 
 	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 
+	/*
 	if((file=DecompressFile(name))==NULL)
 	{
 		LogApp("Error reading MGG file %s",name);
 			return 0;
+	}
+	*/
+
+	
+	if((file=fopen(name,"rb"))==NULL)
+	{
+		LogApp("Error reading MGG file %s",name);
+			return -2;
 	}
 
 	rewind(file);
@@ -1683,7 +1824,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	mgg->frames=(TEX_DATA*) calloc(mgg->num_frames,sizeof(TEX_DATA));
 
-	framealone=calloc(mgg->num_frames,sizeof(uint32));
+	framealone=(uint32*)calloc(mgg->num_frames,sizeof(uint32));
 
 	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
@@ -1698,15 +1839,15 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	rewind(file);
 	fseek(file,mggf.framesize_offset,SEEK_CUR);
-	fread(framesize,sizeof(uint32),mggf.num_singletex,file);
-	fread(frameoffset,sizeof(uint32),mggf.num_singletex,file);
-	fread(normals,sizeof(uint8),mggf.num_singletex,file);
-	fread(normalsize,sizeof(uint32),mggf.num_singletex,file);
+	fread(framesize,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
+	fread(frameoffset,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
+	fread(normals,sizeof(uint8),mggf.num_singletex+mggf.num_atlas,file);
+	fread(normalsize,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
 
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 	mgg->atlas=(GLint*) malloc(mggf.num_atlas*sizeof(GLint));
 
-	for(i=0, j=0;i<mggf.num_singletex;i++)
+	for(i=0, j=0;i<mggf.num_singletex+mggf.num_atlas;i++)
 	{
 		
 		if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
@@ -1774,6 +1915,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		}
 		else
 		{
+			i-=mggf.num_atlas;
 			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
@@ -1827,6 +1969,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			}
 			else
 				mgg->frames[i+(mggf.num_texinatlas)].normal=0;
+
+			i+=mggf.num_atlas;
 		}
 	}
 		
@@ -1874,25 +2018,25 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fseek(file,mggf.possize_offset,SEEK_SET);
 
-	posx=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
-	posy=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
-	sizex=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
-	sizey=(uint16*) malloc((mggf.num_texinatlas+1)*sizeof(uint16));
-	imgatlas=(uint8*) malloc((mggf.num_texinatlas+1)*sizeof(uint8));
+	posx=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
+	posy=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
+	sizex=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
+	sizey=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
+	imgatlas=(uint8*) malloc((mggf.num_texinatlas)*sizeof(uint8));
 
-	fread(posx,sizeof(uint16),(mggf.num_texinatlas+1),file);
-	fread(posy,sizeof(uint16),(mggf.num_texinatlas+1),file);
-	fread(sizex,sizeof(uint16),(mggf.num_texinatlas+1),file);
-	fread(sizey,sizeof(uint16),(mggf.num_texinatlas+1),file);
-	fread(imgatlas,sizeof(uint8),(mggf.num_texinatlas+1),file);
+	fread(posx,sizeof(uint16),(mggf.num_texinatlas),file);
+	fread(posy,sizeof(uint16),(mggf.num_texinatlas),file);
+	fread(sizex,sizeof(uint16),(mggf.num_texinatlas),file);
+	fread(sizey,sizeof(uint16),(mggf.num_texinatlas),file);
+	fread(imgatlas,sizeof(uint8),(mggf.num_texinatlas),file);
 
-	for(i=mggf.num_atlas-1;i<mggf.num_texinatlas+1;i++)
+	for(i=mggf.num_atlas-1;i<mggf.num_texinatlas;i++)
 	{
 		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
-		mgg->frames[i].posx=posx[i-1];
-		mgg->frames[i].posy=posy[i-1];
-		mgg->frames[i].sizex=sizex[i-1];
-		mgg->frames[i].sizey=sizey[i-1];
+		mgg->frames[i].posx=posx[i];
+		mgg->frames[i].posy=posy[i];
+		mgg->frames[i].sizex=sizex[i];
+		mgg->frames[i].sizey=sizey[i];
 		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
 	}
 	
@@ -1906,7 +2050,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	
 	if(mggf.num_frames>1)
 	{
-		for(i=(mggf.num_atlas+mggf.num_texinatlas), j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
+		for(i=(mggf.num_texinatlas), j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
 		{	
 			if(framealone[i] && i==mggf.num_frames-1) 
 				break;
@@ -1914,7 +2058,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			if(framealone[i]) 
 				continue;
 
-			if(i==(mggf.num_atlas+mggf.num_texinatlas) && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024) && !mgg->frames[i].normal)
+			if(i==(mggf.num_texinatlas) && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024) && !mgg->frames[i].normal)
 			{
 				if(!vbdt_num)
 				{
@@ -2351,9 +2495,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	free(posy);
 	free(sizex);
 	free(sizey);
-	free(imgatlas);
+	
+	//if(imgatlas!=0)
+		free(imgatlas);
 
-	free(framealone);
+	//if(framealone!=0)
+		free(framealone);
 
 	fclose(file);
 
@@ -2374,25 +2521,37 @@ void FreeMGG(_MGG *file)
 		file->size[i].y=NULL;
 	}
 
-	free(mgg->frames);
-	free(mgg->anim);
-	free(mgg->size);
+	free(file->frames);
+	free(file->anim);
+	free(file->size);
 
 	file->num_frames=NULL;
 	
 	file->num_anims=NULL;
 
-	memset(mgg,0,sizeof(_MGG));
+	memset(file,0,sizeof(_MGG));
 }
 
 void InitMGG()
 {
 	uint16 i;
 
-	for(i=0; i<MAX_MGG; i++)
+	for(i=0; i<MAX_MAP_MGG; i++)
 	{
-		memset(&mgg[i],0,sizeof(_MGG));
-		mgg[i].type=NONE;
+		memset(&mgg_map[i],0,sizeof(_MGG));
+		mgg_map[i].type=NONE;
+	}
+
+	for(i=0; i<MAX_GAME_MGG; i++)
+	{
+		memset(&mgg_game[i],0,sizeof(_MGG));
+		mgg_game[i].type=NONE;
+	}
+
+	for(i=0; i<3; i++)
+	{
+		memset(&mgg_sys[i],0,sizeof(_MGG));
+		mgg_sys[i].type=NONE;
 	}
 }
 
@@ -2755,19 +2914,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
-
-	az=mCos(ang);
-	az*=100;
-	j=(int32) az;
-
-	ay=mSin(ang);
-	ay*=100;
-	k=(int32) ay;
-
-	//if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
-
-	if(valx == 4 || valy == 4)
-		return 1;
+	
+	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -3159,15 +3307,7 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
 
-	az=mCos(ang);
-	az*=100;
-	j=(int32) az;
-
-	ay=mSin(ang);
-	ay*=100;
-	k=(int32) ay;
-
-	//if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -3331,15 +3471,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	t3=16384;
 	t4=8192;
 
-	az=mCos(ang);
-	az*=100;
-	j=(int32) az;
-
-	ay=mSin(ang);
-	ay*=100;
-	k=(int32) ay;
-
-	//if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -3483,15 +3615,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	t3=16384;
 	t4=8192;
 
-	az=mCos(ang);
-	az*=100;
-	j=(int32) az;
-
-	ay=mSin(ang);
-	ay*=100;
-	k=(int32) ay;
-
-	//if(CheckBounds(x,y,sizex,sizey,t3,t4,j,k)) return 1;
+	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -3786,6 +3910,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	
 	SDL_Surface *msg;
 
+	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+
 	co.r=255;
 	co.g=255;
 	co.b=255;
@@ -3934,6 +4060,8 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 	
 	SDL_Surface *msg;
 
+	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+
 	co.r=255;
 	co.g=255;
 	co.b=255;
@@ -4076,6 +4204,8 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	uint8 val=0;
 	
 	SDL_Surface *msg;
+
+	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	co.r=255;
 	co.g=255;
@@ -4522,17 +4652,17 @@ int32 LoadSpriteCFG(char *filename, int id)
 	FILE *file;
 	int value, value2, value3;
 	uint16 i, id2, skip, num_frames;
-	char buf[1024], str[16], str2[16], str3[16], str4[8][16];
+	char buf[1024], str[16], str2[16], str3[16], str4[8][16], *tok;
 
-	for(i=MGG_MAP_START+st.num_mgg;i<MGG_MAP_START+MAX_MAPMGG;i++)
+	for(i=0;i<MAX_GAME_MGG;i++)
 	{
-		if(i==MGG_MAP_START+MAX_MAPMGG && mgg[i].type!=NONE)
+		if(i==MAX_GAME_MGG-1 && mgg_game[i].type!=NONE)
 		{
 			LogApp("Cannot load MGG, reached max number of map MGGs loaded");
 			return 0;
 		}
 
-		if(mgg[i].type==NONE)
+		if(mgg_game[i].type==NONE)
 		{
 			id2=i;
 			break;
@@ -4548,6 +4678,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 	while(!feof(file))
 	{
 		memset(str,0,16);
+		memset(buf,0,1024);
 		fgets(buf,1024,file);
 
 		sscanf(buf,"%s %s",str, str2);
@@ -4573,9 +4704,32 @@ int32 LoadSpriteCFG(char *filename, int id)
 
 			if(CheckMGGFile(str2))
 			{
-				LoadMGG(&mgg[id2],str2);
-				st.num_mgg++;
-				st.Game_Sprites[id].MGG_ID=id2;
+				value=CheckMGGInSystem(str2);
+
+				if(value>999 && value<1003)
+				{
+					st.Game_Sprites[id].MGG_ID=value-1000;
+					id2=value-1000;
+				}
+				else
+				if(value>9999 && value<100000)
+				{
+					st.Game_Sprites[id].MGG_ID=value-10000;
+					id2=value-10000;
+				}
+				else
+				if(value>99999 && value<1000000)
+				{
+					st.Game_Sprites[id].MGG_ID=value-100000;
+					id2=value-100000;
+				}
+				else
+				if(value==-1)
+				{
+					LoadMGG(&mgg_game[id2],str2);
+					st.num_mgg++;
+					st.Game_Sprites[id].MGG_ID=id2;
+				}
 			}
 			else
 			{
@@ -4585,7 +4739,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 
 			if(strcmp(str3,"ALL")==NULL)
 			{
-				st.Game_Sprites[id].num_frames=mgg[id2].num_frames;
+				st.Game_Sprites[id].num_frames=mgg_game[id2].num_frames;
 
 				skip=2;
 			}
@@ -4602,7 +4756,18 @@ int32 LoadSpriteCFG(char *filename, int id)
 		{
 			num_frames=atoi(str2);
 
-			st.Game_Sprites[id].num_start_frames=st.Game_Sprites[id].num_frames=num_frames;
+			if(skip==1)
+				st.Game_Sprites[id].num_start_frames=st.Game_Sprites[id].num_frames=num_frames;
+			else
+			if(skip==2)
+				st.Game_Sprites[id].num_start_frames=num_frames;
+			else
+			if(skip==3 || skip==4)
+			{
+				LogApp("Warning: number os frames already declared: %s",filename);
+				num_frames=st.Game_Sprites[id].num_start_frames;
+				continue;
+			}
 
 			skip=3;
 
@@ -4611,18 +4776,12 @@ int32 LoadSpriteCFG(char *filename, int id)
 		else
 		if(strcmp(str,"FRAMES")==NULL)
 		{
-			if(skip==1)
+			if(skip==1 || skip==2)
 			{
 				LogApp("Error: number of start frames not declared: %s", filename);
-				FreeMGG(&mgg[id2]);
+				FreeMGG(&mgg_game[id2]);
 				st.num_mgg--;
 				return 0;
-			}
-			else
-			if(skip==2)
-			{
-				LogApp("Warning: declaring start frames after ALL declared: %s", filename);
-				continue;
 			}
 			else
 			if(skip==4)
@@ -4633,30 +4792,34 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			if(skip==3)
 			{
-
-				st.Game_Sprites[id].frame=malloc(num_frames*sizeof(int32));
+				st.Game_Sprites[id].frame=(int32*) malloc(num_frames*sizeof(int32));
+				tok=strtok(buf," ");
 
 				for(i=0;i<num_frames;i++)
 				{
-					if(i==0 || i%2==0)
-					{
-						sscanf(str2,"%d %s", &value, str3);
+					tok=strtok(NULL," ");
 
-						st.Game_Sprites[id].frame[i]=value;
-					}
-					else
-					if(i%2!=0)
-					{
-						sscanf(str3,"%d %s", &value, str2);
+					if(tok==NULL) break;
 
-						st.Game_Sprites[id].frame[i]=value;
-					}
+					st.Game_Sprites[id].frame[i]=atoi(tok);
 				}
 
 				skip=4;
 
 				continue;
 			}
+		}
+		else
+		if(strcmp(str,"DEFAULT")==NULL)
+		{
+			st.Game_Sprites[id].health=0;
+			st.Game_Sprites[id].body.mass=0;
+			st.Game_Sprites[id].body.flamable=0;
+			st.Game_Sprites[id].body.explosive=0;
+			st.Game_Sprites[id].body.material=MATERIAL_END;
+			st.Game_Sprites[id].body.size.x=st.Game_Sprites[id].body.size.y=512;
+
+			continue;
 		}
 		else
 		if(strcmp(str,"HEALTH")==NULL)
@@ -4728,16 +4891,16 @@ int32 LoadSpriteCFG(char *filename, int id)
 		if(strcmp(str,"TYPE")==NULL)
 		{
 			if(strcmp(str2,"GAME_LOGICAL")==NULL)
-				st.Game_Sprites[id].body.material=GAME_LOGICAL;
+				st.Game_Sprites[id].type=GAME_LOGICAL;
 			else
 			if(strcmp(str2,"ENEMY")==NULL)
-				st.Game_Sprites[id].body.material=ENEMY;
+				st.Game_Sprites[id].type=ENEMY;
 			else
 			if(strcmp(str2,"FRIEND")==NULL)
-				st.Game_Sprites[id].body.material=FRIEND;
+				st.Game_Sprites[id].type=FRIEND;
 			else
 			if(strcmp(str2,"NORMAL")==NULL)
-				st.Game_Sprites[id].body.material=NORMAL;
+				st.Game_Sprites[id].type=NORMAL;
 			else
 			{
 				LogApp("Error: TYPE declaration undefined: %s", filename);
@@ -4899,11 +5062,11 @@ void FreeMap()
 		free(st.Current_Map.obj);
 		free(st.Current_Map.sprites);
 
-		j=MGG_MAP_START;
+		j=0;
 
 		for(i=0;i<st.Current_Map.num_mgg;i++)
 		{
-			FreeMGG(&mgg[j]);
+			FreeMGG(&mgg_map[j]);
 			j++;
 		}
 
@@ -4923,7 +5086,7 @@ void DrawMap()
 			for(i=0;i<st.Current_Map.num_obj;i++)
 				DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,
-					mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,
+					mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,
 					st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z);
 
 	
@@ -4964,12 +5127,12 @@ void DrawMap()
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,128,32,mgg[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
 
-				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,128,32,mgg[0].frames[0],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,128,32,mgg_sys[0].frames[0],255,0,0,32768,32768,17);
 			}
 	}
 

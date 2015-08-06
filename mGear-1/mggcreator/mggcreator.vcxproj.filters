@@ -27,18 +27,12 @@
     <ClInclude Include="mgg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="quicklz.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="mggcreator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="quicklz.c">
+    <ClCompile Include="mggcreator.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

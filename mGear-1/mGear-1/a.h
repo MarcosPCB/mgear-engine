@@ -1,9 +1,15 @@
 #include "types.h"
 
+#ifndef _A_H_
+#define _A_H_
 //ASM
-//extern "C" 
+//extern "C"
 //{ 
-	int32 CheckBounds(int32,int32,int32,int32,int32,int32,int32,int32); 
+	extern double _cdecl sqrt14(double); 
 
 	//double sqrt14(double);
 //}
+
+//#define CheckBounds _CheckBounds
+
+#endif

@@ -68,12 +68,12 @@ typedef FMOD_CHANNEL Channel;
 //MGG format
 #define MAX_FRAMES 8192
 #define MAX_ANIMATIONS 64
-#define MAX_MGG 256
+#define MAX_MAP_MGG 64
+#define MAX_GAME_MGG 128
 
 #define pi 3.14159265
 
-#define MGG_MAP_START 3 //The first slot to be used for loading map MGGs
-#define MGG_SPRITE_START MGG_MAP_START+MAX_MAPMGG
+#define MGG_START 3 //The first slot to be used for loading sprite MGGs
 
 //double inline  sqrt14(double n)
 
@@ -707,6 +707,7 @@ struct _SETTINGS_
 	uint8 num_lightmap;
 
 	uint8 num_mgg;
+	uint8 num_mgg_basic;
 
 	_GAME_LIGHTMAPS game_lightmaps[128];
 
@@ -785,7 +786,9 @@ extern SDL_Event events;
 extern _LIGHTS game_lights[MAX_LIGHTS];
 extern _ENTITIES lpm[MAX_LIGHTMAPS]; 
 
-extern _MGG mgg[MAX_MGG];
+extern _MGG mgg_sys[3];
+extern _MGG mgg_map[MAX_MAP_MGG];
+extern _MGG mgg_game[MAX_GAME_MGG];
 
 extern const char WindowTitle[32];
 
@@ -799,6 +802,7 @@ void Quit();
 void createmgg();
 void createmgv();
 
+int32 CheckMGGInSystem(const char *name); //Check if the MGG is already loaded into the system
 uint32 CheckMGGFile(const char *name); //Check if its a MGG file
 uint32 LoadMGG(_MGG *mgg, const char *name); //Loads a MGG file into a MGG type struct
 
@@ -858,6 +862,8 @@ void CalTan16u(int16 ang, uint16 *val);
 void CalCos32u(int16 ang, uint32 *val);
 void CalSin32u(int16 ang, uint32 *val);
 void CalTan32u(int16 ang, uint32 *val);
+
+int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 dimx, int32 dimy);
 
 //Draws the main lightmap
 //THIS MUST GO BEFORE ANY DRAWING COMMAND

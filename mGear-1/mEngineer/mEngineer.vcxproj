@@ -100,7 +100,6 @@
     <ClCompile Include="menu.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\mGear-1\a.h" />
     <ClInclude Include="..\mGear-1\dirent.h" />
     <ClInclude Include="..\mGear-1\engine.h" />
     <ClInclude Include="..\mGear-1\input.h" />
@@ -108,11 +107,6 @@
     <ClInclude Include="..\mGear-1\quicklz.h" />
     <ClInclude Include="..\mGear-1\types.h" />
     <ClInclude Include="main.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="..\mGear-1\a.asm">
-      <FileType>Document</FileType>
-    </MASM>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

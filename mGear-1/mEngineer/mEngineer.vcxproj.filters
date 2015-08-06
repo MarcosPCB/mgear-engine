@@ -15,23 +15,38 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\mGear-1\engine.cpp">
+    <ClCompile Include="menu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\mGear-1\input.cpp">
+    <ClCompile Include="..\mGear-1\engine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\mGear-1\physics.cpp">
+    <ClCompile Include="..\mGear-1\input.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mGear-1\physics.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\mGear-1\quicklz.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\mGear-1\shader110.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mGear-1\shader130.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mGear-1\dirent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\mGear-1\engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -45,9 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\mGear-1\types.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
