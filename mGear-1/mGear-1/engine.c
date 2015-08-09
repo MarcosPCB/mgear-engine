@@ -289,14 +289,32 @@ void CalTan32u(int16 ang, uint32 *val)
 
 int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 dimx, int32 dimy)
 {
-	int32 vertex[8];
+	int32 vertex[8], vertex2[8];
 	uint8 valx=0, valy=0;
+	int32 dist, centerx, centery;
+	float r, dx, dy;
 
 	if(x>(dimx-16384) && x<dimx && y>(dimy-8192) && y<dimy)
 		return 0;
 	else
 	{
+		if(sizex>sizey) dist=sizex;
+		else dist=sizey;
 
+		centerx=st.Camera.position.x+8192;
+		centery=st.Camera.position.y+4096;
+
+		dx=(float) pow(x-centerx,2);
+		dy=(float) pow(y-centery,2);
+
+		r=(float) sqrt(dx+dy);
+
+		if(r<16384+dist) return 0;
+		else return 1;
+
+		return 0;
+
+		/*
 		vertex[0]=x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 		vertex[1]=y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 
@@ -308,24 +326,30 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 di
 
 		vertex[6]=x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 		vertex[7]=y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-
+		
 		if(vertex[0]<(dimx-16384) || vertex[0]>dimx) valx++;
 		if(vertex[2]<(dimx-16384) || vertex[2]>dimx) valx++;
 		if(vertex[4]<(dimx-16384) || vertex[4]>dimx) valx++;
 		if(vertex[6]<(dimx-16384) || vertex[6]>dimx) valx++;
 
 		if(valx==4)
-			return 1;
+		{
+			if(dimx<vertex[2] ||
+			//return 1;
 
 		if(vertex[1]<(dimy-8192) || vertex[1]>dimy) valy++;
 		if(vertex[3]<(dimy-8192) || vertex[3]>dimy) valy++;
 		if(vertex[5]<(dimy-8192) || vertex[5]>dimy) valy++;
 		if(vertex[7]<(dimy-8192) || vertex[7]>dimy) valy++;
 
-		if(valy==4)
-			return 1;
+		//if(valy==4)
+			//return 1;
 
+			
+			
 		return 0;
+
+		*/
 	}
 }
 
@@ -836,6 +860,11 @@ void Init()
 	GLint statusCM[32], statusLK[32];
 	GLchar logs[32][1024];
 
+#ifdef _DEBUG
+	printf("Waiting...\n");
+	system("pause");
+#endif
+
 	CreateLog();
 
 	vbd.vertex=(float*) malloc(12*sizeof(float));
@@ -1271,7 +1300,7 @@ SHADER_CREATION:
 #endif
 		}
 		else
-		if(statusCM[0] && statusCM[1] && statusCM[2] && statusCM[3] && statusCM[4] && statusCM[5] && statusCM[6] && statusCM[7])
+		if(statusCM[0] && statusCM[3] && statusCM[4] && statusCM[5] && statusCM[6] && statusCM[7])
 		{
 			//st.renderer.Program[0]=glCreateProgram();
 			//st.renderer.Program[1]=glCreateProgram();
@@ -1426,6 +1455,14 @@ SHADER_CREATION:
 
 			if(statusLK[0] || statusLK[3] || statusLK[4] || statusLK[5] || statusLK[6])
 			{
+				glUseProgram(st.renderer.Program[2]);
+				st.renderer.unifs[0]=glGetUniformLocation(st.renderer.Program[2],"texu");
+				glUseProgram(st.renderer.Program[3]);
+				st.renderer.unifs[1]=glGetUniformLocation(st.renderer.Program[3],"texu");
+				st.renderer.unifs[2]=glGetUniformLocation(st.renderer.Program[3],"texu2");
+				st.renderer.unifs[3]=glGetUniformLocation(st.renderer.Program[3],"texu3");
+				st.renderer.unifs[4]=glGetUniformLocation(st.renderer.Program[3],"normal");
+
 #ifdef _VAO_RENDER
 			CreateVAO(&vbd,1,4);
 #elif _VBO_RENDER
@@ -1479,6 +1516,9 @@ SHADER_CREATION:
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
+
+	memset(&st.strings,0,MAX_STRINGS*sizeof(StringsE));
+	st.num_strings=0;
 
 	//Calculates Cos, Sin and Tan tables
 	for(k=0.0f;k<360.1f;k+=0.1f)
@@ -3896,8 +3936,8 @@ int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
-	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
+	uint32 i=0, j=0, k=0, checked=0;
+	int32 t1, t2, t3, t4, timej, timel, id=-1;
 	
 	PosF dim=st.Camera.dimension;
 
@@ -3912,49 +3952,95 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-	
-	msg=TTF_RenderUTF8_Blended(f,text,co);
-	
-	if(msg->format->BytesPerPixel==4)
+	for(i=0;i<MAX_STRINGS;i++)
 	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
-		else formatt=GL_BGRA_EXT;
-	} else
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
-		else formatt=GL_BGR_EXT;
+		if(st.strings[i].stat==2)
+		{
+			if(strcmp(text,st.strings[i].string)==NULL)
+			{
+				st.strings[i].stat=1;
+				j=st.num_entities;
+				st.strings[i].data.posx=i;
+				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
+				id=i;
+				checked=1;
+				st.num_strings++;
+				break;
+			}
+		}
+		else
+		if(st.strings[i].stat==0)
+			id=i;
+
+		if(i==MAX_STRINGS-1)
+		{
+			if(id!=-1)
+			{
+
+				st.strings[id].stat=1;
+				strcpy(st.strings[id].string,text);
+				checked=2;
+				st.num_strings++;
+			}
+		}
 	}
+
+	if(checked>1)
+	{
+
+		co.r=255;
+		co.g=255;
+		co.b=255;
+		co.a=255;
+	
+		msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+		if(msg->format->BytesPerPixel==4)
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+			else formatt=GL_BGRA_EXT;
+		} else
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+			else formatt=GL_BGR_EXT;
+		}
 			
-	if(st.num_entities==MAX_GRAPHICS-1)
-		return 2;
-	else
-		i=st.num_entities;
+		if(st.num_entities==MAX_GRAPHICS-1)
+			return 2;
+		else
+			i=st.num_entities;
 
-	glGenTextures(1,&ent[i].data.data);
-	glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
-	glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+		glGenTextures(1,&ent[i].data.data);
+		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+		glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	ent[i].data.channel=63; //magical number only used for rendering
+		ent[i].data.channel=63; //magical number only used for rendering
 
-	ent[i].data.normal=0;
-	ent[i].data.vb_id=-1;
+		ent[i].data.posx=id;
+
+		ent[i].data.normal=0;
+		ent[i].data.vb_id=-1;
+
+		ent[i].data.w=msg->w;
+		ent[i].data.h=msg->h;
+
+		memcpy(&st.strings[id].data,&ent[i].data,sizeof(TEX_DATA));
+
+		SDL_FreeSurface(msg);
+	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+	i=st.num_entities;
+
 			if(override_sizex!=0)
-				sizex=msg->w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(override_sizex/1024);
 
 			if(override_sizey!=0)
-				sizey=msg->h*(override_sizey/1024);
-
-			SDL_FreeSurface(msg);
+				sizey=st.strings[id].data.h*(override_sizey/1024);
 
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
@@ -4039,7 +4125,11 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 #endif
 
+			//st.strings[id].data=ent[i].data;
+
 			st.num_entities++;
+
+			//if(checked
 
 	return 0;
 
@@ -4048,8 +4138,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
-	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
+	uint32 i=0, j=0, k=0, checked=0;
+	int32 t1, t2, t3, t4, timej, timel, id=-1;
 
 	SDL_Color co;
 	uint16 formatt;
@@ -4062,49 +4152,94 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 
 	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-	
-	msg=TTF_RenderUTF8_Blended(f,text,co);
-	
-	if(msg->format->BytesPerPixel==4)
+	for(i=0;i<MAX_STRINGS;i++)
 	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
-		else formatt=GL_BGRA_EXT;
-	} else
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
-		else formatt=GL_BGR_EXT;
+		if(st.strings[i].stat==2)
+		{
+			if(strcmp(text,st.strings[i].string)==NULL)
+			{
+				st.strings[i].stat=1;
+				j=st.num_entities;
+				st.strings[i].data.posx=i;
+				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
+				id=i;
+				checked=1;
+				st.num_strings++;
+				break;
+			}
+		}
+		else
+		if(st.strings[i].stat==0)
+			id=i;
+
+		if(i==MAX_STRINGS-1)
+		{
+			if(id!=-1)
+			{
+				st.strings[id].stat=1;
+				strcpy(st.strings[id].string,text);
+				checked=2;
+				st.num_strings++;
+			}
+		}
 	}
+
+	if(checked>1)
+	{
+
+		co.r=255;
+		co.g=255;
+		co.b=255;
+		co.a=255;
+	
+		msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+		if(msg->format->BytesPerPixel==4)
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+			else formatt=GL_BGRA_EXT;
+		} else
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+			else formatt=GL_BGR_EXT;
+		}
 			
-	if(st.num_entities==MAX_GRAPHICS-1)
-		return 2;
-	else
-		i=st.num_entities;
+		if(st.num_entities==MAX_GRAPHICS-1)
+			return 2;
+		else
+			i=st.num_entities;
 
-	glGenTextures(1,&ent[i].data.data);
-	glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
-	glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+		glGenTextures(1,&ent[i].data.data);
+		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+		glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	ent[i].data.channel=63; //magical number only used for rendering
+		ent[i].data.channel=63; //magical number only used for rendering
 
-	ent[i].data.normal=0;
-	ent[i].data.vb_id=-1;
+		ent[i].data.posx=id;
+
+		ent[i].data.normal=0;
+		ent[i].data.vb_id=-1;
+
+		ent[i].data.w=msg->w;
+		ent[i].data.h=msg->h;
+
+		memcpy(&st.strings[id].data,&ent[i].data,sizeof(TEX_DATA));
+
+		SDL_FreeSurface(msg);
+	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+	i=st.num_entities;
+
 			if(override_sizex!=0)
-				sizex=msg->w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(override_sizex/1024);
 
 			if(override_sizey!=0)
-				sizey=msg->h*(override_sizey/1024);
-
-			SDL_FreeSurface(msg);
+				sizey=st.strings[id].data.h*(override_sizey/1024);
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -4184,6 +4319,8 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 
 #endif
 
+			//st.strings[id].data=ent[i].data;
+
 			st.num_entities++;
 
 	return 0;
@@ -4193,8 +4330,8 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
-	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
+	uint32 i=0, j=0, k=0, checked=0;
+	int32 t1, t2, t3, t4, timej, timel, id=-1;
 
 	SDL_Color co;
 	uint16 formatt;
@@ -4207,49 +4344,95 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 
 	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
-	co.r=255;
-	co.g=255;
-	co.b=255;
-	co.a=255;
-	
-	msg=TTF_RenderUTF8_Blended(f,text,co);
-	
-	if(msg->format->BytesPerPixel==4)
+	for(i=0;i<MAX_STRINGS;i++)
 	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
-		else formatt=GL_BGRA_EXT;
-	} else
-	{
-		if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
-		else formatt=GL_BGR_EXT;
+		if(st.strings[i].stat==2)
+		{
+			if(strcmp(text,st.strings[i].string)==NULL)
+			{
+				st.strings[i].stat=1;
+				j=st.num_entities;
+				st.strings[i].data.posx=i;
+				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
+				id=i;
+				checked=1;
+				st.num_strings++;
+				break;
+			}
+		}
+		else
+		if(st.strings[i].stat==0)
+			id=i;
+
+		if(i==MAX_STRINGS-1)
+		{
+			if(id!=-1)
+			{
+
+				st.strings[id].stat=1;
+				strcpy(st.strings[id].string,text);
+				checked=2;
+				st.num_strings++;
+			}
+		}
 	}
+
+	if(checked>1)
+	{
+
+		co.r=255;
+		co.g=255;
+		co.b=255;
+		co.a=255;
+	
+		msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+		if(msg->format->BytesPerPixel==4)
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+			else formatt=GL_BGRA_EXT;
+		} else
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+			else formatt=GL_BGR_EXT;
+		}
 			
-	if(st.num_entities==MAX_GRAPHICS-1)
-		return 2;
-	else
-		i=st.num_entities;
+		if(st.num_entities==MAX_GRAPHICS-1)
+			return 2;
+		else
+			i=st.num_entities;
 
-	glGenTextures(1,&ent[i].data.data);
-	glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
-	glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+		glGenTextures(1,&ent[i].data.data);
+		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+		glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	ent[i].data.channel=63; //magical number only used for rendering
+		ent[i].data.channel=63; //magical number only used for rendering
 
-	ent[i].data.normal=0;
-	ent[i].data.vb_id=-1;
+		ent[i].data.posx=id;
+
+		ent[i].data.normal=0;
+		ent[i].data.vb_id=-1;
+
+		ent[i].data.w=msg->w;
+		ent[i].data.h=msg->h;
+
+		memcpy(&st.strings[id].data,&ent[i].data,sizeof(TEX_DATA));
+
+		SDL_FreeSurface(msg);
+	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+	i=st.num_entities;
+
 			if(override_sizex!=0)
-				sizex=msg->w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(override_sizex/1024);
 
 			if(override_sizey!=0)
-				sizey=msg->h*(override_sizey/1024);
-
-			SDL_FreeSurface(msg);
+				sizey=st.strings[id].data.h*(override_sizey/1024);
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -4327,6 +4510,8 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 				texone_num++;
 
 #endif
+
+			//st.strings[id].data=ent[i].data;
 
 			st.num_entities++;
 
@@ -4866,7 +5051,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 		else
 		if(strcmp(str,"SIZE")==NULL)
 		{
-			sscanf(str2,"%d %d", &value, &value2);
+			sscanf(buf,"%s %d %d",str, &value, &value2);
 
 			st.Game_Sprites[id].body.size.x=value;
 			st.Game_Sprites[id].body.size.y=value2;
@@ -5088,6 +5273,11 @@ void DrawMap()
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,
 					mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,
 					st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z);
+
+			for(i=0;i<st.Current_Map.num_sprites;i++)
+				DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
+				st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
+				st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
 
 	
 	/*
@@ -5313,11 +5503,7 @@ void Renderer()
 		for(i=0;i<st.num_lightmap;i++)
 		{
 			glUseProgram(st.renderer.Program[2]);
-			unif=glGetUniformLocation(st.renderer.Program[2],"texu");
-			glUniform1i(unif,0);
-
-			unif=glGetUniformLocation(st.renderer.Program[2],"normal");
-			glUniform1f(unif,0);
+			glUniform1i(st.renderer.unifs[0],0);
 
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
@@ -5348,14 +5534,11 @@ void Renderer()
 
 		glUseProgram(st.renderer.Program[3]);
 
-		unif=glGetUniformLocation(st.renderer.Program[3],"texu");
-		glUniform1i(unif,0);
+		glUniform1i(st.renderer.unifs[1],0);
 
-		unif=glGetUniformLocation(st.renderer.Program[3],"texu2");
-		glUniform1i(unif,2);
+		glUniform1i(st.renderer.unifs[2],2);
 
-		unif=glGetUniformLocation(st.renderer.Program[3],"texu3");
-		glUniform1i(unif,1);
+		glUniform1i(st.renderer.unifs[3],1);
 
 		for(i=z_used;i>-1;i--)
 		{
@@ -5382,8 +5565,7 @@ void Renderer()
 								glBindTexture(GL_TEXTURE_2D,vbdt[m].Ntexture);
 								tex_bound[1]=vbdt[m].texture;
 							}
-							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
-							glUniform1f(unif,1);
+							glUniform1i(st.renderer.unifs[4],1);
 						}
 						else
 						{
@@ -5393,8 +5575,7 @@ void Renderer()
 								tex_bound[1]=vbdt[m].texture;
 							}
 
-							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
-							glUniform1f(unif,2);
+							glUniform1i(st.renderer.unifs[4],1);
 						}
 
 					glBindVertexArray(vbdt[m].vao_id);
@@ -5435,8 +5616,7 @@ void Renderer()
 
 					if(ent[z_buffer[i][j]].data.normal)
 						{
-							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
-							glUniform1f(unif,1);
+							glUniform1i(st.renderer.unifs[4],1);
 
 							if(tex_bound[1]!=ent[z_buffer[i][j]].data.data)
 							{
@@ -5452,8 +5632,7 @@ void Renderer()
 								tex_bound[1]=ent[z_buffer[i][j]].data.data;
 							}
 
-							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
-							glUniform1f(unif,2);
+							glUniform1i(st.renderer.unifs[4],2);
 						}
 
 					glBindVertexArray(vbd.vao_id);
@@ -5466,11 +5645,8 @@ void Renderer()
 
 					glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
-					if(ent[z_buffer[i][j]].data.channel==63)
-					{
-						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
-						ent[z_buffer[i][j]].data.channel=0;
-					}
+					//if(ent[z_buffer[i][j]].data.channel==63)
+						//st.strings[ent[z_buffer[i][j]].data.posx].stat=2;
 				}
 			}
 
@@ -5480,6 +5656,24 @@ void Renderer()
 		memset(z_buffer,0,(7*8)*(2048)*sizeof(int16));
 		memset(z_slot,0,(7*8)*sizeof(int16));
 		z_used=0;
+
+		st.num_strings=0;
+
+		for(i=0;i<MAX_STRINGS;i++)
+		{
+			if(st.strings[i].stat==1)
+			{
+				st.strings[i].stat=2;
+				continue;
+			}
+			else
+			if(st.strings[i].stat==2)
+			{
+				glDeleteTextures(1,&st.strings[i].data.data);
+				st.strings[i].data.channel=0;
+				st.strings[i].stat=0;
+			}
+		}
 		
 		for(i=0;i<vbdt_num;i++)
 		{

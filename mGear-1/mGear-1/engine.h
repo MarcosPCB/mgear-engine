@@ -50,6 +50,7 @@
 #define MAX_LIGHTS 16
 #define MAX_LIGHTMAPS 128
 #define MAX_MAPMGG 32
+#define MAX_STRINGS 256
 
 #define MAX_VERTEX MAX_GRAPHICS*8
 #define MAX_COLORS MAX_GRAPHICS*12
@@ -476,6 +477,8 @@ struct _MGMSPRITE_
 	int32 frame_ID;
 	_SPRITE_T type;
 
+	int32 stat;
+
 	//If it's an entity, you MUST insert here the game sprite name that has a code
 	//or else, just leave it blank
 	char game_name[64]; 
@@ -636,6 +639,8 @@ struct _Render
 	GLuint GShader[16];
 	GLuint Program[16];
 
+	GLint unifs[16];
+
 	//Custom shaders
 	/*
 	PROGRAM_SHADER Custom_Shader[8];
@@ -682,6 +687,15 @@ struct _GAME_LIGHTMAPS_
 };
 
 typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
+
+struct _STRINGS_E
+{
+	char string[1024];
+	TEX_DATA data;
+	int8 stat; //0 - not used, 1 - for rendering, 2 - rendered and waiting for next frame  
+};
+
+typedef struct _STRINGS_E StringsE;
 
 //The main structure
 //Contais all the information about the game
@@ -774,6 +788,10 @@ struct _SETTINGS_
 	float CosTable[3601];
 	float SinTable[3601];
 	float TanTable[3601];
+
+	StringsE strings[MAX_STRINGS];
+
+	uint8 num_strings;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
