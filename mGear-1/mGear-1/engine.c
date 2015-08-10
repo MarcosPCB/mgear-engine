@@ -1518,7 +1518,6 @@ SHADER_CREATION:
 	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
 
 	memset(&st.strings,0,MAX_STRINGS*sizeof(StringsE));
-	st.num_strings=0;
 
 	//Calculates Cos, Sin and Tan tables
 	for(k=0.0f;k<360.1f;k+=0.1f)
@@ -3950,6 +3949,9 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	
 	SDL_Surface *msg;
 
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+
 	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
@@ -3964,28 +3966,36 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
 				id=i;
 				checked=1;
-				st.num_strings++;
 				break;
 			}
 		}
 		else
-		if(st.strings[i].stat==0)
+		if(st.strings[i].stat==0 && checked==0)
+		{
+			checked=3;
 			id=i;
+		}
 
 		if(i==MAX_STRINGS-1)
 		{
-			if(id!=-1)
+			if(id!=-1 && checked==3)
 			{
-
 				st.strings[id].stat=1;
 				strcpy(st.strings[id].string,text);
 				checked=2;
-				st.num_strings++;
+			}
+			else
+			if(checked==0 && id==-1)
+			{
+				LogApp("Warning: max number os strings reached");
+				return 2;
 			}
 		}
 	}
 
-	if(checked>1)
+	i=st.num_entities;
+
+	if(checked==2)
 	{
 
 		co.r=255;
@@ -4004,11 +4014,6 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
 			else formatt=GL_BGR_EXT;
 		}
-			
-		if(st.num_entities==MAX_GRAPHICS-1)
-			return 2;
-		else
-			i=st.num_entities;
 
 		glGenTextures(1,&ent[i].data.data);
 		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
@@ -4033,8 +4038,6 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
-
-	i=st.num_entities;
 
 			if(override_sizex!=0)
 				sizex=st.strings[id].data.w*(override_sizex/1024);
@@ -4125,11 +4128,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 #endif
 
-			//st.strings[id].data=ent[i].data;
-
 			st.num_entities++;
-
-			//if(checked
 
 	return 0;
 
@@ -4149,6 +4148,8 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 	uint8 val=0;
 	
 	SDL_Surface *msg;
+if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
 
 	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
@@ -4164,27 +4165,36 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
 				id=i;
 				checked=1;
-				st.num_strings++;
 				break;
 			}
 		}
 		else
-		if(st.strings[i].stat==0)
+		if(st.strings[i].stat==0 && checked==0)
+		{
+			checked=3;
 			id=i;
+		}
 
 		if(i==MAX_STRINGS-1)
 		{
-			if(id!=-1)
+			if(id!=-1 && checked==3)
 			{
 				st.strings[id].stat=1;
 				strcpy(st.strings[id].string,text);
 				checked=2;
-				st.num_strings++;
+			}
+			else
+			if(checked==0 && id==-1)
+			{
+				LogApp("Warning: max number os strings reached");
+				return 2;
 			}
 		}
 	}
 
-	if(checked>1)
+	i=st.num_entities;
+
+	if(checked==2)
 	{
 
 		co.r=255;
@@ -4203,11 +4213,6 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
 			else formatt=GL_BGR_EXT;
 		}
-			
-		if(st.num_entities==MAX_GRAPHICS-1)
-			return 2;
-		else
-			i=st.num_entities;
 
 		glGenTextures(1,&ent[i].data.data);
 		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
@@ -4232,8 +4237,6 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
-
-	i=st.num_entities;
 
 			if(override_sizex!=0)
 				sizex=st.strings[id].data.w*(override_sizex/1024);
@@ -4319,8 +4322,6 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 
 #endif
 
-			//st.strings[id].data=ent[i].data;
-
 			st.num_entities++;
 
 	return 0;
@@ -4342,6 +4343,9 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	
 	SDL_Surface *msg;
 
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+
 	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
@@ -4356,28 +4360,36 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
 				id=i;
 				checked=1;
-				st.num_strings++;
 				break;
 			}
 		}
 		else
-		if(st.strings[i].stat==0)
+		if(st.strings[i].stat==0 && checked==0)
+		{
+			checked=3;
 			id=i;
+		}
 
 		if(i==MAX_STRINGS-1)
 		{
-			if(id!=-1)
+			if(id!=-1 && checked==3)
 			{
-
 				st.strings[id].stat=1;
 				strcpy(st.strings[id].string,text);
 				checked=2;
-				st.num_strings++;
+			}
+			else
+			if(checked==0 && id==-1)
+			{
+				LogApp("Warning: max number os strings reached");
+				return 2;
 			}
 		}
 	}
 
-	if(checked>1)
+	i=st.num_entities;
+
+	if(checked==2)
 	{
 
 		co.r=255;
@@ -4396,11 +4408,6 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
 			else formatt=GL_BGR_EXT;
 		}
-			
-		if(st.num_entities==MAX_GRAPHICS-1)
-			return 2;
-		else
-			i=st.num_entities;
 
 		glGenTextures(1,&ent[i].data.data);
 		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
@@ -4425,8 +4432,6 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
-
-	i=st.num_entities;
 
 			if(override_sizex!=0)
 				sizex=st.strings[id].data.w*(override_sizex/1024);
@@ -4510,8 +4515,6 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 				texone_num++;
 
 #endif
-
-			//st.strings[id].data=ent[i].data;
 
 			st.num_entities++;
 
@@ -5519,10 +5522,6 @@ void Renderer()
 			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 		}
 
-		//if(st.renderer.use_custom_shader)
-			//glDrawBuffers(1,&st.renderer.Buffers[0]);
-		//else
-
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -5644,9 +5643,6 @@ void Renderer()
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[z_buffer[i][j]].color);
 
 					glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
-
-					//if(ent[z_buffer[i][j]].data.channel==63)
-						//st.strings[ent[z_buffer[i][j]].data.posx].stat=2;
 				}
 			}
 
@@ -5656,8 +5652,6 @@ void Renderer()
 		memset(z_buffer,0,(7*8)*(2048)*sizeof(int16));
 		memset(z_slot,0,(7*8)*sizeof(int16));
 		z_used=0;
-
-		st.num_strings=0;
 
 		for(i=0;i<MAX_STRINGS;i++)
 		{
@@ -5926,12 +5920,6 @@ void Renderer()
 
 					glBindBuffer(GL_ARRAY_BUFFER,0);
 					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-
-					if(ent[z_buffer[i][j]].data.channel==63)
-					{
-						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
-						ent[z_buffer[i][j]].data.channel=0;
-					}
 				}
 			}
 
@@ -5945,6 +5933,22 @@ void Renderer()
 		memset(z_buffer,0,(5*8)*(2048));
 		memset(z_slot,0,5*8);
 		z_used=0;
+
+		for(i=0;i<MAX_STRINGS;i++)
+		{
+			if(st.strings[i].stat==1)
+			{
+				st.strings[i].stat=2;
+				continue;
+			}
+			else
+			if(st.strings[i].stat==2)
+			{
+				glDeleteTextures(1,&st.strings[i].data.data);
+				st.strings[i].data.channel=0;
+				st.strings[i].stat=0;
+			}
+		}
 		
 		for(i=0;i<vbdt_num;i++)
 		{
@@ -6044,12 +6048,6 @@ void Renderer()
 					glDisableClientState(GL_VERTEX_ARRAY);
 					glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 					glDisableClientState(GL_COLOR_ARRAY);
-
-					if(ent[z_buffer[i][j]].data.channel==63)
-					{
-						glDeleteTextures(1,&ent[z_buffer[i][j]].data.data);
-						ent[z_buffer[i][j]].data.channel=0;
-					}
 				}
 			}
 		}
@@ -6085,6 +6083,22 @@ void Renderer()
 		memset(z_buffer,0,(5*8)*(2048));
 		memset(z_slot,0,5*8);
 		z_used=0;
+
+		for(i=0;i<MAX_STRINGS;i++)
+		{
+			if(st.strings[i].stat==1)
+			{
+				st.strings[i].stat=2;
+				continue;
+			}
+			else
+			if(st.strings[i].stat==2)
+			{
+				glDeleteTextures(1,&st.strings[i].data.data);
+				st.strings[i].data.channel=0;
+				st.strings[i].stat=0;
+			}
+		}
 		
 		for(i=0;i<vbdt_num;i++)
 		{

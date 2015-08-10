@@ -34,6 +34,7 @@
 #define EDIT_SPRITE 19
 #define EDIT_SPRITE_TYPE 20
 #define SPRITE_EDIT_BOX 21
+#define SPRITE_SELECTION 25
 
 struct _mEng
 {
@@ -54,6 +55,9 @@ struct _mEng
 	int16 tex_MGGID;
 	uint16 mgg_sel;
 	uint16 menu_sel;
+
+	int16 sprite_selection;
+	int16 sprite_frame_selection;
 
 	Pos p;
 	int32 got_it;
@@ -76,6 +80,7 @@ struct _mEng
 		uint16 anim; //if the game actor is animated than leave it NULL
 		uint32 gid;
 		Body body;
+		Pos size;
 	} spr, spr2;
 
 	uint32 palette[256][256];

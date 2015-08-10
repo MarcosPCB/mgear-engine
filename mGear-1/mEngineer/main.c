@@ -216,9 +216,9 @@ void SpriteList()
 						meng.sprite_frame_selection=st.Game_Sprites[m].frame[k];
 
 						meng.spr.health=st.Game_Sprites[m].health;
-						meng.spr.body.mass=st.Game_Sprites[m].body.mass;
-						meng.spr.body.explosive=st.Game_Sprites[m].body.explosive;
-						meng.spr.body.flamable=st.Game_Sprites[m].body.flamable;
+						meng.spr.body=st.Game_Sprites[m].body;
+
+						meng.spr.body.size=st.Game_Sprites[m].body.size;
 							//meng.tex_selection=mgg_map[id].frames[m];
 							//meng.tex_ID=m;
 							//meng.tex_MGGID=id;
@@ -1056,7 +1056,7 @@ static void PannelLeft()
 
 			sprintf(str,"Physics? %d",meng.spr.body.physics_on);
 
-			if(CheckColisionMouse(8192, 4096-1420,810,200,0))
+			if(CheckColisionMouse(8192, 4096-1420,810,405,0))
 			{
 				DrawString2UI(str,8192, 4096-1420,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
@@ -1073,7 +1073,7 @@ static void PannelLeft()
 
 			sprintf(str,"Mass %.2f",meng.spr.body.mass);
 
-			if(CheckColisionMouse(8192, 4096-710,810,1420,0))
+			if(CheckColisionMouse(8192, 4096-710,810,405,0))
 			{
 				DrawString2UI(str,8192, 4096-710,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
@@ -1104,7 +1104,7 @@ static void PannelLeft()
 
 			sprintf(str,"Flammable? %d",meng.spr.body.flamable);
 
-			if(CheckColisionMouse(8192, 4096,810,1420,0))
+			if(CheckColisionMouse(8192, 4096,810,405,0))
 			{
 				DrawString2UI(str,8192, 4096,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
@@ -1121,7 +1121,7 @@ static void PannelLeft()
 
 			sprintf(str,"Explosive? %d",meng.spr.body.explosive);
 
-			if(CheckColisionMouse(8192, 4096+710,90,40,0))
+			if(CheckColisionMouse(8192, 4096+710,810,405,0))
 			{
 				DrawString2UI(str,8192, 4096+710,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
 
@@ -2774,6 +2774,75 @@ static void ViewPortCommands()
 					}
 				}
 			}
+			
+			if(st.Current_Map.num_sprites>0)
+			{
+				for(i=0;i<st.Current_Map.num_sprites;i++)
+				{
+					if(got_it) break;
+
+					if(CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle))
+					{
+						if(st.mouse1)
+						{
+							if(meng.got_it==-1)
+							{
+								meng.command2=EDIT_SPRITE;
+								meng.p=st.mouse;
+								meng.got_it=i;
+
+								STW(&meng.p.x, &meng.p.y);
+
+								meng.p.x-=st.Current_Map.sprites[i].position.x;
+								meng.p.y-=st.Current_Map.sprites[i].position.y;
+							}
+							else
+							if(meng.got_it!=-1 && meng.got_it!=i)
+								continue;
+
+							p=st.mouse;
+
+							STW(&p.x, &p.y);
+
+							meng.com_id=i;
+
+							st.Current_Map.sprites[i].position.x=p.x;
+							st.Current_Map.sprites[i].position.y=p.y;
+
+							st.Current_Map.sprites[i].position.x-=meng.p.x;
+							st.Current_Map.sprites[i].position.y-=meng.p.y;
+
+							p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
+							p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
+
+							p.x-=st.Camera.position.x;
+							p.y-=st.Camera.position.y;
+
+							sprintf(str,"%d",st.Current_Map.sprites[i].angle);
+							DrawString(str,p.x+227,p.y-227,405,217,0,255,255,255,255,st.fonts[ARIAL].font,1024,1024,0);
+
+							if(st.mouse_wheel>0 && !st.mouse2)
+							{
+								if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle+=1;
+								else st.Current_Map.sprites[i].angle+=100;
+								st.mouse_wheel=0;
+							}
+
+							if(st.mouse_wheel<0 && !st.mouse2)
+							{
+								if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle-=1;
+								else st.Current_Map.sprites[i].angle-=100;
+								st.mouse_wheel=0;
+							}
+
+							got_it=1;
+							break;
+						}
+						else
+							meng.got_it=-1;
+					}
+				}
+			}
 
 			if(st.Current_Map.num_obj>0)
 			{
@@ -2892,6 +2961,58 @@ static void ViewPortCommands()
 
 				LogApp("Object added");
 				st.mouse1=0;
+			}
+		}
+		else
+		if(meng.command==ADD_SPRITE)
+		{
+			if(st.mouse1)
+			{
+				if(st.Current_Map.num_sprites<MAX_SPRITES)
+				{
+					for(i=0;i<MAX_SPRITES;i++)
+					{
+						if(st.Current_Map.sprites[i].stat==0)
+						{
+							st.Current_Map.sprites[i].stat=1;
+							st.Current_Map.sprites[i].color=meng.spr.color;
+							st.Current_Map.sprites[i].health=meng.spr.health;
+							st.Current_Map.sprites[i].body=meng.spr.body;
+							st.Current_Map.sprites[i].GameID=meng.sprite_selection;
+							st.Current_Map.sprites[i].frame_ID=meng.sprite_frame_selection;
+
+							st.Current_Map.sprites[i].position=st.mouse;
+							STW(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);
+
+							//st.Current_Map.sprites[i].body.size=meng.spr.size;
+							memcpy(st.Current_Map.sprites[i].tags,st.Game_Sprites[meng.sprite_selection].tags,8*sizeof(int16));
+							st.Current_Map.sprites[i].num_tags=st.Game_Sprites[meng.sprite_selection].num_tags;
+							st.Current_Map.sprites[i].angle=0;
+
+							if(meng.spr.type==BACKGROUND3)
+								st.Current_Map.sprites[i].position.z=48;
+							else
+							if(meng.spr.type==BACKGROUND2)
+								st.Current_Map.sprites[i].position.z=40;
+							else
+							if(meng.spr.type==BACKGROUND1)
+								st.Current_Map.sprites[i].position.z=32;
+							else
+							if(meng.spr.type==MIDGROUND)
+								st.Current_Map.sprites[i].position.z=24;
+							else
+							if(meng.spr.type==FOREGROUND)
+								st.Current_Map.sprites[i].position.z=16;
+
+							st.Current_Map.num_sprites++;
+
+							LogApp("Sprite Added");
+							st.mouse1=0;
+
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -3079,6 +3200,8 @@ int main(int argc, char *argv[])
 	meng.got_it=-1;
 	meng.sprite_selection=0;
 	meng.sprite_frame_selection=0;
+	meng.spr.size.x=2048;
+	meng.spr.size.y=2048;
 
 	//SpriteListLoad();
 

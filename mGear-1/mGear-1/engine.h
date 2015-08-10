@@ -50,7 +50,7 @@
 #define MAX_LIGHTS 16
 #define MAX_LIGHTMAPS 128
 #define MAX_MAPMGG 32
-#define MAX_STRINGS 256
+#define MAX_STRINGS 512
 
 #define MAX_VERTEX MAX_GRAPHICS*8
 #define MAX_COLORS MAX_GRAPHICS*12
@@ -790,8 +790,6 @@ struct _SETTINGS_
 	float TanTable[3601];
 
 	StringsE strings[MAX_STRINGS];
-
-	uint8 num_strings;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
