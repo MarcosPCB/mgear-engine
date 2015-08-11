@@ -36,7 +36,7 @@ void Menu()
 					meng.tex_selection.data=-1;
 					meng.command2=0;
 					meng.scroll2=0;
-					meng.mgg_sel=MGG_MAP_START;
+					meng.mgg_sel=0;
 
 					if(st.Current_Map.obj)
 						free(st.Current_Map.obj);
@@ -67,7 +67,7 @@ void Menu()
 						st.Current_Map.obj[i].type=BLANK;
 
 					for(i=0;i<MAX_SPRITES;i++)
-						st.Current_Map.sprites[i].type=non;
+						st.Current_Map.sprites[i].stat=0;;
 
 					memset(st.Current_Map.MGG_FILES,0,32*256);
 					meng.num_mgg-=st.Current_Map.num_mgg;
@@ -83,25 +83,30 @@ void Menu()
 					meng.pannel_choice=2;
 					meng.command=2;
 
+					memset(&meng.spr,0,sizeof(meng.spr));
+
 					meng.obj.amblight=1;
-					meng.obj.color.r=255;
-					meng.obj.color.g=255;
-					meng.obj.color.b=255;
-					meng.obj.color.a=255;
+					meng.obj.color.r=meng.spr.color.r=255;
+					meng.obj.color.g=meng.spr.color.g=255;
+					meng.obj.color.b=meng.spr.color.b=255;
+					meng.obj.color.a=meng.spr.color.a=255;
 					meng.obj.texsize.x=32768;
 					meng.obj.texsize.y=32768;
 					meng.obj.texpan.x=0;
 					meng.obj.texpan.y=0;
-					meng.obj.type=MIDGROUND;
+					meng.obj.type=meng.spr.type=MIDGROUND;
 
-					memset(&meng.spr,0,sizeof(meng.spr));
 					meng.spr.gid=-1;
 					meng.spr2.gid=-1;
+					meng.sprite_selection=-1;
+					meng.sprite_frame_selection=-1;
+					meng.spr.size.x=2048;
+					meng.spr.size.y=2048;
 
 				}
 			}
 			else
-				DrawStringUI("Start New Map",8192,(4096)-1820,1820,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
+				DrawString2UI("Start New Map",8192,(4096)-1820,1820,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
 
 			if(st.gt==GAME_MENU) 
 			{
@@ -115,7 +120,7 @@ void Menu()
 					}
 				}
 				else
-					DrawStringUI("Save Map",8192,(4096)-2275,1365,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
+					DrawString2UI("Save Map",8192,(4096)-2275,1365,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
 			}
 
 			if(CheckColisionMouse(8192,(4096)-1365,1365,455,0))
@@ -128,7 +133,7 @@ void Menu()
 				}
 			}
 			else
-				DrawStringUI("Load Map",8192,(4096)-1365,1365,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
+				DrawString2UI("Load Map",8192,(4096)-1365,1365,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
 
 			if(CheckColisionMouse(8192,(4096)-910,910,455,0))
 			{
@@ -140,7 +145,7 @@ void Menu()
 				}
 			}
 			else
-				DrawStringUI("Options",8192,(4096)-910,910,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
+				DrawString2UI("Options",8192,(4096)-910,910,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
 
 			if(CheckColisionMouse(8192,(4096)-455,455,455,0))
 			{
@@ -149,7 +154,7 @@ void Menu()
 					Quit();
 			}
 			else
-				DrawStringUI("Quit",8192,(4096)-455,455,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
+				DrawString2UI("Quit",8192,(4096)-455,455,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
 		}
 		else
 		if(meng.menu_sel==2)
@@ -208,18 +213,18 @@ void Menu()
 									meng.num_mgg=0;
 									LogApp("Map %s loaded",path2);
 
-									id=MGG_MAP_START;
+									id=0;
 									id2=0;
 
 									for(a=0;a<st.Current_Map.num_mgg;a++)
 									{
-										DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg[0].frames[4],255,0);
+										DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
 										sprintf(lo,"Loading %d%",(a/st.Current_Map.num_mgg)*100);
 										DrawString2UI(lo,8192,4096,1,1,0,255,255,255,255,st.fonts[GEOMET].font,FONT_SIZE*2,FONT_SIZE*2,0);
 										if(CheckMGGFile(st.Current_Map.MGG_FILES[a]))
 										{
-											LoadMGG(&mgg[id],st.Current_Map.MGG_FILES[a]);
-											strcpy(meng.mgg_list[a],mgg[id].name);
+											LoadMGG(&mgg_map[id],st.Current_Map.MGG_FILES[a]);
+											strcpy(meng.mgg_list[a],mgg_map[id].name);
 											meng.num_mgg++;
 											id++;
 										}
@@ -232,7 +237,7 @@ void Menu()
 									meng.tex_selection.data=-1;
 									meng.command2=0;
 									meng.scroll2=0;
-									meng.mgg_sel=MGG_MAP_START;
+									meng.mgg_sel=0;
 									meng.pannel_choice=2;
 									meng.command=2;
 									meng.menu_sel=0;

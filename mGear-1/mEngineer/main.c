@@ -534,7 +534,7 @@ static void PannelLeft()
 					//meng.tex_MGGID=st.Game_Sprites[meng.spr.gid].MGG_ID;
 					
 				st.mouse1=0;
-				meng.command=meng.pannel_choice=ADD_SPRITE;
+				meng.command=meng.pannel_choice=meng.command2=ADD_SPRITE;
 			}
 	}
 	
@@ -1129,6 +1129,720 @@ static void PannelLeft()
 				{
 					if(meng.spr.body.explosive==0) meng.spr.body.explosive=1;
 					else meng.spr.body.explosive=0;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,8192, 4096+710,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+			if(st.keys[ESC_KEY].state)
+			{
+				meng.command=meng.pannel_choice;
+				st.keys[ESC_KEY].state=0;
+			}
+		}
+	}
+
+	//Sprite editing
+
+	if(meng.command2==EDIT_SPRITE)
+	{
+			p.x=st.Current_Map.sprites[meng.sprite_edit_selection].position.x;
+			p.y=st.Current_Map.sprites[meng.sprite_edit_selection].position.y-(st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y/2);
+
+			p.x-=st.Camera.position.x;
+			p.y-=st.Camera.position.y;
+
+			p2.x=1024*st.Camera.dimension.x;
+			p2.y=1024*st.Camera.dimension.y;
+
+			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
+			DrawString(str,p.x,p.y-227,810,217,0,255,255,255,255,st.fonts[ARIAL].font,p2.x,p2.y,0);
+
+			p.x=st.Current_Map.sprites[meng.sprite_edit_selection].position.x-(st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/2);
+			p.y=st.Current_Map.sprites[meng.sprite_edit_selection].position.y;
+
+			p.x-=st.Camera.position.x;
+			p.y-=st.Camera.position.y;
+
+			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
+			DrawString(str,p.x-455,p.y,810,217,0,255,255,255,255,st.fonts[ARIAL].font,p2.x,p2.y,0);
+
+			if(st.keys[RETURN_KEY].state && meng.command!=SPRITE_EDIT_BOX && meng.command!=RGB_SPRITE && meng.command!=SPRITE_PHY && meng.command!=SPRITE_TAG)
+			{
+				meng.command=SPRITE_EDIT_BOX;
+				st.keys[RETURN_KEY].state=0;
+			}
+
+			if(meng.command==SPRITE_EDIT_BOX)
+			{
+				DrawUI(8192,4096,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
+
+				sprintf(str,"X %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.x);
+
+				if(CheckColisionMouse(8192,(4096)-681,1720,455,0) && !meng.sub_com)
+				{
+					DrawStringUI(str,8192,(4096)-681,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					if(st.mouse1)
+					{
+						meng.sub_com=1;
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].position.x);
+						SDL_StartTextInput();
+						st.Text_Input=1;
+						st.mouse1=0;
+					}
+				}
+				else
+				if(meng.sub_com==1)
+				{
+					DrawStringUI(str,8192,(4096)-681,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.x=atof(st.TextInput);
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,(4096)-681,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				sprintf(str,"Y %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.y);
+
+				if(CheckColisionMouse(8192,(4096)-227,1720,455,0) && !meng.sub_com)
+				{
+					DrawStringUI(str,8192,(4096)-227,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					if(st.mouse1)
+					{
+						meng.sub_com=2;
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].position.y);
+						SDL_StartTextInput();
+						st.Text_Input=1;
+						st.mouse1=0;
+					}
+				}
+				else
+				if(meng.sub_com==2)
+				{
+					DrawStringUI(str,8192,(4096)-227,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.y=atof(st.TextInput);
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,(4096)-227,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				sprintf(str,"SX %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
+
+				if(CheckColisionMouse(8192,(4096)+227,1720,455,0) && !meng.sub_com)
+				{
+					DrawStringUI(str,8192,(4096)+227,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					if(st.mouse1)
+					{
+						meng.sub_com=3;
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
+						SDL_StartTextInput();
+						st.Text_Input=1;
+						st.mouse1=0;
+					}
+				}
+				else
+				if(meng.sub_com==3)
+				{
+					DrawStringUI(str,8192,(4096)+227,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=atof(st.TextInput);
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,(4096)+227,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				sprintf(str,"SY %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
+
+				if(CheckColisionMouse(8192,(4096)+681,1720,455,0) && !meng.sub_com)
+				{
+					DrawStringUI(str,8192,(4096)+681,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					if(st.mouse1)
+					{
+						meng.sub_com=4;
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
+						SDL_StartTextInput();
+						st.Text_Input=1;
+						st.mouse1=0;
+					}
+				}
+				else
+				if(meng.sub_com==4)
+				{
+					DrawStringUI(str,8192,(4096)+681,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,(4096)+681,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				sprintf(str,"Z %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
+
+				if(CheckColisionMouse(8192,(4096)+1137,1720,455,0) && !meng.sub_com)
+				{
+					DrawStringUI(str,8192,(4096)+1137,1720,455,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					if(st.mouse1)
+					{
+						meng.sub_com=5;
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
+						SDL_StartTextInput();
+						st.Text_Input=1;
+						st.mouse1=0;
+					}
+				}
+				else
+				if(meng.sub_com==5)
+				{
+					DrawStringUI(str,8192,(4096)+1137,1720,455,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=atoi(st.TextInput);
+					if(st.Current_Map.sprites[meng.sprite_edit_selection].position.z>56) st.Current_Map.sprites[meng.sprite_edit_selection].position.z=56;
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,(4096)+1137,1720,455,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(st.keys[ESC_KEY].state && !meng.sub_com)
+				{
+					meng.command=meng.pannel_choice;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+
+
+		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==MIDGROUND)
+		{
+			if(CheckColisionMouse(465,1900,880,220,0))
+			{
+				DrawStringUI("Midground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				if(st.mouse1)
+				{
+					meng.command=26;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Midground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+
+		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==FOREGROUND)
+		{
+			if(CheckColisionMouse(465,2010,810,217,0))
+			{
+				DrawStringUI("Foreground",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				if(st.mouse1)
+				{
+					meng.command=26;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Foreground",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+
+		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==BACKGROUND1)
+		{
+			if(CheckColisionMouse(465,2010,810,217,0))
+			{
+				DrawStringUI("Background1",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				if(st.mouse1)
+				{
+					meng.command=26;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Background1",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+
+		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==BACKGROUND2)
+		{
+			if(CheckColisionMouse(465,2010,810,217,0))
+			{
+				DrawStringUI("Background2",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				if(st.mouse1)
+				{
+					meng.command=26;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Background2",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+
+		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==BACKGROUND3)
+		{
+			if(CheckColisionMouse(465,2010,810,217,0))
+			{
+				DrawStringUI("Background3",465,2010,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+				if(st.mouse1)
+				{
+					meng.command=26;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Background3",465,2010,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+
+		if(meng.command==EDIT_SPRITE_TYPE_S)
+		{
+			DrawUI(1365,1715,910,1210,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
+
+			if(CheckColisionMouse(1365,1715,810,227,0))
+			{
+				DrawStringUI("Background1",1365,1715,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+				if(st.mouse1)
+				{
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=BACKGROUND1;
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=32;
+					meng.command=meng.pannel_choice;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Background1",1365,1715,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(CheckColisionMouse(1365,1465,810,227,0))
+			{
+				DrawStringUI("Background2",1365,1465,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+				if(st.mouse1)
+				{
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=BACKGROUND2;
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=40;
+					meng.command=meng.pannel_choice;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Background2",1365,1465,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(CheckColisionMouse(1365,1215,810,227,0))
+			{
+				DrawStringUI("Background3",1365,1215,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+				if(st.mouse1)
+				{
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=BACKGROUND3;
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=48;
+					meng.command=meng.pannel_choice;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Background3",1365,1215,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(CheckColisionMouse(1365,1920,810,227,0))
+			{
+				DrawStringUI("Midground",1365,1920,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+				if(st.mouse1)
+				{
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=MIDGROUND;
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=24;
+					meng.command=meng.pannel_choice;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Midground",1365,1920,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(CheckColisionMouse(1365,2170,810,227,0))
+			{
+				DrawStringUI("Foreground",1365,2170,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+				if(st.mouse1)
+				{
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=FOREGROUND;
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=16;
+					meng.command=meng.pannel_choice;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Foreground",1365,2170,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+
+		sprintf(str,"color");
+
+		if(CheckColisionMouse(465,2445,810,217,0))
+		{
+			DrawStringUI(str,465,2445,810,217,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+			if(st.mouse1)
+			{
+				meng.command=RGB_SPRITE;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawStringUI(str,465,2445,810,217,0, 255, 255, 255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+		if(meng.command==RGB_SPRITE)
+		{
+			DrawUI(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+
+			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+			sprintf(str,"R %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.r);
+
+			if(meng.sub_com!=1)
+			{
+				if(CheckColisionMouse(8192,2048+455,2048,227,0))
+				{
+					DrawStringUI(str,8192,2048+455,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.r);
+						StartText();
+						st.mouse1=0;
+						meng.sub_com=1;
+					}
+				}
+				else
+					DrawStringUI(str,8192,2048+455,0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+			}
+			else
+			if(meng.sub_com==1)
+			{
+				DrawStringUI(str,8192,2048+455,0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				st.Current_Map.sprites[meng.sprite_edit_selection].color.r=atoi(st.TextInput);
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					StopText();
+					st.keys[RETURN_KEY].state=0;
+					meng.sub_com=0;
+				}
+			}
+
+			sprintf(str,"G %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.g);
+
+			if(meng.sub_com!=2)
+			{
+				if(CheckColisionMouse(8192,2048+810,2048,227,0))
+				{
+					DrawStringUI(str,8192,2048+810,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.g);
+						StartText();
+						st.mouse1=0;
+						meng.sub_com=2;
+					}
+				}
+				else
+					DrawStringUI(str,8192,2048+810,0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+			}
+			else
+			if(meng.sub_com==2)
+			{
+				DrawStringUI(str,8192,2048+810,0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				st.Current_Map.sprites[meng.sprite_edit_selection].color.g=atoi(st.TextInput);
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					StopText();
+					st.keys[RETURN_KEY].state=0;
+					meng.sub_com=0;
+				}
+			}
+
+			sprintf(str,"B %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.b);
+
+			if(meng.sub_com!=3)
+			{
+				if(CheckColisionMouse(8192,2048+1265,2048,455,0))
+				{
+					DrawStringUI(str,8192,2048+1265,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.b);
+						StartText();
+						st.mouse1=0;
+						meng.sub_com=3;
+					}
+				}
+				else
+					DrawStringUI(str,8192,2048+1265,0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+			}
+			else
+			if(meng.sub_com==3)
+			{
+				DrawStringUI(str,8192,2048+1265,0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				st.Current_Map.sprites[meng.sprite_edit_selection].color.b=atoi(st.TextInput);
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					StopText();
+					st.keys[RETURN_KEY].state=0;
+					meng.sub_com=0;
+				}
+			}
+
+			sprintf(str,"A %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.a);
+
+			if(meng.sub_com!=4)
+			{
+				if(CheckColisionMouse(8192,2048+1720,2048,455,0))
+				{
+					DrawStringUI(str,8192,2048+1720,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.a);
+						StartText();
+						st.mouse1=0;
+						meng.sub_com=4;
+					}
+				}
+				else
+					DrawStringUI(str,8192,2048+1720,0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+			}
+			else
+			if(meng.sub_com==4)
+			{
+				DrawStringUI(str,8192,2048+1720,0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				st.Current_Map.sprites[meng.sprite_edit_selection].color.a=atoi(st.TextInput);
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					StopText();
+					st.keys[RETURN_KEY].state=0;
+					meng.sub_com=0;
+				}
+			}
+
+			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
+			{
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+
+
+		if(CheckColisionMouse(455,3135,810,217,0))
+		{
+			DrawStringUI("Tags",465,3135,810,217,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+			if(st.mouse1)
+			{
+				meng.command=SPRITE_TAG;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawStringUI("Tags",465,3135,810,217,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+		
+		if(meng.command==SPRITE_TAG)
+		{
+			DrawUI(8192,4096,2048,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+
+			for(i=1, yt=4096-2560;(i-1)<st.Game_Sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
+			{
+				sprintf(str,"%s %d",st.Game_Sprites[meng.sprite_edit_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_edit_selection].tags[i-1]);
+
+				if(meng.sub_com!=i)
+				{
+					if(CheckColisionMouse(8192,yt,2048,455,0))
+					{
+						DrawStringUI(str,8192,yt,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							sprintf(st.TextInput,"%d",st.Game_Sprites[meng.sprite_edit_selection].tags[i-1]);
+							StartText();
+							st.mouse1=0;
+							meng.sub_com=i;
+						}
+					}
+					else
+						DrawStringUI(str,8192,yt,0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+				}
+				else
+				if(meng.sub_com==i)
+				{
+					DrawStringUI(str,8192,yt,0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					st.Game_Sprites[meng.sprite_edit_selection].tags[i-1]=atoi(st.TextInput);
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						StopText();
+						st.keys[RETURN_KEY].state=0;
+						meng.sub_com=0;
+					}
+				}
+			}
+
+			if(st.keys[ESC_KEY].state)
+			{
+				meng.command=meng.pannel_choice;
+				st.keys[ESC_KEY].state=0;
+			}
+		}
+
+		sprintf(str,"Health %d",st.Current_Map.sprites[meng.sprite_edit_selection].health);
+
+		if(CheckColisionMouse(465,3435,810,217,0))
+		{
+			DrawStringUI(str,465,3435,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1 && !StartText())
+			{
+				meng.command=SPRITE_HEALTH;
+				sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].health);
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawStringUI(str,465,3435,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+		if(meng.command==SPRITE_HEALTH)
+		{
+			DrawStringUI(str,465,3435,810,217,0,255,32,32,255,st.fonts[ARIAL].font,0,0,0);
+			st.Current_Map.sprites[meng.sprite_edit_selection].health=atoi(st.TextInput);
+
+			if(st.keys[ESC_KEY].state)
+			{
+				StopText();
+				meng.command=meng.pannel_choice;
+				st.keys[ESC_KEY].state=0;
+			}
+		}
+
+		sprintf(str,"Physics");
+
+		if(CheckColisionMouse(465,3690,810,217,0))
+		{
+			DrawStringUI(str,465,3690,810,217,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				meng.command=SPRITE_PHY;
+				st.mouse1=0;
+			}
+		}
+		else
+			DrawStringUI(str,465,3690,810,217,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+		if(meng.command==SPRITE_PHY)
+		{
+			DrawHud(8192, 4096, 2120,4096,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
+
+			sprintf(str,"Physics? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on);
+
+			if(CheckColisionMouse(8192, 4096-1420,810,405,0))
+			{
+				DrawString2UI(str,8192, 4096-1420,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+				if(st.mouse1)
+				{
+					if(meng.spr.body.physics_on==0) st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on=1;
+					else st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on=0;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,8192, 4096-1420,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+			sprintf(str,"Mass %.2f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
+
+			if(CheckColisionMouse(8192, 4096-710,810,405,0))
+			{
+				DrawString2UI(str,8192, 4096-710,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+				if(st.mouse1 && !StartText())
+				{
+					if(meng.spr.body.mass==0)
+						sprintf(st.TextInput,"%.0f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
+					else
+						sprintf(st.TextInput,"%.2f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
+					meng.sub_com=10;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,8192, 4096-710,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+			if(meng.sub_com==10)
+			{
+				DrawString2UI(str,8192, 4096-1420,0,0,0,255,32,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
+				st.Current_Map.sprites[meng.sprite_edit_selection].body.mass=atof(st.TextInput);
+				if(st.keys[ESC_KEY].state)
+				{
+					StopText();
+					meng.sub_com=0;
+					st.keys[ESC_KEY].state=0;
+				}
+			}
+
+			sprintf(str,"Flammable? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable);
+
+			if(CheckColisionMouse(8192, 4096,810,405,0))
+			{
+				DrawString2UI(str,8192, 4096,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+				if(st.mouse1)
+				{
+					if(meng.spr.body.flamable==0) st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable=1;
+					else st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable=0;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawString2UI(str,8192, 4096,0,0,0,255,255,255,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+			sprintf(str,"Explosive? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive);
+
+			if(CheckColisionMouse(8192, 4096+710,810,405,0))
+			{
+				DrawString2UI(str,8192, 4096+710,0,0,0,255,128,32,255,st.fonts[ARIAL].font,512*4,512*4,0);
+
+				if(st.mouse1)
+				{
+					if(meng.spr.body.explosive==0) st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive=1;
+					else st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive=0;
 
 					st.mouse1=0;
 				}
@@ -2791,6 +3505,8 @@ static void ViewPortCommands()
 								meng.p=st.mouse;
 								meng.got_it=i;
 
+								meng.sprite_edit_selection=i;
+
 								STW(&meng.p.x, &meng.p.y);
 
 								meng.p.x-=st.Current_Map.sprites[i].position.x;
@@ -2980,6 +3696,7 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].body=meng.spr.body;
 							st.Current_Map.sprites[i].GameID=meng.sprite_selection;
 							st.Current_Map.sprites[i].frame_ID=meng.sprite_frame_selection;
+							st.Current_Map.sprites[i].type_s=meng.spr.type;
 
 							st.Current_Map.sprites[i].position=st.mouse;
 							STW(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);
@@ -3198,8 +3915,8 @@ int main(int argc, char *argv[])
 	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
 	st.num_sprites=0;
 	meng.got_it=-1;
-	meng.sprite_selection=0;
-	meng.sprite_frame_selection=0;
+	meng.sprite_selection=-1;
+	meng.sprite_frame_selection=-1;
 	meng.spr.size.x=2048;
 	meng.spr.size.y=2048;
 

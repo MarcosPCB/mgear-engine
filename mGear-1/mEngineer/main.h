@@ -29,6 +29,7 @@
 #define SPRITE_TAG 22
 #define SPRITE_HEALTH 23
 #define SPRITE_PHY 24
+#define EDIT_SPRITE_TYPE_S 26
 #define RGB_SPRITE 18
 
 #define EDIT_SPRITE 19
@@ -58,6 +59,8 @@ struct _mEng
 
 	int16 sprite_selection;
 	int16 sprite_frame_selection;
+
+	int16 sprite_edit_selection;
 
 	Pos p;
 	int32 got_it;
