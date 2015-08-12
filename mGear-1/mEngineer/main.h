@@ -101,6 +101,16 @@ struct _mEng
 
 	uPos16 lightmap_res;
 
+	Color lightmap_color;
+
+	struct Light
+	{
+		float intensity;
+		Color color;
+		float falloff;
+		uint8 light_id;
+	} light;
+
 	uint32 palette[256][256];
 
 	Color tmp_color;

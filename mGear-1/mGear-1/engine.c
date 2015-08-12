@@ -377,6 +377,26 @@ unsigned char *GenerateLightmap(uint16 w, uint16 h)
 	return data;
 }
 
+uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h)
+{
+	uint16 i, j;
+
+	if(!data)
+		return NULL;
+
+	for(i=0;i<h;i++)
+	{
+		for(j=0;j<w;j++)
+		{
+			data[(i*h*3)+(j*3)]=r;
+			data[(i*h*3)+(j*3)+1]=g;
+			data[(i*h*3)+(j*3)+2]=b;
+		}
+	}
+
+	return 1;
+}
+
 uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity)
 {
 	uint16 i, j;
@@ -395,6 +415,7 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 
 			if(d==0)
 				d=1;
+
 			att=1.0f/(d*falloff);
 
 			col=r*att*intensity;
@@ -1527,6 +1548,10 @@ SHADER_CREATION:
 		st.SinTable[i]=sin((k*pi)/180);
 		st.TanTable[i]=tan((k*pi)/180);
 	}
+
+	memset(&st.game_lightmaps,0,MAX_LIGHTMAPS*sizeof(_GAME_LIGHTMAPS));
+
+	st.game_lightmaps[0].stat=1;
 
 	st.game_lightmaps[0].W_w=16384;
 	st.game_lightmaps[0].W_h=8192;
@@ -3815,7 +3840,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ent[i].data.channel=0;
 		ent[i].data.normal=0;
 
-		if(z>40) z=40;
+		if(z>56) z=56;
 		//else if(z<16) z+=16;
 
 		z_buffer[z][z_slot[z]]=i;
@@ -3823,7 +3848,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 		if(z>z_used) z_used=z;
 
-		if(z>16)
+		if(z>15)
 		{
 			x-=st.Camera.position.x;
 			y-=st.Camera.position.y;
@@ -3948,6 +3973,9 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	uint8 val=0;
 	
 	SDL_Surface *msg;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
 
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;

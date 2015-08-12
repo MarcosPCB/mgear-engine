@@ -684,6 +684,8 @@ struct _GAME_LIGHTMAPS_
 	uint8 num_lights;
 
 	GLuint tex;
+
+	uint8 stat;
 };
 
 typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
@@ -855,6 +857,13 @@ void _fastcall WTS(int32 *x, int32 *y);
 uint32 PlayMovie(const char *name);
 
 void ResetVB();
+
+//Lightmap functions
+unsigned char *GenerateLightmap(uint16 w, uint16 h); //Generate a raw data lightmap
+uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity);
+GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h);
+uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
+uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
 
 //Faster than math.h functions
 float mCos(int16 ang);

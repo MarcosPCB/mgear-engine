@@ -1,6 +1,8 @@
 #include "engine.h"
 #include <SDL.h>
 
+extern SDL_Window *wn;
+
 //Keys
 
 #define ESC_KEY 0
@@ -90,3 +92,5 @@ void InputClose();
 
 uint8 StartText();
 void StopText();
+
+void SetMousePos(int32 x, int32 y);

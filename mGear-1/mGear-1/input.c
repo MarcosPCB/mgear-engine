@@ -278,3 +278,10 @@ void StopText()
 	st.Text_Input=0;
 	SDL_StopTextInput();
 }
+
+void SetMousePos(int32 x, int32 y)
+{
+	WTS(&x,&y);
+
+	SDL_WarpMouseInWindow(wn,x,y);
+}

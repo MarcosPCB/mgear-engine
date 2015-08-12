@@ -103,6 +103,8 @@ void Menu()
 					meng.spr.size.x=2048;
 					meng.spr.size.y=2048;
 
+					meng.lightmap_res.x=meng.lightmap_res.y=512;
+
 				}
 			}
 			else
