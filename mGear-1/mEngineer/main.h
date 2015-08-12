@@ -37,6 +37,19 @@
 #define SPRITE_EDIT_BOX 21
 #define SPRITE_SELECTION 25
 
+#define ADD_LIGHT 27
+#define CREATE_LIGHTMAP 28
+#define ADD_LIGHT_TO_LIGHTMAP 29
+#define RGB_LIGHTMAP 30
+#define RGB_LIGHT 31
+#define LIGHT_TAG 32
+#define LIGHTMAP_RES 33
+#define EDIT_LIGHTMAP 34
+#define EDIT_LIGHT_LIGHTMAP 35
+#define EDIT_LIGHTMAP_BOX 36
+#define EDIT_LIGHT_LIGHTMAP_BOX 37
+#define CREATE_LIGHTMAP_STEP2 38
+
 struct _mEng
 {
 	char mgg_list[32][256];
@@ -85,6 +98,8 @@ struct _mEng
 		Body body;
 		Pos size;
 	} spr, spr2;
+
+	uPos16 lightmap_res;
 
 	uint32 palette[256][256];
 

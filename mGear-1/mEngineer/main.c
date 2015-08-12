@@ -121,6 +121,7 @@ static void MGGList()
 					{
 						meng.mgg_sel=j;
 						meng.command=meng.pannel_choice;
+						st.mouse1=0;
 						break;
 					}
 				}
@@ -522,93 +523,106 @@ static void PannelLeft()
 		//}
 
 			if(st.mouse1)
-			{
-				
-					
-					//meng.tex2_sel=meng.tex_selection;
-					//meng.tex2_ID=meng.tex_ID;
-					//meng.tex2_MGGID=meng.tex_MGGID;
-
-					//meng.tex_selection=mgg_sys[st.Game_Sprites[].MGG_ID].frames[st.Game_Sprites[meng.spr.gid].frame];
-					//meng.tex_ID=st.Game_Sprites[meng.spr.gid].frame;
-					//meng.tex_MGGID=st.Game_Sprites[meng.spr.gid].MGG_ID;
-					
+			{		
 				st.mouse1=0;
 				meng.command=meng.pannel_choice=meng.command2=ADD_SPRITE;
 			}
 	}
-	
-	if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-		sprintf(str,"Tex. Sel.");
-	else
-		sprintf(str,"Sprite Sel.");
 
-	if(!CheckColisionMouse(458,1137,490,223,0))
+	if(!CheckColisionMouse(227,1137,448,488,0))
 	{
-		DrawStringUI(str,458,1137,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		DrawUI(227,1137,448,448,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[5],255,7);
 	}
 	else
 	{
-		DrawStringUI(str,458,1137,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+		DrawUI(227,1137,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[5],255,7);
 
-
-		if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-			DrawStringUI("Texture Selection",8192,8192-455,2730,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
-		else
-			DrawStringUI("Sprite Selection",8192,8192-455,2730,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
-
+		DrawStringUI("Add a lightmap",8192,8192-455,1820,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
 		if(st.mouse1)
 		{
-			meng.scroll=0;
+			st.mouse1=0;
+			meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
+		}
+	}
+	
+	if(meng.pannel_choice==ADD_OBJ || meng.pannel_choice==ADD_SPRITE)
+	{
+		if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
+			sprintf(str,"Tex. Sel.");
+		else
+			sprintf(str,"Sprite Sel.");
+
+		if(!CheckColisionMouse(458,8192-2275,490,223,0))
+		{
+			DrawStringUI(str,458,8192-2275,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+		else
+		{
+			DrawStringUI(str,458,8192-2275,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
 
 			if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-				meng.command=TEX_SEL;
+				DrawStringUI("Texture Selection",8192,8192-455,2730,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 			else
-				meng.command=SPRITE_SELECTION;
+				DrawStringUI("Sprite Selection",8192,8192-455,2730,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
-			meng.command2=0;
-			st.mouse1=0;
+
+			if(st.mouse1)
+			{
+				meng.scroll=0;
+
+				if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
+					meng.command=TEX_SEL;
+				else
+					meng.command=SPRITE_SELECTION;
+
+				meng.command2=0;
+				st.mouse1=0;
+			}
 		}
 	}
 
-	if(!CheckColisionMouse(458,1400,490,223,0))
+	if(meng.pannel_choice==ADD_OBJ)
 	{
-		DrawStringUI("MGG Sel.",458,1400,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
-	}
-	else
-	{
-		DrawStringUI("MGG Sel.",458,1400,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
-
-		DrawStringUI("MGG Selection",8192,8192-455,2270,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
-
-		if(st.mouse1)
+		if(!CheckColisionMouse(458,8192-1820,490,223,0))
 		{
-			meng.scroll2=0;
-			meng.command=6;
-			meng.command2=0;
+			DrawStringUI("MGG Sel.",458,8192-1820,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
 		}
-	}
-
-	if(!CheckColisionMouse(458,(8192)-227,490,223,0))
-	{
-		DrawStringUI("Load MGG",458,8192-227,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
-	}
-	else
-	{
-		DrawStringUI("Load MGG",458,(8192)-227,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
-
-		DrawStringUI("Load an MGG file and adds it to the map list",8192,(8192)-455,5460,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
-
-		if(st.mouse1)
+		else
 		{
-			meng.scroll2=0;
-			meng.command=7;
-			meng.command2=0;
-		}
-	}
+			DrawStringUI("MGG Sel.",458,8192-1820,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
 
-	DrawUI(455,8192-910,910,910,0,255,255,255,0,0,32768,32768,meng.tex_selection,255,0);
+			DrawStringUI("MGG Selection",8192,8192-455,2270,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				meng.scroll2=0;
+				meng.command=6;
+				meng.command2=0;
+			}
+		}
+
+		if(!CheckColisionMouse(458,(8192)-227,490,223,0))
+		{
+			DrawStringUI("Load MGG",458,8192-227,490,223,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+		else
+		{
+			DrawStringUI("Load MGG",458,(8192)-227,490,223,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			DrawStringUI("Load an MGG file and adds it to the map list",8192,(8192)-455,5460,455,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				meng.scroll2=0;
+				meng.command=7;
+				meng.command2=0;
+			}
+		}
+
+		DrawUI(455,8192-910,910,910,0,255,255,255,0,0,32768,32768,meng.tex_selection,255,0);
+	}
 
 	if(meng.pannel_choice==0)
 		DrawUI(227,227,455,455,0,128,32,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[0],255,0);
@@ -616,11 +630,87 @@ static void PannelLeft()
 	if(meng.pannel_choice==2)
 		DrawUI(682,227,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[2],255,0);
 	//else
+
+	if(meng.pannel_choice==ADD_LIGHT)
+	{
+		DrawUI(227,1137,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[5],255,0);
+
+		if(CheckColisionMouse(455,1900,810,455,0))
+		{
+			DrawStringUI("Create Lightmap",455,1900,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				st.mouse1=0;
+				meng.command=CREATE_LIGHTMAP;
+			}
+		}
+		else
+			DrawStringUI("Create Lightmap",455,1900,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		
+		
+		if(CheckColisionMouse(455,1900+810,810,455,0))
+		{
+			DrawStringUI("Add Light",455,1900+810,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				st.mouse1=0;
+				meng.command=ADD_LIGHT_TO_LIGHTMAP;
+			}
+		}
+		else
+			DrawStringUI("Add Light",455,1900+810,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+		
+		if(CheckColisionMouse(455,2710+810,810,455,0))
+		{
+			DrawStringUI("Lightmap Res.",455,2710+810,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				st.mouse1=0;
+				meng.command=LIGHTMAP_RES;
+			}
+		}
+		else
+			DrawStringUI("Lightmap Res.",455,2710+810,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+		if(CheckColisionMouse(455,3520+810,810,455,0))
+		{
+			DrawStringUI("Edit Lightmap",455,3520+810,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+			if(st.mouse1)
+			{
+				st.mouse1=0;
+				meng.command=EDIT_LIGHTMAP;
+			}
+		}
+		else
+			DrawStringUI("Edit Lightmap",455,3520+810,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+
+		if(meng.command==EDIT_LIGHTMAP)
+		{
+			if(CheckColisionMouse(455,3520+810+810,810,455,0))
+			{
+				DrawStringUI("Edit Light",455,3520+810+810,810,227,0,255,128,32,255,st.fonts[ARIAL].font,0,0,0);
+
+				if(st.mouse1)
+				{
+					st.mouse1=0;
+					meng.command2=EDIT_LIGHT_LIGHTMAP;
+				}
+			}
+			else
+				DrawStringUI("Edit Light",455,3520+810+810,810,227,0,255,255,255,255,st.fonts[ARIAL].font,0,0,0);
+		}
+	}
+
 	if(meng.pannel_choice==4)
 	{
 		DrawUI(682,682,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[3],255,0);
 
-		DrawUI(455,8192-2275,910,910,0,255,255,255,0,0,32768,32768,mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[meng.sprite_frame_selection],255,0);
+		DrawUI(455,8192-910,910,910,0,255,255,255,0,0,32768,32768,mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[meng.sprite_frame_selection],255,0);
 
 		if(meng.spr.type==MIDGROUND)
 		{
@@ -3388,7 +3478,7 @@ static void ViewPortCommands()
 	uint16 i, j;
 	Pos p, p2;
 
-	if(!CheckColisionMouse(455,4096,910,8192,0))
+	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL)
 	{
 		if(meng.command==DRAW_SECTOR)
 		{
@@ -3732,6 +3822,141 @@ static void ViewPortCommands()
 				}
 			}
 		}
+		else
+		if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP)
+		{
+			if(st.mouse1)
+			{
+				if(st.num_lightmap<MAX_LIGHTMAPS)
+				{
+					for(i=0;i<MAX_LIGHTMAPS;i++)
+					{
+						if(!st.game_lightmaps[i].stat)
+						{
+							st.game_lightmaps[i].stat=2;
+							
+							meng.command=CREATE_LIGHTMAP_STEP2;
+							meng.command2=i;
+
+							st.game_lightmaps[i].w_pos=st.mouse;
+							STW(&st.game_lightmaps[i].w_pos.x,&st.game_lightmaps[i].w_pos.y);
+
+							st.game_lightmaps[i].W_w=2048;
+							st.game_lightmaps[i].W_h=2048;
+							st.game_lightmaps[i].T_w=meng.lightmap_res.x;
+							st.game_lightmaps[i].T_h=meng.lightmap_res.y;
+							st.game_lightmaps[i].num_lights=0;
+
+							LogApp("Lightmap Creation Step 2");
+							st.mouse1=0;
+
+							break;
+						}
+					}
+				}
+			}
+		}
+		else
+		if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP_STEP2)
+		{
+			i=meng.command2;
+			/*
+			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w/2,st.game_lightmaps[i].W_h/2,0) && st.mouse1)
+			{
+				if(meng.got_it==-1)
+				{
+					meng.p=st.mouse;
+					meng.got_it=1;
+
+					STW(&meng.p.x, &meng.p.y);
+
+					meng.p.x-=st.game_lightmaps[i].w_pos.x;
+					meng.p.y-=st.game_lightmaps[i].w_pos.y;
+
+					//meng.com_id=1;
+				}
+				else
+				if(meng.got_it==1)
+				{
+					p=st.mouse;
+
+					STW(&p.x, &p.y);
+
+					//meng.com_id=i;
+
+					st.game_lightmaps[i].w_pos.x=p.x;
+					st.game_lightmaps[i].w_pos.y=p.y;
+
+					st.game_lightmaps[i].w_pos.x-=meng.p.x;
+					st.game_lightmaps[i].w_pos.y-=meng.p.y;
+				}
+
+				//meng.com_id++;
+
+				//if(meng.com_id==3)
+				//{
+					//meng.com_id=0;
+					//meng.got_it=-1;
+				//}
+
+			}
+			else
+				meng.got_it=-1;
+				*/
+			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h/12,0) && st.mouse1)
+			{
+				if(meng.got_it==-1)
+				{
+					meng.p=st.mouse;
+					meng.got_it=2;
+
+					STW(&meng.p.x, &meng.p.y);
+
+					//meng.p.x-=st.game_lightmaps[i].w_pos.x;
+					//meng.p.y-=st.game_lightmaps[i].w_pos.y;
+
+					//meng.com_id=1;
+				}
+				else
+				if(meng.got_it==2)
+				{
+					p=st.mouse;
+
+					STW(&p.x, &p.y);
+
+					//p.x-=meng.p.x;
+					p.y-=meng.p.y;
+
+					st.game_lightmaps[i].W_h-=p.y*2;
+
+					st.game_lightmaps[i].w_pos.y+=p.y;
+
+					meng.p=st.mouse;
+					//meng.got_it=2;
+
+					STW(&meng.p.x, &meng.p.y);
+
+					//meng.com_id++;
+
+					//if(meng.com_id==4)
+					//{
+						//meng.com_id=0;
+						//meng.got_it=-1;
+					//}
+				}
+
+				//meng.com_id=i;
+				/*
+				st.game_lightmaps[i].w_pos.x=p.x;
+				st.game_lightmaps[i].w_pos.y=p.y;
+
+				st.game_lightmaps[i].w_pos.x-=meng.p.x;
+				st.game_lightmaps[i].w_pos.y-=meng.p.y;
+				*/
+			}
+			else
+				meng.got_it=-1;
+		}
 	}
 
 	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX)
@@ -3808,85 +4033,22 @@ static void MGGListLoad()
 	LogApp("MGGs loaded");
 
 }
-/*
-static void SpriteListLoad()
+
+static void ENGDrawLight()
 {
-	FILE *file;
-	char str[3][64], tmp[1024];
-	int value[2];
-	register uint16 i=MGG_SPRITE_START, line=0;
+	uint8 i=0;
 
-	if((file=fopen("sprite.list","r"))==NULL)
+	if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP_STEP2)
 	{
-		LogApp("Could not open the sprite list");
-		Quit();
-	}
+		i=meng.command2;
 
-	while(!feof(file))
-	{
-		BASICBKD();
-		DrawStringUI("Loading...",8192,4096,1820,455,0,255,255,255,255,st.fonts[GEOMET].font,0,0,0);
-		memset(tmp,0,sizeof(str));
-		fgets(tmp,1024,file);
-		sscanf(tmp,"%s %s %d %s %d",str[0], str[1], &value[0], str[2], &value[1]);
-		if(strcmp(str[0],"\0")==NULL)
-		{
-			line++;
-			continue;
-		}
-		else
-		if(strcmp(str[0],"SPRITE")==NULL)
-		{
-			strcpy(st.Game_Sprites[value[0]].name,str[1]);
-			if(strcmp(str[2],"NONE")==NULL)
-			{
-				st.Game_Sprites[value[0]].MGG_ID=-1;
-				st.Game_Sprites[value[0]].frame=-1;
-				st.num_sprites++;
-				line++;
-			}
-			else
-			{
-				if(CheckMGGFile(str[2]))
-				{
-					DrawString2UI(str[2],8192,(4096)+455,0,0,0,255,255,255,255,st.fonts[ARIAL_BOULD].font,2048,2048,0);
-					Renderer();
-					if(LoadMGG(&mgg_sys[i],str[2]))
-					{
-						st.Game_Sprites[value[0]].MGG_ID=i;
-						st.Game_Sprites[value[0]].frame=value[1];
-						st.num_sprites++;
-						meng.num_mgg++;
-						line++;
-					}
-					else
-					{
-						LogApp("Failed to load sprite MGG: %s at slot %d",str[2], i);
-						line++;
-						continue;
-					}
-				}
-				else
-				{
-					LogApp("Invalid sprite MGG file: %s",str[2]);
-					line++;
-					continue;
-				}
-			}
-		}
-		else
-		{
-			LogApp("Invalid entry at line %d", line);
-			line++;
-			continue;
-		}
-		
-		Renderer();
-	}
+		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,128,32,mgg_sys[0].frames[5],128,0,0,32768,32768,15);
 
-	LogApp("%d Sprites loaded",st.num_sprites);
+		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),
+			st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),255,128,32,255,st.game_lightmaps[i].W_h/12,14);
+	}
 }
-*/
+
 int main(int argc, char *argv[])
 {
 	int8 i=0;
@@ -4003,6 +4165,8 @@ int main(int argc, char *argv[])
 				
 				PannelLeft();
 				DrawMap();
+
+				ENGDrawLight();
 
 				if(st.keys[ESC_KEY].state && meng.command!=OBJ_EDIT_BOX)
 				{
