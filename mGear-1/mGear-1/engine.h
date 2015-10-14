@@ -117,6 +117,7 @@ struct _VB_DATAT
 	GLuint vbo_id;
 	float *vertex;
 	float *texcoord;
+	float *texcoordlight;
 	GLubyte *color;
 	GLushort *index;
 	GLuint texture;
@@ -161,8 +162,10 @@ struct _ENTITIES_ //To be rendered
 	int16 ang;
 	float vertex[12];
 	float texcor[8];
+	float texcorlight[8];
 	GLubyte color[16];
 	ColorF Color;
+	int16 lightmapid;
 };
 
 typedef struct _ENTITIES_ _ENTITIES;
@@ -463,6 +466,7 @@ struct _MGMOBJ_
 	_OBJTYPE type;
 	_OBJBLOCK block_type;
 	uint8 amblight;
+	int16 lightmapid;
 };
 
 typedef struct _MGMOBJ_ _MGMOBJ;
@@ -686,6 +690,10 @@ struct _GAME_LIGHTMAPS_
 	GLuint tex;
 
 	uint8 stat;
+
+	LIGHT_TYPE type;
+
+	int16 obj_id;
 };
 
 typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
@@ -850,9 +858,21 @@ void RestartVideo();
 
 void _fastcall STW(int32 *x, int32 *y);
 
+void _fastcall STWci(int32 *x, int32 *y); //No camera position in calculation
+
+void _fastcall STWf(float *x, float *y);
+
+void _fastcall STWcf(float *x, float *y); //No camera position in calculation
+
 uint32 POT(uint32 value);
 
 void _fastcall WTS(int32 *x, int32 *y);
+
+void _fastcall WTSci(int32 *x, int32 *y); //No camera position in calculation
+
+void _fastcall WTSf(float *x, float *y);
+
+void _fastcall WTScf(float *x, float *y); ////No camera position in calculation
 
 uint32 PlayMovie(const char *name);
 
@@ -894,6 +914,7 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 di
 //THIS MUST GO BEFORE ANY DRAWING COMMAND
 void BASICBKD(); 
 
+int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, int16 lightmap_id);
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
 int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius);
@@ -907,7 +928,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 
 int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a);
 
-void Renderer();
+void Renderer(uint8 type);
 
 void PlaySound(const char *filename, uint8 loop);
 void PlayMusic(const char *filename, uint8 loop);

@@ -126,6 +126,24 @@ void _fastcall STW(int32 *x, int32 *y)
 	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
+void _fastcall STWci(int32 *x, int32 *y)
+{
+	*x=((((*x*16384)/st.screenx)/st.Camera.dimension.x));
+	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y));
+}
+
+void _fastcall STWf(float *x, float *y)
+{
+	*x=(float) ((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
+	*y=(float) ((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+}
+
+void _fastcall STWcf(float *x, float *y)
+{
+	*x=(float) ((((*x*16384)/st.screenx)/st.Camera.dimension.x));
+	*y=(float) ((((*y*8192)/st.screeny)/st.Camera.dimension.y));
+}
+
 uint32 POT(uint32 value)
 {
 	if(value != 0)
@@ -149,6 +167,27 @@ void _fastcall WTS(int32 *x, int32 *y)
 
 	*x=((*x*st.screenx)/16384)*st.Camera.dimension.x;
 	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
+}
+
+void _fastcall WTSci(int32 *x, int32 *y)
+{
+	*x=((*x*st.screenx)/16384)*st.Camera.dimension.x;
+	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
+}
+
+void _fastcall WTSf(float *x, float *y)
+{
+	*x-=st.Camera.position.x;
+	*y-=st.Camera.position.y;
+
+	*x=(float) ((*x*st.screenx)/16384)*st.Camera.dimension.x;
+	*y=(float) ((*y*st.screeny)/8192)*st.Camera.dimension.y;
+}
+
+void _fastcall WTScf(float *x, float *y)
+{
+	*x=(float) ((*x*st.screenx)/16384)*st.Camera.dimension.x;
+	*y=(float) ((*y*st.screeny)/8192)*st.Camera.dimension.y;
 }
 
 float mCos(int16 ang)
@@ -371,6 +410,8 @@ unsigned char *GenerateLightmap(uint16 w, uint16 h)
 
 	data=(unsigned char*) calloc(w*h*3,sizeof(unsigned char));
 
+	//printf("%d\n",w*h*3);
+
 	if(!data)
 		return NULL;
 
@@ -388,9 +429,9 @@ uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uin
 	{
 		for(j=0;j<w;j++)
 		{
-			data[(i*h*3)+(j*3)]=r;
-			data[(i*h*3)+(j*3)+1]=g;
-			data[(i*h*3)+(j*3)+2]=b;
+			data[(i*w*3)+(j*3)]=r;
+			data[(i*w*3)+(j*3)+1]=g;
+			data[(i*w*3)+(j*3)+2]=b;
 		}
 	}
 
@@ -421,29 +462,30 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 			col=r*att*intensity;
 			if(col>255)
 				col=255;
-
-			if((data[(i*h*3)+(j*3)]+col)>255)
-				data[(i*h*3)+(j*3)]=255;
+			
+			if((data[(i*w*3)+(j*3)]+col)>255)
+				data[(i*w*3)+(j*3)]=255;
 			else
-				data[(i*h*3)+(j*3)]+=(unsigned char)col;
+				data[(i*w*3)+(j*3)]+=(unsigned char)col;
 
 			col=g*att*intensity;
 			if(col>255)
 				col=255;
-
-			if((data[(i*h*3)+(j*3)+1]+col)>255)
-				data[(i*h*3)+(j*3)+1]=255;
+			
+			if((data[(i*w*3)+(j*3)+1]+col)>255)
+				data[(i*w*3)+(j*3)+1]=255;
 			else
-				data[(i*h*3)+(j*3)+1]+=(unsigned char)col;
-
+				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
+				
 			col=b*att*intensity;
 			if(col>255)
 				col=255;
-
-			if((data[(i*h*3)+(j*3)+2]+col)>255)
-				data[(i*h*3)+(j*3)+2]=255;
+			
+			if((data[(i*w*3)+(j*3)+2]+col)>255)
+				data[(i*w*3)+(j*3)+2]=255;
 			else
-				data[(i*h*3)+(j*3)+2]+=(unsigned char)col;
+				data[(i*w*3)+(j*3)+2]+=(unsigned char)col;
+				
 		}
 	}
 
@@ -487,7 +529,7 @@ uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h)
 #ifdef _VAO_RENDER
 static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 {
-	GLint pos, texc, col;
+	GLint pos, texc, col, texl;
 
 	if(type==1)
 	{
@@ -501,15 +543,18 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 	col=glGetAttribLocation(st.renderer.Program[pr],"Color");
 	pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
 	texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
+	texl=glGetAttribLocation(st.renderer.Program[pr],"TexLight");
+
 
 	glEnableVertexAttribArray(pos);
 	glEnableVertexAttribArray(texc);
 	glEnableVertexAttribArray(col);
+	glEnableVertexAttribArray(texl);
 
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 
-	glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte))),NULL,GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,((data->buffer_elements*12)*sizeof(GLfloat))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat)),NULL,GL_STREAM_DRAW);
 	/*
 	glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
 	glBufferSubData(GL_ARRAY_BUFFER,(12*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
@@ -519,6 +564,8 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 	glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
 	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)));
 	glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)+(8*data->buffer_elements)*sizeof(GLfloat)));
+	glVertexAttribPointer(texl,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))));
+
 
 	glGenBuffers(1,&data->ibo_id);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
@@ -533,6 +580,7 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 	glDisableVertexAttribArray(pos);
 	glDisableVertexAttribArray(texc);
 	glDisableVertexAttribArray(col);
+	glDisableVertexAttribArray(texl);
 
 	data->num_elements2=0;
 	
@@ -547,7 +595,7 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 
 static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr)
 {
-	GLint pos, texc, col;
+	GLint pos, texc, col, texl;
 	GLenum error;
 
 	//glUseProgram(st.renderer.Program[pr]);
@@ -564,6 +612,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 			glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
 			glBufferSubData(GL_ARRAY_BUFFER,(12*data->buffer_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 			glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
+			glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))),(data->num_elements*8)*sizeof(float),data->texcoordlight);
 
 			if(upd_index)
 			{
@@ -579,6 +628,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 			free(data->index);
 			free(data->color);
 			free(data->vertex);
+			free(data->texcoordlight);
 			
 		}
 	}
@@ -591,22 +641,27 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
 		texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
 		col=glGetAttribLocation(st.renderer.Program[pr],"Color");
+		texl=glGetAttribLocation(st.renderer.Program[pr],"TexLight");
 
 		glEnableVertexAttribArray(pos);
 		glEnableVertexAttribArray(texc);
 		glEnableVertexAttribArray(col);
+		glEnableVertexAttribArray(texl);
 
 		glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 
-		glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte))),NULL,GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte)))+(((data->buffer_elements*8)*sizeof(GLfloat))),NULL,GL_STREAM_DRAW);
 
 		glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
 		glBufferSubData(GL_ARRAY_BUFFER,(12*data->buffer_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
+		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))),(data->num_elements*8)*sizeof(float),data->texcoordlight);
+
 
 		glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
 		glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)));
 		glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))));
+		glVertexAttribPointer(texl,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))));
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
@@ -618,6 +673,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		glDisableVertexAttribArray(pos);
 		glDisableVertexAttribArray(texc);
 		glDisableVertexAttribArray(col);
+		glDisableVertexAttribArray(texl);
 
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 		//glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -626,6 +682,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		free(data->index);
 		free(data->color);
 		free(data->vertex);
+		free(data->texcoordlight);
 	}
 	else
 	if(upd_buff==2)
@@ -637,16 +694,19 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
 		texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
 		col=glGetAttribLocation(st.renderer.Program[pr],"Color");
+		texl=glGetAttribLocation(st.renderer.Program[pr],"TexLight");
 
 		glEnableVertexAttribArray(pos);
 		glEnableVertexAttribArray(texc);
 		glEnableVertexAttribArray(col);
+		glEnableVertexAttribArray(texl);
 
-		glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte))),NULL,GL_STREAM_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte)))+(((data->buffer_elements*8)*sizeof(GLfloat))),NULL,GL_STREAM_DRAW);
 
 		glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
 		glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)));
 		glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)+(8*data->buffer_elements)*sizeof(GLfloat)));
+		glVertexAttribPointer(texl,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))));
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
@@ -655,6 +715,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		glDisableVertexAttribArray(pos);
 		glDisableVertexAttribArray(texc);
 		glDisableVertexAttribArray(col);
+		glDisableVertexAttribArray(texl);
 
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 		//glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -1483,9 +1544,10 @@ SHADER_CREATION:
 				st.renderer.unifs[2]=glGetUniformLocation(st.renderer.Program[3],"texu2");
 				st.renderer.unifs[3]=glGetUniformLocation(st.renderer.Program[3],"texu3");
 				st.renderer.unifs[4]=glGetUniformLocation(st.renderer.Program[3],"normal");
+				st.renderer.unifs[5]=glGetUniformLocation(st.renderer.Program[2],"light_type");
 
 #ifdef _VAO_RENDER
-			CreateVAO(&vbd,1,4);
+			CreateVAO(&vbd,1,3);
 #elif _VBO_RENDER
 			CreateVBO(&vbd, 1);
 #endif 
@@ -1556,16 +1618,16 @@ SHADER_CREATION:
 	st.game_lightmaps[0].W_w=16384;
 	st.game_lightmaps[0].W_h=8192;
 
-	st.game_lightmaps[0].T_w=8;
-	st.game_lightmaps[0].T_h=8;
+	st.game_lightmaps[0].T_w=4;
+	st.game_lightmaps[0].T_h=2;
 
 	st.game_lightmaps[0].num_lights=1;
 	st.game_lightmaps[0].w_pos.x=8192;
 	st.game_lightmaps[0].w_pos.y=4096;
 	st.game_lightmaps[0].w_pos.z=0;
 
-	st.game_lightmaps[0].t_pos[0].x=4;
-	st.game_lightmaps[0].t_pos[0].y=4;
+	st.game_lightmaps[0].t_pos[0].x=2;
+	st.game_lightmaps[0].t_pos[0].y=1;
 	st.game_lightmaps[0].t_pos[0].z=0;
 
 	st.game_lightmaps[0].t_pos[1].x=0;
@@ -2070,7 +2132,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			vbdt[vbdt_num-1].buffer_elements=8;
 			
 #ifdef _VAO_RENDER
-			if(st.renderer.VAO_ON) CreateVAO(&vbdt[vbdt_num-1],0,4);
+			if(st.renderer.VAO_ON) CreateVAO(&vbdt[vbdt_num-1],0,3);
 #endif
 #ifdef _VBO_RENDER
 			if(st.renderer.VBO_ON) CreateVBO(&vbdt[vbdt_num-1], 0);
@@ -2135,7 +2197,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					vbdt[l].buffer_elements=8;
 
 			#ifdef _VAO_RENDER
-			if(st.renderer.VAO_ON) CreateVAO(&vbdt[l],0,4);
+			if(st.renderer.VAO_ON) CreateVAO(&vbdt[l],0,3);
 			#endif
 			#ifdef _VBO_RENDER
 			if(st.renderer.VBO_ON) CreateVBO(&vbdt[l], 0);
@@ -2159,7 +2221,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					vbdt[l].buffer_elements=8;
 
 					#ifdef _VAO_RENDER
-					if(st.renderer.VAO_ON) CreateVAO(&vbdt[l],0,4);
+					if(st.renderer.VAO_ON) CreateVAO(&vbdt[l],0,3);
 					#endif
 					#ifdef _VBO_RENDER
 					if(st.renderer.VBO_ON) CreateVBO(&vbdt[l], 0);
@@ -2985,6 +3047,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 		return 2;
 	else
 		i=st.num_entities;
+
+	ent[i].lightmapid=-1;
 	
 			ent[i].data=data;
 
@@ -3199,7 +3263,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 	int16 ang=0;
 
-	 uint32 i=0, j=0, k=0;
+	uint32 i=0, j=0, k=0;
 	
 	PosF dim=st.Camera.dimension;
 	
@@ -3214,6 +3278,9 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	sizex*=st.Camera.dimension.x;
 	sizey*=st.Camera.dimension.y;
 
+	x*=st.Camera.dimension.x;
+	y*=st.Camera.dimension.y;
+
 	if(dim.x<0) dim.x*=-1;
 	if(dim.y<0) dim.y*=-1;
 
@@ -3223,6 +3290,15 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	else dim.y*=8192;
 
 	lmp[i].data.data=data;
+
+	if(type==AMBIENT_LIGHT)
+		lmp[i].ang=0;
+	else
+	if(type==POINT_LIGHT_MEDIUM)
+		lmp[i].ang=1;
+	else
+	if(type==POINT_LIGHT_STRONG)
+		lmp[i].ang=2;
 
 			lmp[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
@@ -3276,7 +3352,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 				lmp[i].color[j+3]=1;
 			}
 
-				st.num_lightmap++;
+			st.num_lightmap++;
 
 	return 0;
 }
@@ -3290,6 +3366,7 @@ void BASICBKD()
 	i=0;
 
 	lmp[i].data.data=st.game_lightmaps[0].tex;
+	lmp[i].ang=0;
 
 			lmp[i].vertex[0]=0.0f;
 			lmp[i].vertex[1]=0.0f;
@@ -3347,7 +3424,7 @@ void BASICBKD()
 
 }
 
-int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
+int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, int16 lightmap_id)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
@@ -3377,6 +3454,8 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 		return 2;
 	else
 		i=st.num_entities;
+
+	ent[i].lightmapid=lightmap_id;
 	
 			ent[i].data=data;
 
@@ -3524,6 +3603,235 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 	return 0;
 }
 
+
+int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
+{
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
+
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
+
+	PosF dim=st.Camera.dimension;
+	
+	if(dim.x<0) dim.x*=-1;
+	if(dim.y<0) dim.y*=-1;
+
+	if(dim.x<10) dim.x=16384/dim.x;
+	else dim.x*=16384;
+	if(dim.y<10) dim.y=8192/dim.y;
+	else dim.y*=8192;
+
+	t3=(int32) dim.x;
+	t4=(int32) dim.y;
+
+	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+
+	ent[i].lightmapid=-1;
+	
+			ent[i].data=data;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			tx1=x;
+			ty1=y;
+			tx2=sizex;
+			ty2=sizey;
+
+			x-=st.Camera.position.x;
+			y-=st.Camera.position.y;
+
+			sizex*=st.Camera.dimension.x;
+			sizey*=st.Camera.dimension.y;
+
+			if(z>56) 
+				z=56;
+			else 
+				if(z<16) 
+					z+=16;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			x*=st.Camera.dimension.x;
+			y*=st.Camera.dimension.y;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			//timel=GetTicks() - timej;
+
+			//ang=1000;
+
+			ang/=10;
+
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			tw=st.Camera.position.x;
+			th=st.Camera.position.y;
+
+			WTSf(&tx1,&ty1);
+			WTScf(&tx2,&ty2);
+
+			/*
+			ent[i].texcorlight[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].texcorlight[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+
+			ent[i].texcorlight[2]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].texcorlight[3]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+
+			ent[i].texcorlight[4]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].texcorlight[5]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+
+			ent[i].texcorlight[6]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].texcorlight[7]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			*/
+			
+			ent[i].texcorlight[0]=(float) tx1-(tx2/2);
+			ent[i].texcorlight[1]=(float) ty1-(ty2/2);
+			ent[i].texcorlight[2]=(float) tx1+(tx2/2);
+			ent[i].texcorlight[3]=(float) ty1-(ty2/2);
+			ent[i].texcorlight[4]=(float) tx1+(tx2/2);
+			ent[i].texcorlight[5]=(float) ty1+(ty2/2);
+			ent[i].texcorlight[6]=(float) tx1-(tx2/2);
+			ent[i].texcorlight[7]=(float) ty1+(ty2/2);
+
+			ent[i].texcorlight[0]/=(float) st.screenx;
+			ent[i].texcorlight[1]/=(float) st.screeny;
+			ent[i].texcorlight[2]/=(float) st.screenx;
+			ent[i].texcorlight[3]/=(float) st.screeny;
+			ent[i].texcorlight[4]/=(float) st.screenx;
+			ent[i].texcorlight[5]/=(float) st.screeny;
+			ent[i].texcorlight[6]/=(float) st.screenx;
+			ent[i].texcorlight[7]/=(float) st.screeny;
+
+			ent[i].texcorlight[1]*=-1;
+			ent[i].texcorlight[3]*=-1;
+			ent[i].texcorlight[5]*=-1;
+			ent[i].texcorlight[7]*=-1;
+
+			if(data.vb_id==-1)
+			{
+				ent[i].texcor[0]=x1;
+				ent[i].texcor[1]=y1;
+				ent[i].texcor[2]=x2;
+				ent[i].texcor[3]=y1;
+				ent[i].texcor[4]=x2;
+				ent[i].texcor[5]=y2;
+				ent[i].texcor[6]=x1;
+				ent[i].texcor[7]=y2;
+			}
+			else
+			{
+				tx1=(float) x1/32768;
+				ty1=(float) y1/32768;
+				tx2=(float) x2/32768;
+				ty2=(float) y2/32768;
+
+				ent[i].texcor[0]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[1]=data.posy+(ty1*data.sizey);
+
+				ent[i].texcor[2]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[3]=data.posy+(ty1*data.sizey);
+
+				ent[i].texcor[4]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[5]=data.posy+(ty2*data.sizey);
+
+				ent[i].texcor[6]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[7]=data.posy+(ty2*data.sizey);
+			}
+			
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+		 		ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+				
+				if(j<7)
+				{
+					ent[i].texcor[j]/=(float)32768;
+					ent[i].texcor[j+1]/=(float)32768;
+
+					if((j+2)<7)
+						ent[i].texcor[j+2]/=(float)32768;
+				}
+				
+			}
+
+			/*
+			ent[i].texcor[0]/=tx1;
+			ent[i].texcor[1]/=ty1;
+			ent[i].texcor[2]*=tx2;
+			ent[i].texcor[3]/=ty1;
+			ent[i].texcor[4]*=tx2;
+			ent[i].texcor[5]*=ty2;
+			ent[i].texcor[6]/=tx1;
+			ent[i].texcor[7]*=ty2;
+			*/
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			if(data.vb_id!=-1)
+			{
+				vbdt[data.vb_id].num_elements++;
+				ent[i].data.loc=vbdt[data.vb_id].num_elements-1;
+			}
+			else
+			{
+				texone_ids[texone_num]=i;
+				texone_num++;
+			}
+
+#endif
+
+			st.num_entities++;
+
+	return 0;
+}
+
 int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
@@ -3541,6 +3849,8 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 		return 2;
 	else
 		i=st.num_entities;
+
+	ent[i].lightmapid=-1;
 	
 			ent[i].data=data;
 
@@ -3685,6 +3995,8 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 		return 2;
 	else
 		i=st.num_entities;
+
+	ent[i].lightmapid=-1;
 	
 			ent[i].data=data;
 
@@ -4067,6 +4379,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+	ent[i].lightmapid=-1;
+
 			if(override_sizex!=0)
 				sizex=st.strings[id].data.w*(override_sizex/1024);
 
@@ -4266,6 +4580,8 @@ if(st.num_entities==MAX_GRAPHICS-1)
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+	ent[i].lightmapid=-1;
+
 			if(override_sizex!=0)
 				sizex=st.strings[id].data.w*(override_sizex/1024);
 
@@ -4460,6 +4776,8 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	}
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+	ent[i].lightmapid=-1;
 
 			if(override_sizex!=0)
 				sizex=st.strings[id].data.w*(override_sizex/1024);
@@ -5310,6 +5628,9 @@ void DrawMap()
 				st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
 				st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
 
+			for(i=1;i<=st.num_lights;i++)
+				DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,st.game_lightmaps[i].type);
+
 	
 	/*
 	for( uint16 i=0;i<st.Current_Map.num_obj;i++)
@@ -5361,7 +5682,7 @@ void DrawMap()
 	
 }
 
-void Renderer()
+void Renderer(uint8 type)
 {
 
 	GLint unif, texcat, vertat, pos, col, texc, tex_bound[2]= { -1, -1 };
@@ -5372,6 +5693,8 @@ void Renderer()
 	uint16 *k, l=0;
 
 	static uint32 tesg=0;
+
+	int8 mrt=0;
 
 	float m1, m2;
 
@@ -5397,6 +5720,7 @@ void Renderer()
 			vbdt[i].texcoord=(float*) calloc(vbdt[i].num_elements*8,sizeof(float));
 			vbdt[i].index=(GLushort*) calloc(vbdt[i].num_elements*6,sizeof(GLushort));
 			vbdt[i].color=(GLubyte*) calloc(vbdt[i].num_elements*16,sizeof(GLubyte));
+			vbdt[i].texcoordlight=(float*) calloc(vbdt[i].num_elements*8,sizeof(float));
 		}
 	}
 
@@ -5414,8 +5738,11 @@ void Renderer()
 					vbdt[ent[i].data.vb_id].vertex[(k[ent[i].data.vb_id]*12)+j]=ent[i].vertex[j];
 
 				if(j<8)
+				{
 					vbdt[ent[i].data.vb_id].texcoord[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcor[j];
 
+					vbdt[ent[i].data.vb_id].texcoordlight[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcorlight[j];
+				}
 					
 				if(j<=2)
 					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+j;
@@ -5445,66 +5772,29 @@ void Renderer()
 				{
 					if(vbdt[i].num_elements!=vbdt[i].num_elements2)
 					{
-						UpdateVAO(&vbdt[i],0,1,4);
+						UpdateVAO(&vbdt[i],0,1,3);
 						vbdt[i].num_elements2=vbdt[i].num_elements;
 					}
 					else
-						UpdateVAO(&vbdt[i],0,0,4);
+						UpdateVAO(&vbdt[i],0,0,3);
 				}
 				else
 				if(vbdt[i].num_elements<vbdt[i].buffer_elements-8)
 				{
 					vbdt[i].buffer_elements=vbdt[i].num_elements+8;
-					UpdateVAO(&vbdt[i],1,1,4);
+					UpdateVAO(&vbdt[i],1,1,3);
 				}
 				else
 				if(vbdt[i].num_elements>=vbdt[i].buffer_elements)
 				{
 					vbdt[i].buffer_elements=vbdt[i].num_elements+8;
-					UpdateVAO(&vbdt[i],1,1,4);
+					UpdateVAO(&vbdt[i],1,1,3);
 				}
 			}
 		}
 	}
 
 #endif
-	/*
-#ifdef _VBO_RENDER
-
-	if(st.renderer.VBO_ON)
-	{
-		for(i=0;i<vbdt_num;i++)
-		{
-			if(vbdt[i].num_elements>0)
-			{
-				if(vbdt[i].num_elements<vbdt[i].buffer_elements)
-				{
-					if(vbdt[i].num_elements!=vbdt[i].num_elements2)
-					{
-						UpdateVBO(&vbdt[i],0,1,4);
-						vbdt[i].num_elements2=vbdt[i].num_elements;
-					}
-					else
-						UpdateVBO(&vbdt[i],0,0,4);
-				}
-				else
-				if(vbdt[i].num_elements<vbdt[i].buffer_elements-8)
-				{
-					vbdt[i].buffer_elements=vbdt[i].num_elements+8;
-					UpdateVBO(&vbdt[i],1,1,4);
-				}
-				else
-				if(vbdt[i].num_elements>vbdt[i].buffer_elements)
-				{
-					vbdt[i].buffer_elements=vbdt[i].num_elements+8;
-					UpdateVBO(&vbdt[i],1,1,4);
-				}
-			}
-		}
-	}
-
-#endif
-	*/
 		/*
 		else
 		if(vbdt[i].num_elements==0 && vbdt[i].buffer_elements>8)
@@ -5513,52 +5803,17 @@ void Renderer()
 			UpdateVAO(&vbdt[i],2,0,2);
 		}
 		*/
-	//tesg=1;
-	//}
-
-	//timel=GetTicks() - timej;
 
 #endif
+
+	if(type)
+		st.num_lightmap=1; //Make sure BASICBKD() is being used
 
 	num_targets=st.num_entities;
 
 #ifdef _VAO_RENDER
 	if(st.renderer.VAO_ON)
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
-
-		glDrawBuffers(1,&st.renderer.Buffers[2]);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		for(i=0;i<st.num_lightmap;i++)
-		{
-			glUseProgram(st.renderer.Program[2]);
-			glUniform1i(st.renderer.unifs[0],0);
-
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
-
-			glBindVertexArray(vbd.vao_id);
-
-			glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
-
-			glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
-			glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),vbd.texcoord);
-			glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
-
-			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
-		}
-
-		glBindFramebuffer(GL_FRAMEBUFFER,0);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[2]);
-
-		glGenerateMipmap(GL_TEXTURE_2D);
-
 		glUseProgram(st.renderer.Program[3]);
 
 		glUniform1i(st.renderer.unifs[1],0);
@@ -5566,6 +5821,45 @@ void Renderer()
 		glUniform1i(st.renderer.unifs[2],2);
 
 		glUniform1i(st.renderer.unifs[3],1);
+
+		glUniform1f(st.renderer.unifs[4],0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
+
+		glDrawBuffers(1,&st.renderer.Buffers[0]);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glActiveTexture(GL_TEXTURE0);
+
+		glBindVertexArray(vbd.vao_id);
+
+		glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+
+		if(z_used>16)
+		{
+			for(i=0;i<st.num_lightmap;i++)
+			{
+				glBindTexture(GL_TEXTURE_2D,lmp[i].data.data);
+
+				glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),lmp[i].vertex);
+				glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),vbd.texcoord);
+				glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
+
+				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+			}
+		}
+
+		glActiveTexture(GL_TEXTURE2);
+
+		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		for(i=z_used;i>-1;i--)
 		{
@@ -5583,16 +5877,20 @@ void Renderer()
 						tex_bound[0]=vbdt[m].texture;
 					}
 
-					glActiveTexture(GL_TEXTURE1);
+					if(i<16)
+						glUniform1f(st.renderer.unifs[4],3);
+					else
+					{
+						glActiveTexture(GL_TEXTURE1);
 
-					if(vbdt[m].normal)
+						if(vbdt[m].normal)
 						{
 							if(tex_bound[1]!=vbdt[m].texture)
 							{
 								glBindTexture(GL_TEXTURE_2D,vbdt[m].Ntexture);
 								tex_bound[1]=vbdt[m].texture;
 							}
-							glUniform1i(st.renderer.unifs[4],1);
+							glUniform1f(st.renderer.unifs[4],1);
 						}
 						else
 						{
@@ -5602,8 +5900,10 @@ void Renderer()
 								tex_bound[1]=vbdt[m].texture;
 							}
 
-							glUniform1i(st.renderer.unifs[4],1);
+							glUniform1f(st.renderer.unifs[4],2);
 						}
+
+					}
 
 					glBindVertexArray(vbdt[m].vao_id);
 
@@ -5639,11 +5939,15 @@ void Renderer()
 						tex_bound[0]=ent[z_buffer[i][j]].data.data;
 					}
 
-					glActiveTexture(GL_TEXTURE1);
+					if(i<16)
+						glUniform1f(st.renderer.unifs[4],3);
+					else
+					{
+						glActiveTexture(GL_TEXTURE1);
 
-					if(ent[z_buffer[i][j]].data.normal)
+						if(ent[z_buffer[i][j]].data.normal)
 						{
-							glUniform1i(st.renderer.unifs[4],1);
+							glUniform1f(st.renderer.unifs[4],1);
 
 							if(tex_bound[1]!=ent[z_buffer[i][j]].data.data)
 							{
@@ -5659,8 +5963,9 @@ void Renderer()
 								tex_bound[1]=ent[z_buffer[i][j]].data.data;
 							}
 
-							glUniform1i(st.renderer.unifs[4],2);
+							glUniform1f(st.renderer.unifs[4],2);
 						}
+					}
 
 					glBindVertexArray(vbd.vao_id);
 
@@ -5669,6 +5974,7 @@ void Renderer()
 					glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),ent[z_buffer[i][j]].vertex);
 					glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[z_buffer[i][j]].texcor);
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[z_buffer[i][j]].color);
+					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),8*sizeof(float),ent[z_buffer[i][j]].texcorlight);
 
 					glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 				}
@@ -5807,9 +6113,13 @@ void Renderer()
 						tex_bound[0]=vbdt[m].texture;
 					}
 
-					glActiveTexture(GL_TEXTURE1);
+					if(i<16)
+						glUniform1i(st.renderer.unifs[4],3);
+					else
+					{
+						glActiveTexture(GL_TEXTURE1);
 
-					if(vbdt[i].normal)
+						if(vbdt[i].normal)
 						{
 							if(tex_bound[1]!=vbdt[m].texture)
 							{
@@ -5830,6 +6140,7 @@ void Renderer()
 							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
 							glUniform1f(unif,2);
 						}
+					}
 
 					//glBindVertexArray(vbdt[m].vao_id);
 					glBindBuffer(GL_ARRAY_BUFFER,vbdt[m].vbo_id);
@@ -5891,9 +6202,13 @@ void Renderer()
 						tex_bound[0]=ent[z_buffer[i][j]].data.data;
 					}
 
-					glActiveTexture(GL_TEXTURE1);
+					if(i<16)
+						glUniform1i(st.renderer.unifs[4],3);
+					else
+					{
+						glActiveTexture(GL_TEXTURE1);
 
-					if(ent[z_buffer[i][j]].data.normal)
+						if(ent[z_buffer[i][j]].data.normal)
 						{
 							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
 							glUniform1f(unif,1);
@@ -5915,6 +6230,7 @@ void Renderer()
 							unif=glGetUniformLocation(st.renderer.Program[3],"normal");
 							glUniform1f(unif,2);
 						}
+					}
 
 					//glBindVertexArray(vbd.vao_id);
 
@@ -6139,17 +6455,16 @@ void Renderer()
 
 #endif
 
-	st.num_hud=0;
-	st.num_ui=0;
 	st.num_entities=0;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 	texone_num=0;
 #endif
 
-	st.num_lights=0;
+	//st.num_lights=0;
 	st.num_lightmap=0;
 	memset(&ent,0,MAX_GRAPHICS);
+	memset(&lmp,0,MAX_LIGHTMAPS);
 
 	SDL_GL_SwapWindow(wn);
 
