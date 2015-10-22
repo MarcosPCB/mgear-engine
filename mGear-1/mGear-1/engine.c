@@ -193,7 +193,7 @@ void _fastcall WTScf(float *x, float *y)
 float mCos(int16 ang)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	return st.CosTable[ang];
 }
@@ -201,7 +201,7 @@ float mCos(int16 ang)
 float mSin(int16 ang)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	return st.SinTable[ang];
 }
@@ -209,7 +209,7 @@ float mSin(int16 ang)
 float mTan(int16 ang)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	return st.TanTable[ang];
 }
@@ -219,7 +219,7 @@ float mTan(int16 ang)
 void CalCos16s(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(int16)(st.CosTable[ang]*100);
 	*val/=100;
@@ -228,7 +228,7 @@ void CalCos16s(int16 ang, int16 *val)
 void CalSin16s(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(int16)(st.SinTable[ang]*100);
 	*val/=100;
@@ -237,7 +237,7 @@ void CalSin16s(int16 ang, int16 *val)
 void CalTan16s(int16 ang, int16 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(int16)(st.TanTable[ang]*100);
 	*val/=100;
@@ -246,7 +246,7 @@ void CalTan16s(int16 ang, int16 *val)
 void CalCos32s(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(int32)(st.CosTable[ang]*100);
 	*val/=100;
@@ -255,7 +255,7 @@ void CalCos32s(int16 ang, int32 *val)
 void CalSin32s(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(int32)(st.SinTable[ang]*100);
 	*val/=100;
@@ -264,7 +264,7 @@ void CalSin32s(int16 ang, int32 *val)
 void CalTan32s(int16 ang, int32 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(int32)(st.TanTable[ang]*100);
 	*val/=100;
@@ -275,7 +275,7 @@ void CalTan32s(int16 ang, int32 *val)
 void CalCos16u(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(uint16)(st.CosTable[ang]*100);
 	*val/=100;
@@ -284,7 +284,7 @@ void CalCos16u(int16 ang, uint16 *val)
 void CalSin16u(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(uint16)(st.SinTable[ang]*100);
 	*val/=100;
@@ -293,7 +293,7 @@ void CalSin16u(int16 ang, uint16 *val)
 void CalTan16u(int16 ang, uint16 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(uint16)(st.TanTable[ang]*100);
 	*val/=100;
@@ -302,7 +302,7 @@ void CalTan16u(int16 ang, uint16 *val)
 void CalCos32u(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(uint32)(st.CosTable[ang]*100);
 	*val/=100;
@@ -311,7 +311,7 @@ void CalCos32u(int16 ang, uint32 *val)
 void CalSin32u(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(uint32)(st.SinTable[ang]*100);
 	*val/=100;
@@ -320,7 +320,7 @@ void CalSin32u(int16 ang, uint32 *val)
 void CalTan32u(int16 ang, uint32 *val)
 {
 	if(ang>3600) ang-=3600;
-	else if(ang<0) ang*=-1;
+	else if(ang<0) ang+=3600;
 
 	*val*=(uint32)(st.TanTable[ang]*100);
 	*val/=100;
@@ -3255,13 +3255,13 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 	return 0;
 }
 
-int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type)
+int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type, int16 ang)
 {
 	float tmp, ax, ay, az;
 
 	uint8 val=0;
 
-	int16 ang=0;
+	//int16 ang=0;
 
 	uint32 i=0, j=0, k=0;
 	
@@ -3300,21 +3300,22 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	if(type==POINT_LIGHT_STRONG)
 		lmp[i].ang=2;
 
-			lmp[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			lmp[i].vertex[2]=0;
 
-			lmp[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y-(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			lmp[i].vertex[5]=0;
 
-			lmp[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			lmp[i].vertex[8]=0;
 
-			lmp[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) + ((y+(sizey/2))-y)*mSin(ang));
+			lmp[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			lmp[i].vertex[11]=0;
+
 
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
@@ -3683,14 +3684,6 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
 			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[11]=z;
-
-			//timel=GetTicks() - timej;
-
-			//ang=1000;
-
-			ang/=10;
-
-			tmp=mCos(ang*10);
 	
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
@@ -3702,23 +3695,27 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			tw=st.Camera.position.x;
 			th=st.Camera.position.y;
 
-			WTSf(&tx1,&ty1);
-			WTScf(&tx2,&ty2);
-
-			/*
-			ent[i].texcorlight[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
-			ent[i].texcorlight[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-
-			ent[i].texcorlight[2]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
-			ent[i].texcorlight[3]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-
-			ent[i].texcorlight[4]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
-			ent[i].texcorlight[5]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-
-			ent[i].texcorlight[6]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
-			ent[i].texcorlight[7]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-			*/
+			//WTSf(&tx1,&ty1);
+			//WTScf(&tx2,&ty2);
 			
+			ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[2]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[3]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[4]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[5]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			WTSf(&ent[i].texcorlight[0],&ent[i].texcorlight[1]);
+			WTSf(&ent[i].texcorlight[2],&ent[i].texcorlight[3]);
+			WTSf(&ent[i].texcorlight[4],&ent[i].texcorlight[5]);
+			WTSf(&ent[i].texcorlight[6],&ent[i].texcorlight[7]);
+			
+			/*
 			ent[i].texcorlight[0]=(float) tx1-(tx2/2);
 			ent[i].texcorlight[1]=(float) ty1-(ty2/2);
 			ent[i].texcorlight[2]=(float) tx1+(tx2/2);
@@ -3727,7 +3724,7 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			ent[i].texcorlight[5]=(float) ty1+(ty2/2);
 			ent[i].texcorlight[6]=(float) tx1-(tx2/2);
 			ent[i].texcorlight[7]=(float) ty1+(ty2/2);
-
+			*/
 			ent[i].texcorlight[0]/=(float) st.screenx;
 			ent[i].texcorlight[1]/=(float) st.screeny;
 			ent[i].texcorlight[2]/=(float) st.screenx;
@@ -5629,7 +5626,7 @@ void DrawMap()
 				st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
 
 			for(i=1;i<=st.num_lights;i++)
-				DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,st.game_lightmaps[i].type);
+				DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,st.game_lightmaps[i].type,st.game_lightmaps[i].ang);
 
 	
 	/*

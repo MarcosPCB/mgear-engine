@@ -351,7 +351,7 @@ static int16 MGGLoad()
 
 						DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
 						DrawString2UI("Loading...",8192,4096,1,1,0,255,255,255,255,st.fonts[GEOMET].font,FONT_SIZE*3,FONT_SIZE*3,0);
-						Renderer();
+						Renderer(1);
 						LoadMGG(&mgg_map[id],path2);
 
 						for(u=0;u<st.Current_Map.num_mgg;u++)
@@ -3479,6 +3479,7 @@ static void ViewPortCommands()
 	uint16 i, j;
 	Pos p, p2;
 	uPos16 p3;
+	float tmp;
 
 	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL)
 	{
@@ -3689,6 +3690,12 @@ static void ViewPortCommands()
 							st.Current_Map.obj[i].position.x-=meng.p.x;
 							st.Current_Map.obj[i].position.y-=meng.p.y;
 
+							if(st.Current_Map.obj[i].lightmapid!=-1)
+							{
+								st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
+								st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
+							}
+
 							p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
 							p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
 
@@ -3702,6 +3709,10 @@ static void ViewPortCommands()
 							{
 								if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle+=1;
 								else st.Current_Map.obj[i].angle+=100;
+
+								if(st.Current_Map.obj[i].lightmapid!=-1)
+									st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
+
 								st.mouse_wheel=0;
 							}
 
@@ -3709,6 +3720,10 @@ static void ViewPortCommands()
 							{
 								if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle-=1;
 								else st.Current_Map.obj[i].angle-=100;
+
+								if(st.Current_Map.obj[i].lightmapid!=-1)
+									st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
+
 								st.mouse_wheel=0;
 							}
 
@@ -3827,9 +3842,19 @@ static void ViewPortCommands()
 		else
 		if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP)
 		{
-			if(st.mouse1)
+			if(st.num_lightmap<MAX_LIGHTMAPS)
 			{
-				if(st.num_lightmap<MAX_LIGHTMAPS)
+				for(j=0;j<st.Current_Map.num_obj;j++)
+				{
+					if(st.mouse1 && st.Current_Map.obj[j].lightmapid==-1)
+					{
+						meng.obj_lightmap_sel==j;
+						st.mouse1=0;
+						break;
+					}
+				}
+
+				if(st.keys[RETURN_KEY].state && meng.obj_lightmap_sel!=-1)
 				{
 					for(i=0;i<MAX_LIGHTMAPS;i++)
 					{
@@ -3837,16 +3862,32 @@ static void ViewPortCommands()
 						{
 							st.game_lightmaps[i].stat=2;
 							
-							meng.command=CREATE_LIGHTMAP_STEP2;
+							meng.command=RGB_LIGHTMAP;
 							meng.command2=i;
 
-							st.game_lightmaps[i].w_pos=st.mouse;
-							STW(&st.game_lightmaps[i].w_pos.x,&st.game_lightmaps[i].w_pos.y);
+							st.Current_Map.obj[meng.obj_lightmap_sel].lightmapid=i;
 
-							st.game_lightmaps[i].W_w=2048;
-							st.game_lightmaps[i].W_h=2048;
-							st.game_lightmaps[i].T_w=meng.lightmap_res.x;
-							st.game_lightmaps[i].T_h=meng.lightmap_res.y;
+							st.game_lightmaps[i].obj_id=meng.obj_lightmap_sel;
+
+							st.game_lightmaps[i].w_pos=st.Current_Map.obj[meng.obj_lightmap_sel].position;
+
+							st.game_lightmaps[i].W_w=st.Current_Map.obj[meng.obj_lightmap_sel].size.x;
+							st.game_lightmaps[i].W_h=st.Current_Map.obj[meng.obj_lightmap_sel].size.y;
+
+							tmp=(float) st.Current_Map.obj[meng.obj_lightmap_sel].size.x/st.Current_Map.obj[meng.obj_lightmap_sel].size.y;
+
+							if(tmp>2) 
+							{
+								tmp/=2.0f;
+								st.game_lightmaps[i].T_w=meng.lightmap_res.x*tmp;
+								st.game_lightmaps[i].T_h=meng.lightmap_res.x;
+							}
+							else
+							{
+								st.game_lightmaps[i].T_w=meng.lightmap_res.x;
+								st.game_lightmaps[i].T_h=meng.lightmap_res.x/tmp;
+							}
+
 							st.game_lightmaps[i].num_lights=0;
 							meng.lightmap_color.r=meng.lightmap_color.g=meng.lightmap_color.b=0;
 
@@ -3857,280 +3898,8 @@ static void ViewPortCommands()
 						}
 					}
 				}
+						
 			}
-		}
-		else
-		if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP_STEP2)
-		{
-			i=meng.command2;
-
-			if(st.keys[RETURN_KEY].state)
-			{
-				meng.command=RGB_LIGHTMAP;
-				meng.got_it=0;
-				st.keys[RETURN_KEY].state=0;
-			}
-			
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w/2,st.game_lightmaps[i].W_h/2,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=1;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					meng.p.x-=st.game_lightmaps[i].w_pos.x;
-					meng.p.y-=st.game_lightmaps[i].w_pos.y;
-				}
-				else
-				if(meng.got_it==1)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					st.game_lightmaps[i].w_pos.x=p.x;
-					st.game_lightmaps[i].w_pos.y=p.y;
-
-					st.game_lightmaps[i].w_pos.x-=meng.p.x;
-					st.game_lightmaps[i].w_pos.y-=meng.p.y;
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w-(2*(st.game_lightmaps[i].W_w/12)),st.game_lightmaps[i].W_h/12,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.y-=meng.p.y;
-
-					st.game_lightmaps[i].W_h-=p.y*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w-(2*(st.game_lightmaps[i].W_w/12)),st.game_lightmaps[i].W_h/12,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.y-=meng.p.y;
-
-					st.game_lightmaps[i].W_h+=p.y*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w/12,st.game_lightmaps[i].W_h-(2*(st.game_lightmaps[i].W_h/12)),0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.x-=meng.p.x;
-
-					st.game_lightmaps[i].W_w-=p.x*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w/12,st.game_lightmaps[i].W_h-(2*(st.game_lightmaps[i].W_h/12)),0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.x-=meng.p.x;
-
-					st.game_lightmaps[i].W_w+=p.x*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.x-=meng.p.x;
-					p.y-=meng.p.y;
-
-					st.game_lightmaps[i].W_w-=p.x*2;
-					st.game_lightmaps[i].W_h-=p.y*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.x-=meng.p.x;
-					p.y-=meng.p.y;
-
-					st.game_lightmaps[i].W_w+=p.x*2;
-					st.game_lightmaps[i].W_h-=p.y*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.x-=meng.p.x;
-					p.y-=meng.p.y;
-
-					st.game_lightmaps[i].W_w+=p.x*2;
-					st.game_lightmaps[i].W_h+=p.y*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-			if(CheckColisionMouse(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-					meng.got_it=2;
-
-					STW(&meng.p.x, &meng.p.y);
-				}
-				else
-				if(meng.got_it==2)
-				{
-					p=st.mouse;
-
-					STW(&p.x, &p.y);
-
-					p.x-=meng.p.x;
-					p.y-=meng.p.y;
-
-					st.game_lightmaps[i].W_w-=p.x*2;
-					st.game_lightmaps[i].W_h+=p.y*2;
-
-					meng.p=st.mouse;
-
-					STW(&meng.p.x, &meng.p.y);
-
-					
-				}
-			}
-			else
-				meng.got_it=-1;
 		}
 		else
 		if(meng.pannel_choice==ADD_LIGHT && meng.command==RGB_LIGHTMAP)
@@ -4239,9 +4008,9 @@ static void ViewPortCommands()
 				if(st.mouse1)
 				{
 					meng.command=ADD_LIGHT_TO_LIGHTMAP;
-					st.game_lightmaps[i].data=GenerateLightmap(meng.lightmap_res.x,meng.lightmap_res.y);
-					FillLightmap(st.game_lightmaps[i].data,meng.lightmap_color.r,meng.lightmap_color.g,meng.lightmap_color.b,meng.lightmap_res.x,meng.lightmap_res.y);
-					st.game_lightmaps[i].tex=GenerateLightmapTexture(st.game_lightmaps[i].data,meng.lightmap_res.x,meng.lightmap_res.y);
+					st.game_lightmaps[i].data=GenerateLightmap(st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					FillLightmap(st.game_lightmaps[i].data,meng.lightmap_color.r,meng.lightmap_color.g,meng.lightmap_color.b,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					st.game_lightmaps[i].tex=GenerateLightmapTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 
 					st.game_lightmaps[i].num_lights++;
 					st.game_lightmaps[i].t_pos[0].x=st.game_lightmaps[i].T_w/2;
@@ -4294,7 +4063,28 @@ static void ViewPortCommands()
 
 			p=st.game_lightmaps[i].w_pos;
 
-			p.y-=(st.game_lightmaps[i].W_h/2)+455;
+			p.x+=(st.game_lightmaps[i].W_w/2)+1920;
+
+			if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+			{
+				DrawStringUI("Done",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
+
+				if(st.mouse1)
+				{
+					meng.com_id=0;
+					meng.got_it=-1;
+					st.game_lightmaps[i].stat=1;
+					st.num_lights++;
+					meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI("Done",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
+
+			p=st.game_lightmaps[i].w_pos;
+
+			p.y-=(st.game_lightmaps[i].W_h/2)+810;
 
 			if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
 			{
@@ -4312,11 +4102,11 @@ static void ViewPortCommands()
 
 			p=st.game_lightmaps[i].w_pos;
 
-			p.y+=(st.game_lightmaps[i].W_h/2)+455;
+			p.y+=(st.game_lightmaps[i].W_h/2)+810;
 
 			if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
 			{
-				DrawString("Add Light",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
+				DrawStringUI("Add Light",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
 
 				if(st.mouse1)
 				{
@@ -4331,12 +4121,15 @@ static void ViewPortCommands()
 					st.game_lightmaps[i].t_pos[meng.light.light_id].x=st.game_lightmaps[i].T_w/2;
 					st.game_lightmaps[i].t_pos[meng.light.light_id].y=st.game_lightmaps[i].T_h/2;
 					st.game_lightmaps[i].t_pos[meng.light.light_id].z=0;
+					st.game_lightmaps[i].type=POINT_LIGHT_STRONG;
+
+					LogApp("Light added");
 
 					st.mouse1=0;
 				}
 			}
 			else
-				DrawString("Add Light",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
+				DrawStringUI("Add Light",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
 
 			if(meng.com_id==1)
 			{
@@ -4441,7 +4234,7 @@ static void ViewPortCommands()
 
 				if(CheckColisionMouse(8192,4096,341,341,0))
 				{
-					DrawStringUI(str,8192,4096+341,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					DrawStringUI(str,8192,4096,0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -4582,7 +4375,7 @@ static void MGGListLoad()
 			LogApp("Loaded: %s",str2);
 		}
 
-		Renderer();
+		Renderer(1);
 	}
 
 	fclose(file);
@@ -4677,7 +4470,7 @@ static void ENGDrawLight()
 		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0,
 			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,17);
 
-		dist=1.0f/(meng.light.falloff*0.001f);
+		dist=1.0f/(meng.light.falloff*(1.0f/255.0f));
 
 		//dist=(dist*st.game_lightmaps[i].W_w)/st.game_lightmaps[i].T_w;
 
@@ -4701,7 +4494,7 @@ static void ENGDrawLight()
 
 		DrawGraphic(p2.x,p2.y,455,455,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
 
-		DrawGraphic(dist2,p2.y,455,455,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+		DrawLine(p2.x,p2.y,16384-dist2,p2.y,255,255,255,255,128,16);
 	}
 	
 }
@@ -4744,7 +4537,7 @@ int main(int argc, char *argv[])
 	BASICBKD();
 	DrawStringUI("Loading sprites...",8192,4096,0,0,0,255,255,255,255,st.fonts[GEOMET].font,2048,2048,6);
 
-	Renderer();
+	Renderer(1);
 
 	LoadSpriteList("sprite.list");
 
@@ -4837,7 +4630,7 @@ int main(int argc, char *argv[])
 			Menu();
 
 		MainSound();
-		Renderer();
+		Renderer(0);
 		//Timer();
 	}
 
