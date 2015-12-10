@@ -64,7 +64,10 @@ void Menu()
 					}
 
 					for(i=0;i<MAX_OBJS;i++)
+					{
 						st.Current_Map.obj[i].type=BLANK;
+						st.Current_Map.obj[i].lightmapid=-1;
+					}
 
 					for(i=0;i<MAX_SPRITES;i++)
 						st.Current_Map.sprites[i].stat=0;;
@@ -95,15 +98,16 @@ void Menu()
 					meng.obj.texpan.x=0;
 					meng.obj.texpan.y=0;
 					meng.obj.type=meng.spr.type=MIDGROUND;
+					meng.obj_lightmap_sel=-1;
 
 					meng.spr.gid=-1;
 					meng.spr2.gid=-1;
-					meng.sprite_selection=-1;
-					meng.sprite_frame_selection=-1;
+					meng.sprite_selection=0;
+					meng.sprite_frame_selection=0;
 					meng.spr.size.x=2048;
 					meng.spr.size.y=2048;
 
-					meng.lightmap_res.x=meng.lightmap_res.y=512;
+					meng.lightmap_res.x=meng.lightmap_res.y=256;
 
 				}
 			}

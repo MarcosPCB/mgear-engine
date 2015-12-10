@@ -67,6 +67,7 @@ struct _mEng
 	int16 tex2_MGGID;
 	uint32 tex_ID;
 	int16 tex_MGGID;
+	Pos pre_size;
 	uint16 mgg_sel;
 	uint16 menu_sel;
 
@@ -102,6 +103,11 @@ struct _mEng
 	uPos16 lightmap_res;
 
 	Color lightmap_color;
+
+	int16 obj_lightmap_sel;
+	Pos lightmappos;
+
+	unsigned char *tmplightdata;
 
 	struct Light
 	{

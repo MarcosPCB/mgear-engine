@@ -4473,6 +4473,212 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 }
 
+int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+{	
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0, checked=0;
+	int32 t1, t2, t3, t4, timej, timel, id=-1;
+	
+	PosF dim=st.Camera.dimension;
+
+	SDL_Color co;
+	uint16 formatt;
+
+	float tmp, ax, ay, az;
+
+	uint8 val=0;
+	
+	SDL_Surface *msg;
+
+	x-=st.Camera.position.x;
+	y-=st.Camera.position.y;
+
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+
+	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+
+	for(i=0;i<MAX_STRINGS;i++)
+	{
+		if(st.strings[i].stat==2)
+		{
+			if(strcmp(text,st.strings[i].string)==NULL)
+			{
+				st.strings[i].stat=1;
+				j=st.num_entities;
+				st.strings[i].data.posx=i;
+				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
+				id=i;
+				checked=1;
+				break;
+			}
+		}
+		else
+		if(st.strings[i].stat==0 && checked==0)
+		{
+			checked=3;
+			id=i;
+		}
+
+		if(i==MAX_STRINGS-1)
+		{
+			if(id!=-1 && checked==3)
+			{
+				st.strings[id].stat=1;
+				strcpy(st.strings[id].string,text);
+				checked=2;
+			}
+			else
+			if(checked==0 && id==-1)
+			{
+				LogApp("Warning: max number os strings reached");
+				return 2;
+			}
+		}
+	}
+
+	i=st.num_entities;
+
+	if(checked==2)
+	{
+
+		co.r=255;
+		co.g=255;
+		co.b=255;
+		co.a=255;
+	
+		msg=TTF_RenderUTF8_Blended(f,text,co);
+	
+		if(msg->format->BytesPerPixel==4)
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+			else formatt=GL_BGRA_EXT;
+		} else
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+			else formatt=GL_BGR_EXT;
+		}
+
+		glGenTextures(1,&ent[i].data.data);
+		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+		glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		ent[i].data.channel=63; //magical number only used for rendering
+
+		ent[i].data.posx=id;
+
+		ent[i].data.normal=0;
+		ent[i].data.vb_id=-1;
+
+		ent[i].data.w=msg->w;
+		ent[i].data.h=msg->h;
+
+		memcpy(&st.strings[id].data,&ent[i].data,sizeof(TEX_DATA));
+
+		SDL_FreeSurface(msg);
+	}
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+	ent[i].lightmapid=-1;
+
+			if(override_sizex!=0)
+				sizex=st.strings[id].data.w*(override_sizex/1024);
+
+			if(override_sizey!=0)
+				sizey=st.strings[id].data.h*(override_sizey/1024);
+
+			sizex*=st.Camera.dimension.x;
+			sizey*=st.Camera.dimension.y;
+
+			x*=st.Camera.dimension.x;
+			y*=st.Camera.dimension.y;
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(z>7) z=7;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			
+				ent[i].texcor[0]=0;
+				ent[i].texcor[1]=0;
+				ent[i].texcor[2]=1;
+				ent[i].texcor[3]=0;
+				ent[i].texcor[4]=1;
+				ent[i].texcor[5]=1;
+				ent[i].texcor[6]=0;
+				ent[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			
+				texone_ids[texone_num]=i;
+				texone_num++;
+
+#endif
+
+			st.num_entities++;
+
+	return 0;
+
+}
+
 int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
@@ -5686,7 +5892,7 @@ void Renderer(uint8 type)
 	GLenum error;
 
 	uint32 num_targets=0;
-	 int32 i=0, j=0, m=0, timej, timel;
+	 int32 i=0, j=0, m=0, timej, timel, n=0;
 	uint16 *k, l=0;
 
 	static uint32 tesg=0;
@@ -5723,35 +5929,43 @@ void Renderer(uint8 type)
 
 	k=(uint16*) calloc(vbdt_num,sizeof(uint16));
 
-	for(i=0;i<st.num_entities;i++)
+	for(m=z_used;m>-1;m--)
 	{
-		if(ent[i].data.vb_id!=-1)
+		for(n=0;n<z_slot[m];n++)
 		{
-			for(j=0;j<16;j++)
+			i=z_buffer[m][n];
+			if(ent[i].data.vb_id!=-1)
 			{
-				vbdt[ent[i].data.vb_id].color[(k[ent[i].data.vb_id]*16)+j]=ent[i].color[j];
-
-				if(j<12)
-					vbdt[ent[i].data.vb_id].vertex[(k[ent[i].data.vb_id]*12)+j]=ent[i].vertex[j];
-
-				if(j<8)
+				for(j=0;j<16;j++)
 				{
-					vbdt[ent[i].data.vb_id].texcoord[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcor[j];
+					vbdt[ent[i].data.vb_id].color[(k[ent[i].data.vb_id]*16)+j]=ent[i].color[j];
 
-					vbdt[ent[i].data.vb_id].texcoordlight[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcorlight[j];
-				}
+					if(j<12)
+						vbdt[ent[i].data.vb_id].vertex[(k[ent[i].data.vb_id]*12)+j]=ent[i].vertex[j];
+
+					if(j<8)
+					{
+						vbdt[ent[i].data.vb_id].texcoord[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcor[j];
+
+						vbdt[ent[i].data.vb_id].texcoordlight[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcorlight[j];
+					}
 					
-				if(j<=2)
-					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+j;
+					if(j<=2)
+						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+j;
 
-				if(j==3 || j==4)
-					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+(j-1);
+					if(j==3 || j==4)
+						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+(j-1);
 
-				if(j==5)
-					vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2));
+					if(j==5)
+						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2));
+				}
+
+				ent[i].data.loc=k[ent[i].data.vb_id];
+
+				k[ent[i].data.vb_id]++;
 			}
-
-			k[ent[i].data.vb_id]++;
+			else
+				ent[i].data.loc=-1;
 		}
 	}
 
