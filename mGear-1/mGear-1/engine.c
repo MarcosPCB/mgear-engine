@@ -459,7 +459,7 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 
 			att=1.0f/(d*falloff);
 
-			col=r*att*intensity;
+			col=b*att*intensity;
 			if(col>255)
 				col=255;
 			
@@ -477,7 +477,7 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 			else
 				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
 				
-			col=b*att*intensity;
+			col=r*att*intensity;
 			if(col>255)
 				col=255;
 			
@@ -3019,16 +3019,13 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z)
 {
-	float tmp, ax, ay, az;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
 
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
 	int32 t1, t2, t3, t4, timej, timel;
 	
 	PosF dim=st.Camera.dimension;
-	
-	x-=st.Camera.position.x;
-	y-=st.Camera.position.y;
 	
 	if(dim.x<0) dim.x*=-1;
 	if(dim.y<0) dim.y*=-1;
@@ -3054,8 +3051,16 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+			tx1=x;
+			ty1=y;
+			tx2=sizex;
+			ty2=sizey;
+
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
+
+			x-=st.Camera.position.x;
+			y-=st.Camera.position.y;
 
 			x*=st.Camera.dimension.x;
 			y*=st.Camera.dimension.y;
@@ -3093,10 +3098,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 			//ang=1000;
 
-			ang/=10;
-
-			tmp=cos((ang*pi)/180);
-			tmp=mCos(ang*10);
+			//ang/=10;
 	
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
@@ -3104,6 +3106,37 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			ay*=-1.0f;
 
 			az=(float) 1/(4096/2);
+
+			ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[2]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[3]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[4]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[5]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			WTSf(&ent[i].texcorlight[0],&ent[i].texcorlight[1]);
+			WTSf(&ent[i].texcorlight[2],&ent[i].texcorlight[3]);
+			WTSf(&ent[i].texcorlight[4],&ent[i].texcorlight[5]);
+			WTSf(&ent[i].texcorlight[6],&ent[i].texcorlight[7]);
+			
+			ent[i].texcorlight[0]/=(float) st.screenx;
+			ent[i].texcorlight[1]/=(float) st.screeny;
+			ent[i].texcorlight[2]/=(float) st.screenx;
+			ent[i].texcorlight[3]/=(float) st.screeny;
+			ent[i].texcorlight[4]/=(float) st.screenx;
+			ent[i].texcorlight[5]/=(float) st.screeny;
+			ent[i].texcorlight[6]/=(float) st.screenx;
+			ent[i].texcorlight[7]/=(float) st.screeny;
+
+			ent[i].texcorlight[1]*=-1;
+			ent[i].texcorlight[3]*=-1;
+			ent[i].texcorlight[5]*=-1;
+			ent[i].texcorlight[7]*=-1;
 
 			if(data.vb_id==-1)
 			{
@@ -3144,13 +3177,14 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				ent[i].vertex[j+2]*=az;
 				ent[i].vertex[j+2]-=1;
 				
-				if(j<8 && data.vb_id!=-1)
+				if(j<7)
 				{
 					ent[i].texcor[j]/=(float)32768;
 					ent[i].texcor[j+1]/=(float)32768;
-					ent[i].texcor[j+2]/=(float)32768;
+
+					if((j+2)<7)
+						ent[i].texcor[j+2]/=(float)32768;
 				}
-				
 			}
 
 			for(j=0;j<16;j+=4)
@@ -3715,16 +3749,6 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			WTSf(&ent[i].texcorlight[4],&ent[i].texcorlight[5]);
 			WTSf(&ent[i].texcorlight[6],&ent[i].texcorlight[7]);
 			
-			/*
-			ent[i].texcorlight[0]=(float) tx1-(tx2/2);
-			ent[i].texcorlight[1]=(float) ty1-(ty2/2);
-			ent[i].texcorlight[2]=(float) tx1+(tx2/2);
-			ent[i].texcorlight[3]=(float) ty1-(ty2/2);
-			ent[i].texcorlight[4]=(float) tx1+(tx2/2);
-			ent[i].texcorlight[5]=(float) ty1+(ty2/2);
-			ent[i].texcorlight[6]=(float) tx1-(tx2/2);
-			ent[i].texcorlight[7]=(float) ty1+(ty2/2);
-			*/
 			ent[i].texcorlight[0]/=(float) st.screenx;
 			ent[i].texcorlight[1]/=(float) st.screeny;
 			ent[i].texcorlight[2]/=(float) st.screenx;
@@ -4133,7 +4157,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	int16 ang;
 
-	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2;
+	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
 
 	i=st.num_entities;
 
@@ -4159,6 +4183,11 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 		if(z>15)
 		{
+			tx1=x;
+			ty1=y;
+			tx2=x2;
+			ty2=y2;
+
 			x-=st.Camera.position.x;
 			y-=st.Camera.position.y;
 
@@ -4209,6 +4238,40 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ay*=-1.0f;
 
 		az=(float) 1/(4096/2);
+
+		if(z>15)
+		{
+			ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[2]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[3]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[4]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[5]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			WTSf(&ent[i].texcorlight[0],&ent[i].texcorlight[1]);
+			WTSf(&ent[i].texcorlight[2],&ent[i].texcorlight[3]);
+			WTSf(&ent[i].texcorlight[4],&ent[i].texcorlight[5]);
+			WTSf(&ent[i].texcorlight[6],&ent[i].texcorlight[7]);
+			
+			ent[i].texcorlight[0]/=(float) st.screenx;
+			ent[i].texcorlight[1]/=(float) st.screeny;
+			ent[i].texcorlight[2]/=(float) st.screenx;
+			ent[i].texcorlight[3]/=(float) st.screeny;
+			ent[i].texcorlight[4]/=(float) st.screenx;
+			ent[i].texcorlight[5]/=(float) st.screeny;
+			ent[i].texcorlight[6]/=(float) st.screenx;
+			ent[i].texcorlight[7]/=(float) st.screeny;
+
+			ent[i].texcorlight[1]*=-1;
+			ent[i].texcorlight[3]*=-1;
+			ent[i].texcorlight[5]*=-1;
+			ent[i].texcorlight[7]*=-1;
+		}
 
 		ent[i].texcor[0]=0.0f;
 		ent[i].texcor[1]=0.0f;
@@ -4271,7 +4334,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
 	int32 t1, t2, t3, t4, timej, timel, id=-1;
-	
+	float tx1, ty1, tx2, ty2;
+
 	PosF dim=st.Camera.dimension;
 
 	SDL_Color co;
@@ -4282,9 +4346,6 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	uint8 val=0;
 	
 	SDL_Surface *msg;
-
-	x-=st.Camera.position.x;
-	y-=st.Camera.position.y;
 
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4384,8 +4445,16 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			if(override_sizey!=0)
 				sizey=st.strings[id].data.h*(override_sizey/1024);
 
+			tx1=x;
+			ty1=y;
+			tx2=sizex;
+			ty2=sizey;
+
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
+
+			x-=st.Camera.position.x;
+			y-=st.Camera.position.y;
 
 			x*=st.Camera.dimension.x;
 			y*=st.Camera.dimension.y;
@@ -4432,14 +4501,45 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			az=(float) 1/(4096/2);
 
 			
-				ent[i].texcor[0]=0;
-				ent[i].texcor[1]=0;
-				ent[i].texcor[2]=1;
-				ent[i].texcor[3]=0;
-				ent[i].texcor[4]=1;
-				ent[i].texcor[5]=1;
-				ent[i].texcor[6]=0;
-				ent[i].texcor[7]=1;
+			ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[2]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[3]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[4]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[5]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+			ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+			WTSf(&ent[i].texcorlight[0],&ent[i].texcorlight[1]);
+			WTSf(&ent[i].texcorlight[2],&ent[i].texcorlight[3]);
+			WTSf(&ent[i].texcorlight[4],&ent[i].texcorlight[5]);
+			WTSf(&ent[i].texcorlight[6],&ent[i].texcorlight[7]);
+			
+			ent[i].texcorlight[0]/=(float) st.screenx;
+			ent[i].texcorlight[1]/=(float) st.screeny;
+			ent[i].texcorlight[2]/=(float) st.screenx;
+			ent[i].texcorlight[3]/=(float) st.screeny;
+			ent[i].texcorlight[4]/=(float) st.screenx;
+			ent[i].texcorlight[5]/=(float) st.screeny;
+			ent[i].texcorlight[6]/=(float) st.screenx;
+			ent[i].texcorlight[7]/=(float) st.screeny;
+
+			ent[i].texcorlight[1]*=-1;
+			ent[i].texcorlight[3]*=-1;
+			ent[i].texcorlight[5]*=-1;
+			ent[i].texcorlight[7]*=-1;
+
+			ent[i].texcor[0]=0;
+			ent[i].texcor[1]=0;
+			ent[i].texcor[2]=1;
+			ent[i].texcor[3]=0;
+			ent[i].texcor[4]=1;
+			ent[i].texcor[5]=1;
+			ent[i].texcor[6]=0;
+			ent[i].texcor[7]=1;
 
 			for(j=0;j<12;j+=3)
 			{
@@ -4600,7 +4700,8 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>7) z=7;
+			if(z>15) z=15;
+			if(z<8) z=8;
 
 			z_buffer[z][z_slot[z]]=i;
 			z_slot[z]++;
@@ -5872,12 +5973,12 @@ void DrawMap()
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
-				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
 
-				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,128,32,mgg_sys[0].frames[0],255,0,0,32768,32768,17);
+				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg_sys[0].frames[0],255,0,0,32768,32768,17);
 			}
 	}
 
@@ -5931,6 +6032,8 @@ void Renderer(uint8 type)
 
 	for(m=z_used;m>-1;m--)
 	{
+		if(!z_slot[m]) continue;
+		else
 		for(n=0;n<z_slot[m];n++)
 		{
 			i=z_buffer[m][n];

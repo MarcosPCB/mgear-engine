@@ -3861,16 +3861,9 @@ static void ViewPortCommands()
 		{
 			if(st.num_lightmap<MAX_LIGHTMAPS)
 			{
-				for(j=0;j<st.Current_Map.num_obj;j++)
+				if(st.Current_Map.num_obj==0)
 				{
-					if(st.mouse1 && CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
-					{
-						meng.obj_lightmap_sel=j;
-						st.mouse1=0;
-						break;
-					}
-					else
-					if(st.mouse1 && !CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
+					if(st.mouse1)
 					{
 						meng.lightmappos.x=st.mouse.x;
 						meng.lightmappos.y=st.mouse.y;
@@ -3880,7 +3873,36 @@ static void ViewPortCommands()
 						meng.obj_lightmap_sel=-2;
 
 						st.mouse1=0;
-						break;
+					}
+				}
+
+				for(j=0;j<st.Current_Map.num_obj;j++)
+				{
+					if(CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
+					{
+						if(st.mouse1)
+						{
+							meng.obj_lightmap_sel=j;
+							st.mouse1=0;
+							break;
+						}
+					}
+					else
+						if(j==st.Current_Map.num_obj-1 && 
+							!CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
+					{
+						if(st.mouse1)
+						{
+							meng.lightmappos.x=st.mouse.x;
+							meng.lightmappos.y=st.mouse.y;
+
+							STW(&meng.lightmappos.x,&meng.lightmappos.y);
+
+							meng.obj_lightmap_sel=-2;
+
+							st.mouse1=0;
+							break;
+						}
 					}
 				}
 
@@ -4559,33 +4581,33 @@ static void ENGDrawLight()
 
 		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,128,0,0,32768,32768,17);
 
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
+		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
+			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
 			255,128,32,255,64,16);
 
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
+		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
+			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
 			255,128,32,255,64,16);
 
-		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
-			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
+		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
+			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
 			255,128,32,255,64,16);
 
-		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
-			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
+		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
+			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
 			255,128,32,255,64,16);
 
 		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
 
 		DrawGraphic(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
 
 		DrawGraphic(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
 
 		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
 
 		dist=1.0f/(meng.light.falloff*0.001);
 
@@ -4609,7 +4631,7 @@ static void ENGDrawLight()
 
 		//DrawLine(p2.x-dist2,p2.y,p2.x+dist2,p2.y,255,255,255,255,128,16);
 
-		DrawGraphic(p2.x,p2.y,455,455,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+		DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
 
 		//DrawLine(p2.x,p2.y,p2.x+dist2,p2.y,255,255,255,255,128,16);
 	}
