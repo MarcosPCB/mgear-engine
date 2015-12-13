@@ -53,6 +53,13 @@ const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 
 #define timer SDL_Delay
 
+//Faster square root
+double mSqrt(double x)
+{
+	_asm fld x
+	_asm fsqrt
+}
+
 void LogIn(void *userdata, int category, SDL_LogPriority log, const char *message)
 {
 	FILE *file;
@@ -346,7 +353,7 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 di
 		dx=(float) pow(x-centerx,2);
 		dy=(float) pow(y-centery,2);
 
-		r=(float) sqrt(dx+dy);
+		r=(float) mSqrt(dx+dy);
 
 		if(r<16384+dist) return 0;
 		else return 1;
@@ -429,16 +436,16 @@ uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uin
 	{
 		for(j=0;j<w;j++)
 		{
-			data[(i*w*3)+(j*3)]=r;
+			data[(i*w*3)+(j*3)]=b;
 			data[(i*w*3)+(j*3)+1]=g;
-			data[(i*w*3)+(j*3)+2]=b;
+			data[(i*w*3)+(j*3)+2]=r;
 		}
 	}
 
 	return 1;
 }
 
-uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity)
+uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type)
 {
 	uint16 i, j;
 	double d, att;
@@ -452,13 +459,99 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 		for(j=0;j<w;j++)
 		{
 			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
-			d=sqrt(d);
+			d=mSqrt(d);
 
 			if(d==0)
 				d=1;
 
-			att=1.0f/(d*falloff);
+			if(type==POINT_LIGHT_MEDIUM)
+				att=1.0f/(d*falloff);
+			else
+			if(type==POINT_LIGHT_STRONG)
+				att=1.0f/(d*d*falloff);
+			else
+			if(type==POINT_LIGHT_NORMAL)
+				att=1.0f/(1.0f + falloff * (d*d));
+			else
+				att=1.0f/(d*falloff);
 
+			col=b*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*3)+(j*3)]+col)>255)
+				data[(i*w*3)+(j*3)]=255;
+			else
+				data[(i*w*3)+(j*3)]+=(unsigned char)col;
+
+			col=g*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*3)+(j*3)+1]+col)>255)
+				data[(i*w*3)+(j*3)+1]=255;
+			else
+				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
+				
+			col=r*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*3)+(j*3)+2]+col)>255)
+				data[(i*w*3)+(j*3)+2]=255;
+			else
+				data[(i*w*3)+(j*3)+2]+=(unsigned char)col;
+				
+		}
+	}
+
+	return 1;
+}
+
+uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang)
+{
+	uint16 i, j;
+	double d, att;
+	float angle, angle2;
+	uint16 col;
+
+	if(!data)
+		return 0;
+	
+	for(i=0;i<h;i++)
+	{
+		for(j=0;j<w;j++)
+		{
+			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
+			d=mSqrt(d);
+
+			if(d==0)
+				d=1;
+
+			if(type==SPOTLIGHT_MEDIUM)
+				att=1.0f/(d*falloff);
+			else
+			if(type==SPOTLIGHT_STRONG)
+				att=1.0f/(d*d*falloff);
+			else
+			if(type==SPOTLIGHT_NORMAL)
+				att=1.0f/(1.0f + falloff * (d*d));
+			else
+				att=1.0f/(d*falloff);
+
+
+			angle=atan2(x2-x,y2-y);
+			angle2=atan2(j-x,i-y);
+
+			angle2-=angle;
+
+			angle2=(angle2*180)/pi;
+
+			if(angle2<0) angle2*=-1;
+
+			if(angle2>ang)
+				continue;
+		
 			col=b*att*intensity;
 			if(col>255)
 				col=255;
@@ -1639,7 +1732,7 @@ SHADER_CREATION:
 	st.game_lightmaps[0].t_pos[2].z=0;
 
 	st.game_lightmaps[0].data=GenerateLightmap(st.game_lightmaps[0].T_w, st.game_lightmaps[0].T_h);
-	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,0.1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255);
+	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,0.1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255,POINT_LIGHT_MEDIUM);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[1].x,st.game_lightmaps[0].t_pos[1].y,st.game_lightmaps[0].t_pos[1].z,128);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
 
@@ -5933,7 +6026,7 @@ void DrawMap()
 				st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
 
 			for(i=1;i<=st.num_lights;i++)
-				DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,st.game_lightmaps[i].type,st.game_lightmaps[i].ang);
+				DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,0,st.game_lightmaps[i].ang);
 
 	
 	/*

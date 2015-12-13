@@ -172,10 +172,13 @@ typedef struct _ENTITIES_ _ENTITIES;
 
 enum _LIGHT_TYPE
 {
-	AMBIENT_LIGHT,
-	POINT_LIGHT_MEDIUM,
-	POINT_LIGHT_STRONG,
-	SPOTLIGHT
+	AMBIENT_LIGHT = 0,
+	POINT_LIGHT_MEDIUM = 1,
+	POINT_LIGHT_STRONG = 2,
+	POINT_LIGHT_NORMAL = 3,
+	SPOTLIGHT_MEDIUM = 4,
+	SPOTLIGHT_STRONG = 5,
+	SPOTLIGHT_NORMAL = 6
 };
 
 typedef enum _LIGHT_TYPE LIGHT_TYPE;
@@ -683,6 +686,8 @@ struct _GAME_LIGHTMAPS_
 
 	uPos16 t_pos[16];
 
+	uPos16 t_pos2[16];
+
 	unsigned char *data;
 
 	uint8 num_lights;
@@ -691,7 +696,13 @@ struct _GAME_LIGHTMAPS_
 
 	uint8 stat;
 
-	LIGHT_TYPE type;
+	LIGHT_TYPE type[16];
+
+	Color color[16];
+
+	float falloff[16];
+
+	int16 spot_ang[16];
 
 	int16 obj_id;
 
@@ -882,10 +893,14 @@ void ResetVB();
 
 //Lightmap functions
 unsigned char *GenerateLightmap(uint16 w, uint16 h); //Generate a raw data lightmap
-uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity);
+uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type);
+uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang);
 GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h);
 uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
+
+//Faster square root
+double mSqrt(double x);
 
 //Faster than math.h functions
 float mCos(int16 ang);

@@ -4120,9 +4120,20 @@ static void ViewPortCommands()
 					meng.light.color.g=255;
 					meng.light.color.b=255;
 					meng.light.intensity=255.0f;
+					meng.light.type=POINT_LIGHT_MEDIUM;
+					st.game_lightmaps[i].t_pos2[meng.light.light_id].x=0;
+					st.game_lightmaps[i].t_pos2[meng.light.light_id].y=0;
+					st.game_lightmaps[i].color[meng.light.light_id].r=255;
+					st.game_lightmaps[i].color[meng.light.light_id].g=255;
+					st.game_lightmaps[i].color[meng.light.light_id].b=255;
+					st.game_lightmaps[i].color[meng.light.light_id].a=255;
+					st.game_lightmaps[i].falloff[meng.light.light_id]=16.0f;
+					st.game_lightmaps[i].spot_ang[meng.light.light_id]=30;
+					st.game_lightmaps[i].type[meng.light.light_id]=POINT_LIGHT_MEDIUM;
 
 					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
-						st.game_lightmaps[i].t_pos[0].x,st.game_lightmaps[i].t_pos[0].y,0,meng.light.intensity);
+						st.game_lightmaps[i].t_pos[0].x,st.game_lightmaps[i].t_pos[0].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
+
 					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 
 					meng.com_id=0;
@@ -4137,6 +4148,13 @@ static void ViewPortCommands()
 		if(meng.pannel_choice==ADD_LIGHT && meng.command==ADD_LIGHT_TO_LIGHTMAP)
 		{
 			i=meng.command2;
+
+			st.game_lightmaps[i].falloff[meng.light.light_id]=meng.light.falloff;
+			st.game_lightmaps[i].color[meng.light.light_id].a=meng.light.intensity;
+			st.game_lightmaps[i].color[meng.light.light_id].r=meng.light.color.r;
+			st.game_lightmaps[i].color[meng.light.light_id].g=meng.light.color.g;
+			st.game_lightmaps[i].color[meng.light.light_id].b=meng.light.color.b;
+			st.game_lightmaps[i].type[meng.light.light_id]=meng.light.type;
 
 			p3=st.game_lightmaps[i].t_pos[meng.light.light_id];
 
@@ -4163,8 +4181,124 @@ static void ViewPortCommands()
 
 				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
 
-				AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,0,meng.light.intensity);
+				if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+					else
+						AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+			}
+
+			if(st.mouse1)
+			{
+				if(st.mouse_wheel>0)
+				{
+					st.mouse_wheel=0;
+					meng.light.falloff+=0.1;
+				}
+				else
+				if(st.mouse_wheel<0)
+				{
+					st.mouse_wheel=0;
+					meng.light.falloff-=0.1;
+				}
+
+				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+				if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+					else
+						AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
+			}
+
+			if(st.keys[LSHIFT_KEY].state)
+			{
+				if(st.mouse_wheel>0)
+				{
+					st.game_lightmaps[i].spot_ang[meng.light.light_id]++;
+					st.mouse_wheel=0;
+				}
+				else
+				if(st.mouse_wheel<0)
+				{
+					st.game_lightmaps[i].spot_ang[meng.light.light_id]--;
+					st.mouse_wheel=0;
+				}
+
+				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+				AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
+				st.keys[LSHIFT_KEY].state=0;
+			}
+
+			if(st.mouse2)
+			{
+				if(st.mouse_wheel>0)
+				{
+					st.mouse_wheel=0;
+					st.game_lightmaps[i].t_pos[meng.light.light_id].z+=2;
+				}
+				else
+				if(st.mouse_wheel<0)
+				{
+					st.mouse_wheel=0;
+					st.game_lightmaps[i].t_pos[meng.light.light_id].z-=2;
+				}
+
+				if(st.game_lightmaps[i].type[meng.light.light_id]>3)
+				{
+					p=st.mouse;
+
+					STW(&p.x,&p.y);
+
+					p.x=p.x-(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2));
+					p.y=p.y-(st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2));
+
+					p.x=(st.game_lightmaps[i].T_w*p.x)/st.game_lightmaps[i].W_w;
+					p.y=(st.game_lightmaps[i].T_h*p.y)/st.game_lightmaps[i].W_h;
+
+					st.game_lightmaps[i].t_pos2[meng.light.light_id].x=p.x;
+					st.game_lightmaps[i].t_pos2[meng.light.light_id].y=p.y;
+				}
+
+				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+				if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+					else
+						AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
 				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 			}
 
@@ -4172,85 +4306,112 @@ static void ViewPortCommands()
 
 			p.x+=(st.game_lightmaps[i].W_w/2)+1920;
 
-			if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+			if(meng.com_id!=1)
 			{
-				DrawString2("Done",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
-
-				if(st.mouse1)
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
 				{
-					meng.com_id=0;
-					meng.got_it=-1;
-					st.game_lightmaps[i].stat=1;
-					st.num_lights++;
-					meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
-					AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
-					free(meng.tmplightdata);
-					st.mouse1=0;
+					DrawString2("Done",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
+
+					if(st.mouse1)
+					{
+						meng.com_id=0;
+						meng.got_it=-1;
+						st.game_lightmaps[i].stat=1;
+						st.num_lights++;
+						meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
+						AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						free(meng.tmplightdata);
+						st.mouse1=0;
+					}
 				}
-			}
-			else
-				DrawString2("Done",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
+				else
+					DrawString2("Done",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
 
-			p=st.game_lightmaps[i].w_pos;
+				p=st.game_lightmaps[i].w_pos;
 
-			p.y-=(st.game_lightmaps[i].W_h/2)+810;
+				p.y-=(st.game_lightmaps[i].W_h/2)+810;
 
-			if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
-			{
-				DrawString2("Edit light",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
-
-				if(st.mouse1)
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
 				{
-					meng.com_id=1;
-					meng.got_it=0;
-					st.mouse1=0;
+					DrawString2("Edit light",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
+
+					if(st.mouse1)
+					{
+						meng.com_id=1;
+						meng.got_it=0;
+						st.mouse1=0;
+					}
 				}
-			}
-			else
-				DrawString2("Edit light",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
+				else
+					DrawString2("Edit light",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
 
-			p=st.game_lightmaps[i].w_pos;
+				p=st.game_lightmaps[i].w_pos;
 
-			p.y+=(st.game_lightmaps[i].W_h/2)+810;
+				p.y+=(st.game_lightmaps[i].W_h/2)+810;
 
-			if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
-			{
-				DrawString2("Add Light",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
-
-				if(st.mouse1)
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
 				{
-					AddLightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,
-						meng.light.falloff,st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity);
+					DrawString2("Add Light",p.x,p.y,0,0,0,255,128,32,255,st.fonts[ARIAL].font,1536,1536,0);
 
-					AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					if(st.mouse1)
+					{
+						if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+							AddLightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
 
-					meng.light.light_id++;
+						AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 
-					st.game_lightmaps[i].num_lights++;
-					st.game_lightmaps[i].t_pos[meng.light.light_id].x=st.game_lightmaps[i].T_w/2;
-					st.game_lightmaps[i].t_pos[meng.light.light_id].y=st.game_lightmaps[i].T_h/2;
-					st.game_lightmaps[i].t_pos[meng.light.light_id].z=0;
-					st.game_lightmaps[i].type=POINT_LIGHT_STRONG;
+						meng.light.light_id++;
 
-					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+						st.game_lightmaps[i].num_lights++;
+						st.game_lightmaps[i].t_pos[meng.light.light_id].x=st.game_lightmaps[i].T_w/2;
+						st.game_lightmaps[i].t_pos[meng.light.light_id].y=st.game_lightmaps[i].T_h/2;
+						st.game_lightmaps[i].t_pos[meng.light.light_id].z=0;
+						st.game_lightmaps[i].t_pos2[meng.light.light_id].x=0;
+						st.game_lightmaps[i].t_pos2[meng.light.light_id].y=0;
+						st.game_lightmaps[i].color[meng.light.light_id].r=255;
+						st.game_lightmaps[i].color[meng.light.light_id].g=255;
+						st.game_lightmaps[i].color[meng.light.light_id].b=255;
+						st.game_lightmaps[i].color[meng.light.light_id].a=255;
+						st.game_lightmaps[i].falloff[meng.light.light_id]=16.0f;
+						st.game_lightmaps[i].spot_ang[meng.light.light_id]=30;
+						st.game_lightmaps[i].type[meng.light.light_id]=POINT_LIGHT_MEDIUM;
 
-					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,0,meng.light.intensity);
-					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						meng.light.falloff=16.0f;
+						meng.light.color.r=255;
+						meng.light.color.g=255;
+						meng.light.color.b=255;
+						meng.light.intensity=255.0f;
+						meng.light.type=POINT_LIGHT_MEDIUM;
 
-					LogApp("Light added");
+						memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
 
-					st.mouse1=0;
+						AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
+							st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
+						AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
+						LogApp("Light added");
+
+						st.mouse1=0;
+					}
 				}
+				else
+					DrawString2("Add Light",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
 			}
-			else
-				DrawString2("Add Light",p.x,p.y,0,0,0,255,255,255,255,st.fonts[ARIAL].font,1536,1536,0);
 
 			if(meng.com_id==1)
 			{
-				DrawString2("Edit light",p.x,p.y,0,0,0,255,32,32,255,st.fonts[ARIAL].font,1536,1536,0);
+				//DrawString2("Edit light",p.x,p.y,0,0,0,255,32,32,255,st.fonts[ARIAL].font,1536,1536,0);
 
-				DrawUI(8192,4096,3072,3072,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+				DrawUI(8192,4300,3072,3900,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
 				sprintf(str,"R %d",meng.light.color.r);
 
@@ -4407,24 +4568,219 @@ static void ViewPortCommands()
 					}
 				}
 
-				if(CheckColisionMouse(8192,4096+(341*2),455,455,0))
+				sprintf(str,"Z %d",st.game_lightmaps[i].t_pos[meng.light.light_id].z);
+
+				if(CheckColisionMouse(8192,4096+(341*2),341,341,0))
 				{
-					DrawStringUI("Done",8192,4096+(341*2),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+					DrawStringUI(str,8192,4096+(341*2),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						StartText();
+						sprintf(st.TextInput,"%d",st.game_lightmaps[i].t_pos[meng.light.light_id].z);
+						meng.got_it=6;
+						st.mouse1=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,4096+(341*2),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(meng.got_it==6)
+				{
+					DrawStringUI(str,8192,4096+(341*2),0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					st.game_lightmaps[i].t_pos[meng.light.light_id].z=atoi(st.TextInput);
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						StopText();
+						st.keys[RETURN_KEY].state=0;
+						meng.got_it=0;
+					}
+				}
+
+				if(meng.light.type==POINT_LIGHT_MEDIUM) strcpy(str,"Point medium");
+				else if(meng.light.type==POINT_LIGHT_STRONG) strcpy(str,"Point strong");
+				else if(meng.light.type==POINT_LIGHT_NORMAL) strcpy(str,"Point normal");
+				else if(meng.light.type==SPOTLIGHT_MEDIUM) strcpy(str,"Spotlight medium");
+				else if(meng.light.type==SPOTLIGHT_STRONG) strcpy(str,"Spotlight strong");
+				else if(meng.light.type==SPOTLIGHT_NORMAL) strcpy(str,"Spotlight normal");
+
+				if(CheckColisionMouse(8192,4096+(341*3),341,341,0))
+				{
+					DrawStringUI(str,8192,4096+(341*3),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						meng.got_it=7;
+						st.mouse1=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,4096+(341*3),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(meng.got_it==7)
+				{
+					DrawUI(11264,4096,3072,3072,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+
+					if(CheckColisionMouse(11264,4096-(341*3),341,341,0))
+					{
+						DrawStringUI("Point medium",11264,4096-(341*3),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							meng.light.type=POINT_LIGHT_MEDIUM;
+							meng.got_it=-1;
+							st.mouse1=0;
+						}
+					}
+					else
+						DrawStringUI("Point medium",11264,4096-(341*3),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(CheckColisionMouse(11264,4096-(341*2),341,341,0))
+					{
+						DrawStringUI("Point strong",11264,4096-(341*2),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							meng.light.type=POINT_LIGHT_STRONG;
+							meng.got_it=-1;
+							st.mouse1=0;
+						}
+					}
+					else
+						DrawStringUI("Point strong",11264,4096-(341*2),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(CheckColisionMouse(11264,4096-(341),341,341,0))
+					{
+						DrawStringUI("Point normal",11264,4096-(341),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							meng.light.type=POINT_LIGHT_NORMAL;
+							meng.got_it=-1;
+							st.mouse1=0;
+						}
+					}
+					else
+						DrawStringUI("Point normal",11264,4096-(341),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(CheckColisionMouse(11264,4096+(341),341,341,0))
+					{
+						DrawStringUI("Spotlight medium",11264,4096+(341),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							meng.light.type=SPOTLIGHT_MEDIUM;
+							meng.got_it=-1;
+							st.mouse1=0;
+						}
+					}
+					else
+						DrawStringUI("Spotlight medium",11264,4096+(341),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(CheckColisionMouse(11264,4096+(341*2),341,341,0))
+					{
+						DrawStringUI("Spotlight strong",11264,4096+(341*2),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							meng.light.type=SPOTLIGHT_STRONG;
+							meng.got_it=-1;
+							st.mouse1=0;
+						}
+					}
+					else
+						DrawStringUI("Spotlight STRONG",11264,4096+(341*2),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(CheckColisionMouse(11264,4096+(341*3),341,341,0))
+					{
+						DrawStringUI("Spotlight normal",11264,4096+(341*3),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+						if(st.mouse1)
+						{
+							meng.light.type=SPOTLIGHT_NORMAL;
+							meng.got_it=-1;
+							st.mouse1=0;
+						}
+					}
+					else
+						DrawStringUI("Spotlight normal",11264,4096+(341*3),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						meng.got_it=-1;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+
+				sprintf(str,"Spot angle %d",st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+				if(CheckColisionMouse(8192,4096+(341*4),341,341,0))
+				{
+					DrawStringUI(str,8192,4096+(341*4),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					if(st.mouse1)
+					{
+						StartText();
+						sprintf(st.TextInput,"%d",st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+						meng.got_it=8;
+						st.mouse1=0;
+					}
+				}
+				else
+					DrawStringUI(str,8192,4096+(341*4),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(meng.got_it==8)
+				{
+					DrawStringUI(str,8192,4096+(341*4),0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+					st.game_lightmaps[i].spot_ang[meng.light.light_id]=atoi(st.TextInput);
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						StopText();
+						st.keys[RETURN_KEY].state=0;
+						meng.got_it=0;
+					}
+				}
+
+
+				if(CheckColisionMouse(8192,4096+(341*5),455,455,0))
+				{
+					DrawStringUI("Done",8192,4096+(341*5),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
 
 					if(st.mouse1)
 					{
 						meng.com_id=0;
 						meng.got_it=-1;
+
+						memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+						if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+							AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+						AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
 						st.mouse1=0;
 					}
 				}
 				else
-					DrawStringUI("Done",8192,4096+(341*2),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+					DrawStringUI("Done",8192,4096+(341*5),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
 			}
 		}
 	}
 
-	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX)
+	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX && meng.command!=ADD_LIGHT_TO_LIGHTMAP)
 	{
 		if(st.keys[W_KEY].state)
 		{
@@ -4555,19 +4911,19 @@ static void ENGDrawLight()
 		{
 			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2)+32,st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2),
-				255,128,32,255,64,16);
+				255,255,255,255,64,16);
 
 			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2)-32,st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2)+32,st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
-				255,128,32,255,64,16);
+				255,255,255,255,64,16);
 
 			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2)-32,
-				255,128,32,255,64,16);
+				255,255,255,255,64,16);
 
 			DrawLine(st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2)-32,
-				255,128,32,255,64,16);
+				255,255,255,255,64,16);
 		}
 	}
 	else
@@ -4579,35 +4935,23 @@ static void ENGDrawLight()
 		texture.normal=0;
 		texture.vb_id=-1;
 
-		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,128,0,0,32768,32768,17);
+		DrawHud(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,0,0,32768,32768,texture,255,16);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
 			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			255,128,32,255,64,16);
+			255,255,255,255,64,15);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
 			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			255,128,32,255,64,16);
+			255,255,255,255,64,15);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
 			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,128,32,255,64,16);
+			255,255,255,255,64,15);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
 			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,128,32,255,64,16);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),256,256,0,
-			255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+			255,255,255,255,64,15);
 
 		dist=1.0f/(meng.light.falloff*0.001);
 
@@ -4631,7 +4975,7 @@ static void ENGDrawLight()
 
 		//DrawLine(p2.x-dist2,p2.y,p2.x+dist2,p2.y,255,255,255,255,128,16);
 
-		DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16);
+		DrawHud(p2.x,p2.y,256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,15);
 
 		//DrawLine(p2.x,p2.y,p2.x+dist2,p2.y,255,255,255,255,128,16);
 	}

@@ -115,6 +115,7 @@ struct _mEng
 		Color color;
 		float falloff;
 		uint8 light_id;
+		LIGHT_TYPE type;
 	} light;
 
 	uint32 palette[256][256];
