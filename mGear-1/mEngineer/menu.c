@@ -100,6 +100,9 @@ void Menu()
 					meng.obj.type=meng.spr.type=MIDGROUND;
 					meng.obj_lightmap_sel=-1;
 
+					meng.lightmapsize.x=0;
+					meng.lightmapsize.y=0;
+
 					meng.spr.gid=-1;
 					meng.spr2.gid=-1;
 					meng.sprite_selection=0;

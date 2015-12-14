@@ -106,6 +106,7 @@ struct _mEng
 
 	int16 obj_lightmap_sel;
 	Pos lightmappos;
+	Pos lightmapsize;
 
 	unsigned char *tmplightdata;
 

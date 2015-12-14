@@ -3494,9 +3494,10 @@ static void ViewPortCommands()
 	uint8 got_it=0;
 	char str[64];
 	uint16 i, j;
-	Pos p, p2;
+	static Pos p, p2;
 	uPos16 p3;
 	float tmp;
+	static int16 temp;
 
 	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL)
 	{
@@ -3863,16 +3864,27 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_obj==0)
 				{
-					if(st.mouse1)
+					if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
 					{
-						meng.lightmappos.x=st.mouse.x;
-						meng.lightmappos.y=st.mouse.y;
+						if(st.mouse1)
+						{
+							meng.lightmappos.x=st.mouse.x;
+							meng.lightmappos.y=st.mouse.y;
 
-						STW(&meng.lightmappos.x,&meng.lightmappos.y);
+							if(meng.lightmapsize.x==0 && meng.lightmapsize.y==0)
+							{
+								meng.lightmapsize.x=2048;
+								meng.lightmapsize.y=2048;
+							}
 
-						meng.obj_lightmap_sel=-2;
+							STW(&meng.lightmappos.x,&meng.lightmappos.y);
 
-						st.mouse1=0;
+							meng.obj_lightmap_sel=-2;
+
+							temp=1;
+
+							st.mouse1=0;
+						}
 					}
 				}
 
@@ -3888,22 +3900,122 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						if(j==st.Current_Map.num_obj-1 && 
-							!CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
+					if(j==st.Current_Map.num_obj-1 && 
+						!CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
 					{
-						if(st.mouse1)
+						if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
 						{
-							meng.lightmappos.x=st.mouse.x;
-							meng.lightmappos.y=st.mouse.y;
+							if(st.mouse1)
+							{
+								meng.lightmappos.x=st.mouse.x;
+								meng.lightmappos.y=st.mouse.y;
 
-							STW(&meng.lightmappos.x,&meng.lightmappos.y);
+								if(meng.lightmapsize.x==0 && meng.lightmapsize.y==0)
+								{
+									meng.lightmapsize.x=2048;
+									meng.lightmapsize.y=2048;
+								}
 
-							meng.obj_lightmap_sel=-2;
+								STW(&meng.lightmappos.x,&meng.lightmappos.y);
 
-							st.mouse1=0;
-							break;
+								meng.obj_lightmap_sel=-2;
+
+								temp=1;
+
+								st.mouse1=0;
+								break;
+							}
 						}
 					}
+				}
+
+				if(meng.obj_lightmap_sel==-2)
+				{
+					if(st.mouse1)
+					{
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=2;
+						}
+						
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=3;
+						}
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=4;
+						}
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=5;
+						}
+
+						if(temp==2)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.x-=p2.x;
+
+							p=st.mouse;
+						}
+						else
+						if(temp==3)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.x+=p2.x;
+
+							p=st.mouse;
+						}
+						else
+						if(temp==4)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.y-=p2.y;
+
+							p=st.mouse;
+						}
+						else
+						if(temp==5)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.y+=p2.y;
+
+							p=st.mouse;
+						}
+					}
+					else
+						temp=1;
 				}
 
 				if(st.keys[RETURN_KEY].state && meng.obj_lightmap_sel>-1)
@@ -3966,8 +4078,8 @@ static void ViewPortCommands()
 
 							st.game_lightmaps[i].w_pos=meng.lightmappos;
 
-							st.game_lightmaps[i].W_w=2048;
-							st.game_lightmaps[i].W_h=2048;
+							st.game_lightmaps[i].W_w=meng.lightmapsize.x;
+							st.game_lightmaps[i].W_h=meng.lightmapsize.y;
 
 							tmp=(float) st.Current_Map.obj[meng.obj_lightmap_sel].size.x/st.Current_Map.obj[meng.obj_lightmap_sel].size.y;
 
@@ -4506,7 +4618,10 @@ static void ViewPortCommands()
 					}
 				}
 
-				sprintf(str,"Intensity %.3f",meng.light.intensity);
+				if(meng.got_it!=4)
+					sprintf(str,"Intensity %.3f",meng.light.intensity);
+				else
+					strcpy(str,st.TextInput);
 
 				if(CheckColisionMouse(8192,4096,341,341,0))
 				{
@@ -4537,7 +4652,10 @@ static void ViewPortCommands()
 					}
 				}
 
-				sprintf(str,"Fall Off %.3f",meng.light.falloff);
+				if(meng.got_it!=5)
+					sprintf(str,"Fall Off %.3f",meng.light.falloff);
+				else
+					strcpy(str,st.TextInput);
 
 				if(CheckColisionMouse(8192,4096+341,341,341,0))
 				{
@@ -4780,7 +4898,7 @@ static void ViewPortCommands()
 		}
 	}
 
-	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX && meng.command!=ADD_LIGHT_TO_LIGHTMAP)
+	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX)
 	{
 		if(st.keys[W_KEY].state)
 		{
@@ -4802,18 +4920,21 @@ static void ViewPortCommands()
 			st.Camera.position.x-=64;
 		}
 
-		if(st.mouse_wheel>0 && !st.mouse2)
+		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP)
 		{
-			if(st.Camera.dimension.x<2) st.Camera.dimension.x+=0.1;
-			if(st.Camera.dimension.y<2) st.Camera.dimension.y+=0.1;
-			st.mouse_wheel=0;
-		}
+			if(st.mouse_wheel>0 && !st.mouse2)
+			{
+				if(st.Camera.dimension.x<2) st.Camera.dimension.x+=0.1;
+				if(st.Camera.dimension.y<2) st.Camera.dimension.y+=0.1;
+				st.mouse_wheel=0;
+			}
 
-		if(st.mouse_wheel<0 && !st.mouse2)
-		{
-			if(st.Camera.dimension.x>0.4) st.Camera.dimension.x-=0.1;
-			if(st.Camera.dimension.y>0.4) st.Camera.dimension.y-=0.1;
-			st.mouse_wheel=0;
+			if(st.mouse_wheel<0 && !st.mouse2)
+			{
+				if(st.Camera.dimension.x>0.4) st.Camera.dimension.x-=0.1;
+				if(st.Camera.dimension.y>0.4) st.Camera.dimension.y-=0.1;
+				st.mouse_wheel=0;
+			}
 		}
 	}
 }
@@ -4857,7 +4978,7 @@ static void MGGListLoad()
 
 static void ENGDrawLight()
 {
-	uint8 i=0;
+	int16 i=0;
 
 	TEX_DATA texture;
 
@@ -4911,19 +5032,29 @@ static void ENGDrawLight()
 		{
 			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2)+32,st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2),
-				255,255,255,255,64,16);
+				255,255,255,255,64,17);
 
 			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2)-32,st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2)+32,st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
-				255,255,255,255,64,16);
+				255,255,255,255,64,17);
 
 			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2)-32,
-				255,255,255,255,64,16);
+				255,255,255,255,64,17);
 
 			DrawLine(st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
 				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2)-32,
-				255,255,255,255,64,16);
+				255,255,255,255,64,17);
+		}
+		else
+		if(i==-2)
+		{
+			//DrawGraphic(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x,meng.lightmapsize.y,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,16);
+
+			DrawLine(meng.lightmappos.x-(meng.lightmapsize.x/2)-32,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmappos.x+(meng.lightmapsize.x/2)+32,meng.lightmappos.y-(meng.lightmapsize.y/2),255,255,255,255,64,17);
+			DrawLine(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2)+32,255,255,255,255,64,17);
+			DrawLine(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmappos.x+(meng.lightmapsize.x/2)+32,meng.lightmappos.y+(meng.lightmapsize.y/2),255,255,255,255,64,17);
+			DrawLine(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2)+32,255,255,255,255,64,17);
 		}
 	}
 	else
@@ -4935,23 +5066,23 @@ static void ENGDrawLight()
 		texture.normal=0;
 		texture.vb_id=-1;
 
-		DrawHud(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,0,0,32768,32768,texture,255,16);
+		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,255,0,0,32768,32768,17);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
 			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			255,255,255,255,64,15);
+			255,255,255,255,64,17);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
 			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			255,255,255,255,64,15);
+			255,255,255,255,64,17);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
 			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,255,255,255,64,15);
+			255,255,255,255,64,17);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
 			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,255,255,255,64,15);
+			255,255,255,255,64,17);
 
 		dist=1.0f/(meng.light.falloff*0.001);
 
@@ -4975,7 +5106,7 @@ static void ENGDrawLight()
 
 		//DrawLine(p2.x-dist2,p2.y,p2.x+dist2,p2.y,255,255,255,255,128,16);
 
-		DrawHud(p2.x,p2.y,256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,15);
+		DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,17);
 
 		//DrawLine(p2.x,p2.y,p2.x+dist2,p2.y,255,255,255,255,128,16);
 	}

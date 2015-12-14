@@ -18,7 +18,7 @@ SDL_Event events;
 _LIGHTS game_lights[MAX_LIGHTS];
 _ENTITIES lmp[MAX_LIGHTMAPS];
 unsigned char *DataN;
-GLuint DataNT;
+GLuint DataNT, DATA_TEST;
 
 //Foreground + Background + Midground
 //Each layer (z position) has 8 sub-layers (slots)
@@ -411,13 +411,130 @@ void Quit()
 	exit(1);
 }
 
+unsigned char *GenerateAlphaLight(uint16 w, uint16 h)
+{
+	unsigned char *data;
+
+	data=(unsigned char*) calloc(w*h*4,sizeof(unsigned char));
+
+	if(!data)
+		return NULL;
+
+	return data;
+}
+
+uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type)
+{
+	uint16 i, j;
+	double d, att;
+	uint16 col;
+
+	if(!data)
+		return 0;
+	
+	for(i=0;i<h;i++)
+	{
+		for(j=0;j<w;j++)
+		{
+			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
+			d=mSqrt(d);
+
+			if(d==0)
+				d=1;
+
+			if(type==POINT_LIGHT_MEDIUM)
+				att=1.0f/(d*falloff);
+			else
+			if(type==POINT_LIGHT_STRONG)
+				att=1.0f/(d*d*falloff);
+			else
+			if(type==POINT_LIGHT_NORMAL)
+				att=1.0f/(1.0f + falloff * (d*d));
+			else
+				att=1.0f/(d*falloff);
+
+			col=255*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)]+col)>255)
+				data[(i*w*4)+(j*4)]=255;
+			else
+				data[(i*w*4)+(j*4)]+=(unsigned char)col;
+
+			col=b*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)+1]+col)>255)
+				data[(i*w*4)+(j*4)+1]=255;
+			else
+				data[(i*w*4)+(j*4)+1]+=(unsigned char)col;
+
+			col=g*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)+2]+col)>255)
+				data[(i*w*4)+(j*4)+2]=255;
+			else
+				data[(i*w*4)+(j*4)+2]+=(unsigned char)col;
+				
+			col=r*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)+3]+col)>255)
+				data[(i*w*4)+(j*4)+3]=255;
+			else
+				data[(i*w*4)+(j*4)+3]+=(unsigned char)col;
+				
+		}
+	}
+
+	return 1;
+}
+
+GLuint GenerateAlphaLightTexture(unsigned char* data, uint16 w, uint16 h)
+{
+	GLuint tex;
+
+	if(!data)
+		return 0;
+
+	glGenTextures(1,&tex);
+	glBindTexture(GL_TEXTURE_2D,tex);
+
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_BGRA,GL_UNSIGNED_BYTE,data);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	return tex;
+}
+
+uint8 AddLightToAlphaTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h)
+{
+	if(!data)
+		return 0;
+
+	glBindTexture(GL_TEXTURE_2D,*tex);
+
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_BGRA,GL_UNSIGNED_BYTE,data);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	return 1;
+}
+
+
 unsigned char *GenerateLightmap(uint16 w, uint16 h)
 {
 	unsigned char *data;
 
 	data=(unsigned char*) calloc(w*h*3,sizeof(unsigned char));
-
-	//printf("%d\n",w*h*3);
 
 	if(!data)
 		return NULL;
@@ -4494,7 +4611,10 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 		co.b=255;
 		co.a=255;
 	
-		msg=TTF_RenderUTF8_Blended(f,text,co);
+		if(strlen(text)==0) 
+			msg=TTF_RenderUTF8_Blended(f," ",co);
+		else
+			msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
@@ -4740,7 +4860,10 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 		co.b=255;
 		co.a=255;
 	
-		msg=TTF_RenderUTF8_Blended(f,text,co);
+		if(strlen(text)==0) 
+			msg=TTF_RenderUTF8_Blended(f," ",co);
+		else
+			msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
@@ -4940,8 +5063,11 @@ if(st.num_entities==MAX_GRAPHICS-1)
 		co.g=255;
 		co.b=255;
 		co.a=255;
-	
-		msg=TTF_RenderUTF8_Blended(f,text,co);
+
+		if(strlen(text)==0) 
+			msg=TTF_RenderUTF8_Blended(f," ",co);
+		else
+			msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
@@ -5138,7 +5264,10 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 		co.b=255;
 		co.a=255;
 	
-		msg=TTF_RenderUTF8_Blended(f,text,co);
+		if(strlen(text)==0) 
+			msg=TTF_RenderUTF8_Blended(f," ",co);
+		else
+			msg=TTF_RenderUTF8_Blended(f,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
