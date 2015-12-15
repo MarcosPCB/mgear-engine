@@ -423,6 +423,27 @@ unsigned char *GenerateAlphaLight(uint16 w, uint16 h)
 	return data;
 }
 
+uint8 FillAlphaLight(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h)
+{
+	uint16 i, j;
+
+	if(!data)
+		return NULL;
+
+	for(i=0;i<h;i++)
+	{
+		for(j=0;j<w;j++)
+		{
+			data[(i*w*3)+(j*3)]=0;
+			data[(i*w*3)+(j*3)+1]=b;
+			data[(i*w*3)+(j*3)+2]=g;
+			data[(i*w*3)+(j*3)+3]=r;
+		}
+	}
+
+	return 1;
+}
+
 uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type)
 {
 	uint16 i, j;
@@ -494,6 +515,93 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 
 	return 1;
 }
+
+uint32 AddSpotlightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang)
+{
+	uint16 i, j;
+	double d, att;
+	float angle, angle2;
+	uint16 col;
+
+	if(!data)
+		return 0;
+	
+	for(i=0;i<h;i++)
+	{
+		for(j=0;j<w;j++)
+		{
+			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
+			d=mSqrt(d);
+
+			if(d==0)
+				d=1;
+
+			if(type==SPOTLIGHT_MEDIUM)
+				att=1.0f/(d*falloff);
+			else
+			if(type==SPOTLIGHT_STRONG)
+				att=1.0f/(d*d*falloff);
+			else
+			if(type==SPOTLIGHT_NORMAL)
+				att=1.0f/(1.0f + falloff * (d*d));
+			else
+				att=1.0f/(d*falloff);
+
+
+			angle=atan2(x2-x,y2-y);
+			angle2=atan2(j-x,i-y);
+
+			angle2-=angle;
+
+			angle2=(angle2*180)/pi;
+
+			if(angle2<0) angle2*=-1;
+
+			if(angle2>ang)
+				continue;
+		
+			col=255*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)]+col)>255)
+				data[(i*w*4)+(j*4)]=255;
+			else
+				data[(i*w*4)+(j*4)]+=(unsigned char)col;
+
+			col=b*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)+1]+col)>255)
+				data[(i*w*4)+(j*4)+1]=255;
+			else
+				data[(i*w*4)+(j*4)+1]+=(unsigned char)col;
+
+			col=g*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)+2]+col)>255)
+				data[(i*w*4)+(j*4)+2]=255;
+			else
+				data[(i*w*4)+(j*4)+2]+=(unsigned char)col;
+				
+			col=r*att*intensity;
+			if(col>255)
+				col=255;
+			
+			if((data[(i*w*4)+(j*4)+3]+col)>255)
+				data[(i*w*4)+(j*4)+3]=255;
+			else
+				data[(i*w*4)+(j*4)+3]+=(unsigned char)col;
+				
+		}
+	}
+
+	return 1;
+}
+
 
 GLuint GenerateAlphaLightTexture(unsigned char* data, uint16 w, uint16 h)
 {
@@ -712,7 +820,7 @@ GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h)
 	glGenTextures(1,&tex);
 	glBindTexture(GL_TEXTURE_2D,tex);
 
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,w,h,0,GL_BGR,GL_UNSIGNED_BYTE,data);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,data);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -1386,6 +1494,12 @@ void Init()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	SDL_GL_SetSwapInterval(st.vsync);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+
 	//glHint(GL_GENERATE_MIPMAP_HINT,GL_FASTEST);
 
 	if(st.renderer.VAO_ON)

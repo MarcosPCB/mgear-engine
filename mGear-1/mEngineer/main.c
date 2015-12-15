@@ -3957,6 +3957,30 @@ static void ViewPortCommands()
 							p=st.mouse;
 							temp=5;
 						}
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=6;
+						}
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=7;
+						}
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=8;
+						}
+						else
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						{
+							p=st.mouse;
+							temp=9;
+						}
 
 						if(temp==2)
 						{
@@ -4013,6 +4037,66 @@ static void ViewPortCommands()
 
 							p=st.mouse;
 						}
+						else
+						if(temp==6)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.x-=p2.x;
+							meng.lightmapsize.y-=p2.y;
+
+							p=st.mouse;
+						}
+						else
+						if(temp==7)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.x+=p2.x;
+							meng.lightmapsize.y-=p2.y;
+
+							p=st.mouse;
+						}
+						else
+						if(temp==8)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.x+=p2.x;
+							meng.lightmapsize.y+=p2.y;
+
+							p=st.mouse;
+						}
+						else
+						if(temp==9)
+						{
+							p2=st.mouse;
+
+							p2.x-=p.x;
+							p2.y-=p.y;
+
+							STW(&p2.x,&p2.y);
+
+							meng.lightmapsize.x-=p2.x;
+							meng.lightmapsize.y+=p2.y;
+
+							p=st.mouse;
+						}
 					}
 					else
 						temp=1;
@@ -4054,9 +4138,11 @@ static void ViewPortCommands()
 
 							st.game_lightmaps[i].num_lights=0;
 							meng.lightmap_color.r=meng.lightmap_color.g=meng.lightmap_color.b=0;
+							st.game_lightmaps[i].alpha=0;
 
 							LogApp("Lightmap Creation Step 2");
 							st.mouse1=0;
+							temp=0;
 
 							break;
 						}
@@ -4081,25 +4167,26 @@ static void ViewPortCommands()
 							st.game_lightmaps[i].W_w=meng.lightmapsize.x;
 							st.game_lightmaps[i].W_h=meng.lightmapsize.y;
 
-							tmp=(float) st.Current_Map.obj[meng.obj_lightmap_sel].size.x/st.Current_Map.obj[meng.obj_lightmap_sel].size.y;
+							tmp=(float) meng.lightmapsize.x/meng.lightmapsize.y;
 
-							if(tmp>2) 
+							if(tmp>1) 
 							{
-								tmp/=2.0f;
 								st.game_lightmaps[i].T_w=meng.lightmap_res.x*tmp;
 								st.game_lightmaps[i].T_h=meng.lightmap_res.x;
 							}
 							else
 							{
 								st.game_lightmaps[i].T_w=meng.lightmap_res.x;
-								st.game_lightmaps[i].T_h=meng.lightmap_res.x/tmp;
+								st.game_lightmaps[i].T_h=meng.lightmap_res.x*tmp;
 							}
 
 							st.game_lightmaps[i].num_lights=0;
 							meng.lightmap_color.r=meng.lightmap_color.g=meng.lightmap_color.b=0;
+							st.game_lightmaps[i].alpha=0;
 
 							LogApp("Lightmap Creation Step 2");
 							st.mouse1=0;
+							temp=0;
 
 							break;
 						}
@@ -4112,7 +4199,29 @@ static void ViewPortCommands()
 		{
 			i=meng.command2;
 
-			DrawUI(8192,4096,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+			DrawUI(8192,4096,2048,2730,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+
+			if(st.game_lightmaps[i].alpha)
+				sprintf(str,"Alpha light [X]");
+			else
+				sprintf(str,"Alpha light [ ]");
+
+			if(CheckColisionMouse(8192,4096-(341*3),341,341,0))
+			{
+				DrawStringUI(str,8192,4096-(341*3),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(st.mouse1)
+				{
+					if(st.game_lightmaps[i].alpha)
+						st.game_lightmaps[i].alpha=0;
+					else
+						st.game_lightmaps[i].alpha=1;
+
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI(str,8192,4096-(341*3),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
 
 			sprintf(str,"R %d",meng.lightmap_color.r);
 
@@ -4207,19 +4316,94 @@ static void ViewPortCommands()
 				}
 			}
 
-			if(CheckColisionMouse(8192,4096+(341*2),455,455,0))
+			sprintf(str,"Res. Width %d",st.game_lightmaps[i].T_w);
+
+			if(CheckColisionMouse(8192,4096+(341),341,341,0))
 			{
-				DrawStringUI("Done",8192,4096+(341*2),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+				DrawStringUI(str,8192,4096+(341),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(st.mouse1)
+				{
+					StartText();
+					sprintf(st.TextInput,"%d",st.game_lightmaps[i].T_w);
+					meng.got_it=4;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI(str,8192,4096+(341),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+			if(meng.got_it==4)
+			{
+				DrawStringUI(str,8192,4096+(341),0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				st.game_lightmaps[i].T_w=atoi(st.TextInput);
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					StopText();
+					st.keys[RETURN_KEY].state=0;
+					meng.got_it=0;
+				}
+			}
+
+			sprintf(str,"Res. Height %d",st.game_lightmaps[i].T_h);
+
+			if(CheckColisionMouse(8192,4096+(341*2),341,341,0))
+			{
+				DrawStringUI(str,8192,4096+(341*2),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				if(st.mouse1)
+				{
+					StartText();
+					sprintf(st.TextInput,"%d",st.game_lightmaps[i].T_h);
+					meng.got_it=5;
+					st.mouse1=0;
+				}
+			}
+			else
+				DrawStringUI(str,8192,4096+(341*2),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+
+			if(meng.got_it==5)
+			{
+				DrawStringUI(str,8192,4096+(341*2),0,0,0,255,32,32,255,st.fonts[ARIAL].font,2048,2048,0);
+
+				st.game_lightmaps[i].T_h=atoi(st.TextInput);
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					StopText();
+					st.keys[RETURN_KEY].state=0;
+					meng.got_it=0;
+				}
+			}
+
+			if(CheckColisionMouse(8192,4096+(341*3),455,455,0))
+			{
+				DrawStringUI("Done",8192,4096+(341*3),0,0,0,255,128,32,255,st.fonts[ARIAL].font,2048,2048,0);
 
 				if(st.mouse1)
 				{
 					meng.command=ADD_LIGHT_TO_LIGHTMAP;
-					st.game_lightmaps[i].data=GenerateLightmap(st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
-					FillLightmap(st.game_lightmaps[i].data,meng.lightmap_color.r,meng.lightmap_color.g,meng.lightmap_color.b,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
-					st.game_lightmaps[i].tex=GenerateLightmapTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 
-					meng.tmplightdata=malloc(st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
-					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+					if(st.game_lightmaps[i].alpha)
+					{
+						st.game_lightmaps[i].data=GenerateAlphaLight(st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						FillAlphaLight(st.game_lightmaps[i].data,meng.lightmap_color.r,meng.lightmap_color.g,meng.lightmap_color.b,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						st.game_lightmaps[i].tex=GenerateAlphaLightTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
+						meng.tmplightdata=malloc(st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
+						memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
+					}
+					else
+					{
+						st.game_lightmaps[i].data=GenerateLightmap(st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						FillLightmap(st.game_lightmaps[i].data,meng.lightmap_color.r,meng.lightmap_color.g,meng.lightmap_color.b,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						st.game_lightmaps[i].tex=GenerateLightmapTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
+						meng.tmplightdata=malloc(st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+						memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+					}
 
 					st.game_lightmaps[i].num_lights++;
 					st.game_lightmaps[i].t_pos[0].x=st.game_lightmaps[i].T_w/2;
@@ -4243,10 +4427,20 @@ static void ViewPortCommands()
 					st.game_lightmaps[i].spot_ang[meng.light.light_id]=30;
 					st.game_lightmaps[i].type[meng.light.light_id]=POINT_LIGHT_MEDIUM;
 
-					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
-						st.game_lightmaps[i].t_pos[0].x,st.game_lightmaps[i].t_pos[0].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
+					if(st.game_lightmaps[i].alpha)
+					{
+						AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
+							st.game_lightmaps[i].t_pos[0].x,st.game_lightmaps[i].t_pos[0].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
 
-					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					}
+					else
+					{
+						AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
+							st.game_lightmaps[i].t_pos[0].x,st.game_lightmaps[i].t_pos[0].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
+
+						AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					}
 
 					meng.com_id=0;
 					meng.got_it=-1;
@@ -4254,7 +4448,7 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				DrawStringUI("Done",8192,4096+(341*2),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
+				DrawStringUI("Done",8192,4096+(341*3),0,0,0,255,255,255,255,st.fonts[ARIAL].font,2048,2048,0);
 		}
 		else
 		if(meng.pannel_choice==ADD_LIGHT && meng.command==ADD_LIGHT_TO_LIGHTMAP)
@@ -4291,21 +4485,42 @@ static void ViewPortCommands()
 				st.game_lightmaps[i].t_pos[meng.light.light_id].x=p.x;
 				st.game_lightmaps[i].t_pos[meng.light.light_id].y=p.y;
 
-				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+				if(st.game_lightmaps[i].alpha)
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
 
-				if(st.game_lightmaps[i].type[meng.light.light_id]<4)
-					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
-					else
-						AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
-							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+					if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+						AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
 
-				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
+				else
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+					if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+						AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
 			}
 
 			if(st.mouse1)
@@ -4322,21 +4537,43 @@ static void ViewPortCommands()
 					meng.light.falloff-=0.1;
 				}
 
-				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
 
-				if(st.game_lightmaps[i].type[meng.light.light_id]<4)
-					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
-					else
-						AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
-							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+				if(st.game_lightmaps[i].alpha)
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
 
-				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+						AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+					AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
+				else
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+					if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+						AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
 
 			}
 
@@ -4354,15 +4591,31 @@ static void ViewPortCommands()
 					st.mouse_wheel=0;
 				}
 
-				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
 
-				AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
-							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+				if(st.game_lightmaps[i].alpha)
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
 
-				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					AddSpotlightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+					AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
+				else
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+					AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
 
 				st.keys[LSHIFT_KEY].state=0;
 			}
@@ -4397,21 +4650,42 @@ static void ViewPortCommands()
 					st.game_lightmaps[i].t_pos2[meng.light.light_id].y=p.y;
 				}
 
-				memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+				if(st.game_lightmaps[i].alpha)
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
 
-				if(st.game_lightmaps[i].type[meng.light.light_id]<4)
-					AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
-					else
-						AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-							st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-							st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
-							st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+					if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+						AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
 
-				AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+					AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
+				else
+				{
+					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+					if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+						AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+						else
+							AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+					AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+				}
 			}
 
 			p=st.game_lightmaps[i].w_pos;
@@ -4431,7 +4705,11 @@ static void ViewPortCommands()
 						st.game_lightmaps[i].stat=1;
 						st.num_lights++;
 						meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
-						AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+
+						if(st.game_lightmaps[i].alpha)
+							AddLightToAlphaTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						else
+							AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 						free(meng.tmplightdata);
 						st.mouse1=0;
 					}
@@ -4467,19 +4745,38 @@ static void ViewPortCommands()
 
 					if(st.mouse1)
 					{
-						if(st.game_lightmaps[i].type[meng.light.light_id]<4)
-							AddLightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
-						else
-							AddSpotlightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
-								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+						if(st.game_lightmaps[i].alpha)
+						{
+							if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+								AddLightToAlphaLight(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+								else
+									AddSpotlightToAlphaLight(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+										st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
 
-						AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+							AddLightToAlphaTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						}
+						else
+						{
+							if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+								AddLightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+								else
+									AddSpotlightToLightmap(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+										st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+							AddLightToTexture(&st.game_lightmaps[i].tex,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						}
 
 						meng.light.light_id++;
 
@@ -4504,11 +4801,22 @@ static void ViewPortCommands()
 						meng.light.intensity=255.0f;
 						meng.light.type=POINT_LIGHT_MEDIUM;
 
-						memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+						if(st.game_lightmaps[i].alpha)
+						{
+							memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
 
-						AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
-							st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
-						AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+							AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
+							AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						}
+						else
+						{
+							memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+
+							AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
+								st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,st.game_lightmaps[i].t_pos[meng.light.light_id].z,meng.light.intensity,meng.light.type);
+							AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						}
 
 						LogApp("Light added");
 
@@ -4873,21 +5181,42 @@ static void ViewPortCommands()
 						meng.com_id=0;
 						meng.got_it=-1;
 
-						memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
+						if(st.game_lightmaps[i].alpha)
+						{
+							memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
 
-						if(st.game_lightmaps[i].type[meng.light.light_id]<4)
-							AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+							if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+								AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+								else
+									AddSpotlightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+										st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+							AddLightToAlphaTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						}
 						else
-							AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
-								st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
-								st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
-								st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
-								st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+						{
+							memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3);
 
-						AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+							if(st.game_lightmaps[i].type[meng.light.light_id]<4)
+								AddLightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id]);
+								else
+									AddSpotlightToLightmap(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,
+										st.game_lightmaps[i].color[meng.light.light_id].r,st.game_lightmaps[i].color[meng.light.light_id].g,st.game_lightmaps[i].color[meng.light.light_id].b,
+										st.game_lightmaps[i].falloff[meng.light.light_id],st.game_lightmaps[i].t_pos[meng.light.light_id].x,st.game_lightmaps[i].t_pos[meng.light.light_id].y,
+										st.game_lightmaps[i].t_pos[meng.light.light_id].z,st.game_lightmaps[i].color[meng.light.light_id].a,st.game_lightmaps[i].type[meng.light.light_id],
+										st.game_lightmaps[i].t_pos2[meng.light.light_id].x,st.game_lightmaps[i].t_pos2[meng.light.light_id].y,st.game_lightmaps[i].spot_ang[meng.light.light_id]);
+
+							AddLightToTexture(&st.game_lightmaps[i].tex,meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+						}
 
 						st.mouse1=0;
 					}

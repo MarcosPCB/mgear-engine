@@ -707,6 +707,8 @@ struct _GAME_LIGHTMAPS_
 	int16 obj_id;
 
 	int16 ang;
+
+	uint8 alpha;
 };
 
 typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
@@ -892,6 +894,13 @@ uint32 PlayMovie(const char *name);
 void ResetVB();
 
 //Lightmap functions
+unsigned char *GenerateAlphaLight(uint16 w, uint16 h);
+uint8 FillAlphaLight(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
+uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type);
+uint32 AddSpotlightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang);
+GLuint GenerateAlphaLightTexture(unsigned char* data, uint16 w, uint16 h);
+uint8 AddLightToAlphaTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
+
 unsigned char *GenerateLightmap(uint16 w, uint16 h); //Generate a raw data lightmap
 uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type);
 uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang);
