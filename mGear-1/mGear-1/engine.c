@@ -1920,6 +1920,8 @@ SHADER_CREATION:
 
 	st.num_sprites=0;
 
+	st.num_uiwindow=0;
+
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
@@ -2000,6 +2002,11 @@ uint8 OpenFont(const char *file,const char *name, uint8 index, size_t font_size)
 		LogApp("Error while opening TTF font : %s",TTF_GetError());
 		return 0;
 	}
+
+	st.fonts[index].size_h_px=font_size;
+	st.fonts[index].size_w_px=font_size/2;
+	st.fonts[index].size_w_gm=font_size;
+	st.fonts[index].size_h_gm=font_size;
 	
 	strcpy(st.fonts[index].name,name);
 
@@ -4726,9 +4733,9 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 		co.a=255;
 	
 		if(strlen(text)==0) 
-			msg=TTF_RenderUTF8_Blended(f," ",co);
+			msg=TTF_RenderUTF8_Blended_Wrapped(f," ",co,1024);
 		else
-			msg=TTF_RenderUTF8_Blended(f,text,co);
+			msg=TTF_RenderUTF8_Blended_Wrapped(f,text,co,1024);
 	
 		if(msg->format->BytesPerPixel==4)
 		{

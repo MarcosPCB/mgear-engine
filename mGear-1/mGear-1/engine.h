@@ -76,6 +76,8 @@ typedef FMOD_CHANNEL Channel;
 
 #define MGG_START 3 //The first slot to be used for loading sprite MGGs
 
+#define SYS_BOX_TILE 4
+
 //double inline  sqrt14(double n)
 
 #define LogApp SDL_Log
@@ -670,6 +672,10 @@ struct _TFont
 {
 	char name[64];
 	TTF_Font *font;
+	size_t size_w_px;
+	size_t size_h_px;
+	size_t size_w_gm;
+	size_t size_h_gm;
 };
 
 typedef struct _TFont TFont;
@@ -744,6 +750,8 @@ struct _SETTINGS_
 	uint32 num_ui;
 	uint8 num_lights;
 	uint8 num_lightmap;
+
+	uint8 num_uiwindow;
 
 	uint8 num_mgg;
 	uint8 num_mgg_basic;
