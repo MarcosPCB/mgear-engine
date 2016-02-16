@@ -4660,7 +4660,7 @@ int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	return mgf->anim[id].current_frame/10;
 }
 
-int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
@@ -4733,9 +4733,9 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 		co.a=255;
 	
 		if(strlen(text)==0) 
-			msg=TTF_RenderUTF8_Blended_Wrapped(f," ",co,1024);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font," ",co);
 		else
-			msg=TTF_RenderUTF8_Blended_Wrapped(f,text,co,1024);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
@@ -4907,7 +4907,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 }
 
-int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
@@ -4982,9 +4982,9 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 		co.a=255;
 	
 		if(strlen(text)==0) 
-			msg=TTF_RenderUTF8_Blended(f," ",co);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font," ",co);
 		else
-			msg=TTF_RenderUTF8_Blended(f,text,co);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
@@ -5117,7 +5117,7 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 
 }
 
-int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
@@ -5186,9 +5186,9 @@ if(st.num_entities==MAX_GRAPHICS-1)
 		co.a=255;
 
 		if(strlen(text)==0) 
-			msg=TTF_RenderUTF8_Blended(f," ",co);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font," ",co);
 		else
-			msg=TTF_RenderUTF8_Blended(f,text,co);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{
@@ -5316,7 +5316,7 @@ if(st.num_entities==MAX_GRAPHICS-1)
 
 }
 
-int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, TTF_Font *f, int32 override_sizex, int32 override_sizey, int8 z)
+int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
@@ -5386,9 +5386,9 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 		co.a=255;
 	
 		if(strlen(text)==0) 
-			msg=TTF_RenderUTF8_Blended(f," ",co);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font," ",co);
 		else
-			msg=TTF_RenderUTF8_Blended(f,text,co);
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font,text,co);
 	
 		if(msg->format->BytesPerPixel==4)
 		{

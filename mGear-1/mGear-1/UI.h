@@ -25,6 +25,8 @@
 
 #define MAX_UIWINDOWS 4
 
+#define UI_BASICPANNELFRAME 4 //equivalent to mgg_sys[0].frames[4], used in the Window type 2
+
 enum _UI_POS
 {
 	CENTER,
@@ -45,6 +47,29 @@ struct _UI_WINDOW
 };
 
 typedef struct _UI_WINDOW UI_WINDOW;
+
+struct _UI_SYSTEM
+{
+	uint8 mgg_id;
+
+	uint8 window2_frame;
+
+	uint8 window_frame0;
+	uint8 window_frame1;
+	uint8 window_frame2;
+	uint8 button_frame0;
+	uint8 button_frame1;
+	uint8 button_frame2;
+	uint8 tab_frame;
+	uint8 close_frame;
+	uint8 subwindow_frame0;
+	uint8 subwindow_frame1;
+	uint8 subwindow_frame2;
+};
+
+typedef struct _UI_SYSTEM UI_SYSTEM;
+
+extern UI_SYSTEM UI_Sys;
 
 int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_options, uint8 font, size_t font_size, uint32 colorN, uint32 colorS, uint32 colorT);
 
@@ -73,5 +98,7 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 colorN, int32 colorS, int32 colorC);
 
 void UIMain_DrawSystem();
+
+void UILoadSystem(char *filename);
 
 #endif
