@@ -44,27 +44,29 @@ struct _UI_WINDOW
 	uint8 num_options;
 	int8 font;
 	int16 font_size;
+
+	int8 window_frame;
 };
 
 typedef struct _UI_WINDOW UI_WINDOW;
 
 struct _UI_SYSTEM
 {
-	uint8 mgg_id;
+	int8 mgg_id;
 
-	uint8 window2_frame;
+	int8 window2_frame;
 
-	uint8 window_frame0;
-	uint8 window_frame1;
-	uint8 window_frame2;
-	uint8 button_frame0;
-	uint8 button_frame1;
-	uint8 button_frame2;
-	uint8 tab_frame;
-	uint8 close_frame;
-	uint8 subwindow_frame0;
-	uint8 subwindow_frame1;
-	uint8 subwindow_frame2;
+	int8 window_frame0;
+	int8 window_frame1;
+	int8 window_frame2;
+	int8 button_frame0;
+	int8 button_frame1;
+	int8 button_frame2;
+	int8 tab_frame;
+	int8 close_frame;
+	int8 subwindow_frame0;
+	int8 subwindow_frame1;
+	int8 subwindow_frame2;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;
@@ -75,7 +77,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 
 int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint8 num_options, uint8 font, size_t font_size, uint32 colorN, uint32 colorS);
 
-int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer);
+int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer, uint8 window_frame));
 
 int8 UICreateWindow2(int32 x, int32 y, UI_POS bpos, int8 layer, uint8 num_avail_options, int16 font_size, int8 num_charsperoption, int8 font);
 

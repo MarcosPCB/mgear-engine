@@ -20,6 +20,20 @@ void UILoadSystem(char *filename)
 
 	if(basic)
 	{
+		UI_Sys.mgg_id=-1;
+		UI_Sys.window2_frame=-1;
+		UI_Sys.window_frame0=-1;
+		UI_Sys.window_frame1=-1;
+		UI_Sys.window_frame2=-1;
+		UI_Sys.button_frame0=-1;
+		UI_Sys.button_frame1=-1;
+		UI_Sys.button_frame2=-1;
+		UI_Sys.tab_frame=-1;
+		UI_Sys.close_frame=-1;
+		UI_Sys.subwindow_frame0=-1;
+		UI_Sys.subwindow_frame1=-1;
+		UI_Sys.subwindow_frame2=-1;
+
 		while(!feof(file))
 		{
 			fgets(buf,256,file);
@@ -29,13 +43,70 @@ void UILoadSystem(char *filename)
 
 			if(strcmp(tok,"MGG ID")==NULL)
 				UI_Sys.mgg_id=atoi(val);
+
 			if(strcmp(tok,"Window2 Frame")==NULL)
 				UI_Sys.window2_frame=atoi(val);
+
 			if(strcmp(tok,"Window Frame0")==NULL)
-				UI_Sys.window2_frame=atoi(val);
+				UI_Sys.window_frame0=atoi(val);
 			if(strcmp(tok,"Window Frame1")==NULL)
-				UI_Sys.window2_frame=atoi(val);
+				UI_Sys.window_frame1=atoi(val);
+			if(strcmp(tok,"Window Frame2")==NULL)
+				UI_Sys.window_frame2=atoi(val);
+
+			if(strcmp(tok,"Button Frame0")==NULL)
+				UI_Sys.button_frame0=atoi(val);
+			if(strcmp(tok,"Button Frame1")==NULL)
+				UI_Sys.button_frame1=atoi(val);
+			if(strcmp(tok,"Button Frame2")==NULL)
+				UI_Sys.button_frame2=atoi(val);
+
+			if(strcmp(tok,"Subwindow Frame0")==NULL)
+				UI_Sys.subwindow_frame0=atoi(val);
+			if(strcmp(tok,"Subwindow Frame1")==NULL)
+				UI_Sys.subwindow_frame1=atoi(val);
+			if(strcmp(tok,"Subwindow Frame2")==NULL)
+				UI_Sys.subwindow_frame2=atoi(val);
+
+			if(strcmp(tok,"Tab Frame")==NULL)
+				UI_Sys.tab_frame=atoi(val);
+			if(strcmp(tok,"Close Frame")==NULL)
+				UI_Sys.close_frame=atoi(val);
+
 		}
+
+		if(UI_Sys.mgg_id==-1)
+			UI_Sys.mgg_id=0;
+
+		if(UI_Sys.window2_frame==-1)
+			UI_Sys.window2_frame=4;
+
+		if(UI_Sys.window_frame0==-1)
+			UI_Sys.window_frame0=6;
+		if(UI_Sys.window_frame1==-1)
+			UI_Sys.window_frame1=7;
+		if(UI_Sys.window_frame2==-1)
+			UI_Sys.window_frame2=8;
+
+		if(UI_Sys.button_frame0==-1)
+			UI_Sys.button_frame0=9;
+		if(UI_Sys.button_frame1==-1)
+			UI_Sys.button_frame1=10;
+		if(UI_Sys.button_frame2==-1)
+			UI_Sys.button_frame2=11;
+
+		if(UI_Sys.subwindow_frame0==-1)
+			UI_Sys.subwindow_frame0=14;
+		if(UI_Sys.subwindow_frame1==-1)
+			UI_Sys.subwindow_frame1=15;
+		if(UI_Sys.subwindow_frame2==-1)
+			UI_Sys.subwindow_frame2=16;
+
+		if(UI_Sys.tab_frame==-1)
+			UI_Sys.tab_frame=12;
+		if(UI_Sys.close_frame==-1)
+			UI_Sys.close_frame=13;
+
 
 		fclose(file);
 
@@ -45,17 +116,17 @@ void UILoadSystem(char *filename)
 	{
 		UI_Sys.mgg_id=0;
 		UI_Sys.window2_frame=4;
-		UI_Sys.window_frame0=7;
-		UI_Sys.window_frame1=8;
-		UI_Sys.window_frame2=9;
-		UI_Sys.button_frame0=10;
-		UI_Sys.button_frame1=11;
-		UI_Sys.button_frame2=12;
-		UI_Sys.tab_frame=13;
-		UI_Sys.close_frame=14;
-		UI_Sys.subwindow_frame0=15;
-		UI_Sys.subwindow_frame1=16;
-		UI_Sys.subwindow_frame2=17;
+		UI_Sys.window_frame0=6;
+		UI_Sys.window_frame1=7;
+		UI_Sys.window_frame2=8;
+		UI_Sys.button_frame0=9;
+		UI_Sys.button_frame1=10;
+		UI_Sys.button_frame2=11;
+		UI_Sys.tab_frame=12;
+		UI_Sys.close_frame=13;
+		UI_Sys.subwindow_frame0=14;
+		UI_Sys.subwindow_frame1=15;
+		UI_Sys.subwindow_frame2=16;
 
 		LogApp("UI system loaded");
 	}
@@ -137,7 +208,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 	text_size+=128; //64 g.u of space between sides
 	height_size+=2*((st.fonts[font].size_h_gm*font_size)/FONT_SIZE);
 
-	DrawUI(x,y,text_size,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[SYS_BOX_TILE],255,7);
+	DrawUI(x,y,text_size,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[SYS_BOX_TILE],255,7);
 
 	if(!lines)
 		DrawStringUI(text,x,y,0,0,0,rt,gt,bt,255,0,font_size,font_size,6);
@@ -252,7 +323,7 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 		}
 	}
 
-	DrawUI(x,y,text_size+128,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[SYS_BOX_TILE],255,7);
+	DrawUI(x,y,text_size+128,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[SYS_BOX_TILE],255,7);
 
 	for(i=0;i<num_options;i++)
 	{
@@ -270,7 +341,7 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 	return UI_NULLOP;
 }
 
-int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer)
+int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer, uint8 window_frame)
 {
 	int8 ID, i;
 
@@ -293,8 +364,16 @@ int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int
 				UI_Win[i].size.y=ysize;
 				UI_Win[i].layer=layer;
 				UI_Win[i].num_options=0;
-				//UI_Win[i].font=font;
-				//UI_Win[i].font_size=font_size;
+
+				if(window_frame==0 || window_frame==1)
+					UI_Win[i].window_frame=UI_Sys.window_frame0;
+				else
+				if(window_frame==2)
+					UI_Win[i].window_frame=UI_Sys.window_frame1;
+				else
+				if(window_frame==3)
+					UI_Win[i].window_frame=UI_Sys.window_frame2;
+
 				ID=st.num_uiwindow;
 				st.num_uiwindow++;
 				break;
@@ -854,6 +933,11 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 	}
 }
 
+int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, int8 button_frame, uint8 font, uint8 font_size, int32 color, int8 avail)
+{
+
+}
+
 void UIMain_DrawSystem()
 {
 	register uint8 i;
@@ -865,7 +949,11 @@ void UIMain_DrawSystem()
 			if(!UI_Win[i].stat)
 				continue;
 			else
-				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,UI_Win[i].layer);
+			if(UI_Win[i].stat==2)
+				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,UI_Win[i].layer);
+			else
+			if(UI_Win[i].stat==1)
+				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
 		}
 	}
 }
