@@ -59,14 +59,44 @@ struct _UI_SYSTEM
 	int8 window_frame0;
 	int8 window_frame1;
 	int8 window_frame2;
+
 	int8 button_frame0;
 	int8 button_frame1;
 	int8 button_frame2;
+
 	int8 tab_frame;
 	int8 close_frame;
+
 	int8 subwindow_frame0;
 	int8 subwindow_frame1;
 	int8 subwindow_frame2;
+
+	int8 scroll_frame0;
+	int8 scroll_frame1;
+	int8 scroll_up_frame;
+	int8 scroll_down_frame;
+
+	int8 submenu_frame0;
+	int8 submenu_frame1;
+
+	int8 save_icon;
+	int8 newfile_icon;
+	int8 folder_icon;
+	int8 delete_icon;
+	int8 open_icon;
+	int8 close_icon;
+
+	int8 play_icon;
+	int8 stop_icon;
+	int8 pause_icon;
+	int8 foward_icon;
+	int8 rewind_icon;
+	int8 next_icon;
+	int8 back_icon;
+
+	int8 mgg_id2; //for usermade UI frames and icons
+	int8 *frames;
+	int8 num_usermade;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;
@@ -102,5 +132,7 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 void UIMain_DrawSystem();
 
 void UILoadSystem(char *filename);
+
+int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 font_size, int32 color, int8 blocked);
 
 #endif
