@@ -20,19 +20,7 @@ void UILoadSystem(char *filename)
 
 	if(basic)
 	{
-		UI_Sys.mgg_id=-1;
-		UI_Sys.window2_frame=-1;
-		UI_Sys.window_frame0=-1;
-		UI_Sys.window_frame1=-1;
-		UI_Sys.window_frame2=-1;
-		UI_Sys.button_frame0=-1;
-		UI_Sys.button_frame1=-1;
-		UI_Sys.button_frame2=-1;
-		UI_Sys.tab_frame=-1;
-		UI_Sys.close_frame=-1;
-		UI_Sys.subwindow_frame0=-1;
-		UI_Sys.subwindow_frame1=-1;
-		UI_Sys.subwindow_frame2=-1;
+		memset(&UI_Sys,-1,sizeof(UI_SYSTEM));
 
 		while(!feof(file))
 		{
@@ -966,13 +954,51 @@ int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 
 		}
 	}
 	else
+	if(blocked==1)
 	{
 		DrawUI(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2],255,UI_Win[uiwinid].layer-1);
 		DrawStringUI(text,x,y,0,0,0,128,128,128,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
+	else
+	if(blocked==2)
+	{
+		DrawUI(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2],255,UI_Win[uiwinid].layer-1);
+		DrawStringUI(text,x,y,0,0,0,r,g,b,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+	}
 
 	return UI_NULLOP;
 
+}
+
+int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, int8 frame, int32 color, int8 blocked)
+{
+	uint8 r, g, b;
+
+	r=color>>16;
+	g=(color>>8) && 0xFF;
+	b=color & 0xFF;
+
+	if(!blocked)
+	{
+		if(CheckColisionMouse(x,y,sizex,sizey,0) && st.mouse1)
+		{
+			DrawUI(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+
+			st.mouse1=0;
+
+			return UI_SEL;
+		}
+		else
+			DrawUI(x,y,sizex,sizey,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+	}
+	else
+	if(blocked==1)
+		DrawUI(x,y,sizex,sizey,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+	else
+	if(blocked==2)
+		DrawUI(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+
+	return UI_NULLOP;
 }
 
 void UIMain_DrawSystem()

@@ -36,36 +36,40 @@
     <ClInclude Include="dirent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shader110.c">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="shader110.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shader130.c">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="shader130.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="a.h">
+    <ClInclude Include="UI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="mgl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="engine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="game.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="quicklz.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="input.cpp">
+    <ClCompile Include="engine.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="physics.cpp">
+    <ClCompile Include="game.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="a.asm">
+    <ClCompile Include="input.c">
       <Filter>Source Files</Filter>
-    </MASM>
+    </ClCompile>
+    <ClCompile Include="physics.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UI.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="mgl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

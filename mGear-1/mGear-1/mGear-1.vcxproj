@@ -56,7 +56,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;ENGINEER;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DisableSpecificWarnings>4996;4101;4244;4005;4049;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -93,28 +93,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="a.h" />
     <ClInclude Include="dirent.h" />
     <ClInclude Include="engine.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="input.h" />
+    <ClInclude Include="mgl.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="physics.h" />
     <ClInclude Include="quicklz.h" />
-    <ClInclude Include="shader110.c" />
-    <ClInclude Include="shader130.c" />
+    <ClInclude Include="shader110.h" />
+    <ClInclude Include="shader130.h" />
     <ClInclude Include="types.h" />
+    <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="engine.cpp" />
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="input.cpp" />
-    <ClCompile Include="physics.cpp" />
+    <ClCompile Include="engine.c" />
+    <ClCompile Include="game.c" />
+    <ClCompile Include="input.c" />
+    <ClCompile Include="mgl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="physics.c" />
     <ClCompile Include="quicklz.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="a.asm">
-      <FileType>Document</FileType>
-    </MASM>
+    <ClCompile Include="UI.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

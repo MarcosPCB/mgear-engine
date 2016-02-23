@@ -107,7 +107,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 
 int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint8 num_options, uint8 font, size_t font_size, uint32 colorN, uint32 colorS);
 
-int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer, uint8 window_frame));
+int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer, uint8 window_frame);
 
 int8 UICreateWindow2(int32 x, int32 y, UI_POS bpos, int8 layer, uint8 num_avail_options, int16 font_size, int8 num_charsperoption, int8 font);
 
@@ -134,5 +134,7 @@ void UIMain_DrawSystem();
 void UILoadSystem(char *filename);
 
 int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 font_size, int32 color, int8 blocked);
+
+int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, int8 frame, int32 color, int8 blocked);
 
 #endif
