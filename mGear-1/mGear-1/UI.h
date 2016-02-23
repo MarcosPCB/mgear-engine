@@ -137,4 +137,8 @@ int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 
 
 int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, int8 frame, int32 color, int8 blocked);
 
+int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS);
+
+int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS);
+
 #endif

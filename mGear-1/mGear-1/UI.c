@@ -61,6 +61,15 @@ void UILoadSystem(char *filename)
 			if(strcmp(tok,"Close Frame")==NULL)
 				UI_Sys.close_frame=atoi(val);
 
+			if(strcmp(tok,"Scroll Frame0")==NULL)
+				UI_Sys.scroll_frame0=atoi(val);
+			if(strcmp(tok,"Scroll Frame1")==NULL)
+				UI_Sys.scroll_frame1=atoi(val);
+			if(strcmp(tok,"Scroll Up Frame")==NULL)
+				UI_Sys.scroll_up_frame=atoi(val);
+			if(strcmp(tok,"Scroll Down Frame")==NULL)
+				UI_Sys.scroll_down_frame=atoi(val);
+
 		}
 
 		if(UI_Sys.mgg_id==-1)
@@ -325,6 +334,78 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 		else
 			DrawStringUI(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rn,gn,bn,255,font,font_size,font_size,5);
 	}
+
+	return UI_NULLOP;
+}
+
+int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS)
+{
+	int32 text_size;
+	int16 gsize, gsizew;
+
+	uint8 rn, gn, bn, rs, gs, bs;
+
+	rn=colorN>>16;
+	gn=(colorN>>8) & 0xFF;
+	bn=colorN & 0xFF;
+
+	rs=colorS>>16;
+	gs=(colorS>>8) & 0xFF;
+	bs=colorS & 0xFF;
+
+	gsize=(st.fonts[font].size_h_gm*font_size)/FONT_SIZE;
+	gsizew=(st.fonts[font].size_w_gm*font_size)/FONT_SIZE;
+
+	text_size=gsizew*strlen(text);
+
+	if(CheckColisionMouse(x,y,text_size,gsize,0))
+	{
+		DrawStringUI(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
+
+		if(st.mouse1)
+		{
+			st.mouse1=0;
+			return UI_SEL;
+		}
+	}
+	else
+		DrawStringUI(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
+
+	return UI_NULLOP;
+}
+
+int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS)
+{
+	int32 text_size;
+	int16 gsize, gsizew;
+
+	uint8 rn, gn, bn, rs, gs, bs;
+
+	rn=colorN>>16;
+	gn=(colorN>>8) & 0xFF;
+	bn=colorN & 0xFF;
+
+	rs=colorS>>16;
+	gs=(colorS>>8) & 0xFF;
+	bs=colorS & 0xFF;
+
+	gsize=(st.fonts[font].size_h_gm*font_size)/FONT_SIZE;
+	gsizew=(st.fonts[font].size_w_gm*font_size)/FONT_SIZE;
+
+	text_size=gsizew*strlen(text);
+
+	if(CheckColisionMouseWorld(x,y,text_size,gsize,0))
+	{
+		DrawString2(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
+
+		if(st.mouse1)
+		{
+			st.mouse1=0;
+			return UI_SEL;
+		}
+	}
+	else
+		DrawString2(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
 
 	return UI_NULLOP;
 }
