@@ -110,6 +110,7 @@ struct _mEng
 	Pos lightmapsize;
 
 	unsigned char *tmplightdata;
+	unsigned char *tmplightdata2;
 
 	struct Light
 	{
