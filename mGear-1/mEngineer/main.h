@@ -50,6 +50,7 @@
 #define EDIT_LIGHT_LIGHTMAP_BOX 37
 #define EDIT_LIGHTMAP2 39
 #define CREATE_LIGHTMAP_STEP2 38
+#define REMOVE_LIGHTMAP 40
 
 struct _mEng
 {

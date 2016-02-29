@@ -40,6 +40,14 @@ typedef struct
 
 typedef struct
 {
+	uint8 r;
+	uint8 g;
+	uint8 b;
+	uint16 a;
+} ColorA16;
+
+typedef struct
+{
 	float r;
 	float g;
 	float b;

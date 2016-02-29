@@ -715,6 +715,8 @@ struct _GAME_LIGHTMAPS_
 	int16 ang;
 
 	uint8 alpha;
+
+	Color ambient_color;
 };
 
 typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
@@ -917,7 +919,7 @@ uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
 
 //Faster square root
-double mSqrt(double x);
+float mSqrt(float x);
 
 //Faster than math.h functions
 float mCos(int16 ang);

@@ -54,7 +54,7 @@ const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 #define timer SDL_Delay
 
 //Faster square root
-double mSqrt(double x)
+float mSqrt(float x)
 {
 	_asm fld x
 	_asm fsqrt
@@ -446,9 +446,9 @@ uint8 FillAlphaLight(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, u
 
 uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type)
 {
-	uint16 i, j;
-	double d, att;
-	uint16 col;
+	register uint16 i, j;
+	float d, att;
+	register uint16 col;
 
 	if(!data)
 		return 0;
@@ -460,12 +460,9 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
 			d=mSqrt(d);
 
-			if(d==0)
-				d=1;
+			if(d==0.0f)
+				d=1.0f;
 
-			if(type==POINT_LIGHT_MEDIUM)
-				att=1.0f/(d*falloff);
-			else
 			if(type==POINT_LIGHT_STRONG)
 				att=1.0f/(d*d*falloff);
 			else
@@ -475,6 +472,7 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 				att=1.0f/(d*falloff);
 
 			col=255*att*intensity;
+
 			if(col>255)
 				col=255;
 			
@@ -484,6 +482,7 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 				data[(i*w*4)+(j*4)]+=(unsigned char)col;
 
 			col=b*att*intensity;
+
 			if(col>255)
 				col=255;
 			
@@ -493,6 +492,7 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 				data[(i*w*4)+(j*4)+1]+=(unsigned char)col;
 
 			col=g*att*intensity;
+
 			if(col>255)
 				col=255;
 			
@@ -502,6 +502,7 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 				data[(i*w*4)+(j*4)+2]+=(unsigned char)col;
 				
 			col=r*att*intensity;
+
 			if(col>255)
 				col=255;
 			
@@ -518,10 +519,10 @@ uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, ui
 
 uint32 AddSpotlightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang)
 {
-	uint16 i, j;
-	double d, att;
+	register uint16 i, j;
+	float d, att;
 	float angle, angle2;
-	uint16 col;
+	register uint16 col;
 
 	if(!data)
 		return 0;
@@ -536,9 +537,6 @@ uint32 AddSpotlightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r
 			if(d==0)
 				d=1;
 
-			if(type==SPOTLIGHT_MEDIUM)
-				att=1.0f/(d*falloff);
-			else
 			if(type==SPOTLIGHT_STRONG)
 				att=1.0f/(d*d*falloff);
 			else
@@ -613,7 +611,7 @@ GLuint GenerateAlphaLightTexture(unsigned char* data, uint16 w, uint16 h)
 	glGenTextures(1,&tex);
 	glBindTexture(GL_TEXTURE_2D,tex);
 
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_BGRA,GL_UNSIGNED_BYTE,data);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -630,7 +628,7 @@ uint8 AddLightToAlphaTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 
 
 	glBindTexture(GL_TEXTURE_2D,*tex);
 
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_BGRA,GL_UNSIGNED_BYTE,data);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -652,7 +650,7 @@ unsigned char *GenerateLightmap(uint16 w, uint16 h)
 
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h)
 {
-	uint16 i, j;
+	register uint16 i, j;
 
 	if(!data)
 		return NULL;
@@ -672,9 +670,9 @@ uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uin
 
 uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type)
 {
-	uint16 i, j;
-	double d, att;
-	uint16 col;
+	register uint16 i, j;
+	float d, att;
+	register uint16 col;
 
 	if(!data)
 		return 0;
@@ -683,26 +681,23 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 	{
 		for(j=0;j<w;j++)
 		{
+			att=1.0f;
+
 			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
 			d=mSqrt(d);
 
-			if(d==0)
-				d=1;
+			if(d==0.0f)
+				d=1.0f;
 
-			if(type==POINT_LIGHT_MEDIUM)
-				att=1.0f/(d*falloff);
-			else
 			if(type==POINT_LIGHT_STRONG)
-				att=1.0f/(d*d*falloff);
+				att/=(d*d*falloff);
 			else
 			if(type==POINT_LIGHT_NORMAL)
-				att=1.0f/(1.0f + falloff * (d*d));
+				att/=(1.0f + falloff * (d*d));
 			else
-				att=1.0f/(d*falloff);
+				att/=(d*falloff);
 
 			col=b*att*intensity;
-			if(col>255)
-				col=255;
 			
 			if((data[(i*w*3)+(j*3)]+col)>255)
 				data[(i*w*3)+(j*3)]=255;
@@ -710,8 +705,6 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 				data[(i*w*3)+(j*3)]+=(unsigned char)col;
 
 			col=g*att*intensity;
-			if(col>255)
-				col=255;
 			
 			if((data[(i*w*3)+(j*3)+1]+col)>255)
 				data[(i*w*3)+(j*3)+1]=255;
@@ -719,8 +712,6 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
 				
 			col=r*att*intensity;
-			if(col>255)
-				col=255;
 			
 			if((data[(i*w*3)+(j*3)+2]+col)>255)
 				data[(i*w*3)+(j*3)+2]=255;
@@ -735,10 +726,10 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 
 uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, float intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang)
 {
-	uint16 i, j;
-	double d, att;
+	register  i, j;
+	float d, att;
 	float angle, angle2;
-	uint16 col;
+	register uint16 col;
 
 	if(!data)
 		return 0;
@@ -753,9 +744,6 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 			if(d==0)
 				d=1;
 
-			if(type==SPOTLIGHT_MEDIUM)
-				att=1.0f/(d*falloff);
-			else
 			if(type==SPOTLIGHT_STRONG)
 				att=1.0f/(d*d*falloff);
 			else
@@ -4572,6 +4560,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 		if(z>15)
 		{
+			/*
 			ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
 			ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
 
@@ -4583,6 +4572,19 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 			ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
 			ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+			*/
+
+			ent[i].texcorlight[0]=(float) tx1-(linewidth*mSin(ang));
+			ent[i].texcorlight[1]=(float) ty1+(linewidth*mCos(ang));
+
+			ent[i].texcorlight[2]=(float) tx2-(linewidth*mSin(ang));
+			ent[i].texcorlight[3]=(float) ty2+(linewidth*mCos(ang));
+
+			ent[i].texcorlight[4]=(float) tx2+(linewidth*mSin(ang));
+			ent[i].texcorlight[5]=(float) ty2-(linewidth*mCos(ang));
+
+			ent[i].texcorlight[6]=(float) tx1+(linewidth*mSin(ang));
+			ent[i].texcorlight[7]=(float) ty1-(linewidth*mCos(ang));
 
 			WTSf(&ent[i].texcorlight[0],&ent[i].texcorlight[1]);
 			WTSf(&ent[i].texcorlight[2],&ent[i].texcorlight[3]);
