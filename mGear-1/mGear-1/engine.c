@@ -5523,7 +5523,7 @@ uint32 PlayMovie(const char *name)
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
 	unsigned int ms, ms1, ms2, o;
 	int ms3;
-	 uint32 i=0;
+	 uint32 i=0, j=0;
 	char header[21];
 	GLint unif;
 
@@ -5635,8 +5635,11 @@ uint32 PlayMovie(const char *name)
 
 	st.PlayingVideo=1;
 
-	//glDisable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+
+	glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(st.renderer.Program[2]);
 	glBindVertexArray(vbd.vao_id);
@@ -5660,14 +5663,10 @@ uint32 PlayMovie(const char *name)
 		InputProcess();
 
 		if(st.quit) break;
-		//glClearColor(0.0,0.0,0.0,0.0);
 		
 		glClear(GL_COLOR_BUFFER_BIT);
-		//glLoadIdentity();
-
-		//glPushMatrix();
-
-		//glColor4f(1.0,1.0,1.0,1.0f);
+		
+		ms1=GetTicks();
 		
 		FMOD_System_Update(st.sound_sys.Sound_System);
 		
@@ -5677,14 +5676,22 @@ uint32 PlayMovie(const char *name)
 		
 		FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
 
-		if((ms/mgv->fps)>i+1000) FMOD_Channel_SetPosition(ch,i*mgv->fps,FMOD_TIMEUNIT_MS);
+		ms2=ms-(j*(1000/mgv->fps));
+		ms3=(j*(1000/mgv->fps))-ms;
 
-		if(i>mgv->num_frames-1) break;
+		if(ms2 > 30)
+		{
+			free(mgv->frames[i].buffer);
+			SDL_FreeRW(mgv->frames[i].rw);
+			SDL_FreeSurface(mgv->frames[i].data);
+			glDeleteTextures(1,&mgv->frames[i].ID);
 
-		ms1=GetTicks();
+			i=j;
 
-		rewind(mgv->file);
-		fseek(mgv->file,mgv->seeker[i],SEEK_SET);
+			if(i>mgv->num_frames-1) break;
+
+			rewind(mgv->file);
+			fseek(mgv->file,mgv->seeker[i],SEEK_SET);
 
 			mgv->frames[i].buffer=malloc(mgv->framesize[i]);
 
@@ -5700,69 +5707,73 @@ uint32 PlayMovie(const char *name)
 
 			mgv->frames[i].data=IMG_LoadJPG_RW(mgv->frames[i].rw);
 
-			//glEnable(GL_TEXTURE_RECTANGLE);
+			glGenTextures(1,&mgv->frames[i].ID);
+			glBindTexture(GL_TEXTURE_2D,mgv->frames[i].ID);
+			glTexImage2D(GL_TEXTURE_2D,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
+
+			glGenerateMipmap(GL_TEXTURE_2D);
+		}
+		
+		if(ms3 < 30 && ms2 < 30)
+		{
+			if(j>0)
+			{
+				free(mgv->frames[i].buffer);
+				SDL_FreeRW(mgv->frames[i].rw);
+				SDL_FreeSurface(mgv->frames[i].data);
+				glDeleteTextures(1,&mgv->frames[i].ID);
+
+				i++;
+			}
+
+			if(i>mgv->num_frames-1) break;
+
+			rewind(mgv->file);
+			fseek(mgv->file,mgv->seeker[i],SEEK_SET);
+
+			mgv->frames[i].buffer=malloc(mgv->framesize[i]);
+
+			if(mgv->frames[i].buffer==NULL)
+			{
+				LogApp("Unable to allocate memory for MGV frame %d",i);
+				continue;
+			}
+
+			fread(mgv->frames[i].buffer,mgv->framesize[i],1,mgv->file);
+
+			mgv->frames[i].rw=SDL_RWFromMem(mgv->frames[i].buffer,mgv->framesize[i]);
+
+			mgv->frames[i].data=IMG_LoadJPG_RW(mgv->frames[i].rw);
 
 			glGenTextures(1,&mgv->frames[i].ID);
 			glBindTexture(GL_TEXTURE_2D,mgv->frames[i].ID);
 			glTexImage2D(GL_TEXTURE_2D,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
 
 			glGenerateMipmap(GL_TEXTURE_2D);
+		}
 
-			glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
-			/*
-			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
-			glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_RECTANGLE,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-
-			glBegin(GL_TRIANGLES);
-				glTexCoord2i(0,0);
-				glVertex2d(0,0);
-				glTexCoord2i(mgv->frames[i].data->w,0);
-				glVertex2d(st.screenx,0);
-				glTexCoord2i(mgv->frames[i].data->w,mgv->frames[i].data->h);
-				glVertex2d(st.screenx, st.screeny);
-
-				glTexCoord2i(mgv->frames[i].data->w,mgv->frames[i].data->h);
-				glVertex2d(st.screenx, st.screeny);
-				glTexCoord2i(0,mgv->frames[i].data->h);
-				glVertex2d(0,st.screeny);
-				glTexCoord2i(0,0);
-				glVertex2d(0,0);
-			glEnd();
-
-			glPopMatrix();
-			*/
-
-			SDL_GL_SwapWindow(wn);
 			
-			
-			free(mgv->frames[i].buffer);
-			SDL_FreeRW(mgv->frames[i].rw);
-			SDL_FreeSurface(mgv->frames[i].data);
-			glDeleteTextures(1,&mgv->frames[i].ID);
+		j++;
 
-			i++;
+		SDL_GL_SwapWindow(wn);
 
-			ms2=GetTicks();
+		ms2=GetTicks();
 
-			ms3=ms2-ms1;
+		ms3=ms2-ms1;
 
-			ms3=(1000/mgv->fps)-ms3;
+		ms3=(1000/(mgv->fps+1))-ms3;
 
-			if(ms3<0) ms3=0;
+		if(ms3<0) ms3=0;
 
-			SDL_Delay(ms3);
+		SDL_Delay(ms3);
 
-			if(st.FPSYes)
-				FPSCounter();
+		if(st.FPSYes)
+			FPSCounter();
 		
 	}
 
-	//glDisable(GL_TEXTURE_RECTANGLE);
-
-	//glDisable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 
 	glUseProgram(0);

@@ -80,7 +80,7 @@ extern SDL_Window *wn;
 #define PERIOD_KEY 72
 #define SEMICOLON_KEY 73
 #define CAPSLOCK_KEY 74
-
+#define DELETE_KEY 75
 
 
 //Init input

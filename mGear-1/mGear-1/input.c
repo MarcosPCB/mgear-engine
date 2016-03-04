@@ -79,6 +79,7 @@ void InputInit()
 	st.keys[72].key=SDL_SCANCODE_PERIOD;
 	st.keys[73].key=SDL_SCANCODE_SEMICOLON;
 	st.keys[74].key=SDL_SCANCODE_CAPSLOCK;
+	st.keys[75].key=SDL_SCANCODE_DELETE;
 
 	num=SDL_NumJoysticks();
 
@@ -191,8 +192,18 @@ void InputProcess()
 				if(st.keys[BACKSPACE_KEY].state && st.Text_Input)
 				{
 					len=strlen(st.TextInput);
-					st.TextInput[len]='\b';
-					st.TextInput[len-1]='\0';
+
+					if(len>1)
+					{
+						st.TextInput[len]='\b';
+						st.TextInput[len-1]='\0';
+					}
+					else
+					if(len==1)
+					{
+						st.TextInput[0]='\0';
+					}
+
 					st.keys[BACKSPACE_KEY].state=0;
 				}
 				

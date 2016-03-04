@@ -1339,6 +1339,20 @@ static void PannelLeft()
 			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
 			DrawString2(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
 
+			if(st.keys[DELETE_KEY].state)
+			{
+				st.Current_Map.sprites[meng.sprite_edit_selection].stat=0;
+
+				if(meng.sprite_edit_selection<st.Current_Map.num_sprites-1)
+				{
+					for(j=meng.sprite_edit_selection;j<st.Current_Map.num_sprites;j++)
+						memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
+				}
+
+				st.Current_Map.num_sprites--;
+				st.keys[DELETE_KEY].state=0;
+			}
+
 			if(st.keys[RETURN_KEY].state && meng.command!=SPRITE_EDIT_BOX && meng.command!=RGB_SPRITE && meng.command!=SPRITE_PHY && meng.command!=SPRITE_TAG)
 			{
 				meng.command=SPRITE_EDIT_BOX;
@@ -2066,6 +2080,20 @@ static void PannelLeft()
 
 		sprintf(str,"%d",st.Current_Map.obj[i].size.y);
 		DrawString2(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
+
+		if(st.keys[DELETE_KEY].state)
+		{
+			st.Current_Map.obj[i].type=BLANK;
+
+			if(i<st.Current_Map.num_obj-1)
+			{
+				for(j=i;j<st.Current_Map.num_obj;j++)
+					memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
+			}
+
+			st.Current_Map.num_obj--;
+			st.keys[DELETE_KEY].state=0;
+		}
 
 		if(st.keys[RETURN_KEY].state && meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_EDIT_BOX && meng.command!=RGB_OBJ)
 		{
@@ -3603,6 +3631,32 @@ static void ViewPortCommands()
 				LogApp("Sector added");
 				st.mouse1=0;
 			}
+			
+			if(st.mouse2)
+			{
+				if(st.Current_Map.num_sector<MAX_SECTORS)
+				{
+					for(i=0;i<MAX_SECTORS;i++)
+					{
+						if(st.Current_Map.sector[i].id!=-1 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,256,256,0))
+						{
+							st.Current_Map.sector[i].id=-1;
+
+							if(i<st.Current_Map.num_sector-1)
+							{
+								for(j=i;j<st.Current_Map.num_sector;j++)
+									memcpy(&st.Current_Map.sector[j],&st.Current_Map.sector[j+1],sizeof(_SECTOR));
+							}
+
+							st.Current_Map.num_sector--;
+
+							break;
+						}
+					}
+				}
+				LogApp("Sector Removed");
+				st.mouse2=0;
+			}
 		}
 		else
 		if(meng.command==SELECT_EDIT)
@@ -3654,6 +3708,22 @@ static void ViewPortCommands()
 
 							st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
 							st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
+
+							if(st.keys[DELETE_KEY].state)
+							{
+								st.Current_Map.sector[i].id=-1;
+
+								if(i<st.Current_Map.num_sector-1)
+								{
+									for(j=i;j<st.Current_Map.num_sector;j++)
+										memcpy(&st.Current_Map.sector[j],&st.Current_Map.sector[j+1],sizeof(_SECTOR));
+								}
+
+								st.Current_Map.num_sector--;
+								st.keys[DELETE_KEY].state=0;
+
+								break;
+							}
 
 							got_it=1;
 							break;
@@ -3865,6 +3935,33 @@ static void ViewPortCommands()
 				LogApp("Object added");
 				st.mouse1=0;
 			}
+			
+			if(st.mouse2)
+			{
+				if(st.Current_Map.num_obj<MAX_OBJS)
+				{
+					for(i=0;i<MAX_OBJS;i++)
+					{
+						if(st.Current_Map.obj[i].type!=BLANK && CheckColisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
+							st.Current_Map.obj[i].angle))
+						{
+							st.Current_Map.obj[i].type=BLANK;
+
+							if(i<st.Current_Map.num_obj-1)
+							{
+								for(j=i;j<st.Current_Map.num_obj;j++)
+									memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
+							}
+
+							st.Current_Map.num_obj--;
+							break;
+						}
+					}
+				}
+
+				LogApp("Object removed");
+				st.mouse2=0;
+			}
 		}
 		else
 		if(meng.command==ADD_SPRITE)
@@ -3912,6 +4009,34 @@ static void ViewPortCommands()
 
 							LogApp("Sprite Added");
 							st.mouse1=0;
+
+							break;
+						}
+					}
+				}
+			}
+			
+			if(st.mouse2)
+			{
+				if(st.Current_Map.num_sprites<MAX_SPRITES)
+				{
+					for(i=0;i<MAX_SPRITES;i++)
+					{
+						if(st.Current_Map.sprites[i].stat!=0 && CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
+							st.Current_Map.sprites[i].body.ang))
+						{
+							st.Current_Map.sprites[i].stat=0;
+
+							if(i<st.Current_Map.num_sprites-1)
+							{
+								for(j=i;j<st.Current_Map.num_sprites;j++)
+									memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
+							}
+
+							st.Current_Map.num_sprites--;
+
+							LogApp("Sprite removed");
+							st.mouse2=0;
 
 							break;
 						}
@@ -6663,7 +6788,7 @@ int main(int argc, char *argv[])
 		{
 			if(st.keys[SPACE_KEY].state)
 			{
-				PlayMovie("LOGOHD.MGV");
+				PlayMovie("TEN2.MGV");
 				st.keys[SPACE_KEY].state=0;
 			}
 
