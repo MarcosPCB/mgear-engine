@@ -4049,18 +4049,31 @@ static void ViewPortCommands()
 		{
 			if(st.num_lights>0)
 			{
-				DrawStringUI("Select a lightmao to be deleted",8192,8192-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				DrawStringUI("Select a lightmap to be deleted",8192,8192-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				for(j=1;j<=st.num_lights;j++)
 				{
 					if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang) && st.mouse1)
 					{
-						st.num_lights--;
 						st.game_lightmaps[j].num_lights=0;
 						free(st.game_lightmaps[j].data);
 						glDeleteTextures(1,&st.game_lightmaps[j].tex);
 						st.Current_Map.obj[st.game_lightmaps[j].obj_id].lightmapid=-1;
 						st.game_lightmaps[j].obj_id=-1;
+						st.game_lightmaps[j].stat=0;
+
+						if(j<=st.num_lights-1)
+						{
+							for(k=j;k<=st.num_lights-1;k++)
+							{
+								memcpy(&st.game_lightmaps[k],&st.game_lightmaps[k+1],sizeof(_GAME_LIGHTMAPS));
+								free(st.game_lightmaps[k+1].data);
+								st.game_lightmaps[k+1].stat=0;
+								st.Current_Map.obj[st.game_lightmaps[k].obj_id].lightmapid=k;
+							}
+						}
+
+						st.num_lights--;
 
 						LogApp("Removed lightmap %d", j);
 
@@ -4175,13 +4188,13 @@ static void ViewPortCommands()
 						if(st.mouse_wheel>0)
 						{
 							st.mouse_wheel=0;
-							meng.light.falloff+=0.1;
+							st.game_lightmaps[i].falloff[temp]+=0.1;
 						}
 						else
 						if(st.mouse_wheel<0)
 						{
 							st.mouse_wheel=0;
-							meng.light.falloff-=0.1;
+							st.game_lightmaps[i].falloff[temp]-=0.1;
 						}
 
 
@@ -4224,7 +4237,7 @@ static void ViewPortCommands()
 
 					}
 
-					if(st.keys[LSHIFT_KEY].state)
+					if(st.keys[LSHIFT_KEY].state && st.game_lightmaps[i].type[temp]>3)
 					{
 						if(st.mouse_wheel>0)
 						{
@@ -4390,7 +4403,7 @@ static void ViewPortCommands()
 							meng.light.color.r=255;
 							meng.light.color.g=255;
 							meng.light.color.b=255;
-							meng.light.intensity=255.0f;
+							meng.light.intensity=255;
 							meng.light.type=POINT_LIGHT_MEDIUM;
 
 							if(st.game_lightmaps[i].alpha)
@@ -5076,7 +5089,7 @@ static void ViewPortCommands()
 				{
 					if(CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
 					{
-						if(st.mouse1)
+						if(st.mouse1 && st.Current_Map.obj[j].lightmapid==-1)
 						{
 							meng.obj_lightmap_sel=j;
 							st.mouse1=0;
@@ -5723,7 +5736,6 @@ static void ViewPortCommands()
 					meng.light.falloff-=0.1;
 				}
 
-
 				if(st.game_lightmaps[i].alpha)
 				{
 					memcpy(meng.tmplightdata,st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4);
@@ -5763,7 +5775,7 @@ static void ViewPortCommands()
 
 			}
 
-			if(st.keys[LSHIFT_KEY].state)
+			if(st.keys[LSHIFT_KEY].state && st.game_lightmaps[i].type[meng.light.light_id]>3)
 			{
 				if(st.mouse_wheel>0)
 				{
@@ -5985,7 +5997,7 @@ static void ViewPortCommands()
 						meng.light.color.r=255;
 						meng.light.color.g=255;
 						meng.light.color.b=255;
-						meng.light.intensity=255.0f;
+						meng.light.intensity=255;
 						meng.light.type=POINT_LIGHT_MEDIUM;
 
 						if(st.game_lightmaps[i].alpha)
@@ -6436,7 +6448,7 @@ static void ViewPortCommands()
 			st.Camera.position.x-=64;
 		}
 
-		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP)
+		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2)
 		{
 			if(st.mouse_wheel>0 && !st.mouse2)
 			{
