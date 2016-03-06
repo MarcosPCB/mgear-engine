@@ -97,6 +97,8 @@ struct _UI_SYSTEM
 	int8 mgg_id2; //for usermade UI frames and icons
 	int8 *frames;
 	int8 num_usermade;
+
+	int8 resize_cursor;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;
@@ -140,5 +142,9 @@ int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, 
 int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS);
 
 int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS);
+
+int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang);
+
+void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b);
 
 #endif

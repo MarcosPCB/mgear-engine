@@ -969,6 +969,8 @@ static void PannelLeft()
 		{
 			DrawUI(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
+			Sys_ColorPicker(&meng.spr.color.r,&meng.spr.color.g,&meng.spr.color.b);
+
 			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"R %d",meng.spr.color.r);
@@ -1107,10 +1109,10 @@ static void PannelLeft()
 				}
 			}
 
-			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
+			if(st.keys[RETURN_KEY].state)
 			{
 				meng.command=meng.pannel_choice;
-				st.mouse1=0;
+				st.keys[RETURN_KEY].state=0;
 			}
 		}
 
@@ -1353,11 +1355,8 @@ static void PannelLeft()
 				st.keys[DELETE_KEY].state=0;
 			}
 
-			if(st.keys[RETURN_KEY].state && meng.command!=SPRITE_EDIT_BOX && meng.command!=RGB_SPRITE && meng.command!=SPRITE_PHY && meng.command!=SPRITE_TAG)
-			{
+			if(UIStringButton(465,4000,"Edit pos",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 				meng.command=SPRITE_EDIT_BOX;
-				st.keys[RETURN_KEY].state=0;
-			}
 
 			if(meng.command==SPRITE_EDIT_BOX)
 			{
@@ -1697,6 +1696,8 @@ static void PannelLeft()
 		{
 			DrawUI(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
+			Sys_ColorPicker(&st.Current_Map.sprites[meng.sprite_edit_selection].color.r,&st.Current_Map.sprites[meng.sprite_edit_selection].color.g,&st.Current_Map.sprites[meng.sprite_edit_selection].color.b);
+
 			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"R %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.r);
@@ -1835,10 +1836,10 @@ static void PannelLeft()
 				}
 			}
 
-			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
+			if(st.keys[RETURN_KEY].state)
 			{
 				meng.command=meng.pannel_choice;
-				st.mouse1=0;
+				st.keys[RETURN_KEY].state=0;
 			}
 		}
 
@@ -2081,6 +2082,10 @@ static void PannelLeft()
 		sprintf(str,"%d",st.Current_Map.obj[i].size.y);
 		DrawString2(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
 
+		if(UIStringButton(465,4000,"Edit pos.",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+			meng.command=OBJ_EDIT_BOX;
+		
+
 		if(st.keys[DELETE_KEY].state)
 		{
 			st.Current_Map.obj[i].type=BLANK;
@@ -2093,12 +2098,6 @@ static void PannelLeft()
 
 			st.Current_Map.num_obj--;
 			st.keys[DELETE_KEY].state=0;
-		}
-
-		if(st.keys[RETURN_KEY].state && meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_EDIT_BOX && meng.command!=RGB_OBJ)
-		{
-			meng.command=OBJ_EDIT_BOX;
-			st.keys[RETURN_KEY].state=0;
 		}
 
 		if(meng.command==OBJ_EDIT_BOX)
@@ -2359,6 +2358,8 @@ static void PannelLeft()
 
 			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
 
+			Sys_ColorPicker(&meng.obj2.color.r,&meng.obj2.color.g,&meng.obj2.color.b);
+
 			sprintf(str,"R %d",meng.obj2.color.r);
 
 			if(meng.sub_com!=1)
@@ -2495,14 +2496,12 @@ static void PannelLeft()
 				}
 			}
 
-			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
+			if(st.keys[RETURN_KEY].state)
 			{
 				meng.command=meng.pannel_choice;
-				st.mouse1=0;
+				st.keys[RETURN_KEY].state=0;
 			}
 		}
-
-
 
 		sprintf(str,"Light %.2f",meng.obj2.amblight);
 
@@ -2936,6 +2935,8 @@ static void PannelLeft()
 
 			DrawStringUI(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
 
+			Sys_ColorPicker(&meng.obj.color.r,&meng.obj.color.g,&meng.obj.color.b);
+
 			sprintf(str,"R %d",meng.obj.color.r);
 
 			if(meng.sub_com!=1)
@@ -3072,10 +3073,10 @@ static void PannelLeft()
 				}
 			}
 
-			if(!CheckColisionMouse(465,2445,810,217,0) && st.mouse1)
+			if(st.keys[RETURN_KEY].state)
 			{
 				meng.command=meng.pannel_choice;
-				st.mouse1=0;
+				st.keys[RETURN_KEY].state=0;
 			}
 		}
 
@@ -3589,6 +3590,16 @@ static void ViewPortCommands()
 	float tmp;
 	static int16 temp;
 
+	if(meng.command!=DRAW_SECTOR2 && meng.sector_adding==1)
+	{
+		st.Current_Map.num_sector--;
+		meng.sub_com=0;
+		st.Current_Map.sector[meng.com_id].id=-1;
+		st.Current_Map.sector[meng.com_id].num_vertexadded=0;
+		meng.com_id=0;
+		meng.sector_adding=0;
+	}	
+
 	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL)
 	{
 		if(meng.command==DRAW_SECTOR)
@@ -3601,34 +3612,26 @@ static void ViewPortCommands()
 					{
 						if(st.Current_Map.sector[i].id==-1)
 						{
-							st.Current_Map.sector[i].id=i;
+							st.Current_Map.sector[i].id=1;
 
-							st.Current_Map.sector[i].position.x=st.mouse.x;
-							st.Current_Map.sector[i].position.y=st.mouse.y;
-							STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
-
-							st.Current_Map.sector[i].vertex[0].x=st.mouse.x-64;
-							st.Current_Map.sector[i].vertex[0].y=st.mouse.y-64;
+							st.Current_Map.sector[i].vertex[0]=st.mouse;
 							STW(&st.Current_Map.sector[i].vertex[0].x,&st.Current_Map.sector[i].vertex[0].y);
 
-							st.Current_Map.sector[i].vertex[1].x=st.mouse.x+64;
-							st.Current_Map.sector[i].vertex[1].y=st.mouse.y-64;
-							STW(&st.Current_Map.sector[i].vertex[1].x,&st.Current_Map.sector[i].vertex[1].y);
-
-							st.Current_Map.sector[i].vertex[2].x=st.mouse.x+64;
-							st.Current_Map.sector[i].vertex[2].y=st.mouse.y+64;
-							STW(&st.Current_Map.sector[i].vertex[2].x,&st.Current_Map.sector[i].vertex[2].y);
-
-							st.Current_Map.sector[i].vertex[3].x=st.mouse.x-64;
-							st.Current_Map.sector[i].vertex[3].y=st.mouse.y+64;
-							STW(&st.Current_Map.sector[i].vertex[3].x,&st.Current_Map.sector[i].vertex[3].y);
+							st.Current_Map.sector[i].num_vertexadded=1;
 
 							st.Current_Map.num_sector++;
+
+							meng.command=DRAW_SECTOR2;
+
+							meng.sector_adding=1;
+
+							meng.sub_com=1;
+							meng.com_id=i;
 							break;
 						}
 					}
 				}
-				LogApp("Sector added");
+				LogApp("First Sector vertex added");
 				st.mouse1=0;
 			}
 			
@@ -3656,6 +3659,78 @@ static void ViewPortCommands()
 				}
 				LogApp("Sector Removed");
 				st.mouse2=0;
+			}
+		}
+		else
+		if(meng.command==DRAW_SECTOR2)
+		{
+			i=meng.com_id;
+
+			if(st.mouse1)
+			{
+				if(meng.sub_com<4)
+				{
+					st.Current_Map.sector[i].vertex[meng.sub_com]=st.mouse;
+					STW(&st.Current_Map.sector[i].vertex[meng.sub_com].x,&st.Current_Map.sector[i].vertex[meng.sub_com].y);
+
+					st.Current_Map.sector[i].num_vertexadded++;
+
+					st.mouse1=0;
+					meng.sub_com++;
+
+					LogApp("Added Sector vertex %d",meng.sub_com);
+				}
+				else
+				if(meng.sub_com==4)
+				{
+					st.Current_Map.sector[i].position=st.mouse;
+					STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
+
+					st.Current_Map.sector[i].num_vertexadded++;
+
+					meng.command=SELECT_EDIT;
+					meng.pannel_choice=SELECT_EDIT;
+					meng.sub_com=0;
+					meng.com_id=0;
+
+					st.mouse1=0;
+
+					meng.sector_adding=0;
+
+					LogApp("Sector Added");
+				}
+			}
+			
+			if(st.mouse2)
+			{
+				if(meng.sub_com)
+				{
+					st.Current_Map.sector[i].num_vertexadded--;
+
+					if(meng.sub_com==1)
+					{
+						st.Current_Map.sector[i].id=-1;
+
+						LogApp("Sector removed");
+
+						st.Current_Map.num_sector--;
+
+						meng.sub_com=0;
+						meng.com_id=0;
+						meng.command=DRAW_SECTOR;
+
+					}
+					else
+					{
+						LogApp("Sector vertex %d removed",meng.sub_com);
+
+						meng.sub_com--;
+
+						meng.sector_adding=0;
+					}
+
+					st.mouse2=0;
+				}
 			}
 		}
 		else
@@ -3807,6 +3882,9 @@ static void ViewPortCommands()
 			{
 				for(i=0;i<st.Current_Map.num_obj;i++)
 				{
+					if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle))
+						break;
+
 					if(got_it) break;
 
 					if(CheckColisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,st.Current_Map.obj[i].angle))
@@ -4537,6 +4615,8 @@ static void ViewPortCommands()
 				if(meng.com_id==1)
 				{
 					//DrawString2("Edit light",p.x,p.y,0,0,0,255,32,32,255,ARIAL,1536,1536,0);
+
+					Sys_ColorPicker(&st.game_lightmaps[i].color[temp].r,&st.game_lightmaps[i].color[temp].g,&st.game_lightmaps[i].color[temp].b);
 
 					DrawUI(8192,4300,3072,3900,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
@@ -5420,6 +5500,8 @@ static void ViewPortCommands()
 			else
 				DrawStringUI(str,8192,4096-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
+			Sys_ColorPicker(&meng.lightmap_color.r,&meng.lightmap_color.g,&meng.lightmap_color.b);
+
 			sprintf(str,"R %d",meng.lightmap_color.r);
 
 			if(CheckColisionMouse(8192,4096-(341*2),341,341,0))
@@ -6030,6 +6112,8 @@ static void ViewPortCommands()
 			{
 				//DrawString2("Edit light",p.x,p.y,0,0,0,255,32,32,255,ARIAL,1536,1536,0);
 
+				Sys_ColorPicker(&meng.light.color.r,&meng.light.color.g,&meng.light.color.b);
+
 				DrawUI(8192,4300,3072,3900,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
 				sprintf(str,"R %d",meng.light.color.r);
@@ -6550,7 +6634,7 @@ static void ENGDrawLight()
 		texture.normal=0;
 		texture.vb_id=-1;
 
-		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,255,0,0,32768,32768,17);
+		//DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,255,0,0,32768,32768,17);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
 			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),

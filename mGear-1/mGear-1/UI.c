@@ -70,6 +70,9 @@ void UILoadSystem(char *filename)
 			if(strcmp(tok,"Scroll Down Frame")==NULL)
 				UI_Sys.scroll_down_frame=atoi(val);
 
+			if(strcmp(tok,"Resize Cursor Frame")==NULL)
+				UI_Sys.resize_cursor=atoi(val);
+
 		}
 
 		if(UI_Sys.mgg_id==-1)
@@ -104,6 +107,9 @@ void UILoadSystem(char *filename)
 		if(UI_Sys.close_frame==-1)
 			UI_Sys.close_frame=13;
 
+		if(UI_Sys.resize_cursor==-1)
+			UI_Sys.resize_cursor=6;
+
 
 		fclose(file);
 
@@ -124,6 +130,7 @@ void UILoadSystem(char *filename)
 		UI_Sys.subwindow_frame0=14;
 		UI_Sys.subwindow_frame1=15;
 		UI_Sys.subwindow_frame2=16;
+		UI_Sys.resize_cursor=6;
 
 		LogApp("UI system loaded");
 	}
@@ -1085,6 +1092,7 @@ int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, 
 void UIMain_DrawSystem()
 {
 	register uint8 i;
+	Pos p;
 
 	if(st.num_uiwindow!=0)
 	{
@@ -1100,4 +1108,247 @@ void UIMain_DrawSystem()
 				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
 		}
 	}
+
+	if(st.cursor_type!=0)
+	{
+		SDL_ShowCursor(SDL_DISABLE);
+		
+		p=st.mouse;
+
+		STW(&p.x,&p.y);
+
+		if(st.cursor_type==1)
+			DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		else
+		if(st.cursor_type==2)
+			DrawUI(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		else
+		if(st.cursor_type==3)
+			DrawUI(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		else
+		if(st.cursor_type==4)
+			DrawUI(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+	}
+	else
+		SDL_ShowCursor(SDL_ENABLE);
 }
+
+
+int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang)
+{
+	static uint8 controller=0;
+	int32 sx=*sizex/2, sy=*sizey/2;
+	static Pos size, size2;
+
+	//Vertices first
+
+	if(st.mouse1)
+	{
+		if(CheckColisionMouse(x-sx,y-sy,256,256,ang) && !controller)
+		{
+			st.cursor_type=CURSOR_RESIZE_DRIGHT;
+
+			size=st.mouse;
+			controller=1;
+		}
+		else
+		if(CheckColisionMouse(x+sx,y-sy,256,256,ang) && !controller)
+		{
+			st.cursor_type=CURSOR_RESIZE_DLEFT;
+
+			size=st.mouse;
+			controller=2;
+		}
+		else
+		if(CheckColisionMouse(x+sx,y+sy,256,256,ang) && !controller)
+		{
+			st.cursor_type=CURSOR_RESIZE_DRIGHT;
+
+			size=st.mouse;
+			controller=3;
+		}
+		else
+		if(CheckColisionMouse(x-sx,y+sy,256,256,ang) && !controller)
+		{
+			st.cursor_type=CURSOR_RESIZE_DLEFT;
+
+			size=st.mouse;
+			controller=4;
+		}
+		else
+		if(CheckColisionMouse(x,y-sy,*sizex,256,ang) && !controller && !keepaspect)
+		{
+			st.cursor_type=CURSOR_RESIZE_VERTICAL;
+
+			size=st.mouse;
+			controller=5;
+		}
+		else
+		if(CheckColisionMouse(x,y+sy,*sizex,256,ang) && !controller && !keepaspect)
+		{
+			st.cursor_type=CURSOR_RESIZE_VERTICAL;
+
+			size=st.mouse;
+			controller=6;
+		}
+		else
+		if(CheckColisionMouse(x-sx,y,256,*sizey,ang) && !controller && !keepaspect)
+		{
+			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
+
+			size=st.mouse;
+			controller=7;
+		}
+		else
+		if(CheckColisionMouse(x+sx,y,256,*sizey,ang) && !controller && !keepaspect)
+		{
+			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
+
+			size=st.mouse;
+			controller=8;
+		}
+		
+		if(controller==1)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizex-=size2.x;
+			*sizey-=size2.y;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==2)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizex+=size2.x;
+			*sizey-=size2.y;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==3)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizex+=size2.x;
+			*sizey+=size2.y;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==4)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizex-=size2.x;
+			*sizey+=size2.y;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==5)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizey-=size2.y;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==6)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizey+=size2.y;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==7)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizex-=size2.x;
+
+			size=st.mouse;
+		}
+		else
+		if(controller==8)
+		{
+			size2=st.mouse;
+
+			size2.x-=size.x;
+			size2.y-=size.y;
+
+			STW(&size2.x,&size2.y);
+
+			*sizex+=size2.x;
+
+			size=st.mouse;
+		}
+	}
+	else
+	{
+		controller=0;
+		st.cursor_type=CURSOR_NORMAL;
+	}
+
+	if(controller>0)
+		return 1;
+	else
+		return 0;
+}
+
+void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b)
+{
+	Pos p;
+
+	DrawUI(14336,1536,4096,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[10],255,0);
+
+	if(CheckColisionMouse(14336,1536,4096,2048,0) && st.mouse1)
+	{
+		p=st.mouse;
+
+		glReadPixels(p.x,st.screeny-p.y-1,1,1,GL_RED,GL_UNSIGNED_BYTE,r);
+		glReadPixels(p.x,st.screeny-p.y-1,1,1,GL_GREEN,GL_UNSIGNED_BYTE,g);
+		glReadPixels(p.x,st.screeny-p.y-1,1,1,GL_BLUE,GL_UNSIGNED_BYTE,b);
+	}
+}
+

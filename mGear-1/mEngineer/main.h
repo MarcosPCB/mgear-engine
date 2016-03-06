@@ -52,6 +52,8 @@
 #define CREATE_LIGHTMAP_STEP2 38
 #define REMOVE_LIGHTMAP 40
 
+#define DRAW_SECTOR2 41
+
 struct _mEng
 {
 	char mgg_list[32][256];
@@ -127,6 +129,8 @@ struct _mEng
 	Color tmp_color;
 
 	char *path;
+
+	int8 sector_adding;
 };
 
 typedef struct _mEng mEng;

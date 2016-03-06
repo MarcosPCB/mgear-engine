@@ -1910,6 +1910,8 @@ SHADER_CREATION:
 
 	st.num_uiwindow=0;
 
+	st.cursor_type=0;
+
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
@@ -3335,6 +3337,117 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 		return 0; //No collision
 	
 }
+
+int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
+{
+	uint8 valx=0, valy=0;
+
+	uint16 i=0, j=0, k=0;
+
+	int32 x3, y3;
+
+	uint32 a1;
+
+	int16 ang;
+
+	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+
+	i=st.num_entities;
+
+	if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+		return 2;
+
+		ent[i].stat=USED;
+		st.num_entities++;
+		ent[i].data.data=DataNT;
+		ent[i].data.vb_id=-1;
+		ent[i].data.channel=0;
+		ent[i].data.normal=0;
+		ent[i].lightmapid=-1;
+
+		if(z>56) z=56;
+		//else if(z<16) z+=16;
+
+		z_buffer[z][z_slot[z]]=i;
+		z_slot[z]++;
+
+		if(z>z_used) z_used=z;
+
+		if(z>15)
+		{
+			for(j=0;j<4;j++)
+			{
+
+				vertex[j].x-=st.Camera.position.x;
+				vertex[j].y-=st.Camera.position.y;
+
+				vertex[j].x*=st.Camera.dimension.x;
+				vertex[j].y*=st.Camera.dimension.y;
+
+			}
+		}
+
+		ent[i].vertex[0]=vertex[0].x;
+		ent[i].vertex[1]=vertex[0].y;
+		ent[i].vertex[2]=z;
+
+		ent[i].vertex[3]=vertex[1].x;
+		ent[i].vertex[4]=vertex[1].y;
+		ent[i].vertex[5]=z;
+
+		ent[i].vertex[6]=vertex[2].x;
+		ent[i].vertex[7]=vertex[2].y;
+		ent[i].vertex[8]=z;
+
+		ent[i].vertex[9]=vertex[3].x;
+		ent[i].vertex[10]=vertex[3].y;
+		ent[i].vertex[11]=z;
+
+		ent[i].texcor[0]=0;
+		ent[i].texcor[1]=0;
+		ent[i].texcor[2]=1;
+		ent[i].texcor[3]=0;
+		ent[i].texcor[4]=1;
+		ent[i].texcor[5]=1;
+		ent[i].texcor[6]=0;
+		ent[i].texcor[7]=1;
+
+
+		ax=(float) 1/(16384/2);
+		ay=(float) 1/(8192/2);
+
+		ay*=-1.0f;
+
+		az=(float) 1/(4096/2);
+
+		for(j=0;j<12;j+=3)
+		{
+			ent[i].vertex[j]*=ax;
+			ent[i].vertex[j]-=1;
+
+			ent[i].vertex[j+1]*=ay;
+			ent[i].vertex[j+1]+=1;
+				
+			ent[i].vertex[j+2]*=az;
+			ent[i].vertex[j+2]-=1;
+				
+		}
+
+		for(j=0;j<16;j+=4)
+		{
+			ent[i].color[j]=r;
+			ent[i].color[j+1]=g;
+			ent[i].color[j+2]=b;
+			ent[i].color[j+3]=a;
+		}
+
+		texone_ids[texone_num]=i;
+		texone_num++;
+	//}
+
+	return 0;
+}
+
 
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z)
 {
@@ -6317,8 +6430,11 @@ void DrawMap()
 	if(st.Developer_Mode)
 	{
 		for(i=0;i<st.Current_Map.num_sector;i++)
-			if(st.Current_Map.sector[i].id>-1)
+		{
+			if(st.Current_Map.sector[i].id>-1 && st.Current_Map.sector[i].num_vertexadded==5)
 			{
+				DrawPolygon(st.Current_Map.sector[i].vertex,255,32,32,128,17);
+
 				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,32,32,255,32,17);
 				DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,32,32,255,32,17);
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,32,32,255,32,17);
@@ -6336,6 +6452,48 @@ void DrawMap()
 
 				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg_sys[0].frames[0],255,0,0,32768,32768,17);
 			}
+			else
+			if(st.Current_Map.sector[i].id>-1 && st.Current_Map.sector[i].num_vertexadded<5)
+			{
+				if(st.Current_Map.sector[i].num_vertexadded==1)
+					DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				else
+				if(st.Current_Map.sector[i].num_vertexadded==2)
+				{
+					DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,32,32,255,32,17);
+
+					DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+					DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				}
+				else
+				if(st.Current_Map.sector[i].num_vertexadded==3)
+				{
+					DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,32,0,255,32,17);
+					DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,32,0,255,32,17);
+					DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,32,0,255,32,17);
+
+					DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+					DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+					DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				}
+				else
+				if(st.Current_Map.sector[i].num_vertexadded==4)
+				{
+					DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,32,0,255,32,17);
+					DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,32,0,255,32,17);
+					DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,32,0,255,32,17);
+					DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,255,32,0,255,32,17);
+
+					DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,255,32,0,255,32,17);
+					DrawLine(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,255,32,0,255,32,17);
+
+					DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+					DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+					DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+					DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,128,32,mgg_sys[0].frames[4],255,0,0,32768,32768,17);
+				}
+			}
+		}
 	}
 
 

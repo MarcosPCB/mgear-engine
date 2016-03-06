@@ -88,6 +88,12 @@ typedef FMOD_CHANNEL Channel;
 
 //#define MAX_MGVFRAMES 65536
 
+#define CURSOR_NORMAL 0
+#define CURSOR_RESIZE_VERTICAL 1
+#define CURSOR_RESIZE_HORIZONTAL 2
+#define CURSOR_RESIZE_DLEFT 3
+#define CURSOR_RESIZE_DRIGHT 4
+
 enum _Enttype
 {
 	SPRITE,
@@ -441,6 +447,7 @@ struct _SECTOR_
 	int16 tag;
 	uint8 destructive : 2;
 	int16 id;
+	uint8 num_vertexadded;
 };
 
 typedef struct _SECTOR_ _SECTOR;
@@ -825,6 +832,8 @@ struct _SETTINGS_
 	float TanTable[3601];
 
 	StringsE strings[MAX_STRINGS];
+
+	uint8 cursor_type;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
@@ -962,6 +971,7 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
+int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z); //Draw a polygon with no lighting or texture data.
 
 int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a);
 
