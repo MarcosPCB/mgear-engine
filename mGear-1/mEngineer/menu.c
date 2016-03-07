@@ -47,6 +47,16 @@ void Menu()
 					if(st.Current_Map.sector)
 						free(st.Current_Map.sector);
 
+					if(st.Current_Map.num_lights>0)
+					{
+						for(i=0;i<st.Current_Map.num_lights;i++)
+						{
+							free(st.game_lightmaps[i].data);
+							st.game_lightmaps[i].obj_id=-1;
+							st.game_lightmaps[i].stat=0;
+						}
+					}
+
 					st.Current_Map.obj=(_MGMOBJ*) malloc(MAX_OBJS*sizeof(_MGMOBJ));
 					st.Current_Map.sector=(_SECTOR*) malloc(MAX_SECTORS*sizeof(_SECTOR));
 					st.Current_Map.sprites=(_MGMSPRITE*) malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
@@ -54,6 +64,7 @@ void Menu()
 					st.Current_Map.num_sector=0;
 					st.Current_Map.num_obj=0;
 					st.Current_Map.num_sprites=0;
+					st.Current_Map.num_lights=0;
 
 					for(i=0;i<MAX_SECTORS;i++)
 					{
@@ -70,7 +81,13 @@ void Menu()
 					}
 
 					for(i=0;i<MAX_SPRITES;i++)
-						st.Current_Map.sprites[i].stat=0;;
+						st.Current_Map.sprites[i].stat=0;
+
+					if(st.Current_Map.num_mgg>0)
+					{
+						for(i=0;i<st.Current_Map.num_mgg;i++)
+							FreeMGG(&mgg_map[i]);
+					}
 
 					memset(st.Current_Map.MGG_FILES,0,32*256);
 					meng.num_mgg-=st.Current_Map.num_mgg;
@@ -174,7 +191,7 @@ void Menu()
 
 			if(num_files>0)
 			{
-				for(j=227;j<227*20;j+=454)
+				for(j=227;j<454*40;j+=454)
 				{
 					if(i==num_files) break;
 
@@ -308,6 +325,12 @@ void Menu()
 				strcpy(meng.path,".");
 				st.keys[ESC_KEY].state=0;
 			}
+		}
+		else
+		if(meng.menu_sel==1)
+		{
+			SaveMap("Test.mgm");
+			meng.menu_sel=0;
 		}
 	}
 }

@@ -454,12 +454,35 @@ typedef struct _SECTOR_ _SECTOR;
 
 struct _MGMLIGHT_
 {
-	Pos position;
-	Pos size;
-	int16 angle;
-	Color color;
-	uint32 TextureID;
-	int16 tag;
+	Pos w_pos;
+
+	uint16 W_w;
+	uint16 W_h;
+
+	uint16 T_w;
+	uint16 T_h;
+
+	uPos16 t_pos[16];
+
+	uPos16 t_pos2[16];
+
+	uint8 num_lights;
+
+	LIGHT_TYPE type[16];
+
+	ColorA16 color[16];
+
+	float falloff[16];
+
+	int16 spot_ang[16];
+
+	int16 obj_id;
+
+	int16 ang;
+
+	uint8 alpha;
+
+	Color ambient_color;
 };
 
 typedef struct _MGMLIGHT_ _MGMLIGHT;
@@ -531,7 +554,6 @@ struct _MGM_
 	char name[32];
 	_MGMSPRITE *sprites;
 	_MGMOBJ *obj;
-	_MGMLIGHT *light;
 	_SECTOR *sector;
 	uint16 num_sprites;
 	uint16 num_obj;
@@ -765,7 +787,7 @@ struct _SETTINGS_
 	uint8 num_mgg;
 	uint8 num_mgg_basic;
 
-	_GAME_LIGHTMAPS game_lightmaps[128];
+	_GAME_LIGHTMAPS game_lightmaps[MAX_LIGHTMAPS];
 
 	struct
 	{

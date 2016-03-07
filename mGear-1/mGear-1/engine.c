@@ -5912,6 +5912,8 @@ uint32 SaveMap(const char *name)
 	_MGMOBJ *obj;
 	_MGMSPRITE *sprites;
 	_MGMLIGHT *lights;
+	_SECTOR *sectors;
+	register int16 i=0;
 
 	if((file=fopen(name,"wb"))==NULL)
 	{
@@ -5919,35 +5921,75 @@ uint32 SaveMap(const char *name)
 				return 0;
 	}
 
-	strcpy(header,"V1 mGear-1");
+	strcpy(header,"V0.1 mGear-1");
 
 	fwrite(header,13,1,file);
 
-	obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
-	sprites=(_MGMSPRITE*) malloc(st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
-	lights=(_MGMLIGHT*) malloc(st.Current_Map.num_lights*sizeof(_MGMLIGHT));
+	obj=malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
+	sprites=malloc(st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
+	sectors=malloc(st.Current_Map.num_sector*sizeof(_SECTOR));
+	lights=malloc(st.num_lights*sizeof(_MGMLIGHT));
 
-	memcpy(&obj,&st.Current_Map.obj,sizeof(st.Current_Map.num_obj*sizeof(_MGMOBJ)));
-	memcpy(&sprites,&st.Current_Map.sprites,sizeof(st.Current_Map.num_sprites*sizeof(_MGMSPRITE)));
-	memcpy(&lights,&st.Current_Map.light,sizeof(st.Current_Map.num_lights*sizeof(_MGMLIGHT)));
+	memcpy(obj,st.Current_Map.obj,st.Current_Map.num_obj*sizeof(_MGMOBJ));
+	memcpy(sprites,st.Current_Map.sprites,st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
+
+	for(i=0;i<st.num_lights;i++)
+	{
+		lights[i].alpha=st.game_lightmaps[i+1].alpha;
+		lights[i].ambient_color=st.game_lightmaps[i+1].ambient_color;
+		lights[i].ang=st.game_lightmaps[i+1].ang;
+
+		memcpy(&lights[i].color,&st.game_lightmaps[i+1].color,16*sizeof(ColorA16));
+
+		lights[i].num_lights=st.game_lightmaps[i+1].num_lights;
+		lights[i].obj_id=st.game_lightmaps[i+1].obj_id;
+		lights[i].T_h=st.game_lightmaps[i+1].T_h;
+		lights[i].T_w=st.game_lightmaps[i+1].T_w;
+		lights[i].W_h=st.game_lightmaps[i+1].W_h;
+		lights[i].W_w=st.game_lightmaps[i+1].W_w;
+		lights[i].w_pos=st.game_lightmaps[i+1].w_pos;
+
+		memcpy(&lights[i].falloff,st.game_lightmaps[i+1].falloff,16*sizeof(float));
+		memcpy(&lights[i].spot_ang,st.game_lightmaps[i+1].spot_ang,16*sizeof(int16));
+		memcpy(&lights[i].type,st.game_lightmaps[i+1].type,16*sizeof(LIGHT_TYPE));
+		memcpy(&lights[i].t_pos,st.game_lightmaps[i+1].t_pos,16*sizeof(uPos16));
+		memcpy(&lights[i].t_pos2,st.game_lightmaps[i+1].t_pos2,16*sizeof(uPos16));
+	}
+
+	memcpy(sectors,st.Current_Map.sector,st.Current_Map.num_sector*sizeof(_SECTOR));
 
 	map.num_mgg=st.Current_Map.num_mgg;
 	map.num_obj=st.Current_Map.num_obj;
-	map.num_lights=st.Current_Map.num_lights;
+	map.num_lights=st.num_lights;
 	map.num_sprites=st.Current_Map.num_sprites;
+	map.num_sector=st.Current_Map.num_sector;
 	strcpy(map.name,st.Current_Map.name);
 	memcpy(map.MGG_FILES,st.Current_Map.MGG_FILES,sizeof(st.Current_Map.MGG_FILES));
 
 	fwrite(&map,sizeof(_MGMFORMAT),1,file);
 	fwrite(obj,sizeof(_MGMOBJ),map.num_obj,file);
 	fwrite(sprites,sizeof(_MGMSPRITE),map.num_sprites,file);
+	fwrite(sectors,sizeof(_SECTOR),map.num_sector,file);
 	fwrite(lights,sizeof(_MGMLIGHT),map.num_lights,file);
+
+	fseek(file,4,SEEK_CUR);
+
+	for(i=1;i<=st.num_lights;i++)
+	{
+		if(st.game_lightmaps[i].alpha)
+			fwrite(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4,1,file);
+		else
+			fwrite(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3,1,file);
+	}
 
 	fclose(file);
 
 	free(obj);
 	free(sprites);
 	free(lights);
+	free(sectors);
+
+	LogApp("Map saved");
 
 	return 1;
 }
@@ -6299,6 +6341,8 @@ uint32 LoadMap(const char *name)
 	FILE *file;
 	char header[13];
 	_MGMFORMAT map;
+	_MGMLIGHT *lights;
+	register int16 i=0;
 
 	if((file=fopen(name,"rb"))==NULL)
 	{
@@ -6311,7 +6355,7 @@ uint32 LoadMap(const char *name)
 
 	//Checks if it's the same version
 
-	if(strcmp(header,"V1 mGear-1")!=NULL)
+	if(strcmp(header,"V0.1 mGear-1")!=NULL)
 	{
 		LogApp("Invalid map format or version: %s", header);
 				return 0;
@@ -6332,7 +6376,7 @@ uint32 LoadMap(const char *name)
 
 	st.Current_Map.num_mgg=map.num_mgg;
 	st.Current_Map.num_obj=map.num_obj;
-	//st.Current_Map.num_lights=map.num_lights;
+	st.num_lights=st.Current_Map.num_lights=map.num_lights;
 	st.Current_Map.num_sprites=map.num_sprites;
 	st.Current_Map.num_sector=map.num_sector;
 	strcpy(st.Current_Map.name,map.name);
@@ -6341,21 +6385,72 @@ uint32 LoadMap(const char *name)
 #ifdef ENGINEER
 	st.Current_Map.obj=(_MGMOBJ*) malloc(MAX_OBJS*sizeof(_MGMOBJ));
 	st.Current_Map.sprites=(_MGMSPRITE*) malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
-	//st.Current_Map.light=(_MGMLIGHT*) malloc(MAX_LIGHT*sizeof(_MGMLIGHT));
-	st.Current_Map.sector=(_SECTOR*) malloc(MAX_SECTORS*sizeof(_SECTOR));
+	lights=malloc(MAX_LIGHTMAPS*sizeof(_MGMLIGHT));
+	st.Current_Map.sector=malloc(MAX_SECTORS*sizeof(_SECTOR));
 #else
 	st.Current_Map.obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
 	st.Current_Map.sprites=(_MGMSPRITE*) malloc(st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
-	//st.Current_Map.light=(_MGMLIGHT*) malloc(st.Current_Map.num_lights*sizeof(_MGMLIGHT));
+	lights=(_MGMLIGHT*) malloc(st.num_lights*sizeof(_MGMLIGHT));
 	st.Current_Map.sector=(_SECTOR*) malloc(st.Current_Map.num_sector*sizeof(_SECTOR));
 #endif
 
 	fread(st.Current_Map.obj,sizeof(_MGMOBJ),st.Current_Map.num_obj,file);
 	fread(st.Current_Map.sprites,sizeof(_MGMSPRITE),st.Current_Map.num_sprites,file);
-	//fread(st.Current_Map.light,sizeof(_MGMLIGHT),st.Current_Map.num_lights,file);
 	fread(st.Current_Map.sector,sizeof(_SECTOR),st.Current_Map.num_sector,file);
+	fread(lights,sizeof(_MGMLIGHT),st.Current_Map.num_lights,file);
+	
+
+	for(i=0;i<st.Current_Map.num_lights;i++)
+	{
+		st.game_lightmaps[i+1].alpha=lights[i].alpha;
+		st.game_lightmaps[i+1].ambient_color=lights[i].ambient_color;
+		st.game_lightmaps[i+1].ang=lights[i].ang;
+
+		memcpy(&st.game_lightmaps[i+1].color,&lights[i].color,16*sizeof(ColorA16));
+
+		st.game_lightmaps[i+1].num_lights=lights[i].num_lights;
+		st.game_lightmaps[i+1].obj_id=lights[i].obj_id;
+		st.game_lightmaps[i+1].T_h=lights[i].T_h;
+		st.game_lightmaps[i+1].T_w=lights[i].T_w;
+		st.game_lightmaps[i+1].W_h=lights[i].W_h;
+		st.game_lightmaps[i+1].W_w=lights[i].W_w;
+		st.game_lightmaps[i+1].w_pos=lights[i].w_pos;
+
+		memcpy(&st.game_lightmaps[i+1].falloff,lights[i].falloff,16*sizeof(float));
+		memcpy(&st.game_lightmaps[i+1].spot_ang,lights[i].spot_ang,16*sizeof(int16));
+		memcpy(&st.game_lightmaps[i+1].type,lights[i].type,16*sizeof(LIGHT_TYPE));
+		memcpy(&st.game_lightmaps[i+1].t_pos,lights[i].t_pos,16*sizeof(uPos16));
+		memcpy(&st.game_lightmaps[i+1].t_pos2,lights[i].t_pos2,16*sizeof(uPos16));
+
+		st.game_lightmaps[i+1].stat=1;
+
+		if(st.game_lightmaps[i+1].alpha)
+			st.game_lightmaps[i+1].data=malloc(st.game_lightmaps[i+1].T_w*st.game_lightmaps[i+1].T_h*4);
+		else
+			st.game_lightmaps[i+1].data=malloc(st.game_lightmaps[i+1].T_w*st.game_lightmaps[i+1].T_h*3);
+	}
+
+	fseek(file,4,SEEK_CUR);
+
+	for(i=1;i<=st.Current_Map.num_lights;i++)
+	{
+		if(st.game_lightmaps[i].alpha)
+		{
+			fread(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*4,1,file);
+			st.game_lightmaps[i].tex=GenerateAlphaLightTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+		}
+		else
+		{
+			fread(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w*st.game_lightmaps[i].T_h*3,1,file);
+			st.game_lightmaps[i].tex=GenerateLightmapTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
+		}
+	}
+
+	LogApp("Map %s loaded",name);
 
 	fclose(file);
+
+	free(lights);
 
 	return 1;
 }
@@ -6368,14 +6463,17 @@ void FreeMap()
 	{
 		free(st.Current_Map.obj);
 		free(st.Current_Map.sprites);
+		free(st.Current_Map.sector);
 
-		j=0;
+		for(i=0;i<st.Current_Map.num_lights;i++)
+		{
+			free(st.game_lightmaps[i].data);
+			st.game_lightmaps[i].obj_id=-1;
+			st.game_lightmaps[i].stat=0;
+		}
 
 		for(i=0;i<st.Current_Map.num_mgg;i++)
-		{
-			FreeMGG(&mgg_map[j]);
-			j++;
-		}
+			FreeMGG(&mgg_map[i]);
 
 		memset(&st.Current_Map,0,sizeof(_MGM));
 	}

@@ -130,7 +130,7 @@ struct _mEng
 
 	char *path;
 
-	int8 sector_adding;
+	int8 current_command;
 };
 
 typedef struct _mEng mEng;
