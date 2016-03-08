@@ -38,7 +38,8 @@
 
 #define MAX_SPRITES 256
 #define MAX_GRAPHICS 2048
-#define TICSPERSECOND 100
+#define MAX_DRAWCALLS 1024
+#define TICSPERSECOND 125
 #define MAX_CHANNELS 32
 #define MUSIC_CHANNEL MAX_CHANNELS-1
 #define MAX_SOUNDS 32
@@ -77,6 +78,15 @@ typedef FMOD_CHANNEL Channel;
 #define MGG_START 3 //The first slot to be used for loading sprite MGGs
 
 #define SYS_BOX_TILE 4
+
+#define UI_CALL 0
+#define HUD_CALL 1
+#define LINE_CALL 2
+#define GRAPHICS_CALL 3
+#define STRING_CALL 4
+#define STRING2_CALL 5
+#define STRINGUI_CALL 6
+#define STRINGUI2_CALL 7
 
 //double inline  sqrt14(double n)
 
@@ -661,6 +671,28 @@ struct PROGRAM_SHADER
 	int8 num_uniforms;
 };
 */
+
+typedef struct
+{
+	uint8 type;
+
+	Pos pos;
+	Pos pos2;
+	Pos size;
+	Pos size2;
+	Color color;
+	char text[256];
+	int32 tex_panx;
+	int32 tex_pany;
+	int32 tex_sizex;
+	int32 tex_sizey;
+	int16 ang;
+	int8 font;
+
+	TEX_DATA data;
+
+} PIPELINE;
+
 struct _Render
 {
 	uint8 VAO_ON;
@@ -693,6 +725,8 @@ struct _Render
 	GLuint Buffers[4];
 
 	uint16 shader_version;
+
+	PIPELINE ppline[MAX_DRAWCALLS];
 };
 
 typedef struct _Render Render;
@@ -781,6 +815,7 @@ struct _SETTINGS_
 	uint32 num_ui;
 	uint8 num_lights;
 	uint8 num_lightmap;
+	uint16 num_calls;
 
 	uint8 num_uiwindow;
 
@@ -950,7 +985,7 @@ uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
 
 //Faster square root
-float mSqrt(float x);
+float _fastcall mSqrt(float x);
 
 //Faster than math.h functions
 float mCos(int16 ang);
@@ -1010,3 +1045,15 @@ uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float 
 uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang);
 uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang);
 uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4]);
+
+void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
+void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
+void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z);
+void StringUI2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+void StringUIData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+void String2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+void StringData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+
+void Finish();
+
+void DrawSys();

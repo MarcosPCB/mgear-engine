@@ -54,7 +54,7 @@ const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 #define timer SDL_Delay
 
 //Faster square root
-float mSqrt(float x)
+float _fastcall mSqrt(float x)
 {
 	_asm fld x
 	_asm fsqrt
@@ -104,10 +104,10 @@ void Timer()
 {
 	int time=GetTicks() - st.FPSTime;
 
-	if(time<16)
-		timer(16-time);
+	if(time<(1000/TICSPERSECOND))
+		timer((1000/TICSPERSECOND)-time);
 
-	st.time=time;
+	st.time++;
 }
 
 void FPSCounter()
@@ -4737,6 +4737,201 @@ int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	return 0;
 }
 
+void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=layer;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	st.renderer.ppline[i].tex_panx=x1;
+	st.renderer.ppline[i].tex_pany=y1;
+	st.renderer.ppline[i].tex_sizex=x2;
+	st.renderer.ppline[i].tex_sizey=y2;
+	st.renderer.ppline[i].data=data;
+
+	st.renderer.ppline[i].type=UI_CALL;
+
+	st.num_calls++;
+}
+
+void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	st.renderer.ppline[i].tex_panx=x1;
+	st.renderer.ppline[i].tex_pany=y1;
+	st.renderer.ppline[i].tex_sizex=x2;
+	st.renderer.ppline[i].tex_sizey=y2;
+	st.renderer.ppline[i].data=data;
+
+	st.renderer.ppline[i].type=GRAPHICS_CALL;
+
+	st.num_calls++;
+}
+
+void String2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].size2.x=override_sizex;
+	st.renderer.ppline[i].size2.y=override_sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	//st.renderer.ppline[i].text=malloc(strlen(text));
+	strcpy(st.renderer.ppline[i].text,text);
+	st.renderer.ppline[i].font=font;
+
+	st.renderer.ppline[i].type=STRING2_CALL;
+
+	st.num_calls++;
+}
+
+void StringData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].size2.x=override_sizex;
+	st.renderer.ppline[i].size2.y=override_sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	//st.renderer.ppline[i].text=malloc(strlen(text));
+	strcpy(st.renderer.ppline[i].text,text);
+	st.renderer.ppline[i].font=font;
+
+	st.renderer.ppline[i].type=STRING_CALL;
+
+	st.num_calls++;
+}
+
+void StringUIData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].size2.x=override_sizex;
+	st.renderer.ppline[i].size2.y=override_sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	//st.renderer.ppline[i].text=malloc(strlen(text));
+	strcpy(st.renderer.ppline[i].text,text);
+	st.renderer.ppline[i].font=font;
+
+	st.renderer.ppline[i].type=STRINGUI_CALL;
+
+	st.num_calls++;
+}
+
+void StringUI2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].size2.x=override_sizex;
+	st.renderer.ppline[i].size2.y=override_sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	//st.renderer.ppline[i].text=malloc(strlen(text));
+	strcpy(st.renderer.ppline[i].text,text);
+	st.renderer.ppline[i].font=font;
+
+	st.renderer.ppline[i].type=STRINGUI2_CALL;
+
+	st.num_calls++;
+}
+
+void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=layer;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	st.renderer.ppline[i].tex_panx=x1;
+	st.renderer.ppline[i].tex_pany=y1;
+	st.renderer.ppline[i].tex_sizex=x2;
+	st.renderer.ppline[i].tex_sizey=y2;
+	st.renderer.ppline[i].data=data;
+
+	st.renderer.ppline[i].type=HUD_CALL;
+
+	st.num_calls++;
+}
+
+void LineData(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].pos2.x=x2;
+	st.renderer.ppline[i].pos2.y=y2;
+	st.renderer.ppline[i].size.x=linewidth;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+
+	st.renderer.ppline[i].type=LINE_CALL;
+
+	st.num_calls++;
+}
+
 int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z)
 {
 	uint8 valx=0, valy=0;
@@ -6799,6 +6994,47 @@ void DrawMap()
 	
 }
 
+void DrawSys()
+{
+	register uint16 i=0;
+
+	for(i=0;i<st.num_calls;i++)
+	{
+		switch(st.renderer.ppline[i].type)
+		{	
+			case GRAPHICS_CALL: DrawGraphic(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
+							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
+							  st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].pos.z); break;
+
+			case HUD_CALL: DrawHud(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
+							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
+							  st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].pos.z); break;
+
+			case UI_CALL: DrawUI(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
+							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
+							  st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].pos.z); break;
+
+			case STRING_CALL: DrawString(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
+								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
+								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
+
+			case STRING2_CALL: DrawString2(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
+								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
+								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
+
+			case STRINGUI_CALL: DrawStringUI(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
+								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
+								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
+
+			case STRINGUI2_CALL: DrawString2UI(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
+								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
+								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
+		}
+	}
+
+	//Finish();
+}
+
 void Renderer(uint8 type)
 {
 
@@ -7588,17 +7824,26 @@ void Renderer(uint8 type)
 	texone_num=0;
 #endif
 
-	//st.num_lights=0;
 	st.num_lightmap=0;
 	memset(&ent,0,MAX_GRAPHICS);
 	memset(&lmp,0,MAX_LIGHTMAPS);
 
-	//glFinish();
-	//glFlush();
-
 	SDL_GL_SwapWindow(wn);
 
 	
+}
+
+void Finish()
+{
+	register uint16 i=0;
+
+	//for(i=0;i<st.num_calls;i++)
+		//if(st.renderer.ppline[i].type>3)
+			//free(st.renderer.ppline[i].text);
+
+	st.num_calls=0;
+
+	memset(st.renderer.ppline,MAX_DRAWCALLS,sizeof(PIPELINE));
 }
 
 void PlayMusic(const char *filename, uint8 loop)

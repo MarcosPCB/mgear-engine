@@ -29,7 +29,7 @@ void Menu()
 
 			if(CheckColisionMouse(8192,4096-1820,1820,455,0))
 			{
-				DrawStringUI("Start New Map",8192,4096-1820,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Start New Map",8192,4096-1820,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					meng.scroll=0;
@@ -135,13 +135,13 @@ void Menu()
 				}
 			}
 			else
-				DrawString2UI("Start New Map",8192,(4096)-1820,1820,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Start New Map",8192,(4096)-1820,1820,455,0,255,255,255,255,ARIAL,0,0,0);
 
 			if(st.gt==GAME_MENU) 
 			{
 				if(CheckColisionMouse(8192,(4096)-2275,1365,455,0))
 				{
-					DrawStringUI("Save Map",8192,(4096)-2275,1365,455,0,255,128,32,255,ARIAL,0,0,0);
+					StringUIData("Save Map",8192,(4096)-2275,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 					if(st.mouse1)
 					{
 						meng.menu_sel=1;
@@ -149,12 +149,12 @@ void Menu()
 					}
 				}
 				else
-					DrawString2UI("Save Map",8192,(4096)-2275,1365,455,0,255,255,255,255,ARIAL,0,0,0);
+					StringUI2Data("Save Map",8192,(4096)-2275,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 			}
 
 			if(CheckColisionMouse(8192,(4096)-1365,1365,455,0))
 			{
-				DrawStringUI("Load Map",8192,(4096)-1365,1365,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Load Map",8192,(4096)-1365,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					meng.menu_sel=2;
@@ -162,11 +162,11 @@ void Menu()
 				}
 			}
 			else
-				DrawString2UI("Load Map",8192,(4096)-1365,1365,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Load Map",8192,(4096)-1365,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 
 			if(CheckColisionMouse(8192,(4096)-910,910,455,0))
 			{
-				DrawStringUI("Options",8192,(4096)-910,910,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Options",8192,(4096)-910,910,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					meng.menu_sel=3;
@@ -174,16 +174,16 @@ void Menu()
 				}
 			}
 			else
-				DrawString2UI("Options",8192,(4096)-910,910,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Options",8192,(4096)-910,910,455,0,255,255,255,255,ARIAL,0,0,0);
 
 			if(CheckColisionMouse(8192,(4096)-455,455,455,0))
 			{
-				DrawStringUI("Quit",8192,(4096)-455,455,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Quit",8192,(4096)-455,455,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 					Quit();
 			}
 			else
-				DrawString2UI("Quit",8192,(4096)-455,455,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Quit",8192,(4096)-455,455,455,0,255,255,255,255,ARIAL,0,0,0);
 		}
 		else
 		if(meng.menu_sel==2)
@@ -200,7 +200,7 @@ void Menu()
 
 					if(CheckColisionMouse(8192,j+scroll,2730,455,0))
 					{
-						DrawString2UI(files[i],8192,j+scroll,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUI2Data(files[i],8192,j+scroll,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 						if(st.mouse1)
 						{
 							size=strlen(files[i]);
@@ -314,7 +314,7 @@ void Menu()
 					}
 					else
 					{
-						DrawString2UI(files[i],8192,j+scroll,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUI2Data(files[i],8192,j+scroll,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 					}
 
 					i++;

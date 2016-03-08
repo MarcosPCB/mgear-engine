@@ -212,27 +212,27 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 	text_size+=128; //64 g.u of space between sides
 	height_size+=2*((st.fonts[font].size_h_gm*font_size)/FONT_SIZE);
 
-	DrawUI(x,y,text_size,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[SYS_BOX_TILE],255,7);
+	UIData(x,y,text_size,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[SYS_BOX_TILE],255,7);
 
 	if(!lines)
-		DrawStringUI(text,x,y,0,0,0,rt,gt,bt,255,0,font_size,font_size,6);
+		StringUIData(text,x,y,0,0,0,rt,gt,bt,255,0,font_size,font_size,6);
 	else
 	{
 		for(i=0;i<lines;i++)
-			DrawStringUI(text_f[i],x,(y-((height_size-512)/2))+(i*((st.fonts[font].size_h_gm*font_size)/FONT_SIZE)),0,0,0,rt,gt,bt,255,0,font_size,font_size,6);
+			StringUIData(text_f[i],x,(y-((height_size-512)/2))+(i*((st.fonts[font].size_h_gm*font_size)/FONT_SIZE)),0,0,0,rt,gt,bt,255,0,font_size,font_size,6);
 	}
 
 	if(num_options==1 || !num_options)
 	{
 		if(CheckColisionMouse(x,y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0))
 		{
-			DrawStringUI("OK",x,y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
+			StringUIData("OK",x,y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
 			if(st.mouse1)
 				return UI_OK;
 		}
 		else
-			DrawStringUI("OK",x,y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
+			StringUIData("OK",x,y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 	}
 	else
 	if(num_options==2)
@@ -243,7 +243,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 				return UI_YES;
 		}
 		else
-			DrawStringUI("Yes",x-((text_size-256)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
+			StringUIData("Yes",x-((text_size-256)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 
 		if(CheckColisionMouse(x+((text_size-256)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
@@ -251,40 +251,40 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 				return UI_NO;
 		}
 		else
-			DrawStringUI("No",x+((text_size-256)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
+			StringUIData("No",x+((text_size-256)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 	}
 	else
 	if(num_options==3)
 	{
 		if(CheckColisionMouse(x-((text_size-128)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
-			DrawStringUI("Yes",x-((text_size-128)/2),y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
+			StringUIData("Yes",x-((text_size-128)/2),y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
 			if(st.mouse1)
 				return UI_YES;
 		}
 		else
-			DrawStringUI("Yes",x-((text_size-128)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
+			StringUIData("Yes",x-((text_size-128)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 
 		if(CheckColisionMouse(x+((text_size-128)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
-			DrawStringUI("No",x+((text_size-128)/2),y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
+			StringUIData("No",x+((text_size-128)/2),y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
 			if(st.mouse1)
 				return UI_NO;
 		}
 		else
-			DrawStringUI("No",x+((text_size-128)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
+			StringUIData("No",x+((text_size-128)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 
 		if(CheckColisionMouse(x,y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
-			DrawStringUI("Cancel",x,y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
+			StringUIData("Cancel",x,y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
 			if(st.mouse1)
 				return UI_CANCEL;
 		}
 		else
-			DrawStringUI("Cancel",x,y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
+			StringUIData("Cancel",x,y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 	}
 
 	return UI_NULLOP;
@@ -327,19 +327,19 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 		}
 	}
 
-	DrawUI(x,y,text_size+128,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[SYS_BOX_TILE],255,7);
+	UIData(x,y,text_size+128,height_size,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[SYS_BOX_TILE],255,7);
 
 	for(i=0;i<num_options;i++)
 	{
 		if(CheckColisionMouse(x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),text_size,(st.fonts[font].size_h_gm*font_size)/FONT_SIZE,0))
 		{
-			DrawStringUI(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rs,gs,bs,255,font,font_size,font_size,5);
+			StringUIData(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rs,gs,bs,255,font,font_size,font_size,5);
 
 			if(st.mouse1)
 				return 100+i;
 		}
 		else
-			DrawStringUI(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rn,gn,bn,255,font,font_size,font_size,5);
+			StringUIData(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rn,gn,bn,255,font,font_size,font_size,5);
 	}
 
 	return UI_NULLOP;
@@ -367,7 +367,7 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 
 	if(CheckColisionMouse(x,y,text_size,gsize,0))
 	{
-		DrawStringUI(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
+		StringUIData(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
 		if(st.mouse1)
 		{
@@ -376,7 +376,7 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 		}
 	}
 	else
-		DrawStringUI(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
+		StringUIData(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
 
 	return UI_NULLOP;
 }
@@ -403,7 +403,7 @@ int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size
 
 	if(CheckColisionMouseWorld(x,y,text_size,gsize,0))
 	{
-		DrawString2(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
+		String2Data(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
 		if(st.mouse1)
 		{
@@ -412,7 +412,7 @@ int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size
 		}
 	}
 	else
-		DrawString2(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
+		String2Data(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
 
 	return UI_NULLOP;
 }
@@ -539,7 +539,7 @@ int8 UIWin2_MarkBox(int8 uiwinid, int8 pos, uint8 marked, char *text, int32 colo
 	if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 		lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),(st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE,0))
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,
 			UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		if(st.mouse1 && !marked)
@@ -555,7 +555,7 @@ int8 UIWin2_MarkBox(int8 uiwinid, int8 pos, uint8 marked, char *text, int32 colo
 		}
 	}
 	else
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,
 			UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 	return 0;
@@ -594,7 +594,7 @@ void UIWin2_NumberBoxui8(int8 uiwinid, int8 pos, uint8 *value, char *text, int32
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -606,12 +606,12 @@ void UIWin2_NumberBoxui8(int8 uiwinid, int8 pos, uint8 *value, char *text, int32
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atoi(st.TextInput);
@@ -658,7 +658,7 @@ void UIWin2_NumberBoxi8(int8 uiwinid, int8 pos, int8 *value, char *text, int32 c
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -670,12 +670,12 @@ void UIWin2_NumberBoxi8(int8 uiwinid, int8 pos, int8 *value, char *text, int32 c
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atoi(st.TextInput);
@@ -722,7 +722,7 @@ void UIWin2_NumberBoxui16(int8 uiwinid, int8 pos, uint16 *value, char *text, int
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -734,12 +734,12 @@ void UIWin2_NumberBoxui16(int8 uiwinid, int8 pos, uint16 *value, char *text, int
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atoi(st.TextInput);
@@ -786,7 +786,7 @@ void UIWin2_NumberBoxi16(int8 uiwinid, int8 pos, int16 *value, char *text, int32
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -798,12 +798,12 @@ void UIWin2_NumberBoxi16(int8 uiwinid, int8 pos, int16 *value, char *text, int32
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atoi(st.TextInput);
@@ -850,7 +850,7 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -862,12 +862,12 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atoi(st.TextInput);
@@ -914,7 +914,7 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -926,12 +926,12 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atoi(st.TextInput);
@@ -978,7 +978,7 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			if(st.mouse1)
@@ -990,12 +990,12 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 			}
 		}
 		else
-			DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	{
-		DrawStringUI(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+		StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atof(st.TextInput);
@@ -1028,8 +1028,8 @@ int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 
 	{
 		if(CheckColisionMouse(x,y,lenght*gsizew,gsize,0) && st.mouse1)
 		{
-			DrawUI(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame1],255,UI_Win[uiwinid].layer-1);
-			DrawStringUI(text,x,y,0,0,0,255,255,255,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+			UIData(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame1],255,UI_Win[uiwinid].layer-1);
+			StringUIData(text,x,y,0,0,0,255,255,255,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 			st.mouse1=0;
 
@@ -1037,21 +1037,21 @@ int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 
 		}
 		else
 		{
-			DrawUI(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame0],255,UI_Win[uiwinid].layer-1);
-			DrawStringUI(text,x,y,0,0,0,255,255,255,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+			UIData(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame0],255,UI_Win[uiwinid].layer-1);
+			StringUIData(text,x,y,0,0,0,255,255,255,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 		}
 	}
 	else
 	if(blocked==1)
 	{
-		DrawUI(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2],255,UI_Win[uiwinid].layer-1);
-		DrawStringUI(text,x,y,0,0,0,128,128,128,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+		UIData(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2],255,UI_Win[uiwinid].layer-1);
+		StringUIData(text,x,y,0,0,0,128,128,128,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 	else
 	if(blocked==2)
 	{
-		DrawUI(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2],255,UI_Win[uiwinid].layer-1);
-		DrawStringUI(text,x,y,0,0,0,r,g,b,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+		UIData(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2],255,UI_Win[uiwinid].layer-1);
+		StringUIData(text,x,y,0,0,0,r,g,b,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 	}
 
 	return UI_NULLOP;
@@ -1070,21 +1070,21 @@ int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, 
 	{
 		if(CheckColisionMouse(x,y,sizex,sizey,0) && st.mouse1)
 		{
-			DrawUI(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+			UIData(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
 
 			st.mouse1=0;
 
 			return UI_SEL;
 		}
 		else
-			DrawUI(x,y,sizex,sizey,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+			UIData(x,y,sizex,sizey,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
 	}
 	else
 	if(blocked==1)
-		DrawUI(x,y,sizex,sizey,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+		UIData(x,y,sizex,sizey,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
 	else
 	if(blocked==2)
-		DrawUI(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
+		UIData(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
 
 	return UI_NULLOP;
 }
@@ -1102,10 +1102,10 @@ void UIMain_DrawSystem()
 				continue;
 			else
 			if(UI_Win[i].stat==2)
-				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,UI_Win[i].layer);
+				UIData(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,UI_Win[i].layer);
 			else
 			if(UI_Win[i].stat==1)
-				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
+				UIData(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
 		}
 	}
 
@@ -1119,16 +1119,16 @@ void UIMain_DrawSystem()
 		p.y=(p.y*8192)/st.screeny;
 
 		if(st.cursor_type==1)
-			DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			UIData(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==2)
-			DrawUI(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			UIData(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==3)
-			DrawUI(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			UIData(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==4)
-			DrawUI(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			UIData(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 	}
 	else
 		SDL_ShowCursor(SDL_ENABLE);
@@ -1341,7 +1341,7 @@ void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b)
 {
 	Pos p;
 
-	DrawUI(14336,1536,4096,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[10],255,0);
+	UIData(14336,1536,4096,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[10],255,0);
 
 	if(CheckColisionMouse(14336,1536,4096,2048,0) && st.mouse1)
 	{
