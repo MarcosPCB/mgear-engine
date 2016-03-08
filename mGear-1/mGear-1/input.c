@@ -207,7 +207,7 @@ void InputProcess()
 					st.keys[BACKSPACE_KEY].state=0;
 				}
 				
-				if(events.type==SDL_TEXTINPUT)
+				if(events.type==SDL_TEXTINPUT && st.Text_Input)
 					strcat(st.TextInput,events.text.text);
 				
 				if(events.type==SDL_MOUSEMOTION)

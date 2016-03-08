@@ -6,6 +6,10 @@
 #include "dirent.h"
 #include "UI.h"
 
+#ifdef _DEBUG
+	#include <crtdbg.h>
+#endif
+
 //extern _MGG mgg_sys[3];
 
 mEng meng;
@@ -3849,9 +3853,6 @@ static void ViewPortCommands()
 							p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
 							p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
 
-							p.x-=st.Camera.position.x;
-							p.y-=st.Camera.position.y;
-
 							sprintf(str,"%d",st.Current_Map.sprites[i].angle);
 							DrawString2(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,0);
 
@@ -3882,8 +3883,9 @@ static void ViewPortCommands()
 			{
 				for(i=0;i<st.Current_Map.num_obj;i++)
 				{
-					if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle))
-						break;
+					if(meng.command2==EDIT_OBJ && meng.got_it==i)
+						if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle))
+							break;
 
 					if(got_it) break;
 
@@ -3926,9 +3928,6 @@ static void ViewPortCommands()
 
 							p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
 							p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
-
-							p.x-=st.Camera.position.x;
-							p.y-=st.Camera.position.y;
 
 							sprintf(str,"%d",st.Current_Map.obj[i].angle);
 							DrawString2(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,0);
@@ -6788,6 +6787,8 @@ int main(int argc, char *argv[])
 
 	float t2;
 
+	//_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
+
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
@@ -6798,7 +6799,7 @@ int main(int argc, char *argv[])
 
 	OpenFont("font//arial.ttf","arial",0,128);
 	OpenFont("font//arialbd.ttf","arial bould",1,128);
-	OpenFont("font//tt0524m_.ttf","geometry",2,128);
+	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
 
@@ -6848,13 +6849,16 @@ int main(int argc, char *argv[])
 
 	while(!st.quit)
 	{
+
 		if(st.FPSYes)
 			FPSCounter();
 
-		BASICBKD();
-
 		InputProcess();
 
+		BASICBKD();
+
+		
+		
 		/*
 		if(st.gt==STARTUP)
 		{
@@ -6879,6 +6883,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		*/
+		
 		if(st.gt==INGAME)
 		{
 			if(st.keys[SPACE_KEY].state)
@@ -6941,11 +6946,11 @@ int main(int argc, char *argv[])
 		else
 			if(st.gt==MAIN_MENU || st.gt==GAME_MENU)
 			Menu();
-
+			
 		UIMain_DrawSystem();
 		MainSound();
 		Renderer(0);
-		//Timer();
+		Timer();
 	}
 
 	StopAllSounds();

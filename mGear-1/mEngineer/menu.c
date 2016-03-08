@@ -47,13 +47,14 @@ void Menu()
 					if(st.Current_Map.sector)
 						free(st.Current_Map.sector);
 
-					if(st.Current_Map.num_lights>0)
+					if(st.num_lights>0)
 					{
-						for(i=0;i<st.Current_Map.num_lights;i++)
+						for(i=1;i<=st.num_lights;i++)
 						{
 							free(st.game_lightmaps[i].data);
 							st.game_lightmaps[i].obj_id=-1;
 							st.game_lightmaps[i].stat=0;
+							glDeleteTextures(1,&st.game_lightmaps[i].tex);
 						}
 					}
 
@@ -65,6 +66,8 @@ void Menu()
 					st.Current_Map.num_obj=0;
 					st.Current_Map.num_sprites=0;
 					st.Current_Map.num_lights=0;
+
+					st.num_lights=0;
 
 					for(i=0;i<MAX_SECTORS;i++)
 					{
@@ -268,15 +271,28 @@ void Menu()
 									meng.command=2;
 									meng.menu_sel=0;
 									meng.obj.amblight=1;
-									meng.obj.color.r=255;
-									meng.obj.color.g=255;
-									meng.obj.color.b=255;
-									meng.obj.color.a=255;
+									meng.obj.color.r=meng.spr.color.r=255;
+									meng.obj.color.g=meng.spr.color.g=255;
+									meng.obj.color.b=meng.spr.color.b=255;
+									meng.obj.color.a=meng.spr.color.a=255;
 									meng.obj.texsize.x=32768;
 									meng.obj.texsize.y=32768;
 									meng.obj.texpan.x=0;
 									meng.obj.texpan.y=0;
-									meng.obj.type=MIDGROUND;
+									meng.obj.type=meng.spr.type=MIDGROUND;
+									meng.obj_lightmap_sel=-1;
+
+									meng.lightmapsize.x=0;
+									meng.lightmapsize.y=0;
+
+									meng.spr.gid=-1;
+									meng.spr2.gid=-1;
+									meng.sprite_selection=0;
+									meng.sprite_frame_selection=0;
+									meng.spr.size.x=2048;
+									meng.spr.size.y=2048;
+
+									meng.lightmap_res.x=meng.lightmap_res.y=256;
 									st.gt=INGAME;
 									st.mouse1=0;
 									free(path2);

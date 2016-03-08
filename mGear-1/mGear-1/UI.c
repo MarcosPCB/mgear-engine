@@ -1115,7 +1115,8 @@ void UIMain_DrawSystem()
 		
 		p=st.mouse;
 
-		STW(&p.x,&p.y);
+		p.x=(p.x*16384)/st.screenx;
+		p.y=(p.y*8192)/st.screeny;
 
 		if(st.cursor_type==1)
 			DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
@@ -1144,7 +1145,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 
 	if(st.mouse1)
 	{
-		if(CheckColisionMouse(x-sx,y-sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang) && !controller)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
@@ -1152,7 +1153,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=1;
 		}
 		else
-		if(CheckColisionMouse(x+sx,y-sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang) && !controller)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
@@ -1160,7 +1161,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=2;
 		}
 		else
-		if(CheckColisionMouse(x+sx,y+sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang) && !controller)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
@@ -1168,7 +1169,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=3;
 		}
 		else
-		if(CheckColisionMouse(x-sx,y+sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang) && !controller)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
@@ -1176,7 +1177,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=4;
 		}
 		else
-		if(CheckColisionMouse(x,y-sy,*sizex,256,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang) && !controller && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
@@ -1184,7 +1185,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=5;
 		}
 		else
-		if(CheckColisionMouse(x,y+sy,*sizex,256,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang) && !controller && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
@@ -1192,7 +1193,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=6;
 		}
 		else
-		if(CheckColisionMouse(x-sx,y,256,*sizey,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang) && !controller && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
@@ -1200,7 +1201,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			controller=7;
 		}
 		else
-		if(CheckColisionMouse(x+sx,y,256,*sizey,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang) && !controller && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 

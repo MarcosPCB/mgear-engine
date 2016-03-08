@@ -104,24 +104,21 @@ void Timer()
 {
 	int time=GetTicks() - st.FPSTime;
 
-	if(time<10)
-	{
-		time=10-time;
-		timer(time);
-	}
+	if(time<16)
+		timer(16-time);
 
-	st.time++;
+	st.time=time;
 }
 
 void FPSCounter()
 {
-	if((SDL_GetTicks() - st.FPSTime)!=1000)
+	if((SDL_GetTicks() - st.FPSTime)!=0)
 	{
 		st.FPS=SDL_GetTicks()-st.FPSTime;
-		if(st.FPS<1000)
-			st.FPS=1000/st.FPS;
+		st.FPS=1000/st.FPS;
 		sprintf(st.WINDOW_NAME,"%s fps: %.2f",WindowTitle,st.FPS);
-		st.FPS=0;
+		//if(st.FPS<50) printf("%d\n",st.time);
+		//st.FPS=0;
 		st.FPSTime=SDL_GetTicks();
 		SDL_SetWindowTitle(wn,st.WINDOW_NAME);
 	}
@@ -2963,7 +2960,11 @@ void FreeMGG(_MGG *file)
 
 	for(i=0; i<file->num_frames; i++)
 	{
-		//glDeleteTextures(1, &file->frames[i]);
+		glDeleteTextures(1, &file->frames[i].data);
+
+		if(file->frames[i].normal)
+			glDeleteTextures(1, &file->frames[i].Ndata);
+
 		file->size[i].x=NULL;
 		file->size[i].y=NULL;
 	}
@@ -2976,7 +2977,11 @@ void FreeMGG(_MGG *file)
 	
 	file->num_anims=NULL;
 
+	memset(file->name,0,32);
+
 	memset(file,0,sizeof(_MGG));
+
+	file->type=NONE;
 }
 
 void InitMGG()
@@ -3338,7 +3343,7 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	
 }
 
-int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
+int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 {
 	uint8 valx=0, valy=0;
 
@@ -3350,7 +3355,11 @@ int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 	int16 ang;
 
+	Pos vertex[4];
+
 	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+
+	memcpy(vertex,vertex_s,4*sizeof(Pos));
 
 	i=st.num_entities;
 
@@ -3363,10 +3372,10 @@ int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 		ent[i].data.vb_id=-1;
 		ent[i].data.channel=0;
 		ent[i].data.normal=0;
-		ent[i].lightmapid=-1;
+		ent[i].lightmapid=-2;
 
 		if(z>56) z=56;
-		//else if(z<16) z+=16;
+		else if(z<16) z+=16;
 
 		z_buffer[z][z_slot[z]]=i;
 		z_slot[z]++;
@@ -3405,12 +3414,12 @@ int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 		ent[i].texcor[0]=0;
 		ent[i].texcor[1]=0;
-		ent[i].texcor[2]=1;
+		ent[i].texcor[2]=0;
 		ent[i].texcor[3]=0;
-		ent[i].texcor[4]=1;
-		ent[i].texcor[5]=1;
+		ent[i].texcor[4]=0;
+		ent[i].texcor[5]=0;
 		ent[i].texcor[6]=0;
-		ent[i].texcor[7]=1;
+		ent[i].texcor[7]=0;
 
 
 		ax=(float) 1/(16384/2);
@@ -3443,7 +3452,6 @@ int8 DrawPolygon(Pos vertex[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 		texone_ids[texone_num]=i;
 		texone_num++;
-	//}
 
 	return 0;
 }
@@ -4577,6 +4585,158 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	return 0;
 }
 
+int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
+{
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
+
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0;
+	int32 t1, t2, t3, t4, timej, timel;
+
+	t3=16384;
+	t4=8192;
+
+	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+			
+	if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+	else
+		i=st.num_entities;
+
+	ent[i].lightmapid=-1;
+	
+			ent[i].data=data;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			x-=st.Camera.position.x;
+			y-=st.Camera.position.y;
+
+			sizex*=st.Camera.dimension.x;
+			sizey*=st.Camera.dimension.y;
+
+			if(layer>7) layer=7;
+			//else if(layer<0) layer+=8;
+
+			z_buffer[layer][z_slot[layer]]=i;
+			z_slot[layer]++;
+
+			if(layer>z_used) z_used=layer;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=layer;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=layer;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=layer;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=layer;
+
+			//timel=GetTicks() - timej;
+
+			//ang=1000;
+			/*
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	*/
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			if(data.vb_id==-1)
+			{
+				ent[i].texcor[0]=x1;
+				ent[i].texcor[1]=y1;
+				ent[i].texcor[2]=x2;
+				ent[i].texcor[3]=y1;
+				ent[i].texcor[4]=x2;
+				ent[i].texcor[5]=y2;
+				ent[i].texcor[6]=x1;
+				ent[i].texcor[7]=y2;
+			}
+			else
+			{
+				tx1=(float) x1/32768;
+				ty1=(float) y1/32768;
+				tx2=(float) x2/32768;
+				ty2=(float) y2/32768;
+
+				ent[i].texcor[0]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[1]=data.posy+(ty1*data.sizey);
+
+				ent[i].texcor[2]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[3]=data.posy+(ty1*data.sizey);
+
+				ent[i].texcor[4]=data.posx+(tx2*data.sizex);
+				ent[i].texcor[5]=data.posy+(ty2*data.sizey);
+
+				ent[i].texcor[6]=data.posx+(tx1*data.sizex);
+				ent[i].texcor[7]=data.posy+(ty2*data.sizey);
+			}
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+		 		ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+				
+				if(j<8)
+				{
+					ent[i].texcor[j]/=(float)32768;
+					ent[i].texcor[j+1]/=(float)32768;
+					ent[i].texcor[j+2]/=(float)32768;
+				}
+				
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			if(data.vb_id!=-1)
+			{
+				vbdt[data.vb_id].num_elements++;
+				ent[i].data.loc=vbdt[data.vb_id].num_elements-1;
+			}
+			else
+			{
+				texone_ids[texone_num]=i;
+				texone_num++;
+			}
+
+#endif
+
+			st.num_entities++;
+
+	return 0;
+}
+
 int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z)
 {
 	uint8 valx=0, valy=0;
@@ -4888,11 +5048,12 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 	ent[i].lightmapid=-1;
 
+			
 			if(override_sizex!=0)
-				sizex=st.strings[id].data.w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(float)(override_sizex/1024.0f);
 
 			if(override_sizey!=0)
-				sizey=st.strings[id].data.h*(override_sizey/1024);
+				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
 			tx1=x;
 			ty1=y;
@@ -5128,6 +5289,8 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 		ent[i].data.w=msg->w;
 		ent[i].data.h=msg->h;
 
+		ent[i].lightmapid=-1;
+
 		memcpy(&st.strings[id].data,&ent[i].data,sizeof(TEX_DATA));
 
 		SDL_FreeSurface(msg);
@@ -5138,10 +5301,10 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 	ent[i].lightmapid=-1;
 
 			if(override_sizex!=0)
-				sizex=st.strings[id].data.w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(float)(override_sizex/1024.0f);
 
 			if(override_sizey!=0)
-				sizey=st.strings[id].data.h*(override_sizey/1024);
+				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
 			sizex*=st.Camera.dimension.x;
 			sizey*=st.Camera.dimension.y;
@@ -5341,11 +5504,12 @@ if(st.num_entities==MAX_GRAPHICS-1)
 
 	ent[i].lightmapid=-1;
 
+			
 			if(override_sizex!=0)
-				sizex=st.strings[id].data.w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(float)(override_sizex/1024.0f);
 
 			if(override_sizey!=0)
-				sizey=st.strings[id].data.h*(override_sizey/1024);
+				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -5541,11 +5705,12 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 
 	ent[i].lightmapid=-1;
 
+			
 			if(override_sizex!=0)
-				sizex=st.strings[id].data.w*(override_sizex/1024);
+				sizex=st.strings[id].data.w*(float)(override_sizex/1024.0f);
 
 			if(override_sizey!=0)
-				sizey=st.strings[id].data.h*(override_sizey/1024);
+				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -6372,6 +6537,25 @@ uint32 LoadMap(const char *name)
 
 	//loads the map
 
+	if(st.Current_Map.num_mgg>0)
+	{
+		for(i=0;i<st.Current_Map.num_mgg;i++)
+			FreeMGG(&mgg_map[i]);
+	}
+
+	memset(st.Current_Map.MGG_FILES,0,32*256);
+
+	if(st.num_lights>0)
+	{
+		for(i=1;i<=st.num_lights;i++)
+		{
+			free(st.game_lightmaps[i].data);
+			st.game_lightmaps[i].obj_id=-1;
+			st.game_lightmaps[i].stat=0;
+			glDeleteTextures(1,&st.game_lightmaps[i].tex);
+		}
+	}
+
 	fread(&map,sizeof(_MGMFORMAT),1,file);
 
 	st.Current_Map.num_mgg=map.num_mgg;
@@ -6393,6 +6577,23 @@ uint32 LoadMap(const char *name)
 	lights=(_MGMLIGHT*) malloc(st.num_lights*sizeof(_MGMLIGHT));
 	st.Current_Map.sector=(_SECTOR*) malloc(st.Current_Map.num_sector*sizeof(_SECTOR));
 #endif
+
+	for(i=0;i<MAX_SECTORS;i++)
+	{
+		st.Current_Map.sector[i].id=-1;
+		st.Current_Map.sector[i].layers=1;
+		st.Current_Map.sector[i].material=CONCRETE;
+		st.Current_Map.sector[i].tag=0;
+	}
+
+	for(i=0;i<MAX_OBJS;i++)
+	{
+		st.Current_Map.obj[i].type=BLANK;
+		st.Current_Map.obj[i].lightmapid=-1;
+	}
+
+	for(i=0;i<MAX_SPRITES;i++)
+		st.Current_Map.sprites[i].stat=0;
 
 	fread(st.Current_Map.obj,sizeof(_MGMOBJ),st.Current_Map.num_obj,file);
 	fread(st.Current_Map.sprites,sizeof(_MGMSPRITE),st.Current_Map.num_sprites,file);
@@ -6803,7 +7004,7 @@ void Renderer(uint8 type)
 						tex_bound[0]=vbdt[m].texture;
 					}
 
-					if(i<16)
+					if(i<16 || ent[z_buffer[i][j]].lightmapid==-2)
 						glUniform1f(st.renderer.unifs[4],3);
 					else
 					{
@@ -6865,7 +7066,7 @@ void Renderer(uint8 type)
 						tex_bound[0]=ent[z_buffer[i][j]].data.data;
 					}
 
-					if(i<16)
+					if(i<16 || ent[z_buffer[i][j]].lightmapid==-2)
 						glUniform1f(st.renderer.unifs[4],3);
 					else
 					{
@@ -7391,6 +7592,9 @@ void Renderer(uint8 type)
 	st.num_lightmap=0;
 	memset(&ent,0,MAX_GRAPHICS);
 	memset(&lmp,0,MAX_LIGHTMAPS);
+
+	//glFinish();
+	//glFlush();
 
 	SDL_GL_SwapWindow(wn);
 
