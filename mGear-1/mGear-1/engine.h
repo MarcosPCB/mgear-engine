@@ -1053,6 +1053,7 @@ void StringUI2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 void StringUIData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void String2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void StringData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+void LineCall(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
 
 void Finish();
 

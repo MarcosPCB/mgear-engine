@@ -7003,8 +7003,8 @@ void DrawSys()
 		switch(st.renderer.ppline[i].type)
 		{	
 			case GRAPHICS_CALL: DrawGraphic(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
-							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
-							  st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].pos.z); break;
+									st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,
+									st.renderer.ppline[i].tex_sizex,st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].pos.z); break;
 
 			case HUD_CALL: DrawHud(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
 							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
@@ -7029,6 +7029,9 @@ void DrawSys()
 			case STRINGUI2_CALL: DrawString2UI(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
 								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
 								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
+
+			case LINE_CALL: DrawLine(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].pos2.x,st.renderer.ppline[i].pos2.y,st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,
+								st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].size.x,st.renderer.ppline[i].pos.z); break;
 		}
 	}
 

@@ -3719,8 +3719,6 @@ static void ViewPortCommands()
 
 						LogApp("Sector removed");
 
-						st.Current_Map.num_sector--;
-
 						meng.sub_com=0;
 						meng.com_id=0;
 						meng.command=DRAW_SECTOR;
@@ -5264,12 +5262,13 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.x-=p2.x;
+							meng.lightmapsize.x-=p2.x*2;
 
 							p=st.mouse;
 						}
@@ -5278,12 +5277,13 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.x+=p2.x;
+							meng.lightmapsize.x+=p2.x*2;
 
 							p=st.mouse;
 						}
@@ -5292,12 +5292,13 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.y-=p2.y;
+							meng.lightmapsize.y-=p2.y*2;
 
 							p=st.mouse;
 						}
@@ -5306,12 +5307,13 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.y+=p2.y;
+							meng.lightmapsize.y+=p2.y*2;
 
 							p=st.mouse;
 						}
@@ -5320,13 +5322,14 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.x-=p2.x;
-							meng.lightmapsize.y-=p2.y;
+							meng.lightmapsize.x-=p2.x*2;
+							meng.lightmapsize.y-=p2.y*2;
 
 							p=st.mouse;
 						}
@@ -5335,13 +5338,14 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.x+=p2.x;
-							meng.lightmapsize.y-=p2.y;
+							meng.lightmapsize.x+=p2.x*2;
+							meng.lightmapsize.y-=p2.y*2;
 
 							p=st.mouse;
 						}
@@ -5350,13 +5354,14 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.x+=p2.x;
-							meng.lightmapsize.y+=p2.y;
+							meng.lightmapsize.x+=p2.x*2;
+							meng.lightmapsize.y+=p2.y*2;
 
 							p=st.mouse;
 						}
@@ -5365,13 +5370,14 @@ static void ViewPortCommands()
 						{
 							p2=st.mouse;
 
+							STW(&p2.x,&p2.y);
+							STW(&p.x,&p.y);
+
 							p2.x-=p.x;
 							p2.y-=p.y;
 
-							STW(&p2.x,&p2.y);
-
-							meng.lightmapsize.x-=p2.x;
-							meng.lightmapsize.y+=p2.y;
+							meng.lightmapsize.x-=p2.x*2;
+							meng.lightmapsize.y+=p2.y*2;
 
 							p=st.mouse;
 						}

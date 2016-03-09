@@ -99,6 +99,8 @@ struct _UI_SYSTEM
 	int8 num_usermade;
 
 	int8 resize_cursor;
+
+	uint8 mouse_flag;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;

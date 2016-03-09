@@ -1102,10 +1102,10 @@ void UIMain_DrawSystem()
 				continue;
 			else
 			if(UI_Win[i].stat==2)
-				UIData(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,UI_Win[i].layer);
+				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,UI_Win[i].layer);
 			else
 			if(UI_Win[i].stat==1)
-				UIData(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
+				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
 		}
 	}
 
@@ -1119,25 +1119,27 @@ void UIMain_DrawSystem()
 		p.y=(p.y*8192)/st.screeny;
 
 		if(st.cursor_type==1)
-			UIData(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==2)
-			UIData(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			DrawUI(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==3)
-			UIData(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			DrawUI(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==4)
-			UIData(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+			DrawUI(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 	}
 	else
 		SDL_ShowCursor(SDL_ENABLE);
+
+	if(!st.mouse1)
+		UI_Sys.mouse_flag=0;
 }
 
 
 int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang)
 {
-	static uint8 controller=0;
 	int32 sx=*sizex/2, sy=*sizey/2;
 	static Pos size, size2;
 
@@ -1145,193 +1147,201 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 
 	if(st.mouse1)
 	{
-		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
 			size=st.mouse;
-			controller=1;
+			UI_Sys.mouse_flag=1;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
 			size=st.mouse;
-			controller=2;
+			UI_Sys.mouse_flag=2;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
 			size=st.mouse;
-			controller=3;
+			UI_Sys.mouse_flag=3;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang) && !controller)
+		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
 			size=st.mouse;
-			controller=4;
+			UI_Sys.mouse_flag=4;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
 			size=st.mouse;
-			controller=5;
+			UI_Sys.mouse_flag=5;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
 			size=st.mouse;
-			controller=6;
+			UI_Sys.mouse_flag=6;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
 			size=st.mouse;
-			controller=7;
+			UI_Sys.mouse_flag=7;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang) && !controller && !keepaspect)
+		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
 			size=st.mouse;
-			controller=8;
+			UI_Sys.mouse_flag=8;
 		}
 		
-		if(controller==1)
+		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang) && UI_Sys.mouse_flag==1)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizex-=size2.x;
-			*sizey-=size2.y;
+			*sizex-=size2.x*2;
+			*sizey-=size2.y*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==2)
+		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang) && UI_Sys.mouse_flag==2)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizex+=size2.x;
-			*sizey-=size2.y;
+			*sizex+=size2.x*2;
+			*sizey-=size2.y*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==3)
+		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang) && UI_Sys.mouse_flag==3)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizex+=size2.x;
-			*sizey+=size2.y;
+			*sizex+=size2.x*2;
+			*sizey+=size2.y*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==4)
+		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang) && UI_Sys.mouse_flag==4)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizex-=size2.x;
-			*sizey+=size2.y;
+			*sizex-=size2.x*2;
+			*sizey+=size2.y*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==5)
+		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang) && UI_Sys.mouse_flag==5)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizey-=size2.y;
+			*sizey-=size2.y*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==6)
+		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang) && UI_Sys.mouse_flag==6)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizey+=size2.y;
+			*sizey+=size2.y*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==7)
+		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang) && UI_Sys.mouse_flag==7)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizex-=size2.x;
+			*sizex-=size2.x*2;
 
 			size=st.mouse;
 		}
 		else
-		if(controller==8)
+		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang) && UI_Sys.mouse_flag==8)
 		{
 			size2=st.mouse;
+
+			STW(&size2.x,&size2.y);
+			STW(&size.x,&size.y);
 
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			STW(&size2.x,&size2.y);
-
-			*sizex+=size2.x;
+			*sizex+=size2.x*2;
 
 			size=st.mouse;
 		}
 	}
 	else
 	{
-		controller=0;
+		UI_Sys.mouse_flag=0;
 		st.cursor_type=CURSOR_NORMAL;
 	}
 
-	if(controller>0)
+	if(UI_Sys.mouse_flag>0)
 		return 1;
 	else
 		return 0;
