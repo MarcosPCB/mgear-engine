@@ -88,6 +88,10 @@ typedef FMOD_CHANNEL Channel;
 #define STRINGUI_CALL 6
 #define STRINGUI2_CALL 7
 
+#define BCK2_DEFAULT_VEL 0.1
+#define BCK1_DEFAULT_VEL 0.5
+#define FR_DEFAULT_VEL 1.3
+
 //double inline  sqrt14(double n)
 
 #define LogApp SDL_Log
@@ -466,8 +470,8 @@ struct _MGMLIGHT_
 {
 	Pos w_pos;
 
-	uint16 W_w;
-	uint16 W_h;
+	uint32 W_w;
+	uint32 W_h;
 
 	uint16 T_w;
 	uint16 T_h;
@@ -570,6 +574,9 @@ struct _MGM_
 	uint8 num_mgg;
 	uint8 num_lights;
 	uint16 num_sector;
+	int16 bck2_v;
+	int16 bck1_v;
+	int16 fr_v;
 	char MGG_FILES[32][256];
 };
 
@@ -583,6 +590,9 @@ struct _MGMFORMAT_
 	uint8 num_mgg;
 	uint8 num_lights;
 	uint16 num_sector;
+	int16 bck2_v;
+	int16 bck1_v;
+	int16 fr_v;
 	char MGG_FILES[32][256];
 };
 
@@ -747,8 +757,8 @@ struct _GAME_LIGHTMAPS_
 {
 	Pos w_pos;
 
-	uint16 W_w;
-	uint16 W_h;
+	uint32 W_w;
+	uint32 W_h;
 
 	uint16 T_w;
 	uint16 T_h;

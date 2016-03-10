@@ -3953,6 +3953,30 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 
 			if(z>z_used) z_used=z;
 
+			if(z>47)
+			{
+				x+=st.Camera.position.x;
+				y+=st.Camera.position.y;
+			}
+			else
+			if(z>39 && z<48)
+			{
+				x+=st.Camera.position.x;
+				y+=st.Camera.position.y;
+			}
+			else
+			if(z>31 && z<40)
+			{
+				x+=st.Camera.position.x;
+				y+=st.Camera.position.y;
+			}
+			else
+			if(z>15 && z<24)
+			{
+				x-=st.Camera.position.x;
+				y-=st.Camera.position.y;
+			}
+			
 			x*=st.Camera.dimension.x;
 			y*=st.Camera.dimension.y;
 
@@ -4116,16 +4140,11 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
+
 			tx1=x;
 			ty1=y;
 			tx2=sizex;
 			ty2=sizey;
-
-			x-=st.Camera.position.x;
-			y-=st.Camera.position.y;
-
-			sizex*=st.Camera.dimension.x;
-			sizey*=st.Camera.dimension.y;
 
 			if(z>56) 
 				z=56;
@@ -4138,8 +4157,48 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 
 			if(z>z_used) z_used=z;
 
-			x*=st.Camera.dimension.x;
-			y*=st.Camera.dimension.y;
+			if(z>z_used) z_used=z;
+
+			if(z>39 && z<48)
+			{
+				x-=(float) st.Camera.position.x*st.Current_Map.bck2_v;
+				y-=(float) st.Camera.position.y*st.Current_Map.bck2_v;
+			}
+			else
+			if(z>31 && z<40)
+			{
+				x-=(float) st.Camera.position.x*st.Current_Map.bck1_v;
+				y-=(float) st.Camera.position.y*st.Current_Map.bck1_v;
+
+				sizex*=st.Camera.dimension.x;
+				sizey*=st.Camera.dimension.y;
+
+				x*=st.Camera.dimension.x;
+				y*=st.Camera.dimension.y;
+			}
+			else
+			if(z>23 && z<32)
+			{
+				x-=st.Camera.position.x;
+				y-=st.Camera.position.y;
+
+				sizex*=st.Camera.dimension.x;
+				sizey*=st.Camera.dimension.y;
+
+				x*=st.Camera.dimension.x;
+				y*=st.Camera.dimension.y;
+			}
+			if(z>15 && z<24)
+			{
+				x-=(float) st.Camera.position.x*st.Current_Map.fr_v;
+				y-=(float) st.Camera.position.y*st.Current_Map.fr_v;
+
+				sizex*=st.Camera.dimension.x;
+				sizey*=st.Camera.dimension.y;
+
+				x*=st.Camera.dimension.x;
+				y*=st.Camera.dimension.y;
+			}
 
 			//timej=GetTicks();
 

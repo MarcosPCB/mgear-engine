@@ -132,6 +132,10 @@ void Menu()
 
 					meng.lightmap_res.x=meng.lightmap_res.y=256;
 
+					st.Current_Map.bck1_v=BCK1_DEFAULT_VEL;
+					st.Current_Map.bck2_v=BCK2_DEFAULT_VEL;
+					st.Current_Map.fr_v=FR_DEFAULT_VEL;
+
 				}
 			}
 			else
