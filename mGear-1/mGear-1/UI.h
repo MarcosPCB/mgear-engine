@@ -44,6 +44,7 @@ struct _UI_WINDOW
 	uint8 num_options;
 	int8 font;
 	int16 font_size;
+	int8 current;
 
 	int8 window_frame;
 };
@@ -132,6 +133,8 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32 colorN, int32 colorS, int32 colorC);
 
 void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 colorN, int32 colorS, int32 colorC);
+
+int8 UIWin2_StringButton(int8 uiwinid, int8 pos,char *text, int32 colorN, int32 colorS);
 
 void UIMain_DrawSystem();
 

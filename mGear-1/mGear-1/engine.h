@@ -514,6 +514,7 @@ struct _MGMOBJ_
 	uint8 priority : 2;//0 - Most important, 1 - Medium, 2 - Less important
 	_OBJTYPE type;
 	_OBJBLOCK block_type;
+	uint16 flag;
 	uint8 amblight;
 	int16 lightmapid;
 };
@@ -574,9 +575,11 @@ struct _MGM_
 	uint8 num_mgg;
 	uint8 num_lights;
 	uint16 num_sector;
-	int16 bck2_v;
-	int16 bck1_v;
-	int16 fr_v;
+	float bck2_v;
+	float bck1_v;
+	float fr_v;
+	uint8 bcktex_mgg;
+	int16 bcktex_id;
 	char MGG_FILES[32][256];
 };
 
@@ -590,9 +593,11 @@ struct _MGMFORMAT_
 	uint8 num_mgg;
 	uint8 num_lights;
 	uint16 num_sector;
-	int16 bck2_v;
-	int16 bck1_v;
-	int16 fr_v;
+	float bck2_v;
+	float bck1_v;
+	float fr_v;
+	uint8 bcktex_mgg;
+	int16 bcktex_id;
 	char MGG_FILES[32][256];
 };
 

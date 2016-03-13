@@ -54,6 +54,9 @@
 
 #define DRAW_SECTOR2 41
 
+#define MAP_PROPERTIES 42
+#define VIEWMODE_BOX 43
+
 struct _mEng
 {
 	char mgg_list[32][256];

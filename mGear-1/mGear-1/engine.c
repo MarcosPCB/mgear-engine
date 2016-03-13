@@ -330,70 +330,17 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
-int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 dimx, int32 dimy)
+int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int8 z)
 {
-	int32 vertex[8], vertex2[8];
-	uint8 valx=0, valy=0;
-	int32 dist, centerx, centery;
-	float r, dx, dy;
-
-	if(x>(dimx-16384) && x<dimx && y>(dimy-8192) && y<dimy)
-		return 0;
+	int32 vertex[8];
+	/*
+	if(sizex>16384 || sizey>8192 || z>47)
+		return 1;
 	else
 	{
-		if(sizex>sizey) dist=sizex;
-		else dist=sizey;
+		if(z>
+	} */
 
-		centerx=st.Camera.position.x+8192;
-		centery=st.Camera.position.y+4096;
-
-		dx=(float) pow(x-centerx,2);
-		dy=(float) pow(y-centery,2);
-
-		r=(float) mSqrt(dx+dy);
-
-		if(r<16384+dist) return 0;
-		else return 1;
-
-		return 0;
-
-		/*
-		vertex[0]=x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
-		vertex[1]=y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-
-		vertex[2]=x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
-		vertex[3]=y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
-
-		vertex[4]=x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
-		vertex[5]=y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-
-		vertex[6]=x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
-		vertex[7]=y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
-		
-		if(vertex[0]<(dimx-16384) || vertex[0]>dimx) valx++;
-		if(vertex[2]<(dimx-16384) || vertex[2]>dimx) valx++;
-		if(vertex[4]<(dimx-16384) || vertex[4]>dimx) valx++;
-		if(vertex[6]<(dimx-16384) || vertex[6]>dimx) valx++;
-
-		if(valx==4)
-		{
-			if(dimx<vertex[2] ||
-			//return 1;
-
-		if(vertex[1]<(dimy-8192) || vertex[1]>dimy) valy++;
-		if(vertex[3]<(dimy-8192) || vertex[3]>dimy) valy++;
-		if(vertex[5]<(dimy-8192) || vertex[5]>dimy) valy++;
-		if(vertex[7]<(dimy-8192) || vertex[7]>dimy) valy++;
-
-		//if(valy==4)
-			//return 1;
-
-			
-			
-		return 0;
-
-		*/
-	}
 }
 
 void Quit()
@@ -3478,7 +3425,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
 	
-	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -3923,7 +3870,7 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4124,7 +4071,7 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4363,7 +4310,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	t3=16384;
 	t4=8192;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4509,7 +4456,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	t3=16384;
 	t4=8192;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4655,7 +4602,7 @@ int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	t3=16384;
 	t4=8192;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -5210,7 +5157,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -5460,7 +5407,7 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -5666,7 +5613,7 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -5867,7 +5814,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	if(CheckBounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -6818,6 +6765,11 @@ uint32 LoadMap(const char *name)
 	st.Current_Map.num_sprites=map.num_sprites;
 	st.Current_Map.num_sector=map.num_sector;
 	strcpy(st.Current_Map.name,map.name);
+	st.Current_Map.bck1_v=map.bck1_v;
+	st.Current_Map.bck2_v=map.bck2_v;
+	st.Current_Map.fr_v=map.fr_v;
+	st.Current_Map.bcktex_id=map.bcktex_id;
+	st.Current_Map.bcktex_mgg=map.bcktex_mgg;
 	memcpy(&st.Current_Map.MGG_FILES,&map.MGG_FILES,sizeof(map.MGG_FILES));
 
 #ifdef ENGINEER
@@ -6931,6 +6883,7 @@ void FreeMap()
 			FreeMGG(&mgg_map[i]);
 
 		memset(&st.Current_Map,0,sizeof(_MGM));
+		st.Current_Map.bcktex_id=-1;
 	}
 }
 
@@ -6943,6 +6896,9 @@ void DrawMap()
 
 	uint32 i;
 	
+	if(st.Current_Map.bcktex_id>-1)
+		DrawGraphic(8192,4096,16384,8192,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,55);
+
 			for(i=0;i<st.Current_Map.num_obj;i++)
 				DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,

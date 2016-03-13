@@ -471,8 +471,67 @@ static void PannelLeft()
 	uint16 i=0, j=0, xt, yt;
 	Pos p;
 	PosF p2;
+	static int8 winid[4];
 
+	UIData(8192,128,16384,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 	UIData(455,4096,455*2,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+
+	if(UIStringButton(2048,128,"Map Properties",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	{
+		meng.command=meng.pannel_choice=MAP_PROPERTIES;
+		winid[0]=UICreateWindow2(0,0,CENTER,7,9,2048,32,ARIAL);
+	}
+
+	if(meng.pannel_choice==MAP_PROPERTIES)
+	{
+		if(meng.command==MAP_PROPERTIES && meng.command2==MGG_SEL)
+			meng.command=meng.command2=TEX_SEL;
+		else
+		if(meng.command==MAP_PROPERTIES && meng.command2==TEX_SEL)
+		{
+			st.Current_Map.bcktex_id=meng.tex_ID;
+			st.Current_Map.bcktex_mgg=meng.tex_MGGID;
+			meng.command2=0;
+		}
+
+		if(!st.Current_Map.num_mgg)
+			UIWin2_MarkBox(winid[0],0,2,"Textured Background3",UI_COL_NORMAL,UI_COL_SELECTED);
+		else
+		{
+			if(st.Current_Map.bcktex_id==-1)
+			{
+				if(UIWin2_MarkBox(winid[0],1,0,"Textured Background3",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+				{
+					meng.command=MGG_SEL;
+					meng.command2=MGG_SEL;
+				}
+			}
+			else
+			if(UIWin2_MarkBox(winid[0],0,1,"Textured Background3",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+			{
+					st.Current_Map.bcktex_id=-1;
+					st.Current_Map.bcktex_mgg=0;
+			}
+		}
+		
+		if(st.Current_Map.bcktex_id>-1)
+		{
+			if(UIWin2_StringButton(winid[0],1,"Background3 texture",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+				meng.command=meng.command2=MGG_SEL;
+		}
+
+
+		UIWin2_NumberBoxf(winid[0],2,&st.Current_Map.bck1_v,"BCK1 parallax vel",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[0],3,&st.Current_Map.bck2_v,"BCK2 parallax vel",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[0],4,&st.Current_Map.fr_v,"FR1 parallax vel",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+
+		if(UIWin2_StringButton(winid[0],8,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		{
+			meng.command=meng.pannel_choice=1;
+			UIDestroyWindow(winid[0]);
+		}
+
+	}
 
 	if(!CheckColisionMouse(227,227,455,455,0))
 	{
@@ -3606,7 +3665,7 @@ static void ViewPortCommands()
 		meng.current_command=0;
 	}	
 
-	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL)
+	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL && !CheckColisionMouse(8192,128,16384,256,0))
 	{
 		if(meng.command==DRAW_SECTOR)
 		{

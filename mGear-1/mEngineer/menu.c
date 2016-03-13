@@ -135,6 +135,8 @@ void Menu()
 					st.Current_Map.bck1_v=BCK1_DEFAULT_VEL;
 					st.Current_Map.bck2_v=BCK2_DEFAULT_VEL;
 					st.Current_Map.fr_v=FR_DEFAULT_VEL;
+					st.Current_Map.bcktex_id=-1;
+					st.Current_Map.bcktex_mgg=0;
 
 				}
 			}
