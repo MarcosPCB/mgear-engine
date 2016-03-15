@@ -93,6 +93,7 @@ struct _mEng
 		float amblight;
 		Pos texsize;
 		Pos texpan;
+		uint16 flag;
 	} obj, obj2;
 
 	struct SpriteEN
