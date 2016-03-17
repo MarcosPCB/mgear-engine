@@ -148,7 +148,7 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 
 int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS);
 
-int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang);
+int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang, int8 z);
 
 void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b);
 

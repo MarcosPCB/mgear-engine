@@ -138,6 +138,10 @@ void Menu()
 					st.Current_Map.bcktex_id=-1;
 					st.Current_Map.bcktex_mgg=0;
 
+					memset(meng.z_buffer,0,2048*57*sizeof(int16));
+					memset(meng.z_slot,0,57*sizeof(int16));
+					meng.z_used=0;
+
 				}
 			}
 			else

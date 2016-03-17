@@ -474,7 +474,7 @@ static void PannelLeft()
 {
 	uint8 mouse=0;
 	char num[32], str[64];
-	uint16 i=0, j=0, xt, yt;
+	int32 i=0, j=0, xt, yt, k=0;
 	Pos p;
 	PosF p2;
 	static int8 winid[4];
@@ -489,7 +489,7 @@ static void PannelLeft()
 		meng.scroll2=0;
 	}
 
-	if(UIStringButton(2048,128,"Map Properties",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	if(UIStringButton(2256,128,"Map Properties",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		meng.command=meng.pannel_choice=MAP_PROPERTIES;
 		winid[0]=UICreateWindow2(0,0,CENTER,7,9,2048,32,ARIAL);
@@ -529,7 +529,7 @@ static void PannelLeft()
 		if(st.Current_Map.bcktex_id>-1)
 		{
 			if(UIWin2_StringButton(winid[0],1,"Background3 texture",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-				meng.command=meng.command2=MGG_SEL;
+				meng.command=meng.command2=TEX_SEL;
 		}
 
 
@@ -1386,9 +1386,23 @@ static void PannelLeft()
 
 				if(meng.sprite_edit_selection<st.Current_Map.num_sprites-1)
 				{
-					for(j=meng.sprite_edit_selection;j<st.Current_Map.num_sprites;j++)
+					for(j=meng.sprite_edit_selection;j<st.Current_Map.num_sprites-1;j++)
+					{
 						memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
+						memset(&st.Current_Map.sprites[j+1],0,sizeof(_MGMSPRITE));
+
+						st.Current_Map.sprites[j+1].stat=0;
+
+						for(k=0;k<meng.z_slot[st.Current_Map.sprites[meng.sprite_edit_selection].position.z];k++)
+							if(meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k]==meng.sprite_edit_selection)
+								break;
+
+						meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k]=meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k+1];
+						meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k+1]=0;
+					}
 				}
+
+				meng.z_slot[st.Current_Map.sprites[meng.sprite_edit_selection].position.z]--;
 
 				st.Current_Map.num_sprites--;
 				st.keys[DELETE_KEY].state=0;
@@ -2108,7 +2122,7 @@ static void PannelLeft()
 		p2.y=1024*st.Camera.dimension.y;
 
 		sprintf(str,"%d",st.Current_Map.obj[i].size.x);
-		String2Data(str,p.x,p.y-227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
+		String2Data(str,p.x,p.y-227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.obj[i].position.z);
 
 		p.x=st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2);
 		p.y=st.Current_Map.obj[i].position.y;
@@ -2122,9 +2136,9 @@ static void PannelLeft()
 		sprintf(str,"%d",st.Current_Map.obj[i].size.y);
 
 		if(meng.obj2.flag & 1)
-			String2Data(str,st.Current_Map.obj[i].position.x,p.y+(st.Current_Map.obj[i].size.y/2)+227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
+			String2Data(str,st.Current_Map.obj[i].position.x,p.y+(st.Current_Map.obj[i].size.y/2)+227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.obj[i].position.z);
 		else
-			String2Data(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
+			String2Data(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.obj[i].position.z);
 
 		if(UIStringButton(465,4000,"Edit pos.",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 			meng.command=OBJ_EDIT_BOX;
@@ -2136,11 +2150,33 @@ static void PannelLeft()
 
 			if(i<st.Current_Map.num_obj-1)
 			{
-				for(j=i;j<st.Current_Map.num_obj;j++)
+				for(j=i;j<st.Current_Map.num_obj-1;j++)
+				{
 					memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
+					st.Current_Map.obj[j+1].type=BLANK;
+					for(k=0;k<meng.z_slot[st.Current_Map.obj[i].position.z];k++)
+						if(meng.z_buffer[st.Current_Map.obj[i].position.z][k]==i)
+							break;
+
+					meng.z_buffer[st.Current_Map.obj[i].position.z][k]=meng.z_buffer[st.Current_Map.obj[i].position.z][k+1];
+					meng.z_buffer[st.Current_Map.obj[i].position.z][k+1]=0;
+				}
 			}
 
+			meng.z_slot[st.Current_Map.obj[i].position.z]--;
+			
+			meng.obj2.amblight=st.Current_Map.obj[i].amblight;
+			meng.obj2.texpan=st.Current_Map.obj[i].texpan;
+			meng.obj2.texsize=st.Current_Map.obj[i].texsize;
+			meng.obj2.type=st.Current_Map.obj[i].type;
+			meng.obj2.color=st.Current_Map.obj[i].color;
+			meng.obj2.flag=st.Current_Map.obj[i].flag;
+			
 			st.Current_Map.num_obj--;
+
+			if(!st.Current_Map.num_obj)
+				meng.command2=0;
+
 			st.keys[DELETE_KEY].state=0;
 		}
 
@@ -2887,11 +2923,14 @@ static void PannelLeft()
 							}
 		}
 
-		st.Current_Map.obj[i].amblight=meng.obj2.amblight;
-		st.Current_Map.obj[i].texpan=meng.obj2.texpan;
-		st.Current_Map.obj[i].texsize=meng.obj2.texsize;
-		st.Current_Map.obj[i].color=meng.obj2.color;
-		st.Current_Map.obj[i].type=meng.obj2.type;
+		if(!st.Current_Map.obj[i].type==BLANK)
+		{
+			st.Current_Map.obj[i].amblight=meng.obj2.amblight;
+			st.Current_Map.obj[i].texpan=meng.obj2.texpan;
+			st.Current_Map.obj[i].texsize=meng.obj2.texsize;
+			st.Current_Map.obj[i].color=meng.obj2.color;
+			st.Current_Map.obj[i].type=meng.obj2.type;
+		}
 	}
 
 	if(meng.pannel_choice==ADD_OBJ)
@@ -3659,7 +3698,7 @@ static void ViewPortCommands()
 	Pos vertextmp[4];
 	uint8 got_it=0;
 	char str[64];
-	uint16 i, j, k;
+	int16 i, j, k, l, m;
 	static Pos p, p2;
 	uPos16 p3;
 	float tmp;
@@ -3714,23 +3753,24 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_sector<MAX_SECTORS)
 				{
-					for(i=0;i<MAX_SECTORS;i++)
-					{
-						if(st.Current_Map.sector[i].id!=-1 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,256,256,0))
+					i=st.Current_Map.num_sector;
+					//for(i=0;i<MAX_SECTORS;i++)
+					//{
+						if(st.Current_Map.sector[i].id!=-1 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,256,256,0,0,0,0))
 						{
 							st.Current_Map.sector[i].id=-1;
 
 							if(i<st.Current_Map.num_sector-1)
 							{
-								for(j=i;j<st.Current_Map.num_sector;j++)
+								for(j=i;j<st.Current_Map.num_sector-1;j++)
 									memcpy(&st.Current_Map.sector[j],&st.Current_Map.sector[j+1],sizeof(_SECTOR));
 							}
 
 							st.Current_Map.num_sector--;
 
-							break;
+							//break;
 						}
-					}
+					//}
 				}
 				LogApp("Sector Removed");
 				st.mouse2=0;
@@ -3811,70 +3851,74 @@ static void ViewPortCommands()
 		{
 			if(st.Current_Map.num_sector>0)
 			{
-				for(i=0;i<st.Current_Map.num_sector;i++)
+				for(l=16;l<58;l++)
 				{
-					if(got_it) break;
-
-					for(j=0;j<5;j++)
+					for(k=meng.z_slot[l]-1;k>-1;k--)
 					{
-						if(j<4 && CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[j].x,st.Current_Map.sector[i].vertex[j].y,256,256,0) && st.mouse1)
+						i=meng.z_buffer[l][k];
+						if(got_it) break;
+
+						for(j=0;j<5;j++)
 						{
-							st.Current_Map.sector[i].vertex[j].x=st.mouse.x;
-							st.Current_Map.sector[i].vertex[j].y=st.mouse.y;
-							STW(&st.Current_Map.sector[i].vertex[j].x,&st.Current_Map.sector[i].vertex[j].y);
-
-							got_it=1;
-							break;
-						}
-
-						if(j==4 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0) && st.mouse1)
-						{
-							vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
-							vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
-
-							vertextmp[1].x=(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].position.x);
-							vertextmp[1].y=(st.Current_Map.sector[i].vertex[1].y-st.Current_Map.sector[i].position.y);
-
-							vertextmp[2].x=(st.Current_Map.sector[i].vertex[2].x-st.Current_Map.sector[i].position.x);
-							vertextmp[2].y=(st.Current_Map.sector[i].vertex[2].y-st.Current_Map.sector[i].position.y);
-
-							vertextmp[3].x=(st.Current_Map.sector[i].vertex[3].x-st.Current_Map.sector[i].position.x);
-							vertextmp[3].y=(st.Current_Map.sector[i].vertex[3].y-st.Current_Map.sector[i].position.y);
-
-							st.Current_Map.sector[i].position.x=st.mouse.x;
-							st.Current_Map.sector[i].position.y=st.mouse.y;
-							STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
-
-							st.Current_Map.sector[i].vertex[0].x=st.Current_Map.sector[i].position.x+vertextmp[0].x;
-							st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].position.y+vertextmp[0].y;
-
-							st.Current_Map.sector[i].vertex[1].x=st.Current_Map.sector[i].position.x+vertextmp[1].x;
-							st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].position.y+vertextmp[1].y;
-
-							st.Current_Map.sector[i].vertex[2].x=st.Current_Map.sector[i].position.x+vertextmp[2].x;
-							st.Current_Map.sector[i].vertex[2].y=st.Current_Map.sector[i].position.y+vertextmp[2].y;
-
-							st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
-							st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
-
-							if(st.keys[DELETE_KEY].state)
+							if(j<4 && CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[j].x,st.Current_Map.sector[i].vertex[j].y,256,256,0,0) && st.mouse1)
 							{
-								st.Current_Map.sector[i].id=-1;
+								st.Current_Map.sector[i].vertex[j].x=st.mouse.x;
+								st.Current_Map.sector[i].vertex[j].y=st.mouse.y;
+								STW(&st.Current_Map.sector[i].vertex[j].x,&st.Current_Map.sector[i].vertex[j].y);
 
-								if(i<st.Current_Map.num_sector-1)
-								{
-									for(j=i;j<st.Current_Map.num_sector;j++)
-										memcpy(&st.Current_Map.sector[j],&st.Current_Map.sector[j+1],sizeof(_SECTOR));
-								}
-
-								st.Current_Map.num_sector--;
-								st.keys[DELETE_KEY].state=0;
-
+								got_it=1;
 								break;
 							}
 
-							got_it=1;
-							break;
+							if(j==4 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,0) && st.mouse1)
+							{
+								vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
+								vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
+
+								vertextmp[1].x=(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].position.x);
+								vertextmp[1].y=(st.Current_Map.sector[i].vertex[1].y-st.Current_Map.sector[i].position.y);
+
+								vertextmp[2].x=(st.Current_Map.sector[i].vertex[2].x-st.Current_Map.sector[i].position.x);
+								vertextmp[2].y=(st.Current_Map.sector[i].vertex[2].y-st.Current_Map.sector[i].position.y);
+
+								vertextmp[3].x=(st.Current_Map.sector[i].vertex[3].x-st.Current_Map.sector[i].position.x);
+								vertextmp[3].y=(st.Current_Map.sector[i].vertex[3].y-st.Current_Map.sector[i].position.y);
+
+								st.Current_Map.sector[i].position.x=st.mouse.x;
+								st.Current_Map.sector[i].position.y=st.mouse.y;
+								STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
+
+								st.Current_Map.sector[i].vertex[0].x=st.Current_Map.sector[i].position.x+vertextmp[0].x;
+								st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].position.y+vertextmp[0].y;
+
+								st.Current_Map.sector[i].vertex[1].x=st.Current_Map.sector[i].position.x+vertextmp[1].x;
+								st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].position.y+vertextmp[1].y;
+
+								st.Current_Map.sector[i].vertex[2].x=st.Current_Map.sector[i].position.x+vertextmp[2].x;
+								st.Current_Map.sector[i].vertex[2].y=st.Current_Map.sector[i].position.y+vertextmp[2].y;
+
+								st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
+								st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
+
+								if(st.keys[DELETE_KEY].state)
+								{
+									st.Current_Map.sector[i].id=-1;
+
+									if(i<st.Current_Map.num_sector-1)
+									{
+										for(j=i;j<st.Current_Map.num_sector-1;j++)
+											memcpy(&st.Current_Map.sector[j],&st.Current_Map.sector[j+1],sizeof(_SECTOR));
+									}
+
+									st.Current_Map.num_sector--;
+									st.keys[DELETE_KEY].state=0;
+
+									break;
+								}
+
+								got_it=1;
+								break;
+							}
 						}
 					}
 				}
@@ -3882,152 +3926,166 @@ static void ViewPortCommands()
 			
 			if(st.Current_Map.num_sprites>0)
 			{
-				for(i=0;i<st.Current_Map.num_sprites;i++)
+				for(l=16;l<58;l++)
 				{
-					if(got_it) break;
-
-					if(CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle))
+					for(k=meng.z_slot[l]-1;k>-1;k--)
 					{
-						if(st.mouse1)
+						i=meng.z_buffer[l][k];
+						if(got_it) break;
+
+						if(CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
+							st.Current_Map.sprites[i].angle,st.Current_Map.sprites[i].position.z))
 						{
-							if(meng.got_it==-1)
+							if(st.mouse1)
 							{
-								meng.command2=EDIT_SPRITE;
-								meng.p=st.mouse;
-								meng.got_it=i;
+								if(meng.got_it==-1)
+								{
+									meng.command2=EDIT_SPRITE;
+									meng.p=st.mouse;
+									meng.got_it=i;
 
-								meng.sprite_edit_selection=i;
+									meng.sprite_edit_selection=i;
 
-								STW(&meng.p.x, &meng.p.y);
+									STW(&meng.p.x, &meng.p.y);
 
-								meng.p.x-=st.Current_Map.sprites[i].position.x;
-								meng.p.y-=st.Current_Map.sprites[i].position.y;
+									meng.p.x-=st.Current_Map.sprites[i].position.x;
+									meng.p.y-=st.Current_Map.sprites[i].position.y;
+								}
+								else
+								if(meng.got_it!=-1 && meng.got_it!=i)
+									continue;
+
+								p=st.mouse;
+
+								STW(&p.x, &p.y);
+
+								meng.com_id=i;
+
+								st.Current_Map.sprites[i].position.x=p.x;
+								st.Current_Map.sprites[i].position.y=p.y;
+
+								st.Current_Map.sprites[i].position.x-=meng.p.x;
+								st.Current_Map.sprites[i].position.y-=meng.p.y;
+
+								p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
+								p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
+
+								sprintf(str,"%d",st.Current_Map.sprites[i].angle);
+								String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,0);
+
+								if(st.mouse_wheel>0 && !st.mouse2)
+								{
+									if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle+=1;
+									else st.Current_Map.sprites[i].angle+=100;
+									st.mouse_wheel=0;
+								}
+
+								if(st.mouse_wheel<0 && !st.mouse2)
+								{
+									if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle-=1;
+									else st.Current_Map.sprites[i].angle-=100;
+									st.mouse_wheel=0;
+								}
+
+								got_it=1;
+								break;
 							}
 							else
-							if(meng.got_it!=-1 && meng.got_it!=i)
-								continue;
-
-							p=st.mouse;
-
-							STW(&p.x, &p.y);
-
-							meng.com_id=i;
-
-							st.Current_Map.sprites[i].position.x=p.x;
-							st.Current_Map.sprites[i].position.y=p.y;
-
-							st.Current_Map.sprites[i].position.x-=meng.p.x;
-							st.Current_Map.sprites[i].position.y-=meng.p.y;
-
-							p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
-							p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
-
-							sprintf(str,"%d",st.Current_Map.sprites[i].angle);
-							String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,0);
-
-							if(st.mouse_wheel>0 && !st.mouse2)
-							{
-								if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle+=1;
-								else st.Current_Map.sprites[i].angle+=100;
-								st.mouse_wheel=0;
-							}
-
-							if(st.mouse_wheel<0 && !st.mouse2)
-							{
-								if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle-=1;
-								else st.Current_Map.sprites[i].angle-=100;
-								st.mouse_wheel=0;
-							}
-
-							got_it=1;
-							break;
+								meng.got_it=-1;
 						}
-						else
-							meng.got_it=-1;
 					}
 				}
 			}
 
 			if(st.Current_Map.num_obj>0)
 			{
-				for(i=0;i<st.Current_Map.num_obj;i++)
+				for(l=16;l<58;l++)
 				{
-					if(meng.command2==EDIT_OBJ && meng.got_it==i)
-						if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle))
-							break;
-
-					if(got_it) break;
-
-					if(CheckColisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,st.Current_Map.obj[i].angle))
+					for(k=meng.z_slot[l]-1;k>-1;k--)
 					{
-						if(st.mouse1)
+						i=meng.z_buffer[l][k];
+
+						if(meng.command2==EDIT_OBJ && meng.got_it==i)
+							if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle,
+								st.Current_Map.obj[i].position.z))
+								break;
+
+						if(got_it) break;
+
+						if(CheckColisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,st.Current_Map.obj[i].angle,
+							st.Current_Map.obj[i].position.z))
 						{
-							if(meng.got_it==-1)
+							if(st.mouse1)
 							{
-								meng.command2=EDIT_OBJ;
-								meng.p=st.mouse;
-								meng.got_it=i;
+								if(meng.got_it==-1)
+								{
+									meng.command2=EDIT_OBJ;
+									meng.p=st.mouse;
+									meng.got_it=i;
 
-								STW(&meng.p.x, &meng.p.y);
+									STW(&meng.p.x, &meng.p.y);
 
-								meng.p.x-=st.Current_Map.obj[i].position.x;
-								meng.p.y-=st.Current_Map.obj[i].position.y;
+									meng.p.x-=st.Current_Map.obj[i].position.x;
+									meng.p.y-=st.Current_Map.obj[i].position.y;
+								}
+								else
+								if(meng.got_it!=-1 && meng.got_it!=i)
+									continue;
+								else
+								{
+									p=st.mouse;
+
+									STW(&p.x, &p.y);
+
+									meng.com_id=i;
+
+									st.Current_Map.obj[i].position.x=p.x;
+									st.Current_Map.obj[i].position.y=p.y;
+
+									st.Current_Map.obj[i].position.x-=meng.p.x;
+									st.Current_Map.obj[i].position.y-=meng.p.y;
+
+									if(st.Current_Map.obj[i].lightmapid!=-1)
+									{
+										st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
+										st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
+									}
+
+									p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
+									p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
+
+									sprintf(str,"%d",st.Current_Map.obj[i].angle);
+									String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.obj[i].position.z);
+
+									if(st.mouse_wheel>0 && !st.mouse2)
+									{
+										if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle+=1;
+										else st.Current_Map.obj[i].angle+=100;
+
+										if(st.Current_Map.obj[i].lightmapid!=-1)
+											st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
+
+										st.mouse_wheel=0;
+									}
+
+									if(st.mouse_wheel<0 && !st.mouse2)
+									{
+										if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle-=1;
+										else st.Current_Map.obj[i].angle-=100;
+
+										if(st.Current_Map.obj[i].lightmapid!=-1)
+											st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
+
+										st.mouse_wheel=0;
+									}
+
+									got_it=1;
+									break;
+								}
 							}
 							else
-							if(meng.got_it!=-1 && meng.got_it!=i)
-								continue;
-
-							p=st.mouse;
-
-							STW(&p.x, &p.y);
-
-							meng.com_id=i;
-
-							st.Current_Map.obj[i].position.x=p.x;
-							st.Current_Map.obj[i].position.y=p.y;
-
-							st.Current_Map.obj[i].position.x-=meng.p.x;
-							st.Current_Map.obj[i].position.y-=meng.p.y;
-
-							if(st.Current_Map.obj[i].lightmapid!=-1)
-							{
-								st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
-								st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
-							}
-
-							p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
-							p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
-
-							sprintf(str,"%d",st.Current_Map.obj[i].angle);
-							String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,0);
-
-							if(st.mouse_wheel>0 && !st.mouse2)
-							{
-								if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle+=1;
-								else st.Current_Map.obj[i].angle+=100;
-
-								if(st.Current_Map.obj[i].lightmapid!=-1)
-									st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
-
-								st.mouse_wheel=0;
-							}
-
-							if(st.mouse_wheel<0 && !st.mouse2)
-							{
-								if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle-=1;
-								else st.Current_Map.obj[i].angle-=100;
-
-								if(st.Current_Map.obj[i].lightmapid!=-1)
-									st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
-
-								st.mouse_wheel=0;
-							}
-
-							got_it=1;
-							break;
+								meng.got_it=-1;
 						}
-						else
-							meng.got_it=-1;
 					}
 				}
 			}
@@ -4039,8 +4097,9 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_obj<MAX_OBJS)
 				{
-					for(i=0;i<MAX_OBJS;i++)
-					{
+					i=st.Current_Map.num_obj;
+					//for(i=0;i<MAX_OBJS;i++)
+					//{
 						if(st.Current_Map.obj[i].type==BLANK)
 						{
 							st.Current_Map.obj[i].type=meng.obj.type;
@@ -4052,7 +4111,42 @@ static void ViewPortCommands()
 							st.Current_Map.obj[i].texsize=meng.obj.texsize;
 							st.Current_Map.obj[i].texpan=meng.obj.texpan;
 							st.Current_Map.obj[i].position=st.mouse;
-							STW(&st.Current_Map.obj[i].position.x,&st.Current_Map.obj[i].position.y);
+							STWci(&st.Current_Map.obj[i].position.x,&st.Current_Map.obj[i].position.y);
+
+							if(meng.obj.type==BACKGROUND2)
+							{
+				
+								st.Current_Map.obj[i].position.x+=(float) st.Camera.position.x*st.Current_Map.bck2_v;
+								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.bck2_v;
+							}
+							else
+							if(meng.obj.type==BACKGROUND1)
+							{
+				
+								st.Current_Map.obj[i].position.x+=(float) st.Camera.position.x*st.Current_Map.bck1_v;
+								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.bck1_v;
+
+								st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
+							}
+							else
+							if(meng.obj.type==MIDGROUND)
+							{
+								st.Current_Map.obj[i].position.x+=st.Camera.position.x;
+								st.Current_Map.obj[i].position.y+=st.Camera.position.y;
+
+								st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
+							}
+							if(meng.obj.type==FOREGROUND)
+							{
+								st.Current_Map.obj[i].position.x+=(float) st.Camera.position.x*st.Current_Map.fr_v;
+								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.fr_v;
+
+								st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
+							}
+
 							st.Current_Map.obj[i].size.x=meng.pre_size.x;
 							st.Current_Map.obj[i].size.y=meng.pre_size.y;
 							st.Current_Map.obj[i].angle=0;
@@ -4073,10 +4167,15 @@ static void ViewPortCommands()
 							if(meng.obj.type==FOREGROUND)
 								st.Current_Map.obj[i].position.z=16;
 
+							meng.z_buffer[st.Current_Map.obj[i].position.z][meng.z_slot[st.Current_Map.obj[i].position.z]]=i;
+							meng.z_slot[st.Current_Map.obj[i].position.z]++;
+							if(st.Current_Map.obj[i].position.z>meng.z_used)
+								meng.z_used=st.Current_Map.obj[i].position.z;
+
 							st.Current_Map.num_obj++;
-							break;
+							//break;
 						}
-					}
+					//}
 				}
 
 				LogApp("Object added");
@@ -4087,21 +4186,32 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_obj<MAX_OBJS)
 				{
-					for(i=0;i<MAX_OBJS;i++)
+					for(l=0;l<57;l--)
 					{
-						if(st.Current_Map.obj[i].type!=BLANK && CheckColisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-							st.Current_Map.obj[i].angle))
+						for(k=0;k<meng.z_slot[l];k++)
 						{
-							st.Current_Map.obj[i].type=BLANK;
-
-							if(i<st.Current_Map.num_obj-1)
+							i=meng.z_buffer[l][k];
+							if(st.Current_Map.obj[i].type!=BLANK && CheckColisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
+								st.Current_Map.obj[i].angle,st.Current_Map.obj[i].position.z))
 							{
-								for(j=i;j<st.Current_Map.num_obj;j++)
-									memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
-							}
+								st.Current_Map.obj[i].type=BLANK;
 
-							st.Current_Map.num_obj--;
-							break;
+								if(i<st.Current_Map.num_obj-1)
+								{
+									for(j=i;j<st.Current_Map.num_obj-1;j++)
+									{
+										memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
+										st.Current_Map.obj[j+1].type=BLANK;
+										meng.z_buffer[l][k]=meng.z_buffer[l][k+1];
+										meng.z_buffer[l][k+1]=0;
+									}
+								}
+
+								meng.z_slot[l]--;
+
+								st.Current_Map.num_obj--;
+								break;
+							}
 						}
 					}
 				}
@@ -4117,8 +4227,9 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_sprites<MAX_SPRITES)
 				{
-					for(i=0;i<MAX_SPRITES;i++)
-					{
+					i=st.Current_Map.num_sprites;
+					//for(i=0;i<MAX_SPRITES;i++)
+					//{
 						if(st.Current_Map.sprites[i].stat==0)
 						{
 							st.Current_Map.sprites[i].stat=1;
@@ -4130,7 +4241,41 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].type_s=meng.spr.type;
 
 							st.Current_Map.sprites[i].position=st.mouse;
-							STW(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);
+							STWci(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);
+
+							if(meng.spr.type==BACKGROUND2)
+							{
+				
+								st.Current_Map.sprites[i].position.x+=(float) st.Camera.position.x*st.Current_Map.bck2_v;
+								st.Current_Map.sprites[i].position.y+=(float) st.Camera.position.y*st.Current_Map.bck2_v;
+							}
+							else
+							if(meng.spr.type==BACKGROUND1)
+							{
+				
+								st.Current_Map.sprites[i].position.x+=(float) st.Camera.position.x*st.Current_Map.bck1_v;
+								st.Current_Map.sprites[i].position.y+=(float) st.Camera.position.y*st.Current_Map.bck1_v;
+
+								st.Current_Map.sprites[i].position.x*=st.Camera.dimension.x;
+								st.Current_Map.sprites[i].position.y*=st.Camera.dimension.y;
+							}
+							else
+							if(meng.spr.type==MIDGROUND)
+							{
+								st.Current_Map.sprites[i].position.x+=st.Camera.position.x;
+								st.Current_Map.sprites[i].position.y+=st.Camera.position.y;
+
+								st.Current_Map.sprites[i].position.x*=st.Camera.dimension.x;
+								st.Current_Map.sprites[i].position.y*=st.Camera.dimension.y;
+							}
+							if(meng.spr.type==FOREGROUND)
+							{
+								st.Current_Map.sprites[i].position.x+=(float) st.Camera.position.x*st.Current_Map.fr_v;
+								st.Current_Map.sprites[i].position.y+=(float) st.Camera.position.y*st.Current_Map.fr_v;
+
+								st.Current_Map.sprites[i].position.x*=st.Camera.dimension.x;
+								st.Current_Map.sprites[i].position.y*=st.Camera.dimension.y;
+							}
 
 							//st.Current_Map.sprites[i].body.size=meng.spr.size;
 							memcpy(st.Current_Map.sprites[i].tags,st.Game_Sprites[meng.sprite_selection].tags,8*sizeof(int16));
@@ -4152,14 +4297,19 @@ static void ViewPortCommands()
 							if(meng.spr.type==FOREGROUND)
 								st.Current_Map.sprites[i].position.z=16;
 
+							meng.z_buffer[st.Current_Map.sprites[i].position.z][meng.z_slot[st.Current_Map.sprites[i].position.z]]=i;
+							meng.z_slot[st.Current_Map.sprites[i].position.z]++;
+							if(st.Current_Map.sprites[i].position.z>meng.z_used)
+								meng.z_used=st.Current_Map.sprites[i].position.z;
+
 							st.Current_Map.num_sprites++;
 
 							LogApp("Sprite Added");
 							st.mouse1=0;
 
-							break;
+							//break;
 						}
-					}
+					//}
 				}
 			}
 			
@@ -4167,25 +4317,36 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_sprites<MAX_SPRITES)
 				{
-					for(i=0;i<MAX_SPRITES;i++)
+					for(l=0;l<57;l--)
 					{
-						if(st.Current_Map.sprites[i].stat!=0 && CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
-							st.Current_Map.sprites[i].body.ang))
+						for(k=0;k<meng.z_slot[l];k++)
 						{
-							st.Current_Map.sprites[i].stat=0;
-
-							if(i<st.Current_Map.num_sprites-1)
+							i=meng.z_buffer[l][k];
+							if(st.Current_Map.sprites[i].stat!=0 && CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
+								st.Current_Map.sprites[i].body.ang,st.Current_Map.sprites[i].position.z))
 							{
-								for(j=i;j<st.Current_Map.num_sprites;j++)
-									memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
+								st.Current_Map.sprites[i].stat=0;
+
+								if(i<st.Current_Map.num_sprites-1)
+								{
+									for(j=i;j<st.Current_Map.num_sprites-1;j++)
+									{
+										memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
+										st.Current_Map.sprites[j+1].stat=0;
+										meng.z_buffer[l][k]=meng.z_buffer[l][k+1];
+										meng.z_buffer[l][k+1]=0;
+									}
+								}
+
+								meng.z_slot[l]--;
+
+								st.Current_Map.num_sprites--;
+
+								LogApp("Sprite removed");
+								st.mouse2=0;
+
+								break;
 							}
-
-							st.Current_Map.num_sprites--;
-
-							LogApp("Sprite removed");
-							st.mouse2=0;
-
-							break;
 						}
 					}
 				}
@@ -4200,7 +4361,7 @@ static void ViewPortCommands()
 
 				for(j=1;j<=st.num_lights;j++)
 				{
-					if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang) && st.mouse1)
+					if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang,0) && st.mouse1)
 					{
 						st.game_lightmaps[j].num_lights=0;
 						free(st.game_lightmaps[j].data);
@@ -4240,7 +4401,7 @@ static void ViewPortCommands()
 		{
 			for(j=1;j<=st.num_lights;j++)
 			{
-				if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang) && st.mouse1)
+				if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang,0) && st.mouse1)
 				{
 					meng.got_it=j;
 
@@ -4277,7 +4438,7 @@ static void ViewPortCommands()
 					p3.x=p3.x+st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2);
 					p3.y=p3.y+st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2);
 
-					if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0) && st.mouse1)
+					if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0,0) && st.mouse1)
 					{
 						p=st.mouse;
 
@@ -4502,7 +4663,7 @@ static void ViewPortCommands()
 
 					p.x+=(st.game_lightmaps[i].W_w/2)+1920;
 
-					if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,0))
 					{
 						String2Data("Done",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 
@@ -4521,7 +4682,7 @@ static void ViewPortCommands()
 
 					p.y+=(st.game_lightmaps[i].W_h/2)+810;
 
-					if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,0))
 					{
 						String2Data("Add Light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 
@@ -4594,7 +4755,7 @@ static void ViewPortCommands()
 					p.x+=(st.game_lightmaps[i].W_w/2)+1920;
 					p.y+=810;
 
-					if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,17))
 					{
 						String2Data("Done Light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 
@@ -4661,7 +4822,7 @@ static void ViewPortCommands()
 
 				p.y-=(st.game_lightmaps[i].W_h/2)+810;
 
-				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0,17))
 				{
 					String2Data("Edit light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 
@@ -5096,7 +5257,7 @@ static void ViewPortCommands()
 					p3.x=p3.x+st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2);
 					p3.y=p3.y+st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2);
 
-					if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0) && st.mouse1)
+					if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0,0) && st.mouse1)
 					{
 						temp=j;
 						st.mouse1=0;
@@ -5210,7 +5371,7 @@ static void ViewPortCommands()
 			{
 				if(st.Current_Map.num_obj==0)
 				{
-					if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
+					if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
 					{
 						if(st.mouse1)
 						{
@@ -5236,7 +5397,8 @@ static void ViewPortCommands()
 
 				for(j=0;j<st.Current_Map.num_obj;j++)
 				{
-					if(CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
+					if(CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle,
+						st.Current_Map.obj[j].position.z))
 					{
 						if(st.mouse1 && st.Current_Map.obj[j].lightmapid==-1)
 						{
@@ -5247,9 +5409,10 @@ static void ViewPortCommands()
 					}
 					else
 					if(j==st.Current_Map.num_obj-1 && 
-						!CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle))
+						!CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,
+						st.Current_Map.obj[j].angle,st.Current_Map.obj[j].position.z))
 					{
-						if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
+						if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
 						{
 							if(st.mouse1)
 							{
@@ -5279,50 +5442,50 @@ static void ViewPortCommands()
 				{
 					if(st.mouse1)
 					{
-						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=2;
 						}
 						
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=3;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=4;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=5;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=6;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=7;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=8;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
 						{
 							p=st.mouse;
 							temp=9;
@@ -5832,7 +5995,7 @@ static void ViewPortCommands()
 			p3.x=p3.x+st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2);
 			p3.y=p3.y+st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2);
 
-			if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0) && st.mouse1)
+			if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0,0) && st.mouse1)
 			{
 				p=st.mouse;
 
@@ -6055,7 +6218,7 @@ static void ViewPortCommands()
 
 			if(meng.com_id!=1)
 			{
-				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0,0))
 				{
 					String2Data("Done",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 
@@ -6085,7 +6248,7 @@ static void ViewPortCommands()
 
 				p.y-=(st.game_lightmaps[i].W_h/2)+810;
 
-				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0,0))
 				{
 					String2Data("Edit light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 
@@ -6103,7 +6266,7 @@ static void ViewPortCommands()
 
 				p.y+=(st.game_lightmaps[i].W_h/2)+810;
 
-				if(CheckColisionMouseWorld(p.x,p.y,455,455,0))
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0,0))
 				{
 					String2Data("Add Light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,0);
 

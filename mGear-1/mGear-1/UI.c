@@ -446,7 +446,7 @@ int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size
 
 	text_size=gsizew*strlen(text);
 
-	if(CheckColisionMouseWorld(x,y,text_size,gsize,0))
+	if(CheckColisionMouseWorld(x,y,text_size,gsize,0,0))
 	{
 		String2Data(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
@@ -1186,7 +1186,7 @@ void UIMain_DrawSystem()
 }
 
 
-int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang)
+int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang, int8 z)
 {
 	int32 sx=*sizex/2, sy=*sizey/2;
 	static Pos size, size2;
@@ -1195,7 +1195,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 
 	if(st.mouse1)
 	{
-		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang) && !UI_Sys.mouse_flag)
+		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
@@ -1203,7 +1203,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=1;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang) && !UI_Sys.mouse_flag)
+		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
@@ -1211,7 +1211,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=2;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang) && !UI_Sys.mouse_flag)
+		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
@@ -1219,7 +1219,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=3;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang) && !UI_Sys.mouse_flag)
+		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
@@ -1227,7 +1227,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=4;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
@@ -1235,7 +1235,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=5;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
@@ -1243,7 +1243,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=6;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
@@ -1251,7 +1251,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=7;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
@@ -1259,7 +1259,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=8;
 		}
 		
-		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang) && UI_Sys.mouse_flag==1)
+		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang,z) && UI_Sys.mouse_flag==1)
 		{
 			size2=st.mouse;
 
@@ -1275,7 +1275,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang) && UI_Sys.mouse_flag==2)
+		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang,z) && UI_Sys.mouse_flag==2)
 		{
 			size2=st.mouse;
 
@@ -1291,7 +1291,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang) && UI_Sys.mouse_flag==3)
+		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang,z) && UI_Sys.mouse_flag==3)
 		{
 			size2=st.mouse;
 
@@ -1307,7 +1307,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang) && UI_Sys.mouse_flag==4)
+		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang,z) && UI_Sys.mouse_flag==4)
 		{
 			size2=st.mouse;
 
@@ -1323,7 +1323,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang) && UI_Sys.mouse_flag==5)
+		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang,z) && UI_Sys.mouse_flag==5)
 		{
 			size2=st.mouse;
 
@@ -1338,7 +1338,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang) && UI_Sys.mouse_flag==6)
+		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang,z) && UI_Sys.mouse_flag==6)
 		{
 			size2=st.mouse;
 
@@ -1353,7 +1353,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang) && UI_Sys.mouse_flag==7)
+		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang,z) && UI_Sys.mouse_flag==7)
 		{
 			size2=st.mouse;
 
@@ -1368,7 +1368,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang) && UI_Sys.mouse_flag==8)
+		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang,z) && UI_Sys.mouse_flag==8)
 		{
 			size2=st.mouse;
 

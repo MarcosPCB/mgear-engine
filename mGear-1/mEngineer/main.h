@@ -135,6 +135,10 @@ struct _mEng
 	char *path;
 
 	int8 current_command;
+
+	int16 z_slot[57];
+	int16 z_buffer[57][2048];
+	int16 z_used;
 };
 
 typedef struct _mEng mEng;

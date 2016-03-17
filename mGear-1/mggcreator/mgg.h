@@ -16,6 +16,9 @@ typedef long long unsigned uint64;
 #define MAX_ANIMATIONS 64
 #define TEX_RANGE 32768 //16-bit precision
 
+#define LINEAR 0
+#define NEAREST 1
+
 enum _MGGTYPE_
 {
 	SPRITEM,
@@ -50,6 +53,7 @@ struct _MGGFORMAT_
 	size_t possize_offset;
 	size_t framesize_offset;
 	size_t framealone_offset;
+	int8 mipmap;
 };
 
 typedef struct _MGGFORMAT_ _MGGFORMAT;

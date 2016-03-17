@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
 	{
 		printf("Creates an MGG file.\n");
 		printf("-o output file name\n");
-		printf("-p path to the folder with frames ( MUST BE NAMED FRAME0000.TGA, FRAME0001.TGA...\n");
-		printf("-a path to the file that contains information about the mgg. Check test.txt\n");
+		printf("-p path to the folder with frames ( MUST BE NAMED FRAME0000.TGA, FRAME0001.TGA... ) and the instruction file (a.txt)\n");
 		printf("EXAMPLE: -o test.mgg -p test//frames -a test//frames//test.txt\n");
 		printf("OBS: Use double // for paths\n");
 		exit(0);
@@ -64,12 +63,8 @@ int main(int argc, char *argv[])
 			if(strcmp(argv[i],"-p")==NULL)
 			{
 				strcpy(framename,argv[i+1]);
-				i++;
-			}
-			else
-			if(strcmp(argv[i],"-a")==NULL)
-			{
 				strcpy(animfile,argv[i+1]);
+				strcat(animfile,"//a.txt");
 				i++;
 			}
 		}
@@ -184,6 +179,12 @@ int main(int argc, char *argv[])
 				mgg.num_atlas=value;
 			}
 			else
+			if(strcmp(str[0],"MIPMAP")==NULL)
+			{
+				value=atoi(str[1]);
+				mgg.mipmap=value;
+			}
+			else
 			if(strcmp(str[0],"TYPE")==NULL)
 			{
 				if(strcmp(str[1],"MULT")==NULL)
@@ -276,10 +277,10 @@ int main(int argc, char *argv[])
 					sizex[val[5]]=val[3];
 					sizey[val[5]]=val[4];
 
-					posx[k]=(posx[k]*32768)/dimx[val[0]];
-					posy[k]=(posy[k]*32768)/dimy[val[0]];
-					sizex[k]=(sizex[k]*32768)/dimx[val[0]];
-					sizey[k]=(sizey[k]*32768)/dimy[val[0]];
+					posx[val[5]]=(posx[val[5]]*32768)/dimx[val[0]];
+					posy[val[5]]=(posy[val[5]]*32768)/dimy[val[0]];
+					sizex[val[5]]=(sizex[val[5]]*32768)/dimx[val[0]];
+					sizey[val[5]]=(sizey[val[5]]*32768)/dimy[val[0]];
 				}
 			}
 			else

@@ -2258,7 +2258,14 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		if(j<mggf.num_atlas)
 		{
 			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+
 			mgg->atlas[i]=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS ); //mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+			if(mggf.mipmap)
+			{
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+			}
 
 			mgg->frames[i].channel=channel;
 			mgg->frames[i].w=width;
@@ -2314,6 +2321,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
+			if(mggf.mipmap)
+			{
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+			}
+
 			mgg->frames[i+(mggf.num_texinatlas)].w=width;
 			mgg->frames[i+(mggf.num_texinatlas)].h=height;
 			mgg->frames[i+(mggf.num_texinatlas)].channel=channel;
@@ -2346,6 +2359,12 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 				mgg->frames[i+(mggf.num_texinatlas)].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);
+
+				if(mggf.mipmap)
+				{
+					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+				}
 
 				mgg->frames[i+(mggf.num_texinatlas)].normal=1;
 
@@ -2426,8 +2445,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
 		mgg->frames[i].posx=posx[i];
 		mgg->frames[i].posy=posy[i];
-		mgg->frames[i].sizex=sizex[i];
-		mgg->frames[i].sizey=sizey[i];
+		mgg->frames[i].sizex=mgg->frames[i].w=sizex[i];
+		mgg->frames[i].sizey=mgg->frames[i].h=sizey[i];
 		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
 	}
 	
@@ -2871,6 +2890,13 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					glGenerateMipmap(GL_TEXTURE_2D);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+					if(mggf.mipmap)
+					{
+						glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+					}
+
 					/*
 					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
 					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
@@ -3219,7 +3245,7 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 	
 }
 
-uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang)
+uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang, int8 z)
 {
 	uint8 i;
 
@@ -3281,7 +3307,41 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	mx=st.mouse.x;
 	my=st.mouse.y;
 
-	STW(&mx, &my);
+	STWci(&mx, &my);
+
+			if(z>39 && z<48)
+			{
+				
+				mx+=(float) st.Camera.position.x*st.Current_Map.bck2_v;
+				my+=(float) st.Camera.position.y*st.Current_Map.bck2_v;
+			}
+			else
+			if(z>31 && z<40)
+			{
+				
+				mx+=(float) st.Camera.position.x*st.Current_Map.bck1_v;
+				my+=(float) st.Camera.position.y*st.Current_Map.bck1_v;
+
+			//	mx*=st.Camera.dimension.x;
+				//my*=st.Camera.dimension.y;
+			}
+			else
+			if((z>23 && z<32) || z>=0 && z<16)
+			{
+				mx+=st.Camera.position.x;
+				my+=st.Camera.position.y;
+
+				//mx*=st.Camera.dimension.x;
+				//my*=st.Camera.dimension.y;
+			}
+			if(z>15 && z<24)
+			{
+				mx+=(float) st.Camera.position.x*st.Current_Map.fr_v;
+				my+=(float) st.Camera.position.y*st.Current_Map.fr_v;
+
+				//mx*=st.Camera.dimension.x;
+				//my*=st.Camera.dimension.y;
+			}
 
 	if(mx>xl && mx<xb && my>yl && my<yb)
 		return 1; //Collided
@@ -5603,14 +5663,6 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
-			if(z>15) z=15;
-			if(z<8) z=8;
-
-			z_buffer[z][z_slot[z]]=i;
-			z_slot[z]++;
-
-			if(z>z_used) z_used=z;
-
 			if(z>39 && z<48)
 			{
 				
@@ -5653,6 +5705,14 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 				x*=st.Camera.dimension.x;
 				y*=st.Camera.dimension.y;
 			}
+
+			if(z>15) z=15;
+			if(z<8) z=8;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
 
 			//timej=GetTicks();
 
@@ -7084,12 +7144,12 @@ void DrawMap()
 				DrawLine(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 				DrawLine(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,255,32,32,255,16,17);
 
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17,0);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17,0);
-				DrawGraphic(st.Current_Map.sector[i].vertex[2].x,st.Current_Map.sector[i].vertex[2].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17,0);
-				DrawGraphic(st.Current_Map.sector[i].vertex[3].x,st.Current_Map.sector[i].vertex[3].y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,17,0);
+				DrawHud(st.Current_Map.sector[i].vertex[0].x+st.Camera.position.x,st.Current_Map.sector[i].vertex[0].y+st.Camera.position.y,256,256,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,17);
+				DrawHud(st.Current_Map.sector[i].vertex[1].x+st.Camera.position.x,st.Current_Map.sector[i].vertex[1].y+st.Camera.position.y,256,256,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,17);
+				DrawHud(st.Current_Map.sector[i].vertex[2].x+st.Camera.position.x,st.Current_Map.sector[i].vertex[2].y+st.Camera.position.y,256,256,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,17);
+				DrawHud(st.Current_Map.sector[i].vertex[3].x+st.Camera.position.x,st.Current_Map.sector[i].vertex[3].y+st.Camera.position.y,256,256,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,17);
 
-				DrawGraphic(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,255,255,255,mgg_sys[0].frames[0],255,0,0,32768,32768,17,0);
+				DrawHud(st.Current_Map.sector[i].position.x+st.Camera.position.x,st.Current_Map.sector[i].position.y+st.Camera.position.y,484,484,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[0],255,17);
 			}
 			else
 			if(st.Current_Map.sector[i].id>-1 && st.Current_Map.sector[i].num_vertexadded<5)
@@ -7494,8 +7554,8 @@ void Renderer(uint8 type)
 			if(i==0) break;
 		}
 
-		memset(z_buffer,0,(7*8)*(2048)*sizeof(int16));
-		memset(z_slot,0,(7*8)*sizeof(int16));
+		memset(z_buffer,0,((7*8)+1)*(2048)*sizeof(int16));
+		memset(z_slot,0,((7*8)+1)*sizeof(int16));
 		z_used=0;
 
 		for(i=0;i<MAX_STRINGS;i++)
@@ -7993,7 +8053,12 @@ void Finish()
 
 	memset(st.renderer.ppline,MAX_DRAWCALLS,sizeof(PIPELINE));
 }
-
+/*
+void LoadSoundList(char *name)
+{
+	FILE *file;
+}
+*/
 void PlayMusic(const char *filename, uint8 loop)
 {
 	if(st.sound_sys.slot_ID[MUSIC_SLOT]==-1 && st.sound_sys.slotch_ID[MUSIC_CHANNEL]==-1)
