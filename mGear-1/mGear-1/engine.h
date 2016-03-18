@@ -417,6 +417,7 @@ struct _SPRITES_
 	int8 num_tags;
 	int16 tags[8];
 	char tag_names[8][16];
+	char tags_str[8][128];
 	int16 health;
 	_SPRITE_G type;
 	Body body;
@@ -547,6 +548,8 @@ struct _MGMSPRITE_
 	int8 num_tags;
 
 	int16 tags[8];
+
+	char tags_str[8][128];
 
 	int16 health;
 

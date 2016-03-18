@@ -6519,6 +6519,11 @@ uint32 SaveMap(const char *name)
 	map.num_lights=st.num_lights;
 	map.num_sprites=st.Current_Map.num_sprites;
 	map.num_sector=st.Current_Map.num_sector;
+	map.bck1_v=st.Current_Map.bck1_v;
+	map.bck2_v=st.Current_Map.bck2_v;
+	map.fr_v=st.Current_Map.fr_v;
+	map.bcktex_id=st.Current_Map.bcktex_id;
+	map.bcktex_mgg=st.Current_Map.bcktex_mgg;
 	strcpy(map.name,st.Current_Map.name);
 	memcpy(map.MGG_FILES,st.Current_Map.MGG_FILES,sizeof(st.Current_Map.MGG_FILES));
 
@@ -6825,7 +6830,8 @@ int32 LoadSpriteList(char *filename)
 {
 	FILE *file;
 	int value, value2, value3;
-	uint16 i;
+	int16 i, j;
+	int lenght;
 	char buf[1024], str[16], str2[32], str3[64], str4[8][16];
 
 	if((file=fopen(filename,"r"))==NULL)

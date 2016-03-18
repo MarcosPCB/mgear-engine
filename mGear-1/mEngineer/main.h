@@ -78,6 +78,8 @@ struct _mEng
 	uint16 mgg_sel;
 	uint16 menu_sel;
 
+	int8 playing_sound;
+
 	int16 sprite_selection;
 	int16 sprite_frame_selection;
 

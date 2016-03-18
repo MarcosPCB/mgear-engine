@@ -529,7 +529,10 @@ static void PannelLeft()
 		if(st.Current_Map.bcktex_id>-1)
 		{
 			if(UIWin2_StringButton(winid[0],1,"Background3 texture",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+			{
 				meng.command=meng.command2=TEX_SEL;
+				UIDestroyWindow(winid[0]);
+			}
 		}
 
 
@@ -1171,11 +1174,16 @@ static void PannelLeft()
 		
 		if(meng.command==SPRITE_TAG)
 		{
-			UIData(8192,4096,2048,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
 
 			for(i=1, yt=4096-2560;(i-1)<st.Game_Sprites[meng.sprite_selection].num_tags;i++, yt+=512)
 			{
-				sprintf(str,"%s %d",st.Game_Sprites[meng.sprite_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_selection].tags[i-1]);
+				j=strlen(st.Game_Sprites[meng.sprite_selection].tag_names[i-1]);
+
+				if(st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
+					sprintf(str,"%s %s",st.Game_Sprites[meng.sprite_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_selection].tags_str[i-1]);
+				else
+					sprintf(str,"%s %d",st.Game_Sprites[meng.sprite_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_selection].tags[i-1]);
 
 				if(meng.sub_com!=i)
 				{
@@ -1185,7 +1193,11 @@ static void PannelLeft()
 
 						if(st.mouse1)
 						{
-							sprintf(st.TextInput,"%d",st.Game_Sprites[meng.sprite_selection].tags[i-1]);
+							if(st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
+								sprintf(st.TextInput,"%s",st.Game_Sprites[meng.sprite_selection].tags_str[i-1]);
+							else
+								sprintf(st.TextInput,"%d",st.Game_Sprites[meng.sprite_selection].tags[i-1]);
+
 							StartText();
 							st.mouse1=0;
 							meng.sub_com=i;
@@ -1199,7 +1211,10 @@ static void PannelLeft()
 				{
 					StringUIData(str,8192,yt,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
-					st.Game_Sprites[meng.sprite_selection].tags[i-1]=atoi(st.TextInput);
+					if(st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
+						strcpy(st.Game_Sprites[meng.sprite_selection].tags_str[i-1],st.TextInput);
+					else
+						st.Game_Sprites[meng.sprite_selection].tags[i-1]=atoi(st.TextInput);
 
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -1369,7 +1384,7 @@ static void PannelLeft()
 			p2.y=1024*st.Camera.dimension.y;
 
 			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
-			String2Data(str,p.x,p.y-227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
+			String2Data(str,p.x,p.y-227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
 
 			p.x=st.Current_Map.sprites[meng.sprite_edit_selection].position.x-(st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/2);
 			p.y=st.Current_Map.sprites[meng.sprite_edit_selection].position.y;
@@ -1378,7 +1393,22 @@ static void PannelLeft()
 			//p.y-=st.Camera.position.y;
 
 			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
-			String2Data(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,0);
+			String2Data(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
+
+			if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].name,"SOUNDFX")==NULL)
+			{
+				for(i=1;i<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++)
+				{
+					if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i],"PATH_S")==NULL && strlen(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i])>5)
+					{
+						if(UIStringButton(465,4300,"Play sound",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+							PlaySound(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i],0);
+					}
+				}
+			}
+
+			if(UIStringButton(465,4600,"Stop sound",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+				StopAllSounds();
 
 			if(st.keys[DELETE_KEY].state)
 			{
@@ -1912,11 +1942,17 @@ static void PannelLeft()
 		
 		if(meng.command==SPRITE_TAG)
 		{
-			UIData(8192,4096,2048,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
 
-			for(i=1, yt=4096-2560;(i-1)<st.Game_Sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
+			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+
+			for(i=1, yt=4096-2560;(i-1)<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
 			{
-				sprintf(str,"%s %d",st.Game_Sprites[meng.sprite_edit_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_edit_selection].tags[i-1]);
+				j=strlen(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1]);
+
+				if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
+					sprintf(str,"%s %s",st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1]);
+				else
+					sprintf(str,"%s %d",st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
 
 				if(meng.sub_com!=i)
 				{
@@ -1926,7 +1962,11 @@ static void PannelLeft()
 
 						if(st.mouse1)
 						{
-							sprintf(st.TextInput,"%d",st.Game_Sprites[meng.sprite_edit_selection].tags[i-1]);
+							if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
+								sprintf(st.TextInput,"%s",st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1]);
+							else
+								sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
+
 							StartText();
 							st.mouse1=0;
 							meng.sub_com=i;
@@ -1940,7 +1980,10 @@ static void PannelLeft()
 				{
 					StringUIData(str,8192,yt,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
-					st.Game_Sprites[meng.sprite_edit_selection].tags[i-1]=atoi(st.TextInput);
+					if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
+						strcpy(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1],st.TextInput);
+					else
+						st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]=atoi(st.TextInput);
 
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -1986,6 +2029,8 @@ static void PannelLeft()
 				st.keys[ESC_KEY].state=0;
 			}
 		}
+
+
 
 		sprintf(str,"Physics");
 
@@ -4280,6 +4325,10 @@ static void ViewPortCommands()
 							//st.Current_Map.sprites[i].body.size=meng.spr.size;
 							memcpy(st.Current_Map.sprites[i].tags,st.Game_Sprites[meng.sprite_selection].tags,8*sizeof(int16));
 							st.Current_Map.sprites[i].num_tags=st.Game_Sprites[meng.sprite_selection].num_tags;
+
+							for(j=1;j<st.Game_Sprites[meng.sprite_selection].num_tags;j++)
+								strcpy(st.Current_Map.sprites[i].tags_str[j],st.Game_Sprites[meng.sprite_selection].tags_str[j]);
+
 							st.Current_Map.sprites[i].angle=0;
 
 							if(meng.spr.type==BACKGROUND3)
@@ -6756,7 +6805,7 @@ static void ViewPortCommands()
 		}
 	}
 
-	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX)
+	if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX && !st.Text_Input)
 	{
 		if(st.keys[W_KEY].state)
 		{

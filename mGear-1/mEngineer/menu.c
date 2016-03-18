@@ -130,6 +130,8 @@ void Menu()
 					meng.spr.size.x=2048;
 					meng.spr.size.y=2048;
 
+					meng.playing_sound=0;
+
 					meng.lightmap_res.x=meng.lightmap_res.y=256;
 
 					st.Current_Map.bck1_v=BCK1_DEFAULT_VEL;
@@ -302,6 +304,8 @@ void Menu()
 									meng.spr.size.x=2048;
 									meng.spr.size.y=2048;
 
+									meng.playing_sound=0;
+
 									meng.lightmap_res.x=meng.lightmap_res.y=256;
 									st.gt=INGAME;
 									st.mouse1=0;
@@ -310,6 +314,9 @@ void Menu()
 									meng.path=(char*) malloc(2);
 									strcpy(meng.path,".");
 									scroll=0;
+
+
+
 									break;
 								}
 								else
