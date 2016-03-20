@@ -585,6 +585,7 @@ struct _MGM_
 	uint8 bcktex_mgg;
 	int16 bcktex_id;
 	char MGG_FILES[32][256];
+	Color amb_color;
 };
 
 typedef struct _MGM_ _MGM;
@@ -603,6 +604,7 @@ struct _MGMFORMAT_
 	uint8 bcktex_mgg;
 	int16 bcktex_id;
 	char MGG_FILES[32][256];
+	Color amb_color;
 };
 
 typedef struct _MGMFORMAT_ _MGMFORMAT;
@@ -910,6 +912,8 @@ struct _SETTINGS_
 	StringsE strings[MAX_STRINGS];
 
 	uint8 cursor_type;
+
+	int8 viewmode;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
@@ -1031,9 +1035,9 @@ void CalTan32u(int16 ang, uint32 *val);
 
 int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 dimx, int32 dimy);
 
-//Draws the main lightmap
+//Draws the ambient light
 //THIS MUST GO BEFORE ANY DRAWING COMMAND
-void BASICBKD(); 
+void BASICBKD(uint8 r, uint8 g, uint8 b);
 
 int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, int16 lightmap_id);
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, uint16 flag);

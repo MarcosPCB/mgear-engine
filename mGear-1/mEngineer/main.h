@@ -57,8 +57,21 @@
 #define MAP_PROPERTIES 42
 #define VIEWMODE_BOX 43
 
+#define EDIT_SECTOR 44
+
+#define FOREGROUND_MODE 0
+#define MIDGROUND_MODE 1
+#define BACKGROUND1_MODE 2
+#define BACKGROUND2_MODE 3
+#define BACKGROUND3_MODE 4
+#define INGAMEVIEW_MODE 5
+#define LIGHTVIEW_MODE 6
+#define ALLVIEW_MODE 7
+
 struct _mEng
 {
+	int8 viewmode;
+
 	char mgg_list[32][256];
 	uint16 num_mgg;
 	uint8 pannel_choice;

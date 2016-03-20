@@ -8,7 +8,7 @@ int16 scroll=0;
 void Menu()
 {
 	char files[512][512];
-	uint16 num_files=0, i=0, j, a;
+	uint16 num_files=0, i=0, j, a, m, n;
 	FILE *f;
 	DIR *dir;
 	char *path2;
@@ -139,6 +139,9 @@ void Menu()
 					st.Current_Map.fr_v=FR_DEFAULT_VEL;
 					st.Current_Map.bcktex_id=-1;
 					st.Current_Map.bcktex_mgg=0;
+					memset(&st.Current_Map.amb_color,255,sizeof(Color));
+
+					meng.viewmode=7;
 
 					memset(meng.z_buffer,0,2048*57*sizeof(int16));
 					memset(meng.z_slot,0,57*sizeof(int16));
@@ -315,8 +318,36 @@ void Menu()
 									strcpy(meng.path,".");
 									scroll=0;
 
+									meng.viewmode=7;
 
+									memset(meng.z_buffer,0,2048*57*sizeof(int16));
+									memset(meng.z_slot,0,57*sizeof(int16));
+									meng.z_used=0;
 
+									for(m=0;m<st.Current_Map.num_obj;m++)
+									{
+										meng.z_buffer[st.Current_Map.obj[m].position.z][meng.z_slot[st.Current_Map.obj[m].position.z]]=m;
+										meng.z_slot[st.Current_Map.obj[m].position.z]++;
+										if(st.Current_Map.obj[m].position.z>meng.z_used)
+											meng.z_used=st.Current_Map.obj[m].position.z;
+									}
+									
+									for(m=0;m<st.Current_Map.num_sprites;m++)
+									{
+										meng.z_buffer[st.Current_Map.sprites[m].position.z][meng.z_slot[st.Current_Map.sprites[m].position.z]]=m+2000;
+										meng.z_slot[st.Current_Map.sprites[m].position.z]++;
+										if(st.Current_Map.sprites[m].position.z>meng.z_used)
+											meng.z_used=st.Current_Map.sprites[m].position.z;
+									}
+									
+									for(m=0;m<st.Current_Map.num_sector;m++)
+									{
+										meng.z_buffer[st.Current_Map.sector[m].position.z][meng.z_slot[st.Current_Map.sector[m].position.z]]=m+10000;
+										meng.z_slot[st.Current_Map.sector[m].position.z]++;
+										if(st.Current_Map.sector[m].position.z>meng.z_used)
+											meng.z_used=st.Current_Map.sector[m].position.z;
+									}
+									
 									break;
 								}
 								else

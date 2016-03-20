@@ -675,7 +675,7 @@ void UIWin2_NumberBoxui8(int8 uiwinid, int8 pos, uint8 *value, char *text, int32
 		{
 			StopText();
 			st.keys[RETURN_KEY].state=0;
-			UI_Win[uiwinid].current!=pos;
+			UI_Win[uiwinid].current=-1;
 		}
 	}
 }
@@ -738,7 +738,7 @@ void UIWin2_NumberBoxi8(int8 uiwinid, int8 pos, int8 *value, char *text, int32 c
 		{
 			StopText();
 			st.keys[RETURN_KEY].state=0;
-			UI_Win[uiwinid].current!=pos;
+			UI_Win[uiwinid].current=-1;
 		}
 	}
 }
@@ -801,7 +801,7 @@ void UIWin2_NumberBoxui16(int8 uiwinid, int8 pos, uint16 *value, char *text, int
 		{
 			StopText();
 			st.keys[RETURN_KEY].state=0;
-			UI_Win[uiwinid].current!=pos;
+			UI_Win[uiwinid].current=-1;
 		}
 	}
 }
@@ -926,7 +926,7 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 		{
 			StopText();
 			st.keys[RETURN_KEY].state=0;
-			UI_Win[uiwinid].current!=pos;
+			UI_Win[uiwinid].current=-1;
 		}
 	}
 }
@@ -989,7 +989,7 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 		{
 			StopText();
 			st.keys[RETURN_KEY].state=0;
-			UI_Win[uiwinid].current!=pos;
+			UI_Win[uiwinid].current=-1;
 		}
 	}
 }
@@ -1052,7 +1052,7 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 		{
 			StopText();
 			st.keys[RETURN_KEY].state=0;
-			UI_Win[uiwinid].current!=pos;
+			UI_Win[uiwinid].current=-1;
 		}
 	}
 }
