@@ -174,28 +174,20 @@ void ImageList()
 							meng.tex_selection=mgg_map[id].frames[m];
 							meng.tex_ID=m;
 							meng.tex_MGGID=id;
-							if(((float)mgg_map[id].frames[m].w/(float)mgg_map[id].frames[m].h)>1)
+
+							if(mgg_map[id].frames[m].vb_id!=-1)
 							{
-								meng.pre_size.x=2048;
-								meng.pre_size.y=2048/((float)mgg_map[id].frames[m].w/(float)mgg_map[id].frames[m].h);
+								meng.pre_size.x=mgg_map[id].frames[m].w;
+								meng.pre_size.y=mgg_map[id].frames[m].h;
 							}
 							else
-							if(((float)mgg_map[id].frames[m].w/(float)mgg_map[id].frames[m].h)<1)
 							{
-								meng.pre_size.x=2048/((float)mgg_map[id].frames[m].w/(float)mgg_map[id].frames[m].h);
-								meng.pre_size.y=2048;
-							}
-							else
-							if(((float)mgg_map[id].frames[m].w/(float)mgg_map[id].frames[m].h)==1)
-							{
-								meng.pre_size.x=2048;
-								meng.pre_size.y=2048;
+								meng.pre_size.x=(mgg_map[id].frames[m].w*16384)/st.screenx;
+								meng.pre_size.y=(mgg_map[id].frames[m].h*8192)/st.screeny;
 							}
 						}
 						else
-						{
 							UIData(j,i+meng.scroll,1638,1456,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_map[id].frames[m],255,0);
-						}
 
 						if(l<9)
 						{
@@ -492,7 +484,7 @@ static void PannelLeft()
 	if(UIStringButton(2256,128,"Map Properties",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		meng.command=meng.pannel_choice=MAP_PROPERTIES;
-		winid[0]=UICreateWindow2(0,0,CENTER,7,9,2048,32,ARIAL);
+		winid[0]=UICreateWindow2(0,0,CENTER,7,16,2048,32,ARIAL);
 	}
 
 	if(UIStringButton(6096,128,"Viewmode",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
@@ -578,7 +570,7 @@ static void PannelLeft()
 		{
 			st.Current_Map.bcktex_id=meng.tex_ID;
 			st.Current_Map.bcktex_mgg=meng.tex_MGGID;
-			winid[0]=UICreateWindow2(0,0,CENTER,7,9,2048,32,ARIAL);
+			winid[0]=UICreateWindow2(0,0,CENTER,7,16,2048,32,ARIAL);
 			meng.command2=0;
 		}
 
@@ -621,7 +613,11 @@ static void PannelLeft()
 		UIWin2_NumberBoxui8(winid[0],6,&st.Current_Map.amb_color.g,"Ambient Color G:",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 		UIWin2_NumberBoxui8(winid[0],7,&st.Current_Map.amb_color.b,"Ambient Color B:",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 
-		if(UIWin2_StringButton(winid[0],8,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		sprintf(str,"Map name: %s",st.Current_Map.name);
+		UIWin2_TextBox(winid[0],8,str,UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		sscanf(str,"Map name: %s",st.Current_Map.name);
+
+		if(UIWin2_StringButton(winid[0],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=meng.pannel_choice=1;
 			UIDestroyWindow(winid[0]);
@@ -4464,9 +4460,11 @@ static void ViewPortCommands()
 
 							if(meng.obj.type==BACKGROUND2)
 							{
-				
 								st.Current_Map.obj[i].position.x+=(float) st.Camera.position.x*st.Current_Map.bck2_v;
 								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.bck2_v;
+
+								//st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								//st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
 							}
 							else
 							if(meng.obj.type==BACKGROUND1)
@@ -4475,8 +4473,8 @@ static void ViewPortCommands()
 								st.Current_Map.obj[i].position.x+=(float) st.Camera.position.x*st.Current_Map.bck1_v;
 								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.bck1_v;
 
-								st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
-								st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
+								//st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								//st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
 							}
 							else
 							if(meng.obj.type==MIDGROUND)
@@ -4484,16 +4482,16 @@ static void ViewPortCommands()
 								st.Current_Map.obj[i].position.x+=st.Camera.position.x;
 								st.Current_Map.obj[i].position.y+=st.Camera.position.y;
 
-								st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
-								st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
+								//st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								//st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
 							}
 							if(meng.obj.type==FOREGROUND)
 							{
 								st.Current_Map.obj[i].position.x+=(float) st.Camera.position.x*st.Current_Map.fr_v;
 								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.fr_v;
 
-								st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
-								st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
+								//st.Current_Map.obj[i].position.x*=st.Camera.dimension.x;
+								//st.Current_Map.obj[i].position.y*=st.Camera.dimension.y;
 							}
 
 							st.Current_Map.obj[i].size.x=meng.pre_size.x;
@@ -4827,6 +4825,8 @@ static void ViewPortCommands()
 
 					if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0,0) && st.mouse1)
 					{
+						meng.loop_complete=1;
+
 						p=st.mouse;
 
 						STW(&p.x,&p.y);
@@ -4880,6 +4880,8 @@ static void ViewPortCommands()
 
 					if(st.mouse1)
 					{
+						meng.loop_complete=1;
+
 						if(st.mouse_wheel>0)
 						{
 							st.mouse_wheel=0;
@@ -4934,6 +4936,8 @@ static void ViewPortCommands()
 
 					if(st.keys[LSHIFT_KEY].state && st.game_lightmaps[i].type[temp]>3)
 					{
+						meng.loop_complete=1;
+
 						if(st.mouse_wheel>0)
 						{
 							st.game_lightmaps[i].spot_ang[temp]++;
@@ -4977,6 +4981,8 @@ static void ViewPortCommands()
 
 					if(st.mouse2)
 					{
+						meng.loop_complete=1;
+
 						if(st.mouse_wheel>0)
 						{
 							st.mouse_wheel=0;
@@ -5050,7 +5056,7 @@ static void ViewPortCommands()
 
 					p.x+=(st.game_lightmaps[i].W_w/2)+1920;
 
-					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,0))
+					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,24))
 					{
 						String2Data("Done",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,24);
 
@@ -5142,7 +5148,7 @@ static void ViewPortCommands()
 					p.x+=(st.game_lightmaps[i].W_w/2)+1920;
 					p.y+=810;
 
-					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,17))
+					if(CheckColisionMouseWorld(p.x,p.y,455,455,0,24))
 					{
 						String2Data("Done Light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,24);
 
@@ -5183,7 +5189,7 @@ static void ViewPortCommands()
 					p.x-=(st.game_lightmaps[i].W_w/2)+1920;
 					p.y+=810;
 
-					if(UIStringButtonWorld(p.x,p.y,"Remove Light",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+					if(UIStringButtonWorld(p.x,p.y,"Remove Light",ARIAL,1536,24,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 					{
 						st.game_lightmaps[i].num_lights--;
 
@@ -5209,7 +5215,7 @@ static void ViewPortCommands()
 
 				p.y-=(st.game_lightmaps[i].W_h/2)+810;
 
-				if(CheckColisionMouseWorld(p.x,p.y,455,455,0,17))
+				if(CheckColisionMouseWorld(p.x,p.y,455,455,0,24))
 				{
 					String2Data("Edit light",p.x,p.y,0,0,0,255,128,32,255,ARIAL,1536,1536,24);
 
@@ -6109,28 +6115,6 @@ static void ViewPortCommands()
 
 			UIData(8192,4096,2048,2730,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
-			if(st.game_lightmaps[i].alpha)
-				sprintf(str,"Alpha light [X]");
-			else
-				sprintf(str,"Alpha light [ ]");
-
-			if(CheckColisionMouse(8192,4096-(341*3),341,455,0))
-			{
-				StringUIData(str,8192,4096-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-				if(st.mouse1)
-				{
-					if(st.game_lightmaps[i].alpha)
-						st.game_lightmaps[i].alpha=0;
-					else
-						st.game_lightmaps[i].alpha=1;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192,4096-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-
 			Sys_ColorPicker(&meng.lightmap_color.r,&meng.lightmap_color.g,&meng.lightmap_color.b);
 
 			sprintf(str,"R %d",meng.lightmap_color.r);
@@ -6384,6 +6368,8 @@ static void ViewPortCommands()
 
 			if(CheckColisionMouseWorld(p3.x,p3.y,455,455,0,0) && st.mouse1)
 			{
+				meng.loop_complete=1;
+
 				p=st.mouse;
 
 				STW(&p.x,&p.y);
@@ -6437,6 +6423,8 @@ static void ViewPortCommands()
 
 			if(st.mouse1)
 			{
+				meng.loop_complete=1;
+
 				if(st.mouse_wheel>0)
 				{
 					st.mouse_wheel=0;
@@ -6490,6 +6478,8 @@ static void ViewPortCommands()
 
 			if(st.keys[LSHIFT_KEY].state && st.game_lightmaps[i].type[meng.light.light_id]>3)
 			{
+				meng.loop_complete=1;
+
 				if(st.mouse_wheel>0)
 				{
 					st.game_lightmaps[i].spot_ang[meng.light.light_id]++;
@@ -6533,6 +6523,8 @@ static void ViewPortCommands()
 
 			if(st.mouse2)
 			{
+				meng.loop_complete=1;
+
 				if(st.mouse_wheel>0)
 				{
 					st.mouse_wheel=0;
@@ -7167,17 +7159,34 @@ static void ViewPortCommands()
 
 		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2)
 		{
-			if(st.mouse_wheel>0 && !st.mouse2)
+			if(st.mouse_wheel>0 )
 			{
-				if(st.Camera.dimension.x<2) st.Camera.dimension.x+=0.1;
-				if(st.Camera.dimension.y<2) st.Camera.dimension.y+=0.1;
+				if(st.Camera.dimension.x<6) st.Camera.dimension.x+=0.1;
+				if(st.Camera.dimension.y<6) st.Camera.dimension.y+=0.1;
 				st.mouse_wheel=0;
 			}
 
-			if(st.mouse_wheel<0 && !st.mouse2)
+			if(st.mouse_wheel<0 )
 			{
-				if(st.Camera.dimension.x>0.4) st.Camera.dimension.x-=0.1;
-				if(st.Camera.dimension.y>0.4) st.Camera.dimension.y-=0.1;
+				if(st.Camera.dimension.x>0.2) st.Camera.dimension.x-=0.1;
+				if(st.Camera.dimension.y>0.2) st.Camera.dimension.y-=0.1;
+				st.mouse_wheel=0;
+			}
+		}
+		else
+		if(meng.command==ADD_LIGHT_TO_LIGHTMAP || meng.command==EDIT_LIGHTMAP2)
+		{
+			if(st.mouse_wheel>0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state)
+			{
+				if(st.Camera.dimension.x<6) st.Camera.dimension.x+=0.1;
+				if(st.Camera.dimension.y<6) st.Camera.dimension.y+=0.1;
+				st.mouse_wheel=0;
+			}
+
+			if(st.mouse_wheel<0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state)
+			{
+				if(st.Camera.dimension.x>0.2) st.Camera.dimension.x-=0.1;
+				if(st.Camera.dimension.y>0.2) st.Camera.dimension.y-=0.1;
 				st.mouse_wheel=0;
 			}
 		}
@@ -7289,7 +7298,7 @@ static void ENGDrawLight()
 				p2.x=p2.x+(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2));
 				p2.y=p2.y+(st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2));
 				
-				DrawGraphic(p2.x,p2.y,128,128,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,17,24);
+				DrawGraphic(p2.x,p2.y,128,128,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
 			}
 		}
 
@@ -7481,6 +7490,7 @@ int main(int argc, char *argv[])
 	delta=1;
 
 	st.viewmode=31;
+	meng.loop_complete=0;
 
 	while(!st.quit)
 	{
@@ -7589,6 +7599,12 @@ int main(int argc, char *argv[])
 
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;
+
+			if(meng.loop_complete)
+			{
+				loops=10;
+				meng.loop_complete=0;
+			}
 		}
 
 		DrawSys();

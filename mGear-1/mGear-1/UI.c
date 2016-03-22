@@ -446,7 +446,7 @@ int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size
 
 	text_size=gsizew*strlen(text);
 
-	if(CheckColisionMouseWorld(x,y,text_size,gsize,0,0))
+	if(CheckColisionMouseWorld(x,y,text_size,gsize,0,layer))
 	{
 		String2Data(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
@@ -1047,6 +1047,69 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
 
 		*value=atof(st.TextInput);
+
+		if(st.keys[RETURN_KEY].state)
+		{
+			StopText();
+			st.keys[RETURN_KEY].state=0;
+			UI_Win[uiwinid].current=-1;
+		}
+	}
+}
+
+void UIWin2_TextBox(int8 uiwinid, int8 pos, char *text, int32 colorN, int32 colorS, int32 colorC)
+{
+	int16 lenght, gsize;
+
+	uint8 rn, gn, bn, rs, gs, bs, rc, gc, bc;
+
+	//char text2[32];
+
+	rn=colorN>>16;
+	gn=(colorN>>8) & 0xFF;
+	bn=colorN & 0xFF;
+
+	rs=colorS>>16;
+	gs=(colorS>>8) & 0xFF;
+	bs=colorS & 0xFF;
+
+	rc=colorC>>16;
+	gc=(colorC>>8) & 0xFF;
+	bc=colorC & 0xFF;
+
+	gsize=(st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE;
+
+	//sprintf(text2,"%s: %.3f",text, *value);
+
+	lenght=strlen(text);
+
+	if(UI_Win[uiwinid].current!=pos)
+	{
+		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
+		{
+			StringUIData(text,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
+				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+
+			if(st.mouse1)
+			{
+				UI_Win[uiwinid].current=pos;
+				strcpy(st.TextInput,text);
+				StartText();
+				st.mouse1=0;
+			}
+		}
+		else
+			StringUIData(text,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rn,gn,bn,255,UI_Win[uiwinid].font,
+				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+	}
+	else
+	if(UI_Win[uiwinid].current==pos)
+	{
+		StringUIData(text,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rc,gc,bc,255,UI_Win[uiwinid].font,
+				UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
+
+		strcpy(text,st.TextInput);
 
 		if(st.keys[RETURN_KEY].state)
 		{

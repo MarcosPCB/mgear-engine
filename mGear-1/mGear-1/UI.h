@@ -136,6 +136,8 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 
 int8 UIWin2_StringButton(int8 uiwinid, int8 pos,char *text, int32 colorN, int32 colorS);
 
+void UIWin2_TextBox(int8 uiwinid, int8 pos, char *text, int32 colorN, int32 colorS, int32 colorC);
+
 void UIMain_DrawSystem();
 
 void UILoadSystem(char *filename);
