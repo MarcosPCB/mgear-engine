@@ -467,12 +467,24 @@ static void PannelLeft()
 	uint8 mouse=0;
 	char num[32], str[64], options[8][16]={"Foreground", "Midground", "Background1", "Background2", "Background3", "Light view", "Ingame view", "All"};
 	int32 i=0, j=0, xt, yt, k=0;
+	static float asp;
 	Pos p;
 	PosF p2;
 	static int8 winid[4];
 
 	UIData(8192,128,16384,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 	UIData(455,4096,455*2,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+
+	UIData(16384-1024,8192-512,2048,1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+
+	sprintf(str,"MX: %d - MY: %d",(st.mouse.x*16384)/st.screenx, (st.mouse.y*8192)/st.screeny);
+	StringUIData(str,16384-1024,8192-512-256,0,0,0,255,255,255,255,ARIAL,1536,1536,0);
+
+	sprintf(str,"X: %d - Y: %d",st.Camera.position.x, st.Camera.position.y);
+	StringUIData(str,16384-1024,8192-512,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
+
+	sprintf(str,"W: %0.2f - H: %0.2f",st.Camera.dimension.x, st.Camera.dimension.y);
+	StringUIData(str,16384-1024,8192-256,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
 
 	if(UIStringButton(4096,128,"Load MGG",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
@@ -1595,9 +1607,15 @@ static void PannelLeft()
 				if(CheckColisionMouse(8192,(4096)+227,1720,455,0) && !meng.sub_com)
 				{
 					StringUIData(str,8192,(4096)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1)
+					if(st.mouse1 || st.mouse2)
 					{
-						meng.sub_com=3;
+						if(st.mouse1)
+							meng.sub_com=3;
+						else
+						if(st.mouse2)
+							meng.sub_com=6;
+
+						asp=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y;
 						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
 						SDL_StartTextInput();
 						st.Text_Input=1;
@@ -1618,6 +1636,23 @@ static void PannelLeft()
 					}
 				}
 				else
+				if(meng.sub_com==6)
+				{
+					StringUIData(str,8192,(4096)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=atof(st.TextInput);
+					
+					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/asp;
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
 					StringUIData(str,8192,(4096)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				sprintf(str,"SY %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
@@ -1625,9 +1660,15 @@ static void PannelLeft()
 				if(CheckColisionMouse(8192,(4096)+681,1720,455,0) && !meng.sub_com)
 				{
 					StringUIData(str,8192,(4096)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1)
+					if(st.mouse1 || st.mouse2)
 					{
-						meng.sub_com=4;
+						if(st.mouse1)
+							meng.sub_com=4;
+						else
+						if(st.mouse2)
+							meng.sub_com=7;
+
+						asp=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y;
 						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
 						SDL_StartTextInput();
 						st.Text_Input=1;
@@ -1639,6 +1680,23 @@ static void PannelLeft()
 				{
 					StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
+					if(st.keys[RETURN_KEY].state)
+					{
+						SDL_StopTextInput();
+						st.Text_Input=0;
+						meng.sub_com=0;
+						st.keys[RETURN_KEY].state=0;
+					}
+				}
+				else
+				if(meng.sub_com==7)
+				{
+					StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
+					
+					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y*asp;
+
 					if(st.keys[RETURN_KEY].state)
 					{
 						SDL_StopTextInput();
@@ -2403,9 +2461,16 @@ static void PannelLeft()
 			if(CheckColisionMouse(8192,(4096)+227,1720,455,0) && !meng.sub_com)
 			{
 				StringUIData(str,8192,(4096)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1)
+				if(st.mouse1 || st.mouse2)
 				{
-					meng.sub_com=3;
+					if(st.mouse1)
+						meng.sub_com=3;
+					else
+					if(st.mouse2)
+						meng.sub_com=6;
+
+					asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
+
 					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].size.x);
 					SDL_StartTextInput();
 					st.Text_Input=1;
@@ -2426,6 +2491,23 @@ static void PannelLeft()
 				}
 			}
 			else
+			if(meng.sub_com==6)
+			{
+				StringUIData(str,8192,(4096)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+
+				st.Current_Map.obj[i].size.x=atof(st.TextInput);
+				//asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
+				st.Current_Map.obj[i].size.y=(float) st.Current_Map.obj[i].size.x/asp;
+
+				if(st.keys[RETURN_KEY].state)
+				{
+					SDL_StopTextInput();
+					st.Text_Input=0;
+					meng.sub_com=0;
+					st.keys[RETURN_KEY].state=0;
+				}
+			}
+			else
 				StringUIData(str,8192,(4096)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"SY %d",st.Current_Map.obj[i].size.y);
@@ -2433,9 +2515,16 @@ static void PannelLeft()
 			if(CheckColisionMouse(8192,(4096)+681,1720,455,0) && !meng.sub_com)
 			{
 				StringUIData(str,8192,(4096)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1)
+				if(st.mouse1 || st.mouse2)
 				{
-					meng.sub_com=4;
+					if(st.mouse1)
+						meng.sub_com=4;
+					else
+					if(st.mouse2)
+						meng.sub_com=7;
+
+					asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
+
 					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].size.y);
 					SDL_StartTextInput();
 					st.Text_Input=1;
@@ -2447,6 +2536,22 @@ static void PannelLeft()
 			{
 				StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 				st.Current_Map.obj[i].size.y=atof(st.TextInput);
+				if(st.keys[RETURN_KEY].state)
+				{
+					SDL_StopTextInput();
+					st.Text_Input=0;
+					meng.sub_com=0;
+					st.keys[RETURN_KEY].state=0;
+				}
+			}
+			else
+			if(meng.sub_com==7)
+			{
+				StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+
+				st.Current_Map.obj[i].size.y=atof(st.TextInput);
+
+				st.Current_Map.obj[i].size.x=(float) st.Current_Map.obj[i].size.y*asp;
 				if(st.keys[RETURN_KEY].state)
 				{
 					SDL_StopTextInput();
@@ -3844,6 +3949,7 @@ static void ViewPortCommands()
 	float tmp;
 	static int16 temp;
 	static int8 winid;
+	static float asp;
 
 	if(meng.command!=DRAW_SECTOR2 && meng.current_command==1)
 	{
@@ -5762,7 +5868,7 @@ static void ViewPortCommands()
 		{
 			if(st.num_lightmap<MAX_LIGHTMAPS)
 			{
-				if(st.Current_Map.num_obj==0)
+				if(st.Current_Map.num_obj==0 || st.keys[LALT_KEY].state)
 				{
 					if(((meng.obj_lightmap_sel==-2 && !CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x+128,meng.lightmapsize.y+128,0,0)) || meng.obj_lightmap_sel!=-2) && temp<2)
 					{
@@ -5791,7 +5897,7 @@ static void ViewPortCommands()
 				for(j=0;j<st.Current_Map.num_obj;j++)
 				{
 					if(CheckColisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle,
-						st.Current_Map.obj[j].position.z))
+						st.Current_Map.obj[j].position.z) && !st.keys[LALT_KEY].state)
 					{
 						if(st.mouse1 && st.Current_Map.obj[j].lightmapid==-1 && st.Current_Map.obj[j].type==MIDGROUND)
 						{
@@ -5833,54 +5939,58 @@ static void ViewPortCommands()
 
 				if(meng.obj_lightmap_sel==-2)
 				{
-					if(st.mouse1)
+					if(st.mouse1 && st.keys[LALT_KEY].state)
 					{
-						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y,128,meng.lightmapsize.y,0,24) && temp==1)
 						{
 							p=st.mouse;
 							temp=2;
 						}
 						
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y,64,meng.lightmapsize.y,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y,128,meng.lightmapsize.y,0,24) && temp==1)
 						{
 							p=st.mouse;
 							temp=3;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmapsize.x,128,0,24) && temp==1)
 						{
 							p=st.mouse;
 							temp=4;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmapsize.x,64,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x,meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmapsize.x,128,0,24) && temp==1)
 						{
 							p=st.mouse;
 							temp=5;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),128,128,0,24) && temp==1)
 						{
 							p=st.mouse;
+							asp=meng.lightmapsize.x/meng.lightmapsize.y;
 							temp=6;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),128,128,0,24) && temp==1)
 						{
 							p=st.mouse;
+							asp=meng.lightmapsize.x/meng.lightmapsize.y;
 							temp=7;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),128,128,0,24) && temp==1)
 						{
 							p=st.mouse;
+							asp=meng.lightmapsize.x/meng.lightmapsize.y;
 							temp=8;
 						}
 						else
-						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),64,64,0,0) && temp==1)
+						if(CheckColisionMouseWorld(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),128,128,0,24) && temp==1)
 						{
 							p=st.mouse;
+							asp=meng.lightmapsize.x/meng.lightmapsize.y;
 							temp=9;
 						}
 
@@ -5954,8 +6064,11 @@ static void ViewPortCommands()
 							p2.x-=p.x;
 							p2.y-=p.y;
 
+							
 							meng.lightmapsize.x-=p2.x*2;
 							meng.lightmapsize.y-=p2.y*2;
+							
+							meng.lightmapsize.y=(float) meng.lightmapsize.x/asp;
 
 							p=st.mouse;
 						}
@@ -5970,8 +6083,11 @@ static void ViewPortCommands()
 							p2.x-=p.x;
 							p2.y-=p.y;
 
+							
 							meng.lightmapsize.x+=p2.x*2;
 							meng.lightmapsize.y-=p2.y*2;
+						
+							meng.lightmapsize.y=(float) meng.lightmapsize.x/asp;
 
 							p=st.mouse;
 						}
@@ -5986,8 +6102,11 @@ static void ViewPortCommands()
 							p2.x-=p.x;
 							p2.y-=p.y;
 
+						
 							meng.lightmapsize.x+=p2.x*2;
 							meng.lightmapsize.y+=p2.y*2;
+							
+							meng.lightmapsize.y=(float) meng.lightmapsize.x/asp;
 
 							p=st.mouse;
 						}
@@ -6002,8 +6121,11 @@ static void ViewPortCommands()
 							p2.x-=p.x;
 							p2.y-=p.y;
 
+							
 							meng.lightmapsize.x-=p2.x*2;
 							meng.lightmapsize.y+=p2.y*2;
+
+							meng.lightmapsize.y=(float) meng.lightmapsize.x/asp;
 
 							p=st.mouse;
 						}

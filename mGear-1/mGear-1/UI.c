@@ -1253,6 +1253,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 {
 	int32 sx=*sizex/2, sy=*sizey/2;
 	static Pos size, size2;
+	static float asp;
 
 	//Vertices first
 
@@ -1262,6 +1263,9 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
+			asp=*sizex;
+			asp/=*sizey;
+
 			size=st.mouse;
 			UI_Sys.mouse_flag=1;
 		}
@@ -1269,6 +1273,9 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
+
+			asp=*sizex;
+			asp/=*sizey;
 
 			size=st.mouse;
 			UI_Sys.mouse_flag=2;
@@ -1278,6 +1285,9 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
+			asp=*sizex;
+			asp/=*sizey;
+
 			size=st.mouse;
 			UI_Sys.mouse_flag=3;
 		}
@@ -1285,6 +1295,9 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
+
+			asp=*sizex;
+			asp/=*sizey;
 
 			size=st.mouse;
 			UI_Sys.mouse_flag=4;
@@ -1332,8 +1345,10 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size2.x-=size.x;
 			size2.y-=size.y;
 
-			*sizex-=size2.x*2;
-			*sizey-=size2.y*2;
+			*sizex-=(size2.x*2);
+			*sizey-=(size2.y*2);
+
+			*sizey=*sizex/asp;
 
 			size=st.mouse;
 		}
@@ -1348,8 +1363,11 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size2.x-=size.x;
 			size2.y-=size.y;
 
+			
 			*sizex+=size2.x*2;
-			*sizey-=size2.y*2;
+			*sizey-=size2.x*2;
+
+			*sizey=*sizex/asp;
 
 			size=st.mouse;
 		}
@@ -1364,8 +1382,11 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size2.x-=size.x;
 			size2.y-=size.y;
 
+			
 			*sizex+=size2.x*2;
-			*sizey+=size2.y*2;
+			*sizey+=size2.x*2;
+
+			*sizey=*sizex/asp;
 
 			size=st.mouse;
 		}
@@ -1380,8 +1401,11 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size2.x-=size.x;
 			size2.y-=size.y;
 
+		
 			*sizex-=size2.x*2;
-			*sizey+=size2.y*2;
+			*sizey+=size2.x*2;
+
+			*sizey=*sizex/asp;
 
 			size=st.mouse;
 		}
