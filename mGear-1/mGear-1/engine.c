@@ -779,7 +779,7 @@ uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h)
 #ifdef _VAO_RENDER
 static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 {
-	GLint pos, texc, col, texl;
+	GLint pos, texc, col, texl, texr;
 
 	if(type==1)
 	{
@@ -794,17 +794,19 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 	pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
 	texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
 	texl=glGetAttribLocation(st.renderer.Program[pr],"TexLight");
+	//texr=glGetAttribLocation(st.renderer.Program[pr],"TexRepeat");
 
 
 	glEnableVertexAttribArray(pos);
 	glEnableVertexAttribArray(texc);
 	glEnableVertexAttribArray(col);
 	glEnableVertexAttribArray(texl);
+	//glEnableVertexAttribArray(texr);
 
 	glGenBuffers(1,&data->vbo_id);
 	glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 
-	glBufferData(GL_ARRAY_BUFFER,((data->buffer_elements*12)*sizeof(GLfloat))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat)),NULL,GL_STREAM_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,((data->buffer_elements*12)*sizeof(GLfloat))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*4)*sizeof(GLfloat)),NULL,GL_STREAM_DRAW);
 	/*
 	glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
 	glBufferSubData(GL_ARRAY_BUFFER,(12*data->num_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
@@ -815,6 +817,7 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 	glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)));
 	glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)+(8*data->buffer_elements)*sizeof(GLfloat)));
 	glVertexAttribPointer(texl,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))));
+	//glVertexAttribPointer(texr,4,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat))));
 
 
 	glGenBuffers(1,&data->ibo_id);
@@ -831,6 +834,7 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 	glDisableVertexAttribArray(texc);
 	glDisableVertexAttribArray(col);
 	glDisableVertexAttribArray(texl);
+	//glDisableVertexAttribArray(texr);
 
 	data->num_elements2=0;
 	
@@ -845,7 +849,7 @@ static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 
 static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr)
 {
-	GLint pos, texc, col, texl;
+	GLint pos, texc, col, texl, texr;
 	GLenum error;
 
 	//glUseProgram(st.renderer.Program[pr]);
@@ -863,6 +867,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 			glBufferSubData(GL_ARRAY_BUFFER,(12*data->buffer_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 			glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
 			glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))),(data->num_elements*8)*sizeof(float),data->texcoordlight);
+		//	glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->num_elements*8)*sizeof(float))),(data->num_elements*4)*sizeof(float),data->texrepeat);
 
 			if(upd_index)
 			{
@@ -879,6 +884,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 			free(data->color);
 			free(data->vertex);
 			free(data->texcoordlight);
+			//free(data->texrepeat);
 			
 		}
 	}
@@ -888,30 +894,36 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		
 		glBindVertexArray(data->vao_id);
 
+		col=glGetAttribLocation(st.renderer.Program[pr],"Color");
 		pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
 		texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
-		col=glGetAttribLocation(st.renderer.Program[pr],"Color");
 		texl=glGetAttribLocation(st.renderer.Program[pr],"TexLight");
+		//texr=glGetAttribLocation(st.renderer.Program[pr],"TexRepeat");
+
 
 		glEnableVertexAttribArray(pos);
 		glEnableVertexAttribArray(texc);
 		glEnableVertexAttribArray(col);
 		glEnableVertexAttribArray(texl);
+		//glEnableVertexAttribArray(texr);
 
 		glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 
-		glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte)))+(((data->buffer_elements*8)*sizeof(GLfloat))),NULL,GL_STREAM_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,((data->buffer_elements*12)*sizeof(GLfloat))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*4)*sizeof(GLfloat)),NULL,GL_STREAM_DRAW);
 
 		glBufferSubData(GL_ARRAY_BUFFER,0,(12*data->num_elements)*sizeof(GLfloat),data->vertex);
 		glBufferSubData(GL_ARRAY_BUFFER,(12*data->buffer_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
 		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))),(data->num_elements*8)*sizeof(float),data->texcoordlight);
+		//glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->num_elements*8)*sizeof(float))),(data->num_elements*4)*sizeof(float),data->texrepeat);
 
 
 		glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
 		glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)));
 		glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))));
 		glVertexAttribPointer(texl,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))));
+		//glVertexAttribPointer(texr,4,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat))));
+
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
@@ -924,6 +936,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		glDisableVertexAttribArray(texc);
 		glDisableVertexAttribArray(col);
 		glDisableVertexAttribArray(texl);
+		//glDisableVertexAttribArray(texr);
 
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 		//glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -933,6 +946,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		free(data->color);
 		free(data->vertex);
 		free(data->texcoordlight);
+		//free(data->texrepeat);
 	}
 	else
 	if(upd_buff==2)
@@ -941,22 +955,25 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		glBindBuffer(GL_ARRAY_BUFFER,data->vbo_id);
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
+		col=glGetAttribLocation(st.renderer.Program[pr],"Color");
 		pos=glGetAttribLocation(st.renderer.Program[pr],"Position");
 		texc=glGetAttribLocation(st.renderer.Program[pr],"TexCoord");
-		col=glGetAttribLocation(st.renderer.Program[pr],"Color");
 		texl=glGetAttribLocation(st.renderer.Program[pr],"TexLight");
+		//texr=glGetAttribLocation(st.renderer.Program[pr],"TexRepeat");
 
 		glEnableVertexAttribArray(pos);
 		glEnableVertexAttribArray(texc);
 		glEnableVertexAttribArray(col);
 		glEnableVertexAttribArray(texl);
+		//glEnableVertexAttribArray(texr);
 
-		glBufferData(GL_ARRAY_BUFFER,(((data->buffer_elements*12)*sizeof(GLfloat)))+(((data->buffer_elements*8)*sizeof(GLfloat)))+(((data->buffer_elements*16)*sizeof(GLubyte)))+(((data->buffer_elements*8)*sizeof(GLfloat))),NULL,GL_STREAM_DRAW);
+		glBufferData(GL_ARRAY_BUFFER,((data->buffer_elements*12)*sizeof(GLfloat))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat))+((data->buffer_elements*4)*sizeof(GLfloat)),NULL,GL_STREAM_DRAW);
 
 		glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
 		glVertexAttribPointer(texc,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)));
-		glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) ((12*data->buffer_elements)*sizeof(GLfloat)+(8*data->buffer_elements)*sizeof(GLfloat)));
+		glVertexAttribPointer(col,4,GL_UNSIGNED_BYTE,GL_TRUE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))));
 		glVertexAttribPointer(texl,2,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))));
+		//glVertexAttribPointer(texr,4,GL_FLOAT,GL_FALSE,0,(GLvoid*) (((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((16*data->buffer_elements)*sizeof(GLubyte))+((data->buffer_elements*8)*sizeof(GLfloat))));
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,data->ibo_id);
 
@@ -966,6 +983,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		glDisableVertexAttribArray(texc);
 		glDisableVertexAttribArray(col);
 		glDisableVertexAttribArray(texl);
+		//glDisableVertexAttribArray(texr);
 
 		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 		//glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -1801,6 +1819,8 @@ SHADER_CREATION:
 				st.renderer.unifs[3]=glGetUniformLocation(st.renderer.Program[3],"texu3");
 				st.renderer.unifs[4]=glGetUniformLocation(st.renderer.Program[3],"normal");
 				st.renderer.unifs[5]=glGetUniformLocation(st.renderer.Program[2],"light_type");
+				//st.renderer.unifs[6]=glGetUniformLocation(st.renderer.Program[3],"Tile");
+				//st.renderer.unifs[7]=glGetUniformLocation(st.renderer.Program[3],"Tiles");
 
 #ifdef _VAO_RENDER
 			CreateVAO(&vbd,1,3);
@@ -2259,13 +2279,15 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		{
 			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 
-			mgg->atlas[i]=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS ); //mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+			mgg->atlas[i]=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS); //mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
 			if(mggf.mipmap)
 			{
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 			}
+			else
+				glGenerateMipmap(GL_TEXTURE_2D);
 
 			mgg->frames[i].channel=channel;
 			mgg->frames[i].w=width;
@@ -2294,7 +2316,15 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				fread(data,normalsize[i],1,file);
 
 				imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
-				mgg->frames[i].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);
+				mgg->frames[i].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+				if(mggf.mipmap)
+				{
+					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+				}
+				else
+					glGenerateMipmap(GL_TEXTURE_2D);
 
 				mgg->frames[i].normal=1;
 
@@ -2315,7 +2345,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		{
 			i-=mggf.num_atlas;
 			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
-			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
 			//glGenerateMipmap(GL_TEXTURE_2D);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -2326,6 +2356,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 			}
+			else
+				glGenerateMipmap(GL_TEXTURE_2D);
 
 			mgg->frames[i+(mggf.num_texinatlas)].w=width;
 			mgg->frames[i+(mggf.num_texinatlas)].h=height;
@@ -2445,9 +2477,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
 		mgg->frames[i].posx=posx[i];
 		mgg->frames[i].posy=posy[i];
-		mgg->frames[i].sizex=mgg->frames[i].w=sizex[i];
-		mgg->frames[i].sizey=mgg->frames[i].h=sizey[i];
+		mgg->frames[i].sizex=sizex[i];
+		mgg->frames[i].sizey=sizey[i];
 		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
+		mgg->frames[i].w=mgg->frames[imgatlas[i]].w;
+		mgg->frames[i].h=mgg->frames[imgatlas[i]].h;
 	}
 	
 	fseek(file,mggf.framealone_offset,SEEK_SET);
@@ -2887,20 +2921,16 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				for(n=k;n<vbdt_num;n++)
 				{
 					glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
-					glGenerateMipmap(GL_TEXTURE_2D);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 					if(mggf.mipmap)
 					{
 						glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 						glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 					}
-
-					/*
-					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR_MIPMAP_LINEAR);
-					*/
+					else
+						glGenerateMipmap(GL_TEXTURE_2D);
 				}
 			}
 		}
@@ -3491,6 +3521,21 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 		return 2;
 	else
 		i=st.num_entities;
+
+			if(data.vb_id!=-1)
+			{
+				ent[i].texrepeat[0]=(float) data.posx/32768;
+				ent[i].texrepeat[1]=(float) data.posy/32768;
+				ent[i].texrepeat[2]=(float) data.sizex/32768;
+				ent[i].texrepeat[3]=(float) data.sizey/32768;
+			}
+			else
+			{
+				ent[i].texrepeat[0]=0.0f;
+				ent[i].texrepeat[1]=0.0f;
+				ent[i].texrepeat[2]=1.0f;
+				ent[i].texrepeat[3]=1.0f;
+			}
 
 	ent[i].lightmapid=-1;
 	
@@ -4156,7 +4201,7 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 
 	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
+	int32 t1, t2, t3, t4, timej, timel, xp1, yp1, xs2, ys2;
 
 	PosF dim=st.Camera.dimension;
 	
@@ -4189,7 +4234,6 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
-
 
 			tx1=x;
 			ty1=y;
@@ -4485,6 +4529,21 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
+			if(data.vb_id!=-1)
+			{
+				ent[i].texrepeat[0]=(float) data.posx/32768;
+				ent[i].texrepeat[1]=(float) data.posy/32768;
+				ent[i].texrepeat[2]=(float) data.sizex/32768;
+				ent[i].texrepeat[3]=(float) data.sizey/32768;
+			}
+			else
+			{
+				ent[i].texrepeat[0]=0.0f;
+				ent[i].texrepeat[1]=0.0f;
+				ent[i].texrepeat[2]=1.0f;
+				ent[i].texrepeat[3]=1.0f;
+			}
+
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
@@ -4626,6 +4685,21 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 		i=st.num_entities;
 
 	ent[i].lightmapid=-1;
+
+			if(data.vb_id!=-1)
+			{
+				ent[i].texrepeat[0]=(float) data.posx/32768;
+				ent[i].texrepeat[1]=(float) data.posy/32768;
+				ent[i].texrepeat[2]=(float) data.sizex/32768;
+				ent[i].texrepeat[3]=(float) data.sizey/32768;
+			}
+			else
+			{
+				ent[i].texrepeat[0]=0.0f;
+				ent[i].texrepeat[1]=0.0f;
+				ent[i].texrepeat[2]=1.0f;
+				ent[i].texrepeat[3]=1.0f;
+			}
 	
 			ent[i].data=data;
 
@@ -5419,6 +5493,11 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			if(override_sizey!=0)
 				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
+			ent[i].texrepeat[0]=0.0f;
+			ent[i].texrepeat[1]=0.0f;
+			ent[i].texrepeat[2]=1.0f;
+			ent[i].texrepeat[3]=1.0f;
+
 			tx1=x;
 			ty1=y;
 			tx2=sizex;
@@ -5701,6 +5780,11 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 			if(override_sizey!=0)
 				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
+			ent[i].texrepeat[0]=0.0f;
+			ent[i].texrepeat[1]=0.0f;
+			ent[i].texrepeat[2]=1.0f;
+			ent[i].texrepeat[3]=1.0f;
+
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
@@ -5943,6 +6027,11 @@ if(st.num_entities==MAX_GRAPHICS-1)
 			if(override_sizey!=0)
 				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
 
+			ent[i].texrepeat[0]=0.0f;
+			ent[i].texrepeat[1]=0.0f;
+			ent[i].texrepeat[2]=1.0f;
+			ent[i].texrepeat[3]=1.0f;
+
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
 
@@ -6143,6 +6232,11 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 
 			if(override_sizey!=0)
 				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
+
+			ent[i].texrepeat[0]=0.0f;
+			ent[i].texrepeat[1]=0.0f;
+			ent[i].texrepeat[2]=1.0f;
+			ent[i].texrepeat[3]=1.0f;
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -7329,6 +7423,8 @@ void Renderer(uint8 type)
 		0,0, 1,0,
 		1,1, 0,1 };
 
+	float tile[2];
+
 	GLuint fbo, fbr, txo=0, txr, cat[1]={ GL_COLOR_ATTACHMENT0 };
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
@@ -7344,6 +7440,7 @@ void Renderer(uint8 type)
 			vbdt[i].index=(GLushort*) calloc(vbdt[i].num_elements*6,sizeof(GLushort));
 			vbdt[i].color=(GLubyte*) calloc(vbdt[i].num_elements*16,sizeof(GLubyte));
 			vbdt[i].texcoordlight=(float*) calloc(vbdt[i].num_elements*8,sizeof(float));
+			//vbdt[i].texrepeat=(float*) calloc(vbdt[i].num_elements*4,sizeof(float));
 		}
 	}
 
@@ -7360,6 +7457,9 @@ void Renderer(uint8 type)
 			{
 				for(j=0;j<16;j++)
 				{
+					//if(j<4)
+						//vbdt[ent[i].data.vb_id].texrepeat[(k[ent[i].data.vb_id])+j]=ent[i].texrepeat[j];
+
 					vbdt[ent[i].data.vb_id].color[(k[ent[i].data.vb_id]*16)+j]=ent[i].color[j];
 
 					if(j<12)
@@ -7510,6 +7610,9 @@ void Renderer(uint8 type)
 						tex_bound[0]=vbdt[m].texture;
 					}
 
+					//glUniform2f(st.renderer.unifs[6],(float) ent[z_buffer[i][j]].data.sizex/32768,(float) ent[z_buffer[i][j]].data.sizey/32768);
+					//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
+
 					if(i<16  || ent[z_buffer[i][j]].lightmapid==-2)
 						glUniform1f(st.renderer.unifs[4],3);
 					else
@@ -7572,6 +7675,9 @@ void Renderer(uint8 type)
 						tex_bound[0]=ent[z_buffer[i][j]].data.data;
 					}
 
+					//glUniform2f(st.renderer.unifs[6],(float) ent[z_buffer[i][j]].data.sizex/32768,(float) ent[z_buffer[i][j]].data.sizey/32768);
+					//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
+
 					if(i<16 || ent[z_buffer[i][j]].lightmapid==-2)
 						glUniform1f(st.renderer.unifs[4],3);
 					else
@@ -7608,6 +7714,7 @@ void Renderer(uint8 type)
 					glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[z_buffer[i][j]].texcor);
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[z_buffer[i][j]].color);
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),8*sizeof(float),ent[z_buffer[i][j]].texcorlight);
+					//glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte))+(8*sizeof(GLfloat)),4*sizeof(float),ent[z_buffer[i][j]].texrepeat);
 
 					glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 

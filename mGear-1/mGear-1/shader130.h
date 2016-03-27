@@ -299,15 +299,7 @@ const char *Lightmap_FShader[128]={
 		"{\n"
 			"vec4 Lightmap = texture(texu2, TexLight2);\n"
 
-			//"vec3 NormalColor = vec3(0.501, 0.501, 1.0);\n"
-
-			//"vec3 L = normalize(Lightmap.rgb);\n"
-
-			//"vec3 N = normalize(NormalColor * 2.0 - 1.0);\n"
-
-			"FColor = texture(texu, TexCoord2) * colore * Lightmap;\n" //* max(dot(N, L), 0.0));\n"
-
-			//"FColor = texture(texu2, TexLight2);\n"
+			"FColor = texture(texu, TexCoord2) * colore * Lightmap;\n"
 		"}\n"
 		"else\n"
 		"if(normal == 3.0)\n"

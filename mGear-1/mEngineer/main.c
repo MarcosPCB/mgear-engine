@@ -177,8 +177,8 @@ void ImageList()
 
 							if(mgg_map[id].frames[m].vb_id!=-1)
 							{
-								meng.pre_size.x=mgg_map[id].frames[m].w;
-								meng.pre_size.y=mgg_map[id].frames[m].h;
+								meng.pre_size.x=mgg_map[id].frames[m].sizex;
+								meng.pre_size.y=mgg_map[id].frames[m].sizey;
 							}
 							else
 							{

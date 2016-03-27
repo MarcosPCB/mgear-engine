@@ -14,7 +14,7 @@ int main(int argc, char *argv[])
 	FILE *file, *file2, *file3, *file4;
 	_MGGFORMAT mgg;
 	_MGGANIM *mga;
-	char FileName[256], filename[256], animfile[256], tmp[32], str[2][16], framename[256], framename2[256];
+	char FileName[256], filename[256], animfile[256], tmp[32], str[2][24], framename[256], framename2[256],  fileframe[32];
 	int16 t=0, value, p=0, a=-1, val[16];
 	char header[21]={"MGG File Version 1.1"};
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas=0, *dimx, *dimy;
@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 	{
 		printf("Creates an MGG file.\n");
 		printf("-o output file name\n");
-		printf("-p path to the folder with frames ( MUST BE NAMED FRAME0000.TGA, FRAME0001.TGA... ) and the instruction file (a.txt)\n");
-		printf("EXAMPLE: -o test.mgg -p test//frames -a test//frames//test.txt\n");
+		printf("-p path to the folder with frames and the instruction file (a.txt)\n");
+		printf("EXAMPLE: -o test.mgg -p test//frames \n");
 		printf("OBS: Use double // for paths\n");
 		exit(0);
 	}
@@ -153,6 +153,9 @@ int main(int argc, char *argv[])
 		{
 			if(strcmp(str[0],"MGGNAME")==NULL)
 				strcpy(mgg.name,str[1]);
+			else
+			if(strcmp(str[0],"FRAMENAMES")==NULL)
+				strcpy(fileframe,str[1]);
 			else
 			if(strcmp(str[0],"FRAMES")==NULL)
 			{
@@ -284,6 +287,14 @@ int main(int argc, char *argv[])
 				}
 			}
 			else
+			if(strcmp(str[0],"FRAMESALONERANGE")==NULL)
+			{
+				sscanf(tmp,"%s %d %d", str[0], &val[0], &val[1]);
+
+				for(i=val[0];i<=val[1];i++)
+					framealone[i]=1;
+			}
+			else
 			if(strcmp(str[0],"ATLASDIM")==NULL)
 			{
 				if(!mgg.num_atlas || !num_img_in_atlas)
@@ -389,11 +400,11 @@ int main(int argc, char *argv[])
 	{
 		//if(i==33) j=42;
 		strcpy(framename2,framename);
-		if(j<10) sprintf(filename,"//frame000%d.tga",j); else
-		if(j<100) sprintf(filename,"//frame00%d.tga",j); else
-		if(j<1000) sprintf(filename,"//frame0%d.tga",j); else
-		if(j<10000) sprintf(filename,"//frame0%d.tga",j); else
-		if(j<100000) sprintf(filename,"//frame%d.tga",j);
+		if(j<10) sprintf(filename,"//%s000%d.tga",fileframe,j); else
+		if(j<100) sprintf(filename,"//%s00%d.tga",fileframe,j); else
+		if(j<1000) sprintf(filename,"//%s0%d.tga",fileframe,j); else
+		if(j<10000) sprintf(filename,"//%s0%d.tga",fileframe,j); else
+		if(j<100000) sprintf(filename,"//%s%d.tga",fileframe,j);
 
 		strcat(framename2,filename);
 
@@ -437,11 +448,11 @@ int main(int argc, char *argv[])
 			if(normals[i])
 			{
 				strcpy(framename2,framename);
-				if(j<10) sprintf(filename,"//frame_n000%d.tga",j); else
-				if(j<100) sprintf(filename,"//frame_n00%d.tga",j); else
-				if(j<1000) sprintf(filename,"//frame_n0%d.tga",j); else
-				if(j<10000) sprintf(filename,"//frame_n0%d.tga",j); else
-				if(j<100000) sprintf(filename,"//frame_n%d.tga",j);
+				if(j<10) sprintf(filename,"//%s_n000%d.tga",fileframe,j); else
+				if(j<100) sprintf(filename,"//%s_n00%d.tga",fileframe,j); else
+				if(j<1000) sprintf(filename,"//%s_n0%d.tga",fileframe,j); else
+				if(j<10000) sprintf(filename,"//%s_n0%d.tga",fileframe,j); else
+				if(j<100000) sprintf(filename,"//%s_n%d.tga",fileframe,j);
 
 				strcat(framename2,filename);
 

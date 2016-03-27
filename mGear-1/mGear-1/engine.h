@@ -140,6 +140,7 @@ struct _VB_DATAT
 	float *vertex;
 	float *texcoord;
 	float *texcoordlight;
+	float *texrepeat;
 	GLubyte *color;
 	GLushort *index;
 	GLuint texture;
@@ -185,6 +186,7 @@ struct _ENTITIES_ //To be rendered
 	float vertex[12];
 	float texcor[8];
 	float texcorlight[8];
+	float texrepeat[4];
 	GLubyte color[16];
 	ColorF Color;
 	int16 lightmapid;
