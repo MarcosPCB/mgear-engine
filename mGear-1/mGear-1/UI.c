@@ -1,8 +1,36 @@
 #include "UI.h"
 #include "input.h"
+#include "dirent.h"
 
 UI_WINDOW UI_Win[MAX_UIWINDOWS];
 UI_SYSTEM UI_Sys;
+
+int16 NumDirFile(const char *path, char content[512][512])
+{
+	DIR *dir;
+	dirent *ent;
+	uint16 i=0;
+	int16 filenum=0;
+
+	if((dir=opendir(path))!=NULL)
+	{
+		while((ent=readdir(dir))!=NULL)
+		{
+			strcpy(content[i],ent->d_name);
+			i++;
+			filenum++;
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		LogApp("Coulnd not open directory");
+		return -1;
+	}
+
+	return filenum;
+}
 
 void UILoadSystem(char *filename)
 {
@@ -73,6 +101,12 @@ void UILoadSystem(char *filename)
 			if(strcmp(tok,"Resize Cursor Frame")==NULL)
 				UI_Sys.resize_cursor=atoi(val);
 
+			if(strcmp(tok,"Save Icon Frame")==NULL)
+				UI_Sys.save_icon=atoi(val);
+
+			if(strcmp(tok,"Folder Icon Frame")==NULL)
+				UI_Sys.folder_icon=atoi(val);
+
 		}
 
 		if(UI_Sys.mgg_id==-1)
@@ -134,6 +168,9 @@ void UILoadSystem(char *filename)
 
 		LogApp("UI system loaded");
 	}
+
+	strcpy(UI_Sys.current_path,".");
+	UI_Sys.mouse_scroll=0;
 
 }
 
@@ -1497,4 +1534,301 @@ void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b)
 		glReadPixels(p.x,st.screeny-p.y-1,1,1,GL_BLUE,GL_UNSIGNED_BYTE,b);
 	}
 }
+
+int8 UISelectFile(const char *extension, char *filename)
+{
+	char files[512][512], path[2048], ext[16];
+	int16 num_files, filesp[256], foldersp[256], num2=0, num3=0;
+	int32 i, j, k, l, m, n, o, p;
+	DIR *dir;
+	static int32 m_sel=-1, time=0;
+	FILE *f;
+	size_t size;
+	uint8 loop_c=0;
+
+	UIData(8192,4096,8192,4096,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
+	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
+
+	num_files=NumDirFile(UI_Sys.current_path,files);
+
+	if(extension)
+	{
+		memset(ext,0,16);
+		size=strlen(extension);
+
+		for(k=0;k<size;k++)
+			ext[k]=tolower(extension[k]);
+	}
+
+	for(i=0, j=0, l=0;i<num_files;i++)
+	{
+			strcpy(path,UI_Sys.current_path);
+			strcat(path,"//");
+			strcat(path,files[i]);
+
+			if((f=fopen(path,"rb"))==NULL)
+			{
+				if((dir=opendir(path))!=NULL)
+				{
+					closedir(dir);
+					
+					foldersp[j]=i;
+					filesp[j]=i;
+					j++;
+					//l++;
+					num2++;
+					//num3++;
+				}
+			}
+			else
+			{
+				fclose(f);
+
+				//Check if the current extension is the one asked
+
+				if(extension)
+				{
+
+					size=strlen(files[i]);
+
+					for(m=size;m>-1;m--)
+					{
+						if(files[i][m]=='.')
+						{
+							memset(path,0,2048);
+							for(n=m+1,o=0;n<size;n++,o++)
+							{
+								path[o]=tolower(files[i][n]);
+							}
+
+							if(strcmp(path,ext)==NULL)
+							{
+								filesp[j]=i;
+								j++;
+								num2++;
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					filesp[j]=i;
+					j++;
+					num2++;
+				}
+			}
+	}
+
+	if(num2>13)
+	{
+		for(i=UI_Sys.mouse_scroll, j=0;i<UI_Sys.mouse_scroll+13;i++)
+		{
+			if(i>num2-1)
+				break;
+
+			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			{
+				if((GetTimerM()-time)<50)
+				{
+					UI_Sys.mouse_scroll=0;
+
+					strcat(UI_Sys.current_path,"//");
+					strcat(UI_Sys.current_path,files[m_sel]);
+
+
+					if((f=fopen(UI_Sys.current_path,"rb"))==NULL)
+					{
+						if((dir=opendir(UI_Sys.current_path))!=NULL)
+						{
+							closedir(dir);
+							UI_Sys.mouse_scroll=0;
+							m_sel=-1;
+							st.mouse1=0;
+							time=0;
+
+							break;
+						}
+					}
+
+					fclose(f);
+					UI_Sys.mouse_scroll=0;
+					m_sel=-1;
+
+					strcpy(path,UI_Sys.current_path);
+
+					strcpy(UI_Sys.current_path,".");
+
+					st.mouse1=0;
+					time=0;
+
+					strcpy(filename,path);
+					return 1;
+				}
+
+				time=GetTimerM();
+				if(filesp[i]==foldersp[i])
+					m_sel=foldersp[i];
+				else
+					m_sel=filesp[i];
+
+				st.mouse1=0;
+			}
+
+			if(m_sel==filesp[i] || m_sel==foldersp[i])
+			{
+				UIData(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+				if(filesp[i]==foldersp[i])
+					StringUIvData(files[foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
+				else
+					StringUIvData(files[filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
+			}
+			else
+			{
+				if(filesp[i]==foldersp[i])
+					StringUIvData(files[foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+				else
+					StringUIvData(files[filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+			}
+
+			if(filesp[i]==foldersp[i])
+				UIData(8192-((8192-512)/2)+128,4096-((4096-512)/2)+256+(j*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
+
+			j++;
+
+		}
+
+		UIData(8192+((8192-512)/2)-128,4096,256,4096-512,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+		UIData(8192+((8192-512)/2)-128,4096-((4096-512)/2)+128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
+		UIData(8192+((8192-512)/2)-128,4096+((4096-512)/2)-128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
+
+		UIData(8192+((8192-512)/2)-128,4096-((4096-1024)/2)+(UI_Sys.mouse_scroll*((4096-1024)/(num2-13))),256,256,
+			0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+
+		if(st.mouse_wheel>0)
+		{
+			UI_Sys.mouse_scroll--;
+			st.mouse_wheel=0;
+		}
+		else
+		if(st.mouse_wheel<0)
+		{
+			UI_Sys.mouse_scroll++;
+			st.mouse_wheel=0;
+		}
+
+		if(UI_Sys.mouse_scroll<0)
+			UI_Sys.mouse_scroll=0;
+		else
+		if(UI_Sys.mouse_scroll>num2-13)
+			UI_Sys.mouse_scroll=num2-13;
+	}
+	else
+	{
+		for(i=0;i<num2;i++)
+		{
+
+			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			{
+				if((GetTimerM()-time)<50)
+				{
+					UI_Sys.mouse_scroll=0;
+
+					strcat(UI_Sys.current_path,"//");
+					strcat(UI_Sys.current_path,files[m_sel]);
+
+
+					if((f=fopen(UI_Sys.current_path,"rb"))==NULL)
+					{
+						if((dir=opendir(UI_Sys.current_path))!=NULL)
+						{
+							closedir(dir);
+							UI_Sys.mouse_scroll=0;
+							m_sel=-1;
+							st.mouse1=0;
+							time=0;
+
+							break;
+						}
+					}
+
+					fclose(f);
+					UI_Sys.mouse_scroll=0;
+					m_sel=-1;
+
+					strcpy(path,UI_Sys.current_path);
+
+					strcpy(UI_Sys.current_path,".");
+
+					st.mouse1=0;
+					time=0;
+
+					strcpy(filename,path);
+					return 1;
+				}
+
+				time=GetTimerM();
+				if(filesp[i]==foldersp[i])
+					m_sel=foldersp[i];
+				else
+					m_sel=filesp[i];
+				st.mouse1=0;
+			}
+
+			if(m_sel==filesp[i] || m_sel==foldersp[i])
+			{
+				UIData(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+				if(filesp[i]==foldersp[i])
+					StringUIvData(files[foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
+				else
+					StringUIvData(files[filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
+			}
+			else
+			{
+				if(filesp[i]==foldersp[i])
+					StringUIvData(files[foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+				else
+					StringUIvData(files[filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+			}
+
+			if(filesp[i]==foldersp[i])
+				UIData(8192-((8192-512)/2)+128,4096-((4096-512)/2)+256+(i*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
+		}
+	}
+
+	if(UIStringButton(8192+2048+1024,4096+2048-64-32-16,"Open",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	{
+		UI_Sys.mouse_scroll=0;
+
+		strcat(UI_Sys.current_path,"//");
+		strcat(UI_Sys.current_path,files[m_sel]);
+
+
+		if((f=fopen(UI_Sys.current_path,"rb"))==NULL)
+		{
+			if((dir=opendir(UI_Sys.current_path))!=NULL)
+			{
+				closedir(dir);
+				UI_Sys.mouse_scroll=0;
+				m_sel=-1;
+				return NULL;
+			}
+		}
+
+		fclose(f);
+		UI_Sys.mouse_scroll=0;
+		m_sel=-1;
+
+		strcpy(path,UI_Sys.current_path);
+
+		strcpy(UI_Sys.current_path,".");
+
+		strcpy(filename,path);
+		return 1;
+	}
+
+	return NULL;
+}
+
+
 

@@ -918,7 +918,7 @@ static void PannelLeft()
 
 		if(meng.command!=MOVE_LIGHTMAP)
 		{
-			if(UIStringButton(455,3520+810+810,"Move lightmap",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+			if(UIStringButton(455,3520+810+810,"Move lightmap",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 			{
 				meng.command=MOVE_LIGHTMAP;
 				meng.got_it=-1;
@@ -926,14 +926,14 @@ static void PannelLeft()
 		}
 		else
 		{
-			if(UIStringButton(455,3520+810+810,"Move lightmap",ARIAL,1536,0,UI_COL_CLICKED,UI_COL_CLICKED)==UI_SEL)
+			if(UIStringButton(455,3520+810+810,"Move lightmap",ARIAL,1024,0,UI_COL_CLICKED,UI_COL_CLICKED)==UI_SEL)
 			{
 				meng.command=meng.pannel_choice;;
 				meng.got_it=-1;
 			}
 		}
 
-		if(UIStringButton(455,3520+810+810+810,"Load lightmap",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		if(UIStringButton(455,3520+810+810+810,"Load lightmap",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=LOAD_LIGHTMAP;
 			meng.got_it=-1;
@@ -7607,7 +7607,7 @@ static void ENGDrawLight()
 int main(int argc, char *argv[])
 {
 	int8 i=0, test=0, ch, ch2, ch3;
-	char options[8][16]={"Test 1", "Option 2", "vagina 3", "mGear 4"};
+	char options[8][16]={"Test 1", "Option 2", "vagina 3", "mGear 4"}, str[64];
 
 	uint8 t1;
 
@@ -7772,6 +7772,18 @@ int main(int argc, char *argv[])
 					if(MGGLoad()==NULL) meng.command=meng.pannel_choice;
 				}
 				else
+				if(meng.command==LOAD_LIGHTMAP)
+				{
+					if(UISelectFile("tga",str))
+					{
+						if(LoadLightmapFromFile(str))
+						{
+							meng.command=meng.pannel_choice;
+							LogApp("Lightmap loaded from %s", str);
+						}
+					}
+				}
+				else
 				{
 					ViewPortCommands();
 				
@@ -7790,6 +7802,7 @@ int main(int argc, char *argv[])
 
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;
+			SetTimerM(1);
 
 			if(meng.loop_complete)
 			{

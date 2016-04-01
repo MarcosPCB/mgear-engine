@@ -100,14 +100,14 @@ void StartTimer()
 	GetTicks();
 }
 */
-void Timer()
+void _fastcall SetTimerM(unsigned long long int x)
 {
-	int time=GetTicks() - st.FPSTime;
+	st.time+=x;
+}
 
-	if(time<(1000/TICSPERSECOND))
-		timer((1000/TICSPERSECOND)-time);
-
-	st.time++;
+unsigned long long _fastcall GetTimerM()
+{
+	return st.time;
 }
 
 void FPSCounter()
@@ -3010,6 +3010,56 @@ void InitMGG()
 	}
 }
 
+int8 LoadLightmapFromFile(const char *file)
+{
+	FILE *f;
+	unsigned char *buffer, *imgdata;
+	size_t size;
+	int w, h, channel, i;
+
+	if((f=fopen(file,"rb"))==NULL)
+	{
+		LogApp("Error: invalid %s file", file);
+		return NULL;
+	}
+
+	fseek(f,0,SEEK_END);
+
+	size=ftell(f);
+
+	rewind(f);
+
+	i=st.num_lights;
+
+	buffer=malloc(size);
+
+	fread(buffer,size,1,f);
+
+	st.game_lightmaps[i].data=SOIL_load_image_from_memory(buffer,size,&w,&h,&channel,0);
+
+	if(st.game_lightmaps[i].data)
+		st.game_lightmaps[i].tex=SOIL_create_OGL_texture(st.game_lightmaps[i].data,w,h,channel,NULL,SOIL_FLAG_MIPMAPS);
+
+	if(st.game_lightmaps[i].tex)
+	{
+		st.game_lightmaps[i].T_w=w;
+		st.game_lightmaps[i].T_h=h;
+		st.game_lightmaps[i].type[0]=TGA_FILE;
+		st.num_lights++;
+		st.game_lightmaps[i].num_lights=1;
+	}
+	else
+	{
+		free(buffer);
+		LogApp("Error: could not create lightmap texture from file %s", file);
+		return NULL;
+	}
+
+	free(buffer);
+
+	return 1;
+}
+
 uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4])
 {
 	uint8 i;
@@ -5079,6 +5129,31 @@ void StringData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	st.num_calls++;
 }
 
+void StringUIvData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
+{
+	uint16 i=st.num_calls;
+
+	st.renderer.ppline[i].pos.x=x;
+	st.renderer.ppline[i].pos.y=y;
+	st.renderer.ppline[i].pos.z=z;
+	st.renderer.ppline[i].size.x=sizex;
+	st.renderer.ppline[i].size.y=sizey;
+	st.renderer.ppline[i].size2.x=override_sizex;
+	st.renderer.ppline[i].size2.y=override_sizey;
+	st.renderer.ppline[i].ang=ang;
+	st.renderer.ppline[i].color.r=r;
+	st.renderer.ppline[i].color.g=g;
+	st.renderer.ppline[i].color.b=b;
+	st.renderer.ppline[i].color.a=a;
+	//st.renderer.ppline[i].text=malloc(strlen(text));
+	strcpy(st.renderer.ppline[i].text,text);
+	st.renderer.ppline[i].font=font;
+
+	st.renderer.ppline[i].type=STRINGUIV_CALL;
+
+	st.num_calls++;
+}
+
 void StringUIData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {
 	uint16 i=st.num_calls;
@@ -5862,6 +5937,209 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	
+			ax=(float) 1/(16384/2);
+			ay=(float) 1/(8192/2);
+
+			ay*=-1.0f;
+
+			az=(float) 1/(4096/2);
+
+			
+				ent[i].texcor[0]=0;
+				ent[i].texcor[1]=0;
+				ent[i].texcor[2]=1;
+				ent[i].texcor[3]=0;
+				ent[i].texcor[4]=1;
+				ent[i].texcor[5]=1;
+				ent[i].texcor[6]=0;
+				ent[i].texcor[7]=1;
+
+			for(j=0;j<12;j+=3)
+			{
+				ent[i].vertex[j]*=ax;
+				ent[i].vertex[j]-=1;
+
+				ent[i].vertex[j+1]*=ay;
+				ent[i].vertex[j+1]+=1;
+				
+				ent[i].vertex[j+2]*=az;
+				ent[i].vertex[j+2]-=1;
+			}
+
+			for(j=0;j<16;j+=4)
+			{
+				ent[i].color[j]=r;
+				ent[i].color[j+1]=g;
+				ent[i].color[j+2]=b;
+				ent[i].color[j+3]=a;
+			}
+
+			
+				texone_ids[texone_num]=i;
+				texone_num++;
+
+#endif
+
+			st.num_entities++;
+
+	return 0;
+
+}
+
+int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
+{	
+	uint8 valx=0, valy=0;
+	uint32 i=0, j=0, k=0, checked=0;
+	int32 t1, t2, t3, t4, timej, timel, id=-1;
+
+	SDL_Color co;
+	uint16 formatt;
+
+	float tmp, ax, ay, az;
+
+	uint8 val=0;
+	
+	SDL_Surface *msg;
+if(st.num_entities==MAX_GRAPHICS-1)
+		return 2;
+
+	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+
+	for(i=0;i<MAX_STRINGS;i++)
+	{
+		if(st.strings[i].stat==2)
+		{
+			if(strcmp(text,st.strings[i].string)==NULL)
+			{
+				st.strings[i].stat=1;
+				j=st.num_entities;
+				st.strings[i].data.posx=i;
+				memcpy(&ent[j].data,&st.strings[i].data,sizeof(TEX_DATA));
+				id=i;
+				checked=1;
+				break;
+			}
+		}
+		else
+		if(st.strings[i].stat==0 && checked==0)
+		{
+			checked=3;
+			id=i;
+		}
+
+		if(i==MAX_STRINGS-1)
+		{
+			if(id!=-1 && checked==3)
+			{
+				st.strings[id].stat=1;
+				strcpy(st.strings[id].string,text);
+				checked=2;
+			}
+			else
+			if(checked==0 && id==-1)
+			{
+				LogApp("Warning: max number os strings reached");
+				return 2;
+			}
+		}
+	}
+
+	i=st.num_entities;
+
+	if(checked==2)
+	{
+
+		co.r=255;
+		co.g=255;
+		co.b=255;
+		co.a=255;
+
+		if(strlen(text)==0) 
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font," ",co);
+		else
+			msg=TTF_RenderUTF8_Blended(st.fonts[font].font,text,co);
+	
+		if(msg->format->BytesPerPixel==4)
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGBA;
+			else formatt=GL_BGRA_EXT;
+		} else
+		{
+			if(msg->format->Rmask==0x000000ff) formatt=GL_RGB;
+			else formatt=GL_BGR_EXT;
+		}
+
+		glGenTextures(1,&ent[i].data.data);
+		glBindTexture(GL_TEXTURE_2D,ent[i].data.data);
+		glTexImage2D(GL_TEXTURE_2D,0,msg->format->BytesPerPixel,msg->w,msg->h,0,formatt,GL_UNSIGNED_BYTE,msg->pixels);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		ent[i].data.channel=63; //magical number only used for rendering
+
+		ent[i].data.posx=id;
+
+		ent[i].data.normal=0;
+		ent[i].data.vb_id=-1;
+
+		ent[i].data.w=msg->w;
+		ent[i].data.h=msg->h;
+
+		memcpy(&st.strings[id].data,&ent[i].data,sizeof(TEX_DATA));
+
+		SDL_FreeSurface(msg);
+	}
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+	ent[i].lightmapid=-1;
+
+			
+			if(override_sizex!=0)
+				sizex=st.strings[id].data.w*(float)(override_sizex/1024.0f);
+
+			if(override_sizey!=0)
+				sizey=st.strings[id].data.h*(float)(override_sizey/1024.0f);
+
+			if(r==0 && g==0 && b==0)
+				r=g=b=1;
+
+			if(z>7) z=7;
+			//else if(z<0) z+=8;
+
+			z_buffer[z][z_slot[z]]=i;
+			z_slot[z]++;
+
+			if(z>z_used) z_used=z;
+
+			x+=sizex/2;
+			//y-=sizey/2;
+
+			//timej=GetTicks();
+
+			ent[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[2]=z;
+
+			ent[i].vertex[3]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[4]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[5]=z;
+
+			ent[i].vertex[6]=(float)x+(((x+(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[7]=(float)y+(((x+(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[8]=z;
+
+			ent[i].vertex[9]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y+(sizey/2))-y)*mSin(ang));
+			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
+			ent[i].vertex[11]=z;
+
+			/*
+			ang/=10;
+
+			tmp=cos((ang*pi)/180);
+			tmp=mCos(ang*10);
+	*/
 			ax=(float) 1/(16384/2);
 			ay=(float) 1/(8192/2);
 
@@ -7393,6 +7671,10 @@ void DrawSys()
 
 			case LINE_CALL: DrawLine(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].pos2.x,st.renderer.ppline[i].pos2.y,st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,
 								st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].size.x,st.renderer.ppline[i].pos.z); break;
+
+			case STRINGUIV_CALL: DrawStringUIv(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
+								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
+								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
 		}
 	}
 

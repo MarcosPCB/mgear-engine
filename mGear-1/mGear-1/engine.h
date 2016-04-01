@@ -87,6 +87,7 @@ typedef FMOD_CHANNEL Channel;
 #define STRING2_CALL 5
 #define STRINGUI_CALL 6
 #define STRINGUI2_CALL 7
+#define STRINGUIV_CALL 8
 
 #define BCK2_DEFAULT_VEL 0.1
 #define BCK1_DEFAULT_VEL 0.5
@@ -202,7 +203,8 @@ enum _LIGHT_TYPE
 	POINT_LIGHT_NORMAL = 3,
 	SPOTLIGHT_MEDIUM = 4,
 	SPOTLIGHT_STRONG = 5,
-	SPOTLIGHT_NORMAL = 6
+	SPOTLIGHT_NORMAL = 6,
+	TGA_FILE = 7
 };
 
 typedef enum _LIGHT_TYPE LIGHT_TYPE;
@@ -550,6 +552,8 @@ struct _MGMSPRITE_
 	int8 num_tags;
 
 	int16 tags[8];
+
+	int16 current_frame;
 
 	char tags_str[8][128];
 
@@ -963,7 +967,8 @@ void FreeMap();
 
 void DrawMap();
 
-void Timer();
+void _fastcall SetTimerM(unsigned long long int x);
+unsigned long long _fastcall GetTimerM();
 
 void FPSCounter();
 
@@ -1055,6 +1060,7 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z); //Draw a polygon with no lighting or texture data.
 int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer); //Camera affected
+int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z); //Starts at the first vertice
 
 int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a);
 
@@ -1076,6 +1082,7 @@ void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z);
 void StringUI2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void StringUIData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+void StringUIvData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void String2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void StringData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void LineCall(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
@@ -1083,3 +1090,5 @@ void LineCall(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 void Finish();
 
 void DrawSys();
+
+int8 LoadLightmapFromFile(const char *file);

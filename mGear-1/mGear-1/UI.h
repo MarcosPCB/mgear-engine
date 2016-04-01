@@ -102,6 +102,10 @@ struct _UI_SYSTEM
 	int8 resize_cursor;
 
 	uint8 mouse_flag;
+
+	char current_path[2048];
+
+	int32 mouse_scroll;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;
@@ -153,5 +157,7 @@ int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size
 int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang, int8 z);
 
 void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b);
+
+int8 UISelectFile(const char *extension, char *filename);
 
 #endif
