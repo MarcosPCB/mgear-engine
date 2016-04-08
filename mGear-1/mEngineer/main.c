@@ -3986,6 +3986,22 @@ static void ViewPortCommands()
 
 	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL && !CheckColisionMouse(8192,128,16384,256,0))
 	{
+		if(meng.command==LOAD_LIGHTMAP2)
+		{
+			i=st.num_lights;
+
+			p=st.mouse;
+			STW(&p.x,&p.y);
+
+			st.game_lightmaps[i].w_pos=p;
+
+			if(st.mouse1)
+			{
+				meng.command=meng.pannel_choice;
+				st.mouse1=0;
+			}
+		}
+		else
 		if(meng.command==DRAW_SECTOR)
 		{
 			if(st.mouse1)
@@ -7778,7 +7794,8 @@ int main(int argc, char *argv[])
 					{
 						if(LoadLightmapFromFile(str))
 						{
-							meng.command=meng.pannel_choice;
+							st.mouse1=0;
+							meng.command=LOAD_LIGHTMAP2;
 							LogApp("Lightmap loaded from %s", str);
 						}
 					}

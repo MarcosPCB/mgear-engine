@@ -3029,7 +3029,7 @@ int8 LoadLightmapFromFile(const char *file)
 
 	rewind(f);
 
-	i=st.num_lights;
+	i=st.num_lights+1;
 
 	buffer=malloc(size);
 
@@ -3047,6 +3047,9 @@ int8 LoadLightmapFromFile(const char *file)
 		st.game_lightmaps[i].type[0]=TGA_FILE;
 		st.num_lights++;
 		st.game_lightmaps[i].num_lights=1;
+
+		st.game_lightmaps[i].W_w=(w*16384)/st.screenx;
+		st.game_lightmaps[i].W_h=(h*8192)/st.screeny;
 	}
 	else
 	{
@@ -7050,9 +7053,20 @@ int32 LoadSpriteCFG(char *filename, int id)
 				else
 				if(value==-1)
 				{
-					LoadMGG(&mgg_game[id2],str2);
+					if(!LoadMGG(&mgg_game[id2],str2))
+					{
+						fclose(file);
+						return 0;
+					}
+
 					st.num_mgg++;
 					st.Game_Sprites[id].MGG_ID=id2;
+				}
+				else
+				if(value==-2)
+				{
+					fclose(file);
+					return 0;
 				}
 			}
 			else
@@ -7283,9 +7297,9 @@ int32 LoadSpriteList(char *filename)
 			{
 				if(!LoadSpriteCFG(str3,value))
 				{
-					LogApp("failed loading sprite cfg");
+					LogApp("failed loading sprite cfg: %s",str3);
 
-					return 0;
+					continue;
 				}
 			}
 

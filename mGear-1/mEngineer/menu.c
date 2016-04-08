@@ -2,6 +2,7 @@
 #include "main.h"
 #include "input.h"
 #include "dirent.h"
+#include "UI.h"
 
 int16 scroll=0;
 
@@ -11,7 +12,7 @@ void Menu()
 	uint16 num_files=0, i=0, j, a, m, n;
 	FILE *f;
 	DIR *dir;
-	char *path2;
+	char path2[2048];
 	size_t size;
 	int8 id=0;
 	uint32 id2=0;
@@ -203,77 +204,38 @@ void Menu()
 		else
 		if(meng.menu_sel==2)
 		{
-			num_files=DirFiles(meng.path,files);
-
-			i=0;
-
-			if(num_files>0)
+			if(UISelectFile("mgm",path2))
 			{
-				for(j=227;j<454*40;j+=454)
+				if(LoadMap(path2))
 				{
-					if(i==num_files) break;
+					memset(meng.mgg_list,0,64*256);
+					meng.num_mgg=0;
+					LogApp("Map %s loaded",path2);
 
-					if(CheckColisionMouse(8192,j+scroll,2730,455,0))
+					id=0;
+					id2=0;
+
+					for(a=0;a<st.Current_Map.num_mgg;a++)
 					{
-						StringUI2Data(files[i],8192,j+scroll,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-						if(st.mouse1)
+						DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+						sprintf(lo,"Loading %d%",(a/st.Current_Map.num_mgg)*100);
+						DrawString2UI(lo,8192,4096,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*2,FONT_SIZE*2,0);
+						if(CheckMGGFile(st.Current_Map.MGG_FILES[a]))
 						{
-							size=strlen(files[i]);
-							size+=4;
-							size+=strlen(meng.path);
-							path2=(char*) malloc(size);
-							strcpy(path2,meng.path);
-							strcat(path2,"//");
-							strcat(path2,files[i]);
-							//Check if it's a file
-							if((f=fopen(path2,"rb"))==NULL)
-							{
-								//Check if it's a directory
-								if((dir=opendir(path2))==NULL)
-								{
-									LogApp("Error invalid file or directory: %s",files[i]);
-									st.mouse1=0;
-									i++;
-									free(path2);
-									continue;
-								}
-								else
-								{
-									meng.path=(char*) realloc(meng.path,size);
-									strcpy(meng.path,path2);
-									closedir(dir);
-									scroll=0;
-									st.mouse1=0;
-									free(path2);
-									break;
-								}
-							}
-							else
-							{
-								fclose(f);
-								if(LoadMap(path2))
-								{
-									memset(meng.mgg_list,0,64*256);
-									meng.num_mgg=0;
-									LogApp("Map %s loaded",path2);
+							LoadMGG(&mgg_map[id],st.Current_Map.MGG_FILES[a]);
+							strcpy(meng.mgg_list[a],mgg_map[id].name);
+							meng.num_mgg++;
+							id++;
+						}
+						else
+						{
+							FreeMap();
+							
+							LogApp("Error while loading map's MGG: %s",st.Current_Map.MGG_FILES[a]);
+							break;
+						}
 
-									id=0;
-									id2=0;
-
-									for(a=0;a<st.Current_Map.num_mgg;a++)
-									{
-										DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
-										sprintf(lo,"Loading %d%",(a/st.Current_Map.num_mgg)*100);
-										DrawString2UI(lo,8192,4096,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*2,FONT_SIZE*2,0);
-										if(CheckMGGFile(st.Current_Map.MGG_FILES[a]))
-										{
-											LoadMGG(&mgg_map[id],st.Current_Map.MGG_FILES[a]);
-											strcpy(meng.mgg_list[a],mgg_map[id].name);
-											meng.num_mgg++;
-											id++;
-										}
-
-									}
+					}
 
 									st.Camera.position.x=0;
 									st.Camera.position.y=0;
@@ -312,7 +274,7 @@ void Menu()
 									meng.lightmap_res.x=meng.lightmap_res.y=256;
 									st.gt=INGAME;
 									st.mouse1=0;
-									free(path2);
+									//free(path2);
 									free(meng.path);
 									meng.path=(char*) malloc(2);
 									strcpy(meng.path,".");
@@ -348,47 +310,9 @@ void Menu()
 											meng.z_used=st.Current_Map.sector[m].position.z;
 									}
 									
-									break;
-								}
-								else
-								{
-									st.mouse1=0;
-									i++;
-									free(path2);
-									continue;
+									//break;
 								}
 							}
-						}
-					}
-					else
-					{
-						StringUI2Data(files[i],8192,j+scroll,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-					}
-
-					i++;
-				}
-
-				if(st.mouse_wheel>0)
-				{
-					if(scroll<0) scroll+=454;
-					st.mouse_wheel=0;
-				}
-
-				if(st.mouse_wheel<0)
-				{
-					scroll-=454;
-					st.mouse_wheel=0;
-				}
-			}
-
-			if(st.keys[ESC_KEY].state)
-			{
-				meng.menu_sel=0;
-				free(meng.path);
-				meng.path=(char*) malloc(2);
-				strcpy(meng.path,".");
-				st.keys[ESC_KEY].state=0;
-			}
 		}
 		else
 		if(meng.menu_sel==1)

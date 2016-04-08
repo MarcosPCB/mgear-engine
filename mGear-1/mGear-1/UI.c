@@ -1824,6 +1824,7 @@ int8 UISelectFile(const char *extension, char *filename)
 		strcpy(UI_Sys.current_path,".");
 
 		strcpy(filename,path);
+		st.mouse1=0;
 		return 1;
 	}
 
