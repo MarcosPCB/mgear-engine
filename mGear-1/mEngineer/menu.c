@@ -17,6 +17,7 @@ void Menu()
 	int8 id=0;
 	uint32 id2=0;
 	char lo[32];
+	static int8 winid;
 
 	if(st.gt==MAIN_MENU || st.gt==GAME_MENU)
 	{
@@ -160,6 +161,7 @@ void Menu()
 					StringUIData("Save Map",8192,(4096)-2275,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 					if(st.mouse1)
 					{
+						strcpy(UI_Sys.file_name,"newmap");
 						meng.menu_sel=1;
 						st.mouse1=0;
 					}
@@ -185,6 +187,7 @@ void Menu()
 				StringUIData("Options",8192,(4096)-910,910,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
+					winid=UICreateWindow2(0,0,CENTER,5,16,2048,64,ARIAL);
 					meng.menu_sel=3;
 					st.mouse1=0;
 				}
@@ -317,8 +320,23 @@ void Menu()
 		else
 		if(meng.menu_sel==1)
 		{
-			SaveMap("Test.mgm");
-			meng.menu_sel=0;
+			if(UISavePath("mgm",path2))
+			{
+				SaveMap(path2);
+				meng.menu_sel=0;
+			}
+		}
+		else
+		if(meng.menu_sel==3)
+		{
+			if(UIWin2_StringButton(winid,14,"Apply",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+				RestartVideo();
+
+			if(UIWin2_StringButton(winid,15,"Back",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+			{
+				UIDestroyWindow(winid);
+				meng.menu_sel=0;
+			}
 		}
 	}
 }

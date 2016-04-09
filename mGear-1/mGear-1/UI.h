@@ -106,6 +106,10 @@ struct _UI_SYSTEM
 	char current_path[2048];
 
 	int32 mouse_scroll;
+
+	int16 current_option;
+
+	char file_name[64];
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;
@@ -158,6 +162,10 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 
 void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b);
 
+void UITextBox(int32 x, int32 y, int32 sizex, char *text, int8 font, int16 font_size, int32 colorN, int32 colorS, int32 colorC, int8 layer, int16 option_number);
+
 int8 UISelectFile(const char *extension, char *filename);
+
+int8 UISavePath(const char *extension, char *filename);
 
 #endif

@@ -4907,6 +4907,38 @@ static void ViewPortCommands()
 							if(meng.got_it!=-1 && meng.got_it!=i)
 								continue;
 
+							if(st.keys[LSHIFT_KEY].state)
+							{
+								if(st.mouse_wheel>0)
+								{
+									st.game_lightmaps[i].W_w+=256;
+									st.game_lightmaps[i].W_h+=256;
+									st.mouse_wheel=0;
+								}
+								else
+								if(st.mouse_wheel<0)
+								{
+									st.game_lightmaps[i].W_w-=256;
+									st.game_lightmaps[i].W_h-=256;
+									st.mouse_wheel=0;
+								}
+							}
+
+							if(st.keys[LCTRL_KEY].state)
+							{
+								if(st.mouse_wheel>0)
+								{
+									st.game_lightmaps[i].ang+=100;
+									st.mouse_wheel=0;
+								}
+								else
+								if(st.mouse_wheel<0)
+								{
+									st.game_lightmaps[i].ang-=100;
+									st.mouse_wheel=0;
+								}
+							}
+
 							p=st.mouse;
 
 							STW(&p.x, &p.y);
@@ -7364,7 +7396,7 @@ static void ViewPortCommands()
 			st.Camera.position.x-=64*delta;
 		}
 
-		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2)
+		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2  && meng.command!=MOVE_LIGHTMAP)
 		{
 			if(st.mouse_wheel>0 )
 			{
@@ -7381,16 +7413,16 @@ static void ViewPortCommands()
 			}
 		}
 		else
-		if(meng.command==ADD_LIGHT_TO_LIGHTMAP || meng.command==EDIT_LIGHTMAP2)
+		if(meng.command==ADD_LIGHT_TO_LIGHTMAP || meng.command==EDIT_LIGHTMAP2 || meng.command==MOVE_LIGHTMAP)
 		{
-			if(st.mouse_wheel>0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state)
+			if(st.mouse_wheel>0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state && !st.keys[LCTRL_KEY].state)
 			{
 				if(st.Camera.dimension.x<6) st.Camera.dimension.x+=0.1;
 				if(st.Camera.dimension.y<6) st.Camera.dimension.y+=0.1;
 				st.mouse_wheel=0;
 			}
 
-			if(st.mouse_wheel<0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state)
+			if(st.mouse_wheel<0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state && !st.keys[LCTRL_KEY].state)
 			{
 				if(st.Camera.dimension.x>0.2) st.Camera.dimension.x-=0.1;
 				if(st.Camera.dimension.y>0.2) st.Camera.dimension.y-=0.1;

@@ -1974,7 +1974,7 @@ void RestartVideo()
 
 	SDL_DestroyWindow(wn);
 
-	//wn=SDL_CreateWindow(st.WINDOW_NAME,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,st.screenx,st.screeny, st.fullscreen==1 ? SDL_WINDOW_FULLSCREEN : NULL | SDL_WINDOW_OPENGL);
+//	wn=SDL_CreateWindow(st.WINDOW_NAME,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,st.screenx,st.screeny, st.fullscreen==1 ? SDL_WINDOW_FULLSCREEN : NULL | SDL_WINDOW_OPENGL);
 
 	if(wn==NULL)
 	{
@@ -3047,6 +3047,10 @@ int8 LoadLightmapFromFile(const char *file)
 		st.game_lightmaps[i].type[0]=TGA_FILE;
 		st.num_lights++;
 		st.game_lightmaps[i].num_lights=1;
+		if(channel==4)
+			st.game_lightmaps[i].alpha=1;
+		else
+			st.game_lightmaps[i].alpha=0;
 
 		st.game_lightmaps[i].W_w=(w*16384)/st.screenx;
 		st.game_lightmaps[i].W_h=(h*8192)/st.screeny;
