@@ -1598,8 +1598,8 @@ void UITextBox(int32 x, int32 y, int32 sizex, char *text, int8 font, int16 font_
 
 int8 UISelectFile(const char *extension, char *filename)
 {
-	char files[512][512], path[2048], ext[16];
-	int16 num_files, filesp[256], foldersp[256], num2=0, num3=0;
+	char files[512][512], path[2048], ext[16], *tok, toks[16][8];
+	int16 num_files, filesp[256], foldersp[256], num2=0, num3=0, num_ext=0;
 	int32 i, j, k, l, m, n, o, p;
 	DIR *dir;
 	static int32 m_sel=-1, time=0;
@@ -1619,6 +1619,25 @@ int8 UISelectFile(const char *extension, char *filename)
 
 		for(k=0;k<size;k++)
 			ext[k]=tolower(extension[k]);
+
+		tok=strtok(ext,", ");
+
+		strcpy(toks[0],tok);
+
+		num_ext=1;
+
+		k=1;
+
+		while(tok!=NULL)
+		{
+			tok=strtok(NULL,", ");
+			if(tok!=NULL)
+			{
+				strcpy(toks[k],tok);
+				num_ext++;
+				k++;
+			}
+		}
 	}
 
 	for(i=0, j=0, l=0;i<num_files;i++)
@@ -1662,12 +1681,15 @@ int8 UISelectFile(const char *extension, char *filename)
 								path[o]=tolower(files[i][n]);
 							}
 
-							if(strcmp(path,ext)==NULL)
+							for(p=0;p<num_ext;p++)
 							{
-								filesp[j]=i;
-								j++;
-								num2++;
-								break;
+								if(strcmp(path,toks[p])==NULL)
+								{
+									filesp[j]=i;
+									j++;
+									num2++;
+									break;
+								}
 							}
 						}
 					}

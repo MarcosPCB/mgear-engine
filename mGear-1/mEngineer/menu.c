@@ -3,6 +3,7 @@
 #include "input.h"
 #include "dirent.h"
 #include "UI.h"
+#include "mggeditor.h"
 
 int16 scroll=0;
 
@@ -170,9 +171,17 @@ void Menu()
 					StringUI2Data("Save Map",8192,(4096)-2275,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 			}
 
-			if(CheckColisionMouse(8192,(4096)-1365,1365,455,0))
+			if(st.gt==MAIN_MENU)
 			{
-				StringUIData("Load Map",8192,(4096)-1365,1365,455,0,255,128,32,255,ARIAL,0,0,0);
+				if(UIStringButton(8192,4096-1365,"MGG Editor",ARIAL,2048,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+				{
+					meng.menu_sel=4;
+				}
+			}
+
+			if(CheckColisionMouse(8192,(4096)-910,1365,455,0))
+			{
+				StringUIData("Load Map",8192,(4096)-910,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					meng.menu_sel=2;
@@ -180,11 +189,11 @@ void Menu()
 				}
 			}
 			else
-				StringUI2Data("Load Map",8192,(4096)-1365,1365,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Load Map",8192,(4096)-910,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 
-			if(CheckColisionMouse(8192,(4096)-910,910,455,0))
+			if(CheckColisionMouse(8192,(4096)-455,910,455,0))
 			{
-				StringUIData("Options",8192,(4096)-910,910,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Options",8192,(4096)-455,910,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					winid=UICreateWindow2(0,0,CENTER,5,16,2048,64,ARIAL);
@@ -193,16 +202,16 @@ void Menu()
 				}
 			}
 			else
-				StringUI2Data("Options",8192,(4096)-910,910,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Options",8192,(4096)-455,910,455,0,255,255,255,255,ARIAL,0,0,0);
 
-			if(CheckColisionMouse(8192,(4096)-455,455,455,0))
+			if(CheckColisionMouse(8192,(4096),455,455,0))
 			{
-				StringUIData("Quit",8192,(4096)-455,455,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Quit",8192,(4096),455,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 					Quit();
 			}
 			else
-				StringUI2Data("Quit",8192,(4096)-455,455,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Quit",8192,(4096),455,455,0,255,255,255,255,ARIAL,0,0,0);
 		}
 		else
 		if(meng.menu_sel==2)
@@ -337,6 +346,13 @@ void Menu()
 				UIDestroyWindow(winid);
 				meng.menu_sel=0;
 			}
+		}
+		else
+		if(meng.menu_sel==4)
+		{
+			st.gt=INGAME;
+			memset(&mged,0,sizeof(MGGEd));
+			meng.editor=1;
 		}
 	}
 }

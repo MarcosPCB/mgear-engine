@@ -5,6 +5,7 @@
 #include <math.h>
 #include "dirent.h"
 #include "UI.h"
+#include "mggeditor.h"
 
 #ifdef _DEBUG
 	#include <crtdbg.h>
@@ -465,7 +466,7 @@ static int16 MGGLoad()
 static void PannelLeft()
 {
 	uint8 mouse=0;
-	char num[32], str[64], options[8][16]={"Foreground", "Midground", "Background1", "Background2", "Background3", "Light view", "Ingame view", "All"};
+	char num[32], str[64], options[8][16]={"Foreground", "Midground", "Background1", "Background2", "Background3", "Light view", "Ingame view", "All"}, filen[2048];
 	int32 i=0, j=0, xt, yt, k=0;
 	static float asp;
 	Pos p;
@@ -490,7 +491,46 @@ static void PannelLeft()
 	{
 		meng.command=MGG_LOAD;
 		meng.command2=0;
-		meng.scroll2=0;
+	}
+
+	if(meng.command==MGG_LOAD)
+	{
+		if(UISelectFile("mgg",filen))
+		{
+			if(CheckMGGFile(filen))
+			{
+				if(CheckMGGInSystem(filen)<99999)
+				{
+					DrawUI(8192,4096,4096,2048,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+					DrawString2UI("Loading...",8192,4096,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*3,FONT_SIZE*3,0);
+					Renderer(1);
+					LoadMGG(&mgg_map[st.Current_Map.num_mgg],filen);
+
+					j=0;
+					for(i=0;i<st.Current_Map.num_mgg;i++)
+					{
+						if(strcmp(meng.mgg_list[i],mgg_map[st.Current_Map.num_mgg].name)==NULL)
+						{
+							j=1;
+							break;
+						}
+					}
+
+					if(j==1)
+						FreeMGG(&mgg_map[st.Current_Map.num_mgg]);
+					else
+					{
+						strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg],filen);
+						strcpy(meng.mgg_list[st.Current_Map.num_mgg],mgg_map[st.Current_Map.num_mgg].name);
+						meng.num_mgg++;
+						st.Current_Map.num_mgg++;
+						st.num_mgg++;
+						LogApp("MGG %s loaded",filen);
+						meng.command=meng.pannel_choice;
+					}
+				}
+			}
+		}
 	}
 
 	if(UIStringButton(2256,128,"Map Properties",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
@@ -2415,6 +2455,21 @@ static void PannelLeft()
 			}
 		}
 
+		if(meng.obj2.type==MIDGROUND)
+		{
+			if(!(meng.obj2.flag & OBJF_ANIMATED_TEXTURE_MOV_CAM))
+			{
+				if(UIStringButton(465,3640+315+315+315,"ATMC [ ]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+					st.Current_Map.obj[i].flag |=2;
+			}
+			else
+			if(meng.obj2.flag & OBJF_ANIMATED_TEXTURE_MOV_CAM)
+			{
+				if(UIStringButton(465,3640+315+315+315,"ATMC [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+					st.Current_Map.obj[i].flag-=2;
+			}
+		}
+
 		if(meng.command==OBJ_EDIT_BOX)
 		{
 			UIData(8192,4096,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
@@ -3510,6 +3565,21 @@ static void PannelLeft()
 			{
 				if(UIStringButton(465,3640+315,"Tex. Mov [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 					meng.obj.flag-=1;
+			}
+		}
+
+		if(meng.obj.type==MIDGROUND)
+		{
+			if(!(meng.obj.flag & 2))
+			{
+				if(UIStringButton(465,3640+315+315,"ATMC [ ]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+					meng.obj.flag |=2;
+			}
+			else
+			if(meng.obj.flag & 2)
+			{
+				if(UIStringButton(465,3640+315+315,"ATMC [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+					meng.obj.flag-=2;
 			}
 		}
 			
@@ -7730,6 +7800,7 @@ int main(int argc, char *argv[])
 
 	st.viewmode=31;
 	meng.loop_complete=0;
+	meng.editor=0;
 
 	while(!st.quit)
 	{
@@ -7743,33 +7814,6 @@ int main(int argc, char *argv[])
 			BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);
 		else
 			BASICBKD(255,255,255);
-
-		
-		
-		/*
-		if(st.gt==STARTUP)
-		{
-			if(test==0)
-			{
-				if(UIMessageBox(8192,4096,CENTER,"This is a test message box\nmade using the new UI system\n for mGear\n Click OK to proceed.",1,ARIAL,2048,UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_NORMAL)==UI_OK)
-				{
-					test=1;
-					ch2=UICreateWindow2(8192,4096,CENTER,7,3,2048,12,ARIAL);
-					ch=128;
-					ch3=0;
-					t3=32768;
-					t2=128.456f;
-				}
-			}
-			else
-			{
-				UIWin2_NumberBoxf(ch2,0,&t2,"Test",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-				UIWin2_NumberBoxi8(ch2,1,&ch,"8 bit",UI_COL_NORMAL,0xFF8020,0XFF2020);
-				UIWin2_NumberBoxui32(ch2,2,&t3,"u32 bit",UI_COL_NORMAL,0xFF8020,0XFF2020);
-			}
-		}
-		else
-		*/
 		
 		loops=0;
 		while(GetTicks() > curr_tic && loops < 10)
@@ -7778,70 +7822,78 @@ int main(int argc, char *argv[])
 
 			if(st.gt==INGAME)
 			{
-				if(st.keys[SPACE_KEY].state)
+				if(meng.editor==1)
 				{
-					PlayMovie("TEN2.MGV");
-					st.keys[SPACE_KEY].state=0;
+					MGGEditorMain();
 				}
+				else
+				if(meng.editor==0)
+				{
+					if(st.keys[SPACE_KEY].state)
+					{
+						PlayMovie("TEN2.MGV");
+						st.keys[SPACE_KEY].state=0;
+					}
 
-				if(meng.command==TEX_SEL)
-				{
-					ImageList();
-					if(st.keys[ESC_KEY].state)
+					if(meng.command==TEX_SEL)
 					{
-						meng.command=meng.pannel_choice;
-						st.keys[ESC_KEY].state=0;
-					}
-				}
-				else
-				if(meng.command==SPRITE_SELECTION)
-				{
-					SpriteList();
-					if(st.keys[ESC_KEY].state)
-					{
-						meng.command=meng.pannel_choice;
-						st.keys[ESC_KEY].state=0;
-					}
-				}
-				else
-				if(meng.command==MGG_SEL)
-				{
-					PannelLeft();
-					MGGList();
-					if(st.keys[ESC_KEY].state)
-					{
-						meng.command=meng.pannel_choice;
-						st.keys[ESC_KEY].state=0;
-					}
-				}
-				else
-				if(meng.command==MGG_LOAD)
-				{
-					if(MGGLoad()==NULL) meng.command=meng.pannel_choice;
-				}
-				else
-				if(meng.command==LOAD_LIGHTMAP)
-				{
-					if(UISelectFile("tga",str))
-					{
-						if(LoadLightmapFromFile(str))
+						ImageList();
+						if(st.keys[ESC_KEY].state)
 						{
-							st.mouse1=0;
-							meng.command=LOAD_LIGHTMAP2;
-							LogApp("Lightmap loaded from %s", str);
+							meng.command=meng.pannel_choice;
+							st.keys[ESC_KEY].state=0;
 						}
 					}
-				}
-				else
-				{
-					ViewPortCommands();
-				
-					PannelLeft();
-
-					if(st.keys[ESC_KEY].state && meng.command!=OBJ_EDIT_BOX)
+					else
+					if(meng.command==SPRITE_SELECTION)
 					{
-						st.gt=GAME_MENU;
-						st.keys[ESC_KEY].state=0;
+						SpriteList();
+						if(st.keys[ESC_KEY].state)
+						{
+							meng.command=meng.pannel_choice;
+							st.keys[ESC_KEY].state=0;
+						}
+					}
+					else
+					if(meng.command==MGG_SEL)
+					{
+						PannelLeft();
+						MGGList();
+						if(st.keys[ESC_KEY].state)
+						{
+							meng.command=meng.pannel_choice;
+							st.keys[ESC_KEY].state=0;
+						}
+					}
+					//else
+					//if(meng.command==MGG_LOAD)
+					//{
+						//if(MGGLoad()==NULL) meng.command=meng.pannel_choice;
+					//}
+					else
+					if(meng.command==LOAD_LIGHTMAP)
+					{
+						if(UISelectFile("tga",str))
+						{
+							if(LoadLightmapFromFile(str))
+							{
+								st.mouse1=0;
+								meng.command=LOAD_LIGHTMAP2;
+								LogApp("Lightmap loaded from %s", str);
+							}
+						}
+					}
+					else
+					{
+						ViewPortCommands();
+				
+						PannelLeft();
+
+						if(st.keys[ESC_KEY].state && meng.command!=OBJ_EDIT_BOX)
+						{
+							st.gt=GAME_MENU;
+							st.keys[ESC_KEY].state=0;
+						}
 					}
 				}
 			}
@@ -7862,7 +7914,7 @@ int main(int argc, char *argv[])
 
 		DrawSys();
 
-		if(st.gt==INGAME && meng.command!=MGG_LOAD && meng.command!=MGG_SEL && meng.command!=SPRITE_SELECTION && meng.command!=TEX_SEL)
+		if(st.gt==INGAME && meng.command!=MGG_LOAD && meng.command!=MGG_SEL && meng.command!=SPRITE_SELECTION && meng.command!=TEX_SEL && meng.editor==0)
 		{
 			DrawMap();
 

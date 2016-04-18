@@ -109,6 +109,11 @@ typedef FMOD_CHANNEL Channel;
 #define CURSOR_RESIZE_DLEFT 3
 #define CURSOR_RESIZE_DRIGHT 4
 
+//OBJ flags
+
+#define OBJF_TEXTURE_MOV 1
+#define OBJF_ANIMATED_TEXTURE_MOV_CAM 2
+
 enum _Enttype
 {
 	SPRITE,
@@ -523,6 +528,7 @@ struct _MGMOBJ_
 	uint16 flag;
 	uint8 amblight;
 	int16 lightmapid;
+	int16 current_frame;
 };
 
 typedef struct _MGMOBJ_ _MGMOBJ;
@@ -592,6 +598,18 @@ struct _MGM_
 	int16 bcktex_id;
 	char MGG_FILES[32][256];
 	Color amb_color;
+
+	struct CamArea
+	{
+		Pos area_pos;
+		Pos area_size;
+		int8 horiz_lim;
+		int8 vert_lim;
+		Pos max_horiz[2];
+		Pos max_vert[2];
+
+		PosF max_dim;
+	} cam_area;
 };
 
 typedef struct _MGM_ _MGM;
@@ -611,6 +629,18 @@ struct _MGMFORMAT_
 	int16 bcktex_id;
 	char MGG_FILES[32][256];
 	Color amb_color;
+
+	struct Cam_Area
+	{
+		Pos area_pos;
+		Pos area_size;
+		int8 horiz_lim;
+		int8 vert_lim;
+		Pos max_horiz[2];
+		Pos max_vert[2];
+
+		PosF max_dim;
+	} cam_area;
 };
 
 typedef struct _MGMFORMAT_ _MGMFORMAT;
