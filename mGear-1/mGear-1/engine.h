@@ -540,7 +540,7 @@ struct _MGMSPRITE_
 	uint16 MGG_ID;
 
 	//Leave it blank if it's not a texture
-	int32 frame_ID;
+	int16 frame_ID;
 	_SPRITE_T type;
 
 	int32 stat;
@@ -605,8 +605,7 @@ struct _MGM_
 		Pos area_size;
 		int8 horiz_lim;
 		int8 vert_lim;
-		Pos max_horiz[2];
-		Pos max_vert[2];
+		Pos limit[2];
 
 		PosF max_dim;
 	} cam_area;
@@ -636,8 +635,7 @@ struct _MGMFORMAT_
 		Pos area_size;
 		int8 horiz_lim;
 		int8 vert_lim;
-		Pos max_horiz[2];
-		Pos max_vert[2];
+		Pos limit[2];
 
 		PosF max_dim;
 	} cam_area;

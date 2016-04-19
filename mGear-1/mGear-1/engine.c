@@ -5439,23 +5439,25 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 	return 0;
 }
 
-int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a)
+int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a, int16 sprite_id)
 {
 	uint16 curf=0;
 
-	if((mgf->anim[id].current_frame)>mgf->anim[id].endID*10) 
-		mgf->anim[id].current_frame=mgf->anim[id].startID*10; 
+	if((st.Current_Map.sprites[sprite_id].current_frame)>mgf->anim[id].endID*10) 
+		st.Current_Map.sprites[sprite_id].current_frame=mgf->anim[id].startID*10; 
 	else
-	if((mgf->anim[id].current_frame/10)==0) 
+	if((st.Current_Map.sprites[sprite_id].current_frame/10)==0) 
 		curf=mgf->anim[id].startID; 
 	
-	curf=mgf->anim[id].current_frame/10;
+	curf=st.Current_Map.sprites[sprite_id].current_frame/10;
 
-	DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a,0);
+	//DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a,0);
 
-	mgf->anim[id].current_frame+=speed;
+	st.Current_Map.sprites[sprite_id].current_frame+=speed;
 
-	return mgf->anim[id].current_frame/10;
+	st.Current_Map.sprites[sprite_id].frame_ID=st.Current_Map.sprites[sprite_id].current_frame;
+
+	return st.Current_Map.sprites[sprite_id].current_frame/10;
 }
 
 int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
@@ -7575,9 +7577,14 @@ void DrawMap()
 					 || (st.viewmode & 4 && st.Current_Map.sprites[i].position.z>31 && st.Current_Map.sprites[i].position.z<40)
 					 || (st.viewmode & 8 && st.Current_Map.sprites[i].position.z>39 && st.Current_Map.sprites[i].position.z<48)
 					  || (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z<57))
-				DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
-					st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
-					st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
+				//{
+
+
+					DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
+						st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,
+						mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
+						st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
+				//}
 			}
 
 			for(i=1;i<=st.num_lights;i++)

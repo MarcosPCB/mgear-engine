@@ -63,6 +63,11 @@
 
 #define EDIT_SECTOR 44
 
+#define CAM_AREA 45
+#define CAM_AREA_EDIT 46
+#define CAM_LIM_X 47
+#define CAM_LIM_Y 48
+
 #define FOREGROUND_MODE 0
 #define MIDGROUND_MODE 1
 #define BACKGROUND1_MODE 2

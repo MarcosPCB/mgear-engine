@@ -487,6 +487,84 @@ static void PannelLeft()
 	sprintf(str,"W: %0.2f - H: %0.2f",st.Camera.dimension.x, st.Camera.dimension.y);
 	StringUIData(str,16384-1024,8192-256,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
 
+	if(UIStringButton(8096,128,"Camera Area",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	{
+		meng.command=CAM_AREA;
+		meng.command2=0;
+		winid[1]=UICreateWindow2(8192,4096,CENTER,6,16,2048,32,ARIAL);
+	}
+
+	if(meng.command==CAM_AREA)
+	{
+		UIWin2_NumberBoxi32(winid[1],0,&st.Current_Map.cam_area.area_pos.x,"Area pos. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[1],1,&st.Current_Map.cam_area.area_pos.y,"Area pos. Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[1],2,&st.Current_Map.cam_area.area_size.x,"Area size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[1],3,&st.Current_Map.cam_area.area_size.y,"Area size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+
+		UIWin2_NumberBoxf(winid[1],4,&st.Current_Map.cam_area.max_dim.x,"Max dim. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],5,&st.Current_Map.cam_area.max_dim.y,"Max dim. y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+
+		if(st.Current_Map.cam_area.horiz_lim)
+		{
+			if(UIWin2_MarkBox(winid[1],6,1,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+				st.Current_Map.cam_area.horiz_lim=0;
+
+			UIWin2_NumberBoxi32(winid[1],7,&st.Current_Map.cam_area.limit[0].x,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],8,&st.Current_Map.cam_area.limit[1].x,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		}
+		else
+		{
+			if(UIWin2_MarkBox(winid[1],6,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+				st.Current_Map.cam_area.horiz_lim=1;
+
+			UIWin2_MarkBox(winid[1],7,2,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],8,2,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED);
+		}
+
+		if(st.Current_Map.cam_area.vert_lim)
+		{
+			if(UIWin2_MarkBox(winid[1],9,1,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+				st.Current_Map.cam_area.vert_lim=0;
+
+			UIWin2_NumberBoxi32(winid[1],10,&st.Current_Map.cam_area.limit[0].y,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],11,&st.Current_Map.cam_area.limit[1].y,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		}
+		else
+		{
+			if(UIWin2_MarkBox(winid[1],9,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+				st.Current_Map.cam_area.vert_lim=1;
+
+			UIWin2_MarkBox(winid[1],10,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],11,2,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED);
+		}
+
+		if(UIWin2_StringButton(winid[1],12,"Edit area",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		{
+			meng.command=CAM_AREA_EDIT;
+			UIDestroyWindow(winid[1]);
+		}
+
+		if(UIWin2_StringButton(winid[1],13,"Edit limit X",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		{
+			meng.command=CAM_LIM_X;
+			UIDestroyWindow(winid[1]);
+		}
+
+		if(UIWin2_StringButton(winid[1],14,"Edit limit Y",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		{
+			meng.command=CAM_LIM_Y;
+			UIDestroyWindow(winid[1]);
+		}
+
+		if(UIWin2_StringButton(winid[1],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		{
+			meng.command=meng.pannel_choice;
+			meng.command2=0;
+			UIDestroyWindow(winid[1]);
+		}
+		
+	}
+
 	if(UIStringButton(4096,128,"Load MGG",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		meng.command=MGG_LOAD;

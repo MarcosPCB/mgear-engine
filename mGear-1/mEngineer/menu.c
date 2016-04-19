@@ -150,6 +150,18 @@ void Menu()
 					memset(meng.z_slot,0,57*sizeof(int16));
 					meng.z_used=0;
 
+					st.Current_Map.cam_area.area_pos.x=st.Current_Map.cam_area.area_pos.y=0;
+					st.Current_Map.cam_area.area_size.x=16384;
+					st.Current_Map.cam_area.area_size.y=8192;
+					st.Current_Map.cam_area.horiz_lim=0;
+					st.Current_Map.cam_area.vert_lim=0;
+					st.Current_Map.cam_area.max_dim.x=6.0;
+					st.Current_Map.cam_area.max_dim.y=6.0;
+					st.Current_Map.cam_area.limit[0].x=0;
+					st.Current_Map.cam_area.limit[1].x=16384;
+					st.Current_Map.cam_area.limit[0].y=0;
+					st.Current_Map.cam_area.limit[1].y=8192;
+
 				}
 			}
 			else
