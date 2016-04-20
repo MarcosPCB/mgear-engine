@@ -242,6 +242,7 @@ void SpriteList()
 
 						meng.spr.health=st.Game_Sprites[m].health;
 						meng.spr.body=st.Game_Sprites[m].body;
+						meng.spr.flags=st.Game_Sprites[m].flags;
 
 						meng.spr.body.size=st.Game_Sprites[m].body.size;
 							//meng.tex_selection=mgg_map[id].frames[m];
@@ -489,6 +490,7 @@ static void PannelLeft()
 
 	if(UIStringButton(8096,128,"Camera Area",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
+		meng.pannel_choice=1;
 		meng.command=CAM_AREA;
 		meng.command2=0;
 		winid[1]=UICreateWindow2(8192,4096,CENTER,6,16,2048,32,ARIAL);
@@ -496,67 +498,67 @@ static void PannelLeft()
 
 	if(meng.command==CAM_AREA)
 	{
-		UIWin2_NumberBoxi32(winid[1],0,&st.Current_Map.cam_area.area_pos.x,"Area pos. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[1],1,&st.Current_Map.cam_area.area_pos.y,"Area pos. Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[1],2,&st.Current_Map.cam_area.area_size.x,"Area size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[1],3,&st.Current_Map.cam_area.area_size.y,"Area size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		//UIWin2_NumberBoxi32(winid[1],0,&st.Current_Map.cam_area.area_pos.x,"Area pos. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		//UIWin2_NumberBoxi32(winid[1],1,&st.Current_Map.cam_area.area_pos.y,"Area pos. Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],0,&st.Current_Map.cam_area.area_size.x,"Area size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],1,&st.Current_Map.cam_area.area_size.y,"Area size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 
-		UIWin2_NumberBoxf(winid[1],4,&st.Current_Map.cam_area.max_dim.x,"Max dim. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],5,&st.Current_Map.cam_area.max_dim.y,"Max dim. y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],2,&st.Current_Map.cam_area.max_dim.x,"Max dim. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],3,&st.Current_Map.cam_area.max_dim.y,"Max dim. y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 
 		if(st.Current_Map.cam_area.horiz_lim)
 		{
-			if(UIWin2_MarkBox(winid[1],6,1,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+			if(UIWin2_MarkBox(winid[1],4,1,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
 				st.Current_Map.cam_area.horiz_lim=0;
 
-			UIWin2_NumberBoxi32(winid[1],7,&st.Current_Map.cam_area.limit[0].x,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-			UIWin2_NumberBoxi32(winid[1],8,&st.Current_Map.cam_area.limit[1].x,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],5,&st.Current_Map.cam_area.limit[0].x,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],6,&st.Current_Map.cam_area.limit[1].x,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 		}
 		else
 		{
-			if(UIWin2_MarkBox(winid[1],6,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+			if(UIWin2_MarkBox(winid[1],4,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
 				st.Current_Map.cam_area.horiz_lim=1;
 
-			UIWin2_MarkBox(winid[1],7,2,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED);
-			UIWin2_MarkBox(winid[1],8,2,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],5,2,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],6,2,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED);
 		}
 
 		if(st.Current_Map.cam_area.vert_lim)
 		{
-			if(UIWin2_MarkBox(winid[1],9,1,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+			if(UIWin2_MarkBox(winid[1],7,1,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
 				st.Current_Map.cam_area.vert_lim=0;
 
-			UIWin2_NumberBoxi32(winid[1],10,&st.Current_Map.cam_area.limit[0].y,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-			UIWin2_NumberBoxi32(winid[1],11,&st.Current_Map.cam_area.limit[1].y,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],8,&st.Current_Map.cam_area.limit[0].y,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],9,&st.Current_Map.cam_area.limit[1].y,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 		}
 		else
 		{
-			if(UIWin2_MarkBox(winid[1],9,0,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+			if(UIWin2_MarkBox(winid[1],7,0,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
 				st.Current_Map.cam_area.vert_lim=1;
 
-			UIWin2_MarkBox(winid[1],10,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
-			UIWin2_MarkBox(winid[1],11,2,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],8,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],9,2,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED);
 		}
-
-		if(UIWin2_StringButton(winid[1],12,"Edit area",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		/*
+		if(UIWin2_StringButton(winid[1],10,"Edit area",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=CAM_AREA_EDIT;
 			UIDestroyWindow(winid[1]);
 		}
-
-		if(UIWin2_StringButton(winid[1],13,"Edit limit X",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		*/
+		if(UIWin2_StringButton(winid[1],10,"Edit limit X",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=CAM_LIM_X;
 			UIDestroyWindow(winid[1]);
 		}
 
-		if(UIWin2_StringButton(winid[1],14,"Edit limit Y",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		if(UIWin2_StringButton(winid[1],11,"Edit limit Y",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=CAM_LIM_Y;
 			UIDestroyWindow(winid[1]);
 		}
 
-		if(UIWin2_StringButton(winid[1],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		if(UIWin2_StringButton(winid[1],12,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=meng.pannel_choice;
 			meng.command2=0;
@@ -663,6 +665,7 @@ static void PannelLeft()
 			case UI_SEL+6:
 				{
 					meng.viewmode=INGAMEVIEW_MODE;
+					st.Camera.dimension=st.Current_Map.cam_area.area_size;
 					meng.command=meng.pannel_choice;
 					break;
 				}
@@ -690,6 +693,9 @@ static void PannelLeft()
 		else
 		if(meng.viewmode==4)
 			st.viewmode=16;
+		else
+		if(meng.viewmode==5)
+			st.viewmode=31+32;
 		else
 			st.viewmode=31;
 	}
@@ -1404,7 +1410,7 @@ static void PannelLeft()
 		
 		if(meng.command==SPRITE_TAG)
 		{
-			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
 			for(i=1, yt=4096-2560;(i-1)<st.Game_Sprites[meng.sprite_selection].num_tags;i++, yt+=512)
 			{
@@ -1415,11 +1421,11 @@ static void PannelLeft()
 				else
 					sprintf(str,"%s %d",st.Game_Sprites[meng.sprite_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_selection].tags[i-1]);
 
-				if(meng.sub_com!=i)
+				if(meng.sub_com!=i && meng.sub_com<100)
 				{
 					if(CheckColisionMouse(8192,yt,2048,455,0))
 					{
-						StringUIData(str,8192,yt,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,yt,0,0,0,255,128,32,255,ARIAL,2048,2048,6);
 
 						if(st.mouse1)
 						{
@@ -1431,6 +1437,13 @@ static void PannelLeft()
 							StartText();
 							st.mouse1=0;
 							meng.sub_com=i;
+						}
+
+						if(st.mouse2 && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && 
+							st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
+						{
+							meng.sub_com=i+100;
+							st.mouse2=0;
 						}
 					}
 					else
@@ -1449,6 +1462,21 @@ static void PannelLeft()
 					if(st.keys[RETURN_KEY].state)
 					{
 						StopText();
+						st.keys[RETURN_KEY].state=0;
+						meng.sub_com=0;
+					}
+				}
+				else
+				if(meng.sub_com==i+100)
+				{
+					if(UISelectFile(NULL,filen))
+					{
+						strcpy(st.Game_Sprites[meng.sprite_selection].tags_str[i-1],filen);
+						meng.sub_com=0;
+					}
+
+					if(st.keys[RETURN_KEY].state)
+					{
 						st.keys[RETURN_KEY].state=0;
 						meng.sub_com=0;
 					}
@@ -2227,7 +2255,7 @@ static void PannelLeft()
 		if(meng.command==SPRITE_TAG)
 		{
 
-			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
 			for(i=1, yt=4096-2560;(i-1)<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
 			{
@@ -2238,11 +2266,11 @@ static void PannelLeft()
 				else
 					sprintf(str,"%s %d",st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
 
-				if(meng.sub_com!=i)
+				if(meng.sub_com!=i && meng.sub_com<100)
 				{
 					if(CheckColisionMouse(8192,yt,2048,455,0))
 					{
-						StringUIData(str,8192,yt,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,yt,0,0,0,255,128,32,255,ARIAL,2048,2048,6);
 
 						if(st.mouse1)
 						{
@@ -2255,14 +2283,21 @@ static void PannelLeft()
 							st.mouse1=0;
 							meng.sub_com=i;
 						}
+
+						if(st.mouse2 && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && 
+							st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
+						{
+							meng.sub_com=i+100;
+							st.mouse2=0;
+						}
 					}
 					else
-						StringUIData(str,8192,yt,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,yt,0,0,0,255,255,255,255,ARIAL,2048,2048,6);
 				}
 				else
 				if(meng.sub_com==i)
 				{
-					StringUIData(str,8192,yt,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,yt,0,0,0,255,32,32,255,ARIAL,2048,2048,6);
 
 					if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
 						strcpy(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1],st.TextInput);
@@ -2272,6 +2307,21 @@ static void PannelLeft()
 					if(st.keys[RETURN_KEY].state)
 					{
 						StopText();
+						st.keys[RETURN_KEY].state=0;
+						meng.sub_com=0;
+					}
+				}
+				else
+				if(meng.sub_com==i+100)
+				{
+					if(UISelectFile(NULL,filen))
+					{
+						strcpy(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1],filen);
+						meng.sub_com=0;
+					}
+
+					if(st.keys[RETURN_KEY].state)
+					{
 						st.keys[RETURN_KEY].state=0;
 						meng.sub_com=0;
 					}
@@ -4153,6 +4203,12 @@ static void ViewPortCommands()
 				st.Current_Map.cam_area.limit[1].x=p.x;
 				//st.mouse1=0;
 			}
+
+			if(st.keys[RETURN_KEY].state)
+			{
+				meng.command=meng.pannel_choice;
+				st.keys[RETURN_KEY].state=0;
+			}
 		}
 		else
 		if(meng.command==CAM_LIM_Y)
@@ -4173,6 +4229,51 @@ static void ViewPortCommands()
 
 				st.Current_Map.cam_area.limit[1].y=p.y;
 				//st.mouse1=0;
+			}
+
+			if(st.keys[RETURN_KEY].state)
+			{
+				meng.command=meng.pannel_choice;
+				st.keys[RETURN_KEY].state=0;
+			}
+		}
+		else
+		if(meng.command==CAM_AREA_EDIT)
+		{
+			if(CheckColisionMouseWorld(st.Current_Map.cam_area.area_pos.x+(st.Current_Map.cam_area.area_size.x/2),st.Current_Map.cam_area.area_pos.y+(st.Current_Map.cam_area.area_size.y/2),
+				st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_size.y,0,24) && st.mouse1)
+			{
+				if(meng.got_it==-1)
+				{
+					meng.p=st.mouse;
+
+					STW(&meng.p.x,&meng.p.y);
+
+					meng.got_it=1;
+
+					meng.p.x-=st.Current_Map.cam_area.area_pos.x;
+					meng.p.y-=st.Current_Map.cam_area.area_pos.y;
+				}
+				
+				p=st.mouse;
+
+				STW(&p.x,&p.y);
+
+				st.Current_Map.cam_area.area_pos.x=p.x;
+				st.Current_Map.cam_area.area_pos.y=p.y;
+
+				st.Current_Map.cam_area.area_pos.x-=meng.p.x;
+				st.Current_Map.cam_area.area_pos.y-=meng.p.y;
+
+				meng.got_it=1;
+			}
+			else
+				meng.got_it=-1;
+
+			if(st.keys[RETURN_KEY].state)
+			{
+				meng.command=meng.pannel_choice;
+				st.keys[RETURN_KEY].state=0;
 			}
 		}
 		else
@@ -4585,6 +4686,13 @@ static void ViewPortCommands()
 
 						i-=2000;
 
+						if(st.Current_Map.sprites[i].flags & 1)
+						{
+							if(Sys_ResizeController(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,&st.Current_Map.sprites[i].body.size.x,&st.Current_Map.sprites[i].body.size.y,
+								0,0,st.Current_Map.sprites[i].position.z))
+								break;
+						}
+
 						if(got_it) break;
 
 						if(CheckColisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
@@ -4937,6 +5045,7 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].GameID=meng.sprite_selection;
 							st.Current_Map.sprites[i].frame_ID=meng.sprite_frame_selection;
 							st.Current_Map.sprites[i].type_s=meng.spr.type;
+							st.Current_Map.sprites[i].flags=meng.spr.flags;
 
 							st.Current_Map.sprites[i].position=st.mouse;
 							STWci(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);
@@ -7586,7 +7695,7 @@ static void ViewPortCommands()
 			st.Camera.position.x-=64*delta;
 		}
 
-		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2  && meng.command!=MOVE_LIGHTMAP)
+		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2  && meng.command!=MOVE_LIGHTMAP && meng.command!=MGG_LOAD && meng.sub_com<100)
 		{
 			if(st.mouse_wheel>0 )
 			{
@@ -7953,6 +8062,7 @@ int main(int argc, char *argv[])
 	st.viewmode=31;
 	meng.loop_complete=0;
 	meng.editor=0;
+	meng.hide_ui=0;
 
 	while(!st.quit)
 	{
@@ -8037,9 +8147,20 @@ int main(int argc, char *argv[])
 					}
 					else
 					{
+						if(meng.viewmode==INGAMEVIEW_MODE && st.keys[TAB_KEY].state)
+						{
+							if(meng.hide_ui)
+								meng.hide_ui=0;
+							else
+								meng.hide_ui=1;
+
+							st.keys[TAB_KEY].state=0;
+						}
+
+						if((meng.viewmode==INGAMEVIEW_MODE && !meng.hide_ui) || meng.viewmode!=INGAMEVIEW_MODE)
+							PannelLeft();
+
 						ViewPortCommands();
-				
-						PannelLeft();
 
 						if(st.keys[ESC_KEY].state && meng.command!=OBJ_EDIT_BOX)
 						{
@@ -8062,6 +8183,9 @@ int main(int argc, char *argv[])
 				loops=10;
 				meng.loop_complete=0;
 			}
+
+			if(meng.viewmode==INGAMEVIEW_MODE)
+				LockCamera();
 		}
 
 		DrawSys();

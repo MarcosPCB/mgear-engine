@@ -151,8 +151,8 @@ void Menu()
 					meng.z_used=0;
 
 					st.Current_Map.cam_area.area_pos.x=st.Current_Map.cam_area.area_pos.y=0;
-					st.Current_Map.cam_area.area_size.x=16384;
-					st.Current_Map.cam_area.area_size.y=8192;
+					st.Current_Map.cam_area.area_size.x=1.0;
+					st.Current_Map.cam_area.area_size.y=1.0;
 					st.Current_Map.cam_area.horiz_lim=0;
 					st.Current_Map.cam_area.vert_lim=0;
 					st.Current_Map.cam_area.max_dim.x=6.0;

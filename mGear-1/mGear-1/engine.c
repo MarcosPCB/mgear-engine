@@ -7185,6 +7185,20 @@ int32 LoadSpriteCFG(char *filename, int id)
 			continue;
 		}
 		else
+		if(strcmp(str,"RESIZEABLE")==NULL)
+		{
+			st.Game_Sprites[id].flags+=1;
+			
+			continue;
+		}
+		else
+		if(strcmp(str,"HIDDEN")==NULL)
+		{
+			st.Game_Sprites[id].flags+=2;
+			
+			continue;
+		}
+		else
 		if(strcmp(str,"MATERIAL")==NULL)
 		{
 			if(strcmp(str2,"METAL")==NULL)
@@ -7335,6 +7349,33 @@ int32 LoadSpriteList(char *filename)
 	memset(str4,0,8*16);
 
 	return 1;
+}
+
+void LockCamera()
+{
+	if(st.Current_Map.cam_area.horiz_lim)
+	{
+		if((float) st.Camera.position.x+(16384/st.Camera.dimension.x)>st.Current_Map.cam_area.limit[1].x)
+			st.Camera.position.x=(float) st.Current_Map.cam_area.limit[1].x-(16384/st.Camera.dimension.x);
+
+		if(st.Camera.position.x<st.Current_Map.cam_area.limit[0].x)
+			st.Camera.position.x=st.Current_Map.cam_area.limit[0].x;
+	}
+
+	if(st.Current_Map.cam_area.vert_lim)
+	{
+		if((float) st.Camera.position.y+(8192/st.Camera.dimension.y)>st.Current_Map.cam_area.limit[1].y)
+			st.Camera.position.y=(float) st.Current_Map.cam_area.limit[1].y-(8192/st.Camera.dimension.y);
+
+		if(st.Camera.position.y<st.Current_Map.cam_area.limit[0].y)
+			st.Camera.position.y=st.Current_Map.cam_area.limit[0].y;
+	}
+
+	if(st.Camera.dimension.x>st.Current_Map.cam_area.max_dim.x)
+		st.Camera.dimension.x=st.Current_Map.cam_area.max_dim.x;
+
+	if(st.Camera.dimension.y>st.Current_Map.cam_area.max_dim.y)
+		st.Camera.dimension.y=st.Current_Map.cam_area.max_dim.y;
 }
 
 uint32 LoadMap(const char *name)
@@ -7576,15 +7617,14 @@ void DrawMap()
 				if((st.viewmode & 1 && st.Current_Map.sprites[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.sprites[i].position.z>23 && st.Current_Map.sprites[i].position.z<32)
 					 || (st.viewmode & 4 && st.Current_Map.sprites[i].position.z>31 && st.Current_Map.sprites[i].position.z<40)
 					 || (st.viewmode & 8 && st.Current_Map.sprites[i].position.z>39 && st.Current_Map.sprites[i].position.z<48)
-					  || (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z<57))
-				//{
-
-
-					DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
-						st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,
-						mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
-						st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
-				//}
+					 || (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z<57))
+				{
+					if((st.viewmode & 32 && (~st.Current_Map.sprites[i].flags & 2)) || ((~st.viewmode & 32) && st.Current_Map.sprites[i].flags & 2) || ((~st.viewmode & 32) && (~st.Current_Map.sprites[i].flags & 2)))
+						DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
+							st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,
+							mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
+							st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
+				}
 			}
 
 			for(i=1;i<=st.num_lights;i++)

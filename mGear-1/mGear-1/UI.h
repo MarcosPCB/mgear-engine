@@ -110,6 +110,8 @@ struct _UI_SYSTEM
 	int16 current_option;
 
 	char file_name[64];
+
+	int8 sys_freeze;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;

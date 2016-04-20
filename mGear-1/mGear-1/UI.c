@@ -172,6 +172,8 @@ void UILoadSystem(char *filename)
 	strcpy(UI_Sys.current_path,".");
 	UI_Sys.mouse_scroll=0;
 
+	UI_Sys.sys_freeze=0;
+
 }
 
 int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_options, uint8 font, size_t font_size, uint32 colorN, uint32 colorS, uint32 colorT)
@@ -1242,6 +1244,9 @@ void UIMain_DrawSystem()
 	register uint8 i;
 	Pos p;
 
+	//if(UI_Sys.sys_freeze)
+		//UI_Sys.sys_freeze=0;
+
 	if(st.num_uiwindow!=0)
 	{
 		for(i=0;i<MAX_UIWINDOWS;i++)
@@ -1607,6 +1612,8 @@ int8 UISelectFile(const char *extension, char *filename)
 	size_t size;
 	uint8 loop_c=0;
 
+	UI_Sys.sys_freeze=1;
+
 	UIData(8192,4096,8192,4096,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
 	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
 
@@ -1924,6 +1931,8 @@ int8 UISavePath(const char *extension, char *filename)
 	FILE *f;
 	size_t size;
 	uint8 loop_c=0;
+
+	UI_Sys.sys_freeze=1;
 
 	UIData(8192,4096,8192,4096+1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
 	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);

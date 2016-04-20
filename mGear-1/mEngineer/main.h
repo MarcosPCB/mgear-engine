@@ -81,6 +81,8 @@ struct _mEng
 {
 	int8 viewmode;
 
+	int8 hide_ui;
+
 	char mgg_list[32][256];
 	uint16 num_mgg;
 	uint8 pannel_choice;
@@ -130,6 +132,7 @@ struct _mEng
 		uint32 gid;
 		Body body;
 		Pos size;
+		int16 flags;
 	} spr, spr2;
 
 	uPos16 lightmap_res;

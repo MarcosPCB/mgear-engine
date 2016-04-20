@@ -426,9 +426,10 @@ struct _SPRITES_
 	int8 num_tags;
 	int16 tags[8];
 	char tag_names[8][16];
-	char tags_str[8][128];
+	char tags_str[8][1024];
 	int16 health;
 	_SPRITE_G type;
+	int16 flags;
 	Body body;
 };
 
@@ -561,7 +562,7 @@ struct _MGMSPRITE_
 
 	int16 current_frame;
 
-	char tags_str[8][128];
+	char tags_str[8][1024];
 
 	int16 health;
 
@@ -574,6 +575,8 @@ struct _MGMSPRITE_
 	int16 angle;
 
 	Color color;
+
+	int16 flags;
 };
 
 typedef struct _MGMSPRITE_ _MGMSPRITE;
@@ -602,7 +605,7 @@ struct _MGM_
 	struct CamArea
 	{
 		Pos area_pos;
-		Pos area_size;
+		PosF area_size;
 		int8 horiz_lim;
 		int8 vert_lim;
 		Pos limit[2];
@@ -632,7 +635,7 @@ struct _MGMFORMAT_
 	struct Cam_Area
 	{
 		Pos area_pos;
-		Pos area_size;
+		PosF area_size;
 		int8 horiz_lim;
 		int8 vert_lim;
 		Pos limit[2];
@@ -1120,3 +1123,5 @@ void Finish();
 void DrawSys();
 
 int8 LoadLightmapFromFile(const char *file);
+
+void LockCamera();
