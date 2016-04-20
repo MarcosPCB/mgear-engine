@@ -531,7 +531,7 @@ static void PannelLeft()
 		}
 		else
 		{
-			if(UIWin2_MarkBox(winid[1],9,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+			if(UIWin2_MarkBox(winid[1],9,0,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
 				st.Current_Map.cam_area.vert_lim=1;
 
 			UIWin2_MarkBox(winid[1],10,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
@@ -4134,6 +4134,48 @@ static void ViewPortCommands()
 
 	if(!CheckColisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL && !CheckColisionMouse(8192,128,16384,256,0))
 	{
+		if(meng.command==CAM_LIM_X)
+		{
+			if(CheckColisionMouseWorld(st.Current_Map.cam_area.limit[0].x,4096,256,16384,0,24) && st.mouse1)
+			{
+				p=st.mouse;
+				STW(&p.x,&p.y);
+
+				st.Current_Map.cam_area.limit[0].x=p.x;
+				//st.mouse1=0;
+			}
+			else
+			if(CheckColisionMouseWorld(st.Current_Map.cam_area.limit[1].x,4096,256,16384,0,24) && st.mouse1)
+			{
+				p=st.mouse;
+				STW(&p.x,&p.y);
+
+				st.Current_Map.cam_area.limit[1].x=p.x;
+				//st.mouse1=0;
+			}
+		}
+		else
+		if(meng.command==CAM_LIM_Y)
+		{
+			if(CheckColisionMouseWorld(8192,st.Current_Map.cam_area.limit[0].y,32768,256,0,24) && st.mouse1)
+			{
+				p=st.mouse;
+				STW(&p.x,&p.y);
+
+				st.Current_Map.cam_area.limit[0].y=p.y;
+				//st.mouse1=0;
+			}
+			else
+			if(CheckColisionMouseWorld(8192,st.Current_Map.cam_area.limit[1].y,32768,256,0,24) && st.mouse1)
+			{
+				p=st.mouse;
+				STW(&p.x,&p.y);
+
+				st.Current_Map.cam_area.limit[1].y=p.y;
+				//st.mouse1=0;
+			}
+		}
+		else
 		if(meng.command==LOAD_LIGHTMAP2)
 		{
 			i=st.num_lights;
@@ -7629,6 +7671,38 @@ static void ENGDrawLight()
 
 	Pos p;
 	uPos16 p2;
+
+	if(meng.viewmode!=INGAMEVIEW_MODE)
+	{
+		if(st.Current_Map.cam_area.horiz_lim)
+		{
+			DrawLine((float)(st.Current_Map.cam_area.limit[0].x-st.Camera.position.x)*st.Camera.dimension.x,0,(float)(st.Current_Map.cam_area.limit[0].x-st.Camera.position.x)*st.Camera.dimension.x,8192,230,255,0,255,64,15);
+			DrawLine((float)(st.Current_Map.cam_area.limit[1].x-st.Camera.position.x)*st.Camera.dimension.x,0,(float)(st.Current_Map.cam_area.limit[1].x-st.Camera.position.x)*st.Camera.dimension.x,8192,230,255,0,255,64,15);
+		}
+
+		if(st.Current_Map.cam_area.vert_lim)
+		{
+			DrawLine(0,(float)(st.Current_Map.cam_area.limit[0].y-st.Camera.position.y)*st.Camera.dimension.y,16384,(float)(st.Current_Map.cam_area.limit[0].y-st.Camera.position.y)*st.Camera.dimension.y,230,255,0,255,64,15);
+			DrawLine(0,(float)(st.Current_Map.cam_area.limit[1].y-st.Camera.position.y)*st.Camera.dimension.y,16384,(float)(st.Current_Map.cam_area.limit[1].y-st.Camera.position.y)*st.Camera.dimension.y,230,255,0,255,64,15);
+		}
+
+		if(meng.command==CAM_AREA_EDIT)
+		{
+			DrawGraphic(st.Current_Map.cam_area.area_pos.x+(st.Current_Map.cam_area.area_size.x/2),st.Current_Map.cam_area.area_pos.y+(st.Current_Map.cam_area.area_size.y/2),
+				st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_size.y,0,255,255,255,mgg_sys[0].frames[4],64,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
+
+			DrawLine(st.Current_Map.cam_area.area_pos.x-128,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x+128,st.Current_Map.cam_area.area_pos.y,
+				230,255,0,255,256,24);
+
+			DrawLine(st.Current_Map.cam_area.area_pos.x-128,st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x+128,
+				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
+
+			DrawLine(st.Current_Map.cam_area.area_pos.x,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x,st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
+
+			DrawLine(st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,
+				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
+		}
+	}
 
 	if(meng.pannel_choice==ADD_LIGHT && meng.command==EDIT_LIGHTMAP)
 	{
