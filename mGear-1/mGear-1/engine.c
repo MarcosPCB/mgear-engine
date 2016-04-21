@@ -132,8 +132,8 @@ void _fastcall STW(int32 *x, int32 *y)
 
 void _fastcall STWci(int32 *x, int32 *y)
 {
-	*x=((((*x*16384)/st.screenx)/st.Camera.dimension.x));
-	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y));
+	*x=((((*x*16384)/st.screenx)));
+	*y=((((*y*8192)/st.screeny)));
 }
 
 void _fastcall STWf(float *x, float *y)
@@ -3347,6 +3347,13 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	xsize=((xsize*st.screenx)/16384)*st.Camera.dimension.x;
 	ysize=((ysize*st.screeny)/8192)*st.Camera.dimension.y;
 	*/
+
+	//x*=st.Camera.dimension.x;
+	//y*=st.Camera.dimension.y;
+
+	//xsize*=st.Camera.dimension.x;
+	//ysize*=st.Camera.dimension.y;
+
 	for(i=0;i<4;i++)
 	{
 			if(i==0)
@@ -3398,31 +3405,41 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 
 			if(z>39 && z<48)
 			{
-				
+				mx/=(float) st.Camera.dimension.x;
+				my/=(float) st.Camera.dimension.y;
+
 				mx+=(float) st.Camera.position.x*st.Current_Map.bck2_v;
 				my+=(float) st.Camera.position.y*st.Current_Map.bck2_v;
+
+				//mx*=st.Camera.dimension.x;
+				//my*=st.Camera.dimension.y;
 			}
 			else
 			if(z>31 && z<40)
 			{
 				
+				mx/=(float) st.Camera.dimension.x;
+				my/=(float) st.Camera.dimension.y;
+
 				mx+=(float) st.Camera.position.x*st.Current_Map.bck1_v;
 				my+=(float) st.Camera.position.y*st.Current_Map.bck1_v;
 
-			//	mx*=st.Camera.dimension.x;
-				//my*=st.Camera.dimension.y;
 			}
 			else
 			if((z>23 && z<32) || z>=0 && z<16)
 			{
+
+				mx/=(float) st.Camera.dimension.x;
+				my/=(float) st.Camera.dimension.y;
+
 				mx+=st.Camera.position.x;
 				my+=st.Camera.position.y;
-
-				//mx*=st.Camera.dimension.x;
-				//my*=st.Camera.dimension.y;
 			}
 			if(z>15 && z<24)
 			{
+				mx/=(float) st.Camera.dimension.x;
+				my/=(float) st.Camera.dimension.y;
+
 				mx+=(float) st.Camera.position.x*st.Current_Map.fr_v;
 				my+=(float) st.Camera.position.y*st.Current_Map.fr_v;
 

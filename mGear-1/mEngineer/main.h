@@ -170,6 +170,8 @@ struct _mEng
 	int8 loop_complete;
 
 	int8 editor;
+
+	int16 temp;
 };
 
 typedef struct _mEng mEng;
