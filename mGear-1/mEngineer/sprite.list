@@ -10,6 +10,3 @@ SPRITE ACTIVATOR 7 sprites//activator.cfg 3 INPUT OUTPUT DELAY
 SPRITE SPAWNER 8 sprites//spawner.cfg 4 INPUT OUTPUT DELAY TYPE
 
 //GAME SPRITES
-SPRITE FULGORE 9 sprites//fulgore.cfg 0
-SPRITE GLACIUS 10 sprites//glacius.cfg 0
-SPRITE SEKTOR 11 sprites//sektor.cfg 0

@@ -49,7 +49,6 @@ _MGG mgg_game[MAX_GAME_MGG];
 SDL_Window *wn;
 
 #define _ENGINE_VERSION 0.5
-const char WindowTitle[32]={"mGear-1 Engine PRE-ALPHA"};
 
 #define timer SDL_Delay
 
@@ -88,7 +87,7 @@ void CreateLog()
 
 	SDL_LogSetOutputFunction(&LogIn,NULL);
 
-	fprintf(file,"%s %.2f\n",WindowTitle,version);
+	fprintf(file,"%s %.2f\n",st.WindowTitle,version);
 	fprintf(file,"Engine started\n");
 	fprintf(file,"Log created\n");
 
@@ -116,7 +115,7 @@ void FPSCounter()
 	{
 		st.FPS=SDL_GetTicks()-st.FPSTime;
 		st.FPS=1000/st.FPS;
-		sprintf(st.WINDOW_NAME,"%s fps: %.2f",WindowTitle,st.FPS);
+		sprintf(st.WINDOW_NAME,"%s fps: %.2f",st.WindowTitle,st.FPS);
 		//if(st.FPS<50) printf("%d\n",st.time);
 		//st.FPS=0;
 		st.FPSTime=SDL_GetTicks();

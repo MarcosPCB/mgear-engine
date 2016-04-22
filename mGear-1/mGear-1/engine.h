@@ -858,6 +858,7 @@ struct _SETTINGS_
 	uint32 backtrack;
 	char typetext[128];
 	char WINDOW_NAME[64];
+	char WindowTitle[32];
 
 	uint16 screenx;
 	uint16 screeny;

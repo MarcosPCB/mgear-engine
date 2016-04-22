@@ -6871,6 +6871,9 @@ static void ViewPortCommands()
 					st.game_lightmaps[i].spot_ang[meng.light.light_id]=30;
 					st.game_lightmaps[i].type[meng.light.light_id]=POINT_LIGHT_MEDIUM;
 
+					st.game_lightmaps[i].stat=1;
+					st.num_lights++;
+
 					if(st.game_lightmaps[i].alpha)
 					{
 						AddLightToAlphaLight(meng.tmplightdata,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h,meng.light.color.r,meng.light.color.g,meng.light.color.b,meng.light.falloff,
@@ -6914,7 +6917,7 @@ static void ViewPortCommands()
 			p3.x=p3.x+st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2);
 			p3.y=p3.y+st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2);
 
-			if(CheckColisionMouseWorld(p3.x,p3.y,910,910,0,24) && st.mouse1)
+			if(CheckColisionMouseWorld(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].ang,24) && st.mouse1)
 			{
 				meng.loop_complete=1;
 
@@ -7153,8 +7156,6 @@ static void ViewPortCommands()
 					{
 						meng.com_id=0;
 						meng.got_it=-1;
-						st.game_lightmaps[i].stat=1;
-						st.num_lights++;
 						st.game_lightmaps[i].num_lights--;
 						meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
 
@@ -7707,14 +7708,14 @@ static void ViewPortCommands()
 
 		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2  && meng.command!=MOVE_LIGHTMAP && meng.command!=MGG_LOAD && meng.sub_com<100)
 		{
-			if(st.mouse_wheel>0 )
+			if(st.mouse_wheel>0)
 			{
 				if(st.Camera.dimension.x<6) st.Camera.dimension.x+=0.1;
 				if(st.Camera.dimension.y<6) st.Camera.dimension.y+=0.1;
 				st.mouse_wheel=0;
 			}
 
-			if(st.mouse_wheel<0 )
+			if(st.mouse_wheel<0)
 			{
 				if(st.Camera.dimension.x>0.2) st.Camera.dimension.x-=0.1;
 				if(st.Camera.dimension.y>0.2) st.Camera.dimension.y-=0.1;
@@ -7973,7 +7974,7 @@ static void ENGDrawLight()
 		texture.normal=0;
 		texture.vb_id=-1;
 
-		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,128,0,0,32768,32768,24,0);
+		//DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,128,0,0,32768,32768,24,0);
 
 		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
 			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
@@ -8024,9 +8025,9 @@ int main(int argc, char *argv[])
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
 
-	strcpy(st.WINDOW_NAME,"Engineer Map Editor ALPHA");
-
 	Init();
+
+	strcpy(st.WindowTitle,"Engineer v0.01 Alpha");
 
 	OpenFont("font//arial.ttf","arial",0,128);
 	OpenFont("font//arialbd.ttf","arial bould",1,128);
