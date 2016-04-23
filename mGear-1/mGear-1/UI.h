@@ -112,6 +112,8 @@ struct _UI_SYSTEM
 	char file_name[64];
 
 	int8 sys_freeze;
+
+	int8 textinput;
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;

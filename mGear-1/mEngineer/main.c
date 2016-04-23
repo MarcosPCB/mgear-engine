@@ -24,8 +24,8 @@ uint16 WriteCFG()
 	if((file=fopen("settings.cfg","w"))==NULL)
 		return 0;
 
-	st.screenx=800;
-	st.screeny=600;
+	st.screenx=960;
+	st.screeny=540;
 	st.fullscreen=0;
 	st.bpp=32;
 	st.audiof=44100;
@@ -660,6 +660,10 @@ static void PannelLeft()
 				{
 					meng.viewmode=LIGHTVIEW_MODE;
 					meng.command=meng.pannel_choice;
+					if(st.viewmode & 64 && meng.pannel_choice!=ADD_LIGHT)
+						st.viewmode-=64;
+					else
+						st.viewmode+=64;
 					break;
 				}
 			case UI_SEL+6:
@@ -697,7 +701,8 @@ static void PannelLeft()
 		if(meng.viewmode==5)
 			st.viewmode=31+32;
 		else
-			st.viewmode=31;
+		if(meng.viewmode==7)
+			st.viewmode=31+64;
 	}
 
 	if(meng.pannel_choice==MAP_PROPERTIES)
@@ -752,6 +757,11 @@ static void PannelLeft()
 		sprintf(str,"Map name: %s",st.Current_Map.name);
 		UIWin2_TextBox(winid[0],8,str,UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 		sscanf(str,"Map name: %s",st.Current_Map.name);
+
+		UIWin2_NumberBoxi32(winid[0],9,&st.Current_Map.bck3_pan.x,"BCK3 pan X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[0],10,&st.Current_Map.bck3_pan.y,"BCK3 pan Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[0],11,&st.Current_Map.bck3_size.x,"BCK3 size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[0],12,&st.Current_Map.bck3_size.y,"BCK3 size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 
 		if(UIWin2_StringButton(winid[0],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
@@ -855,6 +865,9 @@ static void PannelLeft()
 		{
 			st.mouse1=0;
 			meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
+			
+			if(st.viewmode<64)
+				st.viewmode+=64;
 		}
 	}
 	
@@ -4652,7 +4665,7 @@ static void ViewPortCommands()
 			
 			if(st.Current_Map.num_sprites>0)
 			{
-				for(l=16;l<58;l++)
+				for(l=16;l<57;l++)
 				{
 					if(meng.viewmode==0 && l>23)
 						break;
@@ -4682,7 +4695,7 @@ static void ViewPortCommands()
 					{
 						i=meng.z_buffer[l][k];
 
-						if(i<2000) continue;
+						if(i<2000 || i>9999) continue;
 
 						i-=2000;
 
@@ -4761,7 +4774,7 @@ static void ViewPortCommands()
 
 			if(st.Current_Map.num_obj>0)
 			{
-				for(l=16;l<58;l++)
+				for(l=16;l<57;l++)
 				{
 					if(meng.viewmode==0 && l>23)
 						break;
@@ -5274,7 +5287,7 @@ static void ViewPortCommands()
 			{
 				StringUIData("Select a lightmap to be deleted",8192,8192-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
-				for(j=1;j<=st.num_lights;j++)
+				for(j=st.num_lights;j>=1;j--)
 				{
 					if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang,0) && st.mouse1)
 					{
@@ -5314,7 +5327,7 @@ static void ViewPortCommands()
 		else
 		if(meng.pannel_choice==ADD_LIGHT && meng.command==EDIT_LIGHTMAP)
 		{
-			for(j=1;j<=st.num_lights;j++)
+			for(j=st.num_lights;j>=1;j--)
 			{
 				if(CheckColisionMouseWorld(st.game_lightmaps[j].w_pos.x,st.game_lightmaps[j].w_pos.y,st.game_lightmaps[j].W_w,st.game_lightmaps[j].W_h,st.game_lightmaps[j].ang,0) && st.mouse1)
 				{
@@ -6058,7 +6071,7 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Spotlight STRONG",11264,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight Strong",11264,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 						if(CheckColisionMouse(11264,4096+(341*3),341,341,0))
 						{
@@ -7574,7 +7587,7 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Spotlight STRONG",11264,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight Strong",11264,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(CheckColisionMouse(11264,4096+(341*3),341,341,0))
 					{
@@ -8082,7 +8095,7 @@ int main(int argc, char *argv[])
 	curr_tic=GetTicks();
 	delta=1;
 
-	st.viewmode=31;
+	st.viewmode=31+64;
 	meng.loop_complete=0;
 	meng.editor=0;
 	meng.hide_ui=0;
@@ -8206,6 +8219,9 @@ int main(int argc, char *argv[])
 				loops=10;
 				meng.loop_complete=0;
 			}
+
+			if((st.Text_Input && !meng.sub_com && !st.num_uiwindow && UI_Sys.current_option==-1) && (meng.command==ADD_LIGHT_TO_LIGHTMAP && !meng.got_it && st.Text_Input))
+				st.Text_Input=0;
 
 			if(meng.viewmode==INGAMEVIEW_MODE)
 				LockCamera();

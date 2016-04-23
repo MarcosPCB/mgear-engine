@@ -174,6 +174,7 @@ void UILoadSystem(char *filename)
 
 	UI_Sys.sys_freeze=0;
 
+	UI_Sys.textinput=0;
 }
 
 int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_options, uint8 font, size_t font_size, uint32 colorN, uint32 colorS, uint32 colorT)
@@ -375,7 +376,10 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 			StringUIData(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rs,gs,bs,255,font,font_size,font_size,5);
 
 			if(st.mouse1)
+			{
+				st.mouse1=0;
 				return 100+i;
+			}
 		}
 		else
 			StringUIData(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rn,gn,bn,255,font,font_size,font_size,5);
@@ -696,6 +700,7 @@ void UIWin2_NumberBoxui8(int8 uiwinid, int8 pos, uint8 *value, char *text, int32
 				sprintf(st.TextInput,"%u",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -715,6 +720,7 @@ void UIWin2_NumberBoxui8(int8 uiwinid, int8 pos, uint8 *value, char *text, int32
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -759,6 +765,7 @@ void UIWin2_NumberBoxi8(int8 uiwinid, int8 pos, int8 *value, char *text, int32 c
 				sprintf(st.TextInput,"%d",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -778,6 +785,7 @@ void UIWin2_NumberBoxi8(int8 uiwinid, int8 pos, int8 *value, char *text, int32 c
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -822,6 +830,7 @@ void UIWin2_NumberBoxui16(int8 uiwinid, int8 pos, uint16 *value, char *text, int
 				sprintf(st.TextInput,"%u",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -841,6 +850,7 @@ void UIWin2_NumberBoxui16(int8 uiwinid, int8 pos, uint16 *value, char *text, int
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -885,6 +895,7 @@ void UIWin2_NumberBoxi16(int8 uiwinid, int8 pos, int16 *value, char *text, int32
 				sprintf(st.TextInput,"%d",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -903,6 +914,7 @@ void UIWin2_NumberBoxi16(int8 uiwinid, int8 pos, int16 *value, char *text, int32
 			UI_Win[uiwinid].current=-1;
 			StopText();
 			st.keys[RETURN_KEY].state=0;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -947,6 +959,7 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 				sprintf(st.TextInput,"%lu",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -966,6 +979,7 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -1010,6 +1024,7 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 				sprintf(st.TextInput,"%ld",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -1029,6 +1044,7 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -1073,6 +1089,7 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 				sprintf(st.TextInput,"%.3f",*value);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -1092,6 +1109,7 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -1136,6 +1154,7 @@ void UIWin2_TextBox(int8 uiwinid, int8 pos, char *text, int32 colorN, int32 colo
 				strcpy(st.TextInput,text);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -1155,6 +1174,7 @@ void UIWin2_TextBox(int8 uiwinid, int8 pos, char *text, int32 colorN, int32 colo
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Win[uiwinid].current=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }
@@ -1243,6 +1263,7 @@ void UIMain_DrawSystem()
 {
 	register uint8 i;
 	Pos p;
+	int8 j=0;
 
 	//if(UI_Sys.sys_freeze)
 		//UI_Sys.sys_freeze=0;
@@ -1260,6 +1281,11 @@ void UIMain_DrawSystem()
 			if(UI_Win[i].stat==1)
 				DrawUI(UI_Win[i].pos.x,UI_Win[i].pos.y,UI_Win[i].size.x,UI_Win[i].size.y,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Win[i].window_frame],255,UI_Win[i].layer);
 		}
+	}
+	else
+	{
+		if(st.Text_Input && UI_Sys.textinput && UI_Sys.current_option==-1)
+			st.Text_Input=UI_Sys.textinput=0;
 	}
 
 	if(st.cursor_type!=0)
@@ -1580,6 +1606,7 @@ void UITextBox(int32 x, int32 y, int32 sizex, char *text, int8 font, int16 font_
 				strcpy(st.TextInput,text);
 				StartText();
 				st.mouse1=0;
+				UI_Sys.textinput=1;
 			}
 		}
 		else
@@ -1597,6 +1624,7 @@ void UITextBox(int32 x, int32 y, int32 sizex, char *text, int8 font, int16 font_
 			StopText();
 			st.keys[RETURN_KEY].state=0;
 			UI_Sys.current_option=-1;
+			UI_Sys.textinput=0;
 		}
 	}
 }

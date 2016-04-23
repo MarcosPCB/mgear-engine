@@ -162,6 +162,8 @@ void Menu()
 					st.Current_Map.cam_area.limit[0].y=0;
 					st.Current_Map.cam_area.limit[1].y=8192;
 
+					st.Current_Map.bck3_size.x=st.Current_Map.bck3_size.y=TEX_PAN_RANGE;
+
 				}
 			}
 			else

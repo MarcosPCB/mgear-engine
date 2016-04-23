@@ -114,6 +114,15 @@ typedef FMOD_CHANNEL Channel;
 #define OBJF_TEXTURE_MOV 1
 #define OBJF_ANIMATED_TEXTURE_MOV_CAM 2
 
+//Layers
+#define LIGHT_VIEW 64
+#define INGAME_VIEW 32
+#define BACKGROUND3_VIEW 16
+#define BACKGROUND2_VIEW 8
+#define BACKGROUND1_VIEW 4
+#define MIDGROUND_VIEW 2
+#define FOREGROUND_VIEW 1
+
 enum _Enttype
 {
 	SPRITE,
@@ -612,6 +621,9 @@ struct _MGM_
 
 		PosF max_dim;
 	} cam_area;
+
+	Pos bck3_pan;
+	Pos bck3_size;
 };
 
 typedef struct _MGM_ _MGM;
@@ -642,6 +654,9 @@ struct _MGMFORMAT_
 
 		PosF max_dim;
 	} cam_area;
+
+	Pos bck3_pan;
+	Pos bck3_size;
 };
 
 typedef struct _MGMFORMAT_ _MGMFORMAT;

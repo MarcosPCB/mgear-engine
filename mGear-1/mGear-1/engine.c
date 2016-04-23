@@ -616,6 +616,7 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 	register uint16 i, j;
 	float d, att;
 	register uint16 col;
+	uint8 max;
 
 	if(!data)
 		return 0;
@@ -632,32 +633,43 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 			if(d==0.0f)
 				d=1.0f;
 
+			//att/=(d*falloff);
+
 			if(type==POINT_LIGHT_STRONG)
+			{
 				att/=(d*d*falloff);
+				max=255;
+			}
 			else
 			if(type==POINT_LIGHT_NORMAL)
+			{
 				att/=(1.0f + falloff * (d*d));
+				max=64;
+			}
 			else
+			{
 				att/=(d*falloff);
+				max=128;
+			}
 
 			col=b*att*intensity;
 			
-			if((data[(i*w*3)+(j*3)]+col)>255)
-				data[(i*w*3)+(j*3)]=255;
+			if((data[(i*w*3)+(j*3)]+col)>max)
+				data[(i*w*3)+(j*3)]=max;
 			else
 				data[(i*w*3)+(j*3)]+=(unsigned char)col;
 
 			col=g*att*intensity;
 			
-			if((data[(i*w*3)+(j*3)+1]+col)>255)
-				data[(i*w*3)+(j*3)+1]=255;
+			if((data[(i*w*3)+(j*3)+1]+col)>max)
+				data[(i*w*3)+(j*3)+1]=max;
 			else
 				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
 				
 			col=r*att*intensity;
 			
-			if((data[(i*w*3)+(j*3)+2]+col)>255)
-				data[(i*w*3)+(j*3)+2]=255;
+			if((data[(i*w*3)+(j*3)+2]+col)>max)
+				data[(i*w*3)+(j*3)+2]=max;
 			else
 				data[(i*w*3)+(j*3)+2]+=(unsigned char)col;
 				
@@ -673,6 +685,7 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 	float d, att;
 	float angle, angle2;
 	register uint16 col;
+	uint8 max;
 
 	if(!data)
 		return 0;
@@ -681,6 +694,8 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 	{
 		for(j=0;j<w;j++)
 		{
+			att=1.0f;
+
 			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
 			d=mSqrt(d);
 
@@ -688,12 +703,21 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 				d=1;
 
 			if(type==SPOTLIGHT_STRONG)
-				att=1.0f/(d*d*falloff);
+			{
+				att/=(d*d*falloff);
+				max=255;
+			}
 			else
 			if(type==SPOTLIGHT_NORMAL)
-				att=1.0f/(1.0f + falloff * (d*d));
+			{
+				att/=(1.0f + falloff * (d*d));
+				max=64;
+			}
 			else
-				att=1.0f/(d*falloff);
+			{
+				att/=(d*falloff);
+				max=128;
+			}
 
 
 			angle=atan2(x2-x,y2-y);
@@ -709,29 +733,23 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 				continue;
 		
 			col=b*att*intensity;
-			if(col>255)
-				col=255;
 			
-			if((data[(i*w*3)+(j*3)]+col)>255)
-				data[(i*w*3)+(j*3)]=255;
+			if((data[(i*w*3)+(j*3)]+col)>max)
+				data[(i*w*3)+(j*3)]=max;
 			else
 				data[(i*w*3)+(j*3)]+=(unsigned char)col;
 
 			col=g*att*intensity;
-			if(col>255)
-				col=255;
 			
-			if((data[(i*w*3)+(j*3)+1]+col)>255)
-				data[(i*w*3)+(j*3)+1]=255;
+			if((data[(i*w*3)+(j*3)+1]+col)>max)
+				data[(i*w*3)+(j*3)+1]=max;
 			else
 				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
 				
 			col=r*att*intensity;
-			if(col>255)
-				col=255;
 			
-			if((data[(i*w*3)+(j*3)+2]+col)>255)
-				data[(i*w*3)+(j*3)+2]=255;
+			if((data[(i*w*3)+(j*3)+2]+col)>max)
+				data[(i*w*3)+(j*3)+2]=max;
 			else
 				data[(i*w*3)+(j*3)+2]+=(unsigned char)col;
 				
@@ -751,7 +769,7 @@ GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h)
 	glGenTextures(1,&tex);
 	glBindTexture(GL_TEXTURE_2D,tex);
 
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,w,h,0,GL_RGB,GL_UNSIGNED_BYTE,data);
+	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,w,h,0,GL_BGR,GL_UNSIGNED_BYTE,data);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -1918,7 +1936,7 @@ SHADER_CREATION:
 	st.game_lightmaps[0].t_pos[2].z=0;
 
 	st.game_lightmaps[0].data=GenerateLightmap(st.game_lightmaps[0].T_w, st.game_lightmaps[0].T_h);
-	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,0.1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255,POINT_LIGHT_MEDIUM);
+	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,0.1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255,POINT_LIGHT_NORMAL);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[1].x,st.game_lightmaps[0].t_pos[1].y,st.game_lightmaps[0].t_pos[1].z,128);
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
 
@@ -6968,6 +6986,8 @@ uint32 SaveMap(const char *name)
 	strcpy(map.name,st.Current_Map.name);
 	memcpy(map.MGG_FILES,st.Current_Map.MGG_FILES,sizeof(st.Current_Map.MGG_FILES));
 	map.amb_color=st.Current_Map.amb_color;
+	map.bck3_pan=st.Current_Map.bck3_pan;
+	map.bck3_size=st.Current_Map.bck3_size;
 
 	memcpy(&map.cam_area,&st.Current_Map.cam_area,sizeof(map.cam_area));
 
@@ -7463,6 +7483,8 @@ uint32 LoadMap(const char *name)
 	st.Current_Map.bcktex_id=map.bcktex_id;
 	st.Current_Map.bcktex_mgg=map.bcktex_mgg;
 	st.Current_Map.amb_color=map.amb_color;
+	st.Current_Map.bck3_pan=map.bck3_pan;
+	st.Current_Map.bck3_size=map.bck3_size;
 	memcpy(&st.Current_Map.MGG_FILES,&map.MGG_FILES,sizeof(map.MGG_FILES));
 	memcpy(&st.Current_Map.cam_area,&map.cam_area,sizeof(map.cam_area));
 
@@ -7592,7 +7614,8 @@ void DrawMap()
 	int32 x_f;
 	
 	if(st.Current_Map.bcktex_id>-1)
-		DrawGraphic(8192,4096,16384,8192,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,55,0);
+		DrawGraphic(8192,4096,16384,8192,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,st.Current_Map.bck3_pan.x,st.Current_Map.bck3_pan.y,
+		st.Current_Map.bck3_size.x,st.Current_Map.bck3_size.y,55,0);
 
 			for(i=0;i<st.Current_Map.num_obj;i++)
 			{
@@ -7644,7 +7667,7 @@ void DrawMap()
 			}
 
 			for(i=1;i<=st.num_lights;i++)
-				if(st.viewmode & 2)
+				if(st.viewmode & LIGHT_VIEW || st.viewmode & INGAME_VIEW)
 					DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,0,st.game_lightmaps[i].ang);
 
 	
@@ -7670,7 +7693,7 @@ void DrawMap()
 				DrawGraphic(st.Current_Map.obj[i].position.x-st.Camera.position.x,st.Current_Map.obj[i].position.y-st.Camera.position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
 					st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,mgg[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y);
 	*/
-	if(st.Developer_Mode)
+	if(st.Developer_Mode && (~st.viewmode & 32))
 	{
 		for(i=0;i<st.Current_Map.num_sector;i++)
 		{
