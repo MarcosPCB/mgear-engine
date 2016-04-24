@@ -48,7 +48,7 @@ _MGG mgg_game[MAX_GAME_MGG];
 
 SDL_Window *wn;
 
-#define _ENGINE_VERSION 0.5
+#define _ENGINE_VERSION 0.01
 
 #define timer SDL_Delay
 
@@ -3084,11 +3084,15 @@ int8 LoadLightmapFromFile(const char *file)
 	return 1;
 }
 
-uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4])
+uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vertex[4])
 {
 	uint8 i;
 
 	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+
+	Pos vert[4], quad[2];
+
+	memcpy(vert,vertex,sizeof(Pos)*4);
 
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
@@ -3105,68 +3109,22 @@ uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang
 	vert[3].x-=st.Camera.position.x;
 	vert[3].y-=st.Camera.position.y;
 
-	for(i=0;i<4;i++)
-	{
-			if(i==0)
-			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
-				xb=xl=tmpx;
-				yb=yl=tmpy;
-			}
-			else
-			if(i==1)
-			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
-				if(tmpx>xb) xb=tmpx;
-				else if(tmpx<xl) xl=tmpx;
-
-				if(tmpy>yb) yb=tmpy;
-				else if(tmpy<yl) yl=tmpy;
-			}
-			else
-			if(i==2)
-			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
-				if(tmpx>xb) xb=tmpx;
-				else if(tmpx<xl) xl=tmpx;
-
-				if(tmpy>yb) yb=tmpy;
-				else if(tmpy<yl) yl=tmpy;
-			}
-			else
-			if(i==3)
-			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
-				if(tmpx>xb) xb=tmpx;
-				else if(tmpx<xl) xl=tmpx;
-
-				if(tmpy>yb) yb=tmpy;
-				else if(tmpy<yl) yl=tmpy;
-			}
-	}
+	tmpy=vert[0].y;
 
 	for(i=0;i<4;i++)
 	{
-		if(i==0)
-		{
-			xtb=xtl=vert[i].x;
-			ytb=ytl=vert[i].y;
-		}
-		else
-		{
-			if(vert[i].x<xtl) xtl=vert[i].x;
-			else if(vert[i].x>xtb) xtb=vert[i].x;
-
-			if(vert[i].y<ytl) ytl=vert[i].y;
-			else if(vert[i].y>ytb) ytb=vert[i].y;
-		}
+		if(vert[i].y<tmpy)
+			tmpy=vert[i].y;
 	}
 
-	if((xtb>xl && xtb<xb && ytb>yl && ytb<yb) || (xtl>xl && xtl<xb && ytl>yl && ytl<yb))
+	quad[0].x=x;
+	quad[0].y=y;
+	quad[1].x=x+xsize;
+	quad[1].y=y+ysize;
+		
+	
+
+	if((xl>xtl && xl<xtb && yl>ytl && yl<ytb) || (xb>xtl && xb<xtb && yb>ytl && yb<ytb))
 		return 1; //Collided
 	else
 		return 0; //No collision
@@ -5473,25 +5431,49 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 	return 0;
 }
 
-int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a, int16 sprite_id)
+void SetAnim(int16 id, int16 sprite_id)
+{
+	if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10 || 
+		st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+	{
+		st.Current_Map.sprites[sprite_id].frame_ID=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID;
+		st.Current_Map.sprites[sprite_id].current_frame=st.Current_Map.sprites[sprite_id].frame_ID*10;
+	}
+}
+
+int8 MAnim(int16 id, float speed_mul, int16 sprite_id, int8 loop)
 {
 	uint16 curf=0;
+	int16 speed=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].speed;
 
-	if((st.Current_Map.sprites[sprite_id].current_frame)>mgf->anim[id].endID*10) 
-		st.Current_Map.sprites[sprite_id].current_frame=mgf->anim[id].startID*10; 
-	else
-	if((st.Current_Map.sprites[sprite_id].current_frame/10)==0) 
-		curf=mgf->anim[id].startID; 
-	
-	curf=st.Current_Map.sprites[sprite_id].current_frame/10;
+	if(speed_mul==0.00)
+		speed_mul=1.0;
 
-	//DrawSprite(x,y,sizex,sizey,ang,r,g,b, mgf->frames[curf],a,0);
+	speed*=speed_mul;
+
+	if(speed==0)
+		speed=1;
+
+
+	if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10)
+		st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
 
 	st.Current_Map.sprites[sprite_id].current_frame+=speed;
 
-	st.Current_Map.sprites[sprite_id].frame_ID=st.Current_Map.sprites[sprite_id].current_frame;
+	if(loop)
+	{
+		if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+	}
+	else
+	{
+		if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+			return 1;
+	}
 
-	return st.Current_Map.sprites[sprite_id].current_frame/10;
+	st.Current_Map.sprites[sprite_id].frame_ID=st.Current_Map.sprites[sprite_id].current_frame/10;
+
+	return 0;
 }
 
 int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
@@ -7495,7 +7477,7 @@ uint32 LoadMap(const char *name)
 	st.Current_Map.sector=malloc(MAX_SECTORS*sizeof(_SECTOR));
 #else
 	st.Current_Map.obj=(_MGMOBJ*) malloc(st.Current_Map.num_obj*sizeof(_MGMOBJ));
-	st.Current_Map.sprites=(_MGMSPRITE*) malloc(st.Current_Map.num_sprites*sizeof(_MGMSPRITE));
+	st.Current_Map.sprites=(_MGMSPRITE*) malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
 	lights=(_MGMLIGHT*) malloc(st.num_lights*sizeof(_MGMLIGHT));
 	st.Current_Map.sector=(_SECTOR*) malloc(st.Current_Map.num_sector*sizeof(_SECTOR));
 #endif
@@ -7661,7 +7643,7 @@ void DrawMap()
 					if((st.viewmode & 32 && (~st.Current_Map.sprites[i].flags & 2)) || ((~st.viewmode & 32) && st.Current_Map.sprites[i].flags & 2) || ((~st.viewmode & 32) && (~st.Current_Map.sprites[i].flags & 2)))
 						DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
 							st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,
-							mgg_game[st.Game_Sprites[st.Current_Map.sprites[i].GameID].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
+							mgg_game[st.Current_Map.sprites[i].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
 							st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
 				}
 			}

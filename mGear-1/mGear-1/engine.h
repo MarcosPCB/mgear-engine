@@ -1109,7 +1109,8 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z); 
 int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer); //Camera affected
 int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z); //Starts at the first vertice
 
-int32 MAnim(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, _MGG *mgf, uint16 id, int16 speed, uint8 a);
+void SetAnim(int16 id, int16 sprite_id);
+int8 MAnim(uint16 id, float speed_mul, int16 sprite_id, int8 loop);
 
 void Renderer(uint8 type);
 
@@ -1122,7 +1123,7 @@ void StopMusic();
 uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt);
 uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang);
 uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang, int8 z);
-uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vert[4]);
+uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vertex[4]);
 
 void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);

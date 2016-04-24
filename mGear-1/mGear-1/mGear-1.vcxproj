@@ -41,12 +41,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>M:\projetos\platform\mGear-1\mGear-1\glee;M:\projetos\platform\mGear-1\mGear-1\SOIL\src;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\include;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\include;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\include;C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;$(IncludePath)</IncludePath>
-    <LibraryPath>M:\projetos\platform\mGear-1\mGear-1\glee;M:\projetos\platform\mGear-1\mGear-1\SOIL;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\lib\x86;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\lib\x86;C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\SDL2_image-2.0.0\include;$(SolutionDir)\APIs\SOIL\src;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\APIs\SOIL;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\SDL2_image-2.0.0\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>M:\projetos\platform\mGear-1\mGear-1\glee;M:\projetos\platform\mGear-1\mGear-1\SOIL\src;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\include;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\include;C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\inc;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\SDL2_image-2.0.0\include;$(SolutionDir)\APIs\SOIL\src;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(IncludePath)</IncludePath>
     <LibraryPath>M:\projetos\platform\mGear-1\mGear-1\glee;M:\projetos\platform\mGear-1\mGear-1\SOIL;M:\projetos\platform\mGear-1\mGear-1\SDL2_ttf-2.0.12\lib\x86;C:\Program Files %28x86%29\FMOD SoundSystem\FMOD Programmers API Windows\api\lib;M:\projetos\platform\mGear-1\mGear-1\SDL2_image-2.0.0\lib\x86;M:\projetos\platform\mGear-1\mGear-1\SDL2-2.0.3\lib\x86;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(ProjectName)\Build</OutDir>
   </PropertyGroup>
@@ -93,6 +93,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="actors.h" />
     <ClInclude Include="dirent.h" />
     <ClInclude Include="engine.h" />
     <ClInclude Include="game.h" />
@@ -111,6 +112,7 @@
     <ClCompile Include="engine.c" />
     <ClCompile Include="game.c" />
     <ClCompile Include="input.c" />
+    <ClCompile Include="menu.c" />
     <ClCompile Include="mgl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
