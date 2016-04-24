@@ -498,67 +498,67 @@ static void PannelLeft()
 
 	if(meng.command==CAM_AREA)
 	{
-		//UIWin2_NumberBoxi32(winid[1],0,&st.Current_Map.cam_area.area_pos.x,"Area pos. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		//UIWin2_NumberBoxi32(winid[1],1,&st.Current_Map.cam_area.area_pos.y,"Area pos. Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],0,&st.Current_Map.cam_area.area_size.x,"Area size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],1,&st.Current_Map.cam_area.area_size.y,"Area size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[1],0,&st.Current_Map.cam_area.area_pos.x,"Area pos. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxi32(winid[1],1,&st.Current_Map.cam_area.area_pos.y,"Area pos. Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],2,&st.Current_Map.cam_area.area_size.x,"Area size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],3,&st.Current_Map.cam_area.area_size.y,"Area size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 
-		UIWin2_NumberBoxf(winid[1],2,&st.Current_Map.cam_area.max_dim.x,"Max dim. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],3,&st.Current_Map.cam_area.max_dim.y,"Max dim. y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],4,&st.Current_Map.cam_area.max_dim.x,"Max dim. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+		UIWin2_NumberBoxf(winid[1],5,&st.Current_Map.cam_area.max_dim.y,"Max dim. y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 
 		if(st.Current_Map.cam_area.horiz_lim)
 		{
-			if(UIWin2_MarkBox(winid[1],4,1,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+			if(UIWin2_MarkBox(winid[1],6,1,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
 				st.Current_Map.cam_area.horiz_lim=0;
 
-			UIWin2_NumberBoxi32(winid[1],5,&st.Current_Map.cam_area.limit[0].x,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-			UIWin2_NumberBoxi32(winid[1],6,&st.Current_Map.cam_area.limit[1].x,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],7,&st.Current_Map.cam_area.limit[0].x,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],8,&st.Current_Map.cam_area.limit[1].x,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 		}
 		else
 		{
-			if(UIWin2_MarkBox(winid[1],4,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+			if(UIWin2_MarkBox(winid[1],6,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
 				st.Current_Map.cam_area.horiz_lim=1;
 
-			UIWin2_MarkBox(winid[1],5,2,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED);
-			UIWin2_MarkBox(winid[1],6,2,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],7,2,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],8,2,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED);
 		}
 
 		if(st.Current_Map.cam_area.vert_lim)
 		{
-			if(UIWin2_MarkBox(winid[1],7,1,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
+			if(UIWin2_MarkBox(winid[1],9,1,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
 				st.Current_Map.cam_area.vert_lim=0;
 
-			UIWin2_NumberBoxi32(winid[1],8,&st.Current_Map.cam_area.limit[0].y,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-			UIWin2_NumberBoxi32(winid[1],9,&st.Current_Map.cam_area.limit[1].y,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],10,&st.Current_Map.cam_area.limit[0].y,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
+			UIWin2_NumberBoxi32(winid[1],11,&st.Current_Map.cam_area.limit[1].y,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
 		}
 		else
 		{
-			if(UIWin2_MarkBox(winid[1],7,0,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
+			if(UIWin2_MarkBox(winid[1],9,0,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
 				st.Current_Map.cam_area.vert_lim=1;
 
-			UIWin2_MarkBox(winid[1],8,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
-			UIWin2_MarkBox(winid[1],9,2,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],10,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
+			UIWin2_MarkBox(winid[1],11,2,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED);
 		}
-		/*
-		if(UIWin2_StringButton(winid[1],10,"Edit area",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		
+		if(UIWin2_StringButton(winid[1],12,"Edit area",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=CAM_AREA_EDIT;
 			UIDestroyWindow(winid[1]);
 		}
-		*/
-		if(UIWin2_StringButton(winid[1],10,"Edit limit X",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		
+		if(UIWin2_StringButton(winid[1],13,"Edit limit X",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=CAM_LIM_X;
 			UIDestroyWindow(winid[1]);
 		}
 
-		if(UIWin2_StringButton(winid[1],11,"Edit limit Y",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		if(UIWin2_StringButton(winid[1],14,"Edit limit Y",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=CAM_LIM_Y;
 			UIDestroyWindow(winid[1]);
 		}
 
-		if(UIWin2_StringButton(winid[1],12,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+		if(UIWin2_StringButton(winid[1],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=meng.pannel_choice;
 			meng.command2=0;
@@ -4253,35 +4253,8 @@ static void ViewPortCommands()
 		else
 		if(meng.command==CAM_AREA_EDIT)
 		{
-			if(CheckColisionMouseWorld(st.Current_Map.cam_area.area_pos.x+(st.Current_Map.cam_area.area_size.x/2),st.Current_Map.cam_area.area_pos.y+(st.Current_Map.cam_area.area_size.y/2),
-				st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_size.y,0,24) && st.mouse1)
-			{
-				if(meng.got_it==-1)
-				{
-					meng.p=st.mouse;
-
-					STW(&meng.p.x,&meng.p.y);
-
-					meng.got_it=1;
-
-					meng.p.x-=st.Current_Map.cam_area.area_pos.x;
-					meng.p.y-=st.Current_Map.cam_area.area_pos.y;
-				}
-				
-				p=st.mouse;
-
-				STW(&p.x,&p.y);
-
-				st.Current_Map.cam_area.area_pos.x=p.x;
-				st.Current_Map.cam_area.area_pos.y=p.y;
-
-				st.Current_Map.cam_area.area_pos.x-=meng.p.x;
-				st.Current_Map.cam_area.area_pos.y-=meng.p.y;
-
-				meng.got_it=1;
-			}
-			else
-				meng.got_it=-1;
+			st.Current_Map.cam_area.area_pos=st.Camera.position;
+			st.Current_Map.cam_area.area_size=st.Camera.dimension;
 
 			if(st.keys[RETURN_KEY].state)
 			{
@@ -4353,7 +4326,7 @@ static void ViewPortCommands()
 
 						i-=10000;
 
-						if(st.Current_Map.sector[i].id!=-1 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,256,256,0,0,0,0))
+						if(st.Current_Map.sector[i].id!=-1 && CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,0,0,0))
 						{
 							st.Current_Map.sector[i].id=-1;
 
@@ -4400,23 +4373,22 @@ static void ViewPortCommands()
 
 			if(st.mouse1)
 			{
-				if(meng.sub_com<4)
+				if(meng.sub_com==1)
 				{
-					st.Current_Map.sector[i].vertex[meng.sub_com]=st.mouse;
-					STW(&st.Current_Map.sector[i].vertex[meng.sub_com].x,&st.Current_Map.sector[i].vertex[meng.sub_com].y);
-
-					st.Current_Map.sector[i].num_vertexadded++;
-
-					st.mouse1=0;
-					meng.sub_com++;
-
-					LogApp("Added Sector vertex %d",meng.sub_com);
-				}
-				else
-				if(meng.sub_com==4)
-				{
-					st.Current_Map.sector[i].position=st.mouse;
-					STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
+					if(st.keys[LSHIFT_KEY].state)
+					{
+						st.Current_Map.sector[i].vertex[meng.sub_com]=st.mouse;
+						STW(&st.Current_Map.sector[i].vertex[meng.sub_com].x,&st.Current_Map.sector[i].vertex[meng.sub_com].y);
+						st.Current_Map.sector[i].sloped=1;
+					}
+					else
+					{
+						st.Current_Map.sector[i].vertex[meng.sub_com].x=st.mouse.x;
+						STW(&st.Current_Map.sector[i].vertex[meng.sub_com].x,&st.Current_Map.sector[i].vertex[meng.sub_com].y);
+						st.Current_Map.sector[i].vertex[meng.sub_com].y=st.Current_Map.sector[i].vertex[0].y;
+						st.Current_Map.sector[i].base_y=st.Current_Map.sector[i].vertex[0].y;
+						st.Current_Map.sector[i].sloped=0;
+					}
 
 					st.Current_Map.sector[i].num_vertexadded++;
 
@@ -4566,58 +4538,68 @@ static void ViewPortCommands()
 
 						i-=10000;
 
-						if(CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,0) && st.mouse2)
+						if((CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,484,484,0,0) || 
+							CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,484,484,0,0)))
 						{
-							meng.command2=EDIT_SECTOR;
-							meng.com_id=i;
-							winid=UICreateWindow2(0,0,CENTER,6,4,2048,32,ARIAL);
-							st.mouse2=0;
-							break;
-						}
-
-						if(got_it) break;
-
-						for(j=0;j<5;j++)
-						{
-							if(j<4 && CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[j].x,st.Current_Map.sector[i].vertex[j].y,256,256,0,0) && st.mouse1)
+							if(st.mouse1)
 							{
-								st.Current_Map.sector[i].vertex[j].x=st.mouse.x;
-								st.Current_Map.sector[i].vertex[j].y=st.mouse.y;
-								STW(&st.Current_Map.sector[i].vertex[j].x,&st.Current_Map.sector[i].vertex[j].y);
+								if(meng.got_it==-1)
+								{
+									meng.got_it=i;
+								}
 
-								got_it=1;
-								break;
-							}
+								p=st.mouse;
 
-							if(j==4 && CheckColisionMouseWorld(st.Current_Map.sector[i].position.x,st.Current_Map.sector[i].position.y,484,484,0,0) && st.mouse1)
-							{
-								vertextmp[0].x=(st.Current_Map.sector[i].vertex[0].x-st.Current_Map.sector[i].position.x);
-								vertextmp[0].y=(st.Current_Map.sector[i].vertex[0].y-st.Current_Map.sector[i].position.y);
+								STW(&p.x,&p.y);
 
-								vertextmp[1].x=(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].position.x);
-								vertextmp[1].y=(st.Current_Map.sector[i].vertex[1].y-st.Current_Map.sector[i].position.y);
+								if(CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,484,484,0,0))
+								{
+									if(st.Current_Map.sector[i].sloped)
+										st.Current_Map.sector[i].vertex[0]=p;
+									else
+									{
+										if(st.keys[LSHIFT_KEY].state)
+										{
+											st.Current_Map.sector[i].vertex[0]=p;
+											st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].base_y=p.y;
+										}
+										
+										if(st.keys[LCTRL_KEY].state)
+										{
+											st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].base_y=p.y;
+											st.Current_Map.sector[i].vertex[1].x=(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].vertex[0].x)+p.x;
+											st.Current_Map.sector[i].vertex[0]=p;
+										}
 
-								vertextmp[2].x=(st.Current_Map.sector[i].vertex[2].x-st.Current_Map.sector[i].position.x);
-								vertextmp[2].y=(st.Current_Map.sector[i].vertex[2].y-st.Current_Map.sector[i].position.y);
+										if(!st.keys[LCTRL_KEY].state && !st.keys[LSHIFT_KEY].state)
+											st.Current_Map.sector[i].vertex[0].x=p.x;
+									}
 
-								vertextmp[3].x=(st.Current_Map.sector[i].vertex[3].x-st.Current_Map.sector[i].position.x);
-								vertextmp[3].y=(st.Current_Map.sector[i].vertex[3].y-st.Current_Map.sector[i].position.y);
+								}
+								else
+								if(CheckColisionMouseWorld(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,484,484,0,0))
+								{
+									if(st.Current_Map.sector[i].sloped)
+										st.Current_Map.sector[i].vertex[1]=p;
+									else
+									{
+										if(st.keys[LSHIFT_KEY].state)
+										{
+											st.Current_Map.sector[i].vertex[1]=p;
+											st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].base_y=p.y;
+										}
 
-								st.Current_Map.sector[i].position.x=st.mouse.x;
-								st.Current_Map.sector[i].position.y=st.mouse.y;
-								STW(&st.Current_Map.sector[i].position.x,&st.Current_Map.sector[i].position.y);
+										if(st.keys[LCTRL_KEY].state)
+										{
+											st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].base_y=p.y;
+											st.Current_Map.sector[i].vertex[0].x=p.x-(st.Current_Map.sector[i].vertex[1].x-st.Current_Map.sector[i].vertex[0].x);
+											st.Current_Map.sector[i].vertex[1]=p;
+										}
 
-								st.Current_Map.sector[i].vertex[0].x=st.Current_Map.sector[i].position.x+vertextmp[0].x;
-								st.Current_Map.sector[i].vertex[0].y=st.Current_Map.sector[i].position.y+vertextmp[0].y;
-
-								st.Current_Map.sector[i].vertex[1].x=st.Current_Map.sector[i].position.x+vertextmp[1].x;
-								st.Current_Map.sector[i].vertex[1].y=st.Current_Map.sector[i].position.y+vertextmp[1].y;
-
-								st.Current_Map.sector[i].vertex[2].x=st.Current_Map.sector[i].position.x+vertextmp[2].x;
-								st.Current_Map.sector[i].vertex[2].y=st.Current_Map.sector[i].position.y+vertextmp[2].y;
-
-								st.Current_Map.sector[i].vertex[3].x=st.Current_Map.sector[i].position.x+vertextmp[3].x;
-								st.Current_Map.sector[i].vertex[3].y=st.Current_Map.sector[i].position.y+vertextmp[3].y;
+										if(!st.keys[LCTRL_KEY].state && !st.keys[LSHIFT_KEY].state)
+											st.Current_Map.sector[i].vertex[1].x=p.x;
+									}
+								}
 
 								if(st.keys[DELETE_KEY].state)
 								{
@@ -4654,11 +4636,21 @@ static void ViewPortCommands()
 
 									break;
 								}
+							}
+							else
+								meng.got_it=-1;
 
-								got_it=1;
+							if(st.mouse2)
+							{
+								meng.command2=EDIT_SECTOR;
+								meng.com_id=i;
+								winid=UICreateWindow2(0,0,CENTER,6,4,2048,32,ARIAL);
+								st.mouse2=0;
 								break;
 							}
 						}
+
+						if(got_it) break;
 					}
 				//}
 			}
@@ -5058,6 +5050,7 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].frame_ID=meng.sprite_frame_selection;
 							st.Current_Map.sprites[i].type_s=meng.spr.type;
 							st.Current_Map.sprites[i].flags=meng.spr.flags;
+							st.Current_Map.sprites[i].MGG_ID=st.Game_Sprites[meng.sprite_selection].MGG_ID;
 
 							st.Current_Map.sprites[i].position=st.mouse;
 							STWci(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);

@@ -469,15 +469,10 @@ typedef enum _SPRITE_T_ _SPRITE_T;
 
 struct _SECTOR_
 {
-	Pos position;
-	Pos vertex[4];
-	uint8 layers;
-	struct LAYER
-	{
-		Pos position; // Y is constant
-		Pos size;
-		int16 tag;
-	} Layer[8];
+	int8 sloped;
+	int32 base_y;
+	Pos vertex[2];
+
 	Material material;
 	int16 tag;
 	uint8 destructive : 2;
@@ -1123,7 +1118,7 @@ void StopMusic();
 uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt);
 uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang);
 uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang, int8 z);
-uint8 CheckCollisionSector(float x, float y, float xsize, float ysize, float ang, Pos vertex[4]);
+int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
 
 void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);

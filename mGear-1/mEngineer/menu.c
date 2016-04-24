@@ -75,7 +75,7 @@ void Menu()
 					for(i=0;i<MAX_SECTORS;i++)
 					{
 						st.Current_Map.sector[i].id=-1;
-						st.Current_Map.sector[i].layers=1;
+						///st.Current_Map.sector[i].layers=1;
 						st.Current_Map.sector[i].material=CONCRETE;
 						st.Current_Map.sector[i].tag=0;
 					}
@@ -330,10 +330,10 @@ void Menu()
 									
 									for(m=0;m<st.Current_Map.num_sector;m++)
 									{
-										meng.z_buffer[st.Current_Map.sector[m].position.z][meng.z_slot[st.Current_Map.sector[m].position.z]]=m+10000;
-										meng.z_slot[st.Current_Map.sector[m].position.z]++;
-										if(st.Current_Map.sector[m].position.z>meng.z_used)
-											meng.z_used=st.Current_Map.sector[m].position.z;
+										meng.z_buffer[24][meng.z_slot[24]]=m+10000;
+										meng.z_slot[24]++;
+										if(24>meng.z_used)
+											meng.z_used=24;
 									}
 									
 									//break;

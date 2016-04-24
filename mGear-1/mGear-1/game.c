@@ -77,8 +77,8 @@ void Player_BaseCode(int16 id)
 
 	if(st.keys[RIGHT_KEY].state)
 	{
-		st.Current_Map.sprites[id].position.x+=16;
-		st.Camera.position.x+=8;
+		st.Current_Map.sprites[id].position.x+=32;
+		st.Camera.position.x+=32;
 		playerc.current_anim=WALK;
 		speed=0.5;
 		//SetAnim(WALK,id);
@@ -88,8 +88,8 @@ void Player_BaseCode(int16 id)
 	
 	if(st.keys[LEFT_KEY].state)
 	{
-		st.Current_Map.sprites[id].position.x-=16;
-		st.Camera.position.x-=8;
+		st.Current_Map.sprites[id].position.x-=32;
+		st.Camera.position.x-=32;
 		playerc.current_anim=WALK;
 		speed=0.5;
 		//SetAnim(WALK,id);
@@ -130,24 +130,15 @@ void Player_BaseCode(int16 id)
 		speed=0.5;
 		loop=1;
 	}
+	
+	st.Current_Map.sprites[id].position.y+=64;
 
-	st.Current_Map.sprites[id].position.y+=2;
-
-	for(i=0;i<st.Current_Map.num_sector;i++)
+	if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,st.Current_Map.sprites[id].body.size.y,st.Current_Map.sprites[id].angle))!=-1)
 	{
-			temp=st.Current_Map.sector[i].vertex[0].y;
-
-			for(j=1;j<4;j++)
-			{
-				if(temp>st.Current_Map.sector[i].vertex[j].y)
-					temp=st.Current_Map.sector[i].vertex[j].y;
-			}
-
-			if(st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2)>temp)
-				st.Current_Map.sprites[id].position.y=temp-(st.Current_Map.sprites[id].body.size.y/2);
-
-			//break;
+		if((st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2))-st.Current_Map.sector[temp].base_y<=128)
+			st.Current_Map.sprites[id].position.y=st.Current_Map.sector[temp].base_y-(st.Current_Map.sprites[id].body.size.y/2);
 	}
+	
 }
 
 void SpawnPlayer(Pos pos, Pos size, int16 ang)
@@ -310,7 +301,10 @@ int main(int argc, char *argv[])
 		DrawSys();
 
 		if(st.gt==INGAME)
+		{
+			BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);
 			DrawMap();
+		}
 
 		UIMain_DrawSystem();
 
