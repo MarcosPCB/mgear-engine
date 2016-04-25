@@ -90,7 +90,7 @@ void Player_BaseCode(int16 id)
 	{
 		st.Current_Map.sprites[id].position.x-=32;
 		st.Camera.position.x-=32;
-		playerc.current_anim=WALK;
+		playerc.current_anim=WALKB;
 		speed=0.5;
 		//SetAnim(WALK,id);
 		loop=1;
@@ -99,8 +99,8 @@ void Player_BaseCode(int16 id)
 
 	if(st.keys[S_KEY].state)
 	{
-		playerc.current_anim=PUNCH1;
-		SetAnim(PUNCH1,id);
+		playerc.current_anim=PUNCHS1;
+		SetAnim(PUNCHS1,id);
 		loop=0;
 		speed=0.02;
 		//st.keys[S_KEY].state=0;
@@ -108,8 +108,8 @@ void Player_BaseCode(int16 id)
 
 	if(st.keys[W_KEY].state)
 	{
-		playerc.current_anim=PUNCH2;
-		SetAnim(PUNCH2,id);
+		playerc.current_anim=PUNCHM1;
+		SetAnim(PUNCHM1,id);
 		loop=0;
 		speed=0.02;
 		//st.keys[S_KEY].state=0;
@@ -124,7 +124,7 @@ void Player_BaseCode(int16 id)
 		loop=1;
 	}
 
-	if(playerc.current_anim==WALK && !st.keys[LEFT_KEY].state && !st.keys[RIGHT_KEY].state)
+	if((playerc.current_anim==WALK || playerc.current_anim==WALKB) && !st.keys[LEFT_KEY].state && !st.keys[RIGHT_KEY].state)
 	{
 		playerc.current_anim=STAND;
 		speed=0.5;
@@ -157,7 +157,7 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 
 	for(j=0;j<st.num_sprites;j++)
 	{
-		if(j==SEKTOR)
+		if(j==GLACIUS)
 		{
 			st.Current_Map.sprites[i].frame_ID=st.Current_Map.sprites[i].current_frame=st.Game_Sprites[j].frame[0];
 			st.Current_Map.sprites[i].MGG_ID=st.Game_Sprites[j].MGG_ID;
@@ -202,7 +202,7 @@ void PreGameEvent()
 		{
 			SpawnPlayer(st.Current_Map.sprites[i].position,st.Current_Map.sprites[i].body.size,st.Current_Map.sprites[i].angle);
 
-			SpawnSprite(GLACIUS,st.Current_Map.sprites[i].position,st.Current_Map.sprites[3].body.size,0);
+			//SpawnSprite(GLACIUS,st.Current_Map.sprites[i].position,st.Current_Map.sprites[3].body.size,0);
 			//st.Current_Map.sprites[i].MGG_ID=3;
 			//st.Current_Map.sprites[i].frame_ID=1;
 			//st.Current_Map.sprites[i].current_frame=1;

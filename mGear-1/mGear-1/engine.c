@@ -5446,21 +5446,46 @@ int8 MAnim(int16 id, float speed_mul, int16 sprite_id, int8 loop)
 	if(speed==0)
 		speed=1;
 
+	if(speed>0)
+	{
+		if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10)
+			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+	}
+	else
+	if(speed<0)
+	{
+		if(st.Current_Map.sprites[sprite_id].current_frame>mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10)
+			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+	}
 
-	if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10)
-		st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
 
 	st.Current_Map.sprites[sprite_id].current_frame+=speed;
 
 	if(loop)
 	{
-		if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
-			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+		if(speed<0)
+		{
+			if(st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+				st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+		}
+		else
+		{
+			if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+				st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+		}
 	}
 	else
 	{
-		if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
-			return 1;
+		if(speed<0)
+		{
+			if(st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+				return 1;
+		}
+		else
+		{
+			if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+				return 1;
+		}
 	}
 
 	st.Current_Map.sprites[sprite_id].frame_ID=st.Current_Map.sprites[sprite_id].current_frame/10;

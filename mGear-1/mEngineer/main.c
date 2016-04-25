@@ -570,12 +570,13 @@ static void PannelLeft()
 	if(UIStringButton(4096,128,"Load MGG",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		meng.command=MGG_LOAD;
+		SetDirContent("mgg");
 		meng.command2=0;
 	}
 
 	if(meng.command==MGG_LOAD)
 	{
-		if(UISelectFile("mgg",filen))
+		if(UISelectFile(filen))
 		{
 			if(CheckMGGFile(filen))
 			{
@@ -1073,6 +1074,7 @@ static void PannelLeft()
 		if(UIStringButton(455,3520+810+810+810,"Load lightmap",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		{
 			meng.command=LOAD_LIGHTMAP;
+			SetDirContent("tga");
 			meng.got_it=-1;
 		}
 	}
@@ -1456,6 +1458,7 @@ static void PannelLeft()
 							st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
 						{
 							meng.sub_com=i+100;
+							SetDirContent(NULL);
 							st.mouse2=0;
 						}
 					}
@@ -1482,7 +1485,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==i+100)
 				{
-					if(UISelectFile(NULL,filen))
+					if(UISelectFile(filen))
 					{
 						strcpy(st.Game_Sprites[meng.sprite_selection].tags_str[i-1],filen);
 						meng.sub_com=0;
@@ -2301,6 +2304,7 @@ static void PannelLeft()
 							st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
 						{
 							meng.sub_com=i+100;
+							SetDirContent(NULL);
 							st.mouse2=0;
 						}
 					}
@@ -2327,7 +2331,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==i+100)
 				{
-					if(UISelectFile(NULL,filen))
+					if(UISelectFile(filen))
 					{
 						strcpy(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1],filen);
 						meng.sub_com=0;
@@ -8164,7 +8168,7 @@ int main(int argc, char *argv[])
 					else
 					if(meng.command==LOAD_LIGHTMAP)
 					{
-						if(UISelectFile("tga",str))
+						if(UISelectFile(str))
 						{
 							if(LoadLightmapFromFile(str))
 							{

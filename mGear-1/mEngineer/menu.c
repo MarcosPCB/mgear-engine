@@ -177,6 +177,7 @@ void Menu()
 					if(st.mouse1)
 					{
 						strcpy(UI_Sys.file_name,"newmap");
+						SetDirContent("mgm");
 						meng.menu_sel=1;
 						st.mouse1=0;
 					}
@@ -199,6 +200,7 @@ void Menu()
 				if(st.mouse1)
 				{
 					meng.menu_sel=2;
+					SetDirContent("mgm");
 					st.mouse1=0;
 				}
 			}
@@ -230,7 +232,7 @@ void Menu()
 		else
 		if(meng.menu_sel==2)
 		{
-			if(UISelectFile("mgm",path2))
+			if(UISelectFile(path2))
 			{
 				if(LoadMap(path2))
 				{
@@ -343,7 +345,7 @@ void Menu()
 		else
 		if(meng.menu_sel==1)
 		{
-			if(UISavePath("mgm",path2))
+			if(UISavePath(path2))
 			{
 				SaveMap(path2);
 				meng.menu_sel=0;
