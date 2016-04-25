@@ -421,7 +421,7 @@ enum _OBJTYPE_
 
 typedef enum _OBJTYPE_ _OBJTYPE;
 
-#ifdef ENGINEER
+
 //Structure for the sprites in the game
 //When you create a sprite in the source code
 //You must add it to the structure
@@ -444,7 +444,7 @@ struct _SPRITES_
 
 typedef struct _SPRITES_ _SPRITES;
 
-#endif
+
 
 enum _OBJBLOCK_
 {
@@ -920,10 +920,8 @@ struct _SETTINGS_
 
 	_MGM Current_Map;
 
-#ifdef ENGINEER
 	_SPRITES Game_Sprites[MAX_SPRITES];
 	uint16 num_sprites;
-#endif
 
 	_CAMERA Camera;
 	GAME_STATE gt;

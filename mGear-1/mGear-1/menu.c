@@ -29,8 +29,7 @@ void Menu()
 			}
 		}
 
-		st.Camera.position.x=0;
-		st.Camera.position.y=0;
+		st.Camera.position=st.Current_Map.cam_area.area_pos;
 
 		st.Camera.dimension.x=st.Current_Map.cam_area.area_size.x;
 		st.Camera.dimension.y=st.Current_Map.cam_area.area_size.y;

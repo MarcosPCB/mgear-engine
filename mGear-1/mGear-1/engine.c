@@ -3715,12 +3715,12 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			{
 				ent[i].texcor[0]=0;
 				ent[i].texcor[1]=0;
-				ent[i].texcor[2]=1;
+				ent[i].texcor[2]=32768;
 				ent[i].texcor[3]=0;
-				ent[i].texcor[4]=1;
-				ent[i].texcor[5]=1;
+				ent[i].texcor[4]=32768;
+				ent[i].texcor[5]=32768;
 				ent[i].texcor[6]=0;
-				ent[i].texcor[7]=1;
+				ent[i].texcor[7]=32768;
 			}
 			else
 			{

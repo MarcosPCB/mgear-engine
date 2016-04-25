@@ -148,6 +148,10 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 	st.Current_Map.sprites[i].GameID=PLAYER1;
 	st.Current_Map.sprites[i].position=pos;
 	st.Current_Map.sprites[i].angle=ang;
+	st.Current_Map.sprites[i].health=100;
+	st.Current_Map.sprites[i].color.r=st.Current_Map.sprites[i].color.g=st.Current_Map.sprites[i].color.b=st.Current_Map.sprites[i].color.a=255;
+	st.Current_Map.sprites[i].flags=0;
+	st.Current_Map.sprites[i].type_s=MIDGROUND;
 
 	st.Current_Map.sprites[i].stat=1;
 
@@ -174,6 +178,9 @@ void SpawnSprite(int16 game_id, Pos pos, Pos size, int16 ang)
 	st.Current_Map.sprites[i].position=pos;
 	st.Current_Map.sprites[i].body.size=size;
 	st.Current_Map.sprites[i].angle=ang;
+	st.Current_Map.sprites[i].color.r=st.Current_Map.sprites[i].color.g=st.Current_Map.sprites[i].color.b=255;
+	st.Current_Map.sprites[i].flags=0;
+	st.Current_Map.sprites[i].type_s=MIDGROUND;
 
 	st.Current_Map.sprites[i].MGG_ID=st.Game_Sprites[game_id].MGG_ID;
 	st.Current_Map.sprites[i].frame_ID=st.Current_Map.sprites[i].current_frame=st.Game_Sprites[game_id].frame[0];
@@ -194,6 +201,12 @@ void PreGameEvent()
 		if(st.Current_Map.sprites[i].GameID==STARTER && !starter)
 		{
 			SpawnPlayer(st.Current_Map.sprites[i].position,st.Current_Map.sprites[i].body.size,st.Current_Map.sprites[i].angle);
+
+			SpawnSprite(GLACIUS,st.Current_Map.sprites[i].position,st.Current_Map.sprites[3].body.size,0);
+			//st.Current_Map.sprites[i].MGG_ID=3;
+			//st.Current_Map.sprites[i].frame_ID=1;
+			//st.Current_Map.sprites[i].current_frame=1;
+
 			starter=1;
 		}
 		else

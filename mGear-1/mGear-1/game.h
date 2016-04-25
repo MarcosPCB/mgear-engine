@@ -26,6 +26,7 @@ typedef struct _PLAYER_BSE PLAYERC;
 
 uint16 WriteCFG();
 uint16 LoadCFG();
+void SpawnPlayer(Pos pos, Pos size, int16 ang);
 void PreGameEvent();
 
 void Menu();
