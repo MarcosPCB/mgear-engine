@@ -1638,7 +1638,9 @@ void SetDirContent(const char *extension)
 	DIR *dir;
 	FILE *f;
 
-	strcpy(UI_Sys.extension,extension);
+	if(extension)
+		strcpy(UI_Sys.extension,extension);
+
 	UI_Sys.num_files=0;
 
 	num_files=NumDirFile(UI_Sys.current_path,UI_Sys.files);

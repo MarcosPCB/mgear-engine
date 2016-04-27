@@ -53,6 +53,7 @@ struct _MGGFORMAT_
 	size_t possize_offset;
 	size_t framesize_offset;
 	size_t framealone_offset;
+	size_t frameoffset_offset;
 	int8 mipmap;
 };
 

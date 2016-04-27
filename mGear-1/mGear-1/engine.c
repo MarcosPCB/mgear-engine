@@ -2186,7 +2186,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES], *framealone;
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
 	uint8 *imgatlas;
-	int16 *w, *h, *currh;
+	int16 *w, *h, *currh, *offx, *offy;
 	int width, height, channel;
 	unsigned char *imgdata;
 	uint8 normals[MAX_FRAMES];
@@ -2482,6 +2482,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	sizex=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
 	sizey=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
 	imgatlas=(uint8*) malloc((mggf.num_texinatlas)*sizeof(uint8));
+	offx=malloc(mggf.num_frames*sizeof(int16));
+	offy=malloc(mggf.num_frames*sizeof(int16));
 
 	fread(posx,sizeof(uint16),(mggf.num_texinatlas),file);
 	fread(posy,sizeof(uint16),(mggf.num_texinatlas),file);
@@ -2504,6 +2506,18 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	fseek(file,mggf.framealone_offset,SEEK_SET);
 
 	fread(framealone,sizeof(uint32),mgg->num_frames,file);
+
+	fseek(file,mggf.frameoffset_offset,SEEK_SET);
+
+	fread(offx,sizeof(int16),mgg->num_frames,file);
+	fread(offy,sizeof(int16),mgg->num_frames,file);
+
+	for(i=0;i<mgg->num_frames;i++)
+	{
+		mgg->frames[i].x_offset=(offx[i]*16384)/st.screenx;
+		mgg->frames[i].y_offset=(offy[i]*8192)/st.screeny;
+	}
+
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 
@@ -3535,7 +3549,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 }
 
 
-int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z)
+int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z, int16 flags, int32 sizeax, int32 sizeay, int32 sizemx, int32 sizemy)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
 
@@ -3557,6 +3571,39 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	t4=(int32) dim.y;
 	
 	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+
+	if(flags & 4)
+	{
+		if(data.vb_id!=-1)
+		{
+			if(sizemx!=NULL && sizemy!=NULL)
+			{
+				sizex=(data.sizex*sizemx)+sizeax;
+				sizey=(data.sizey*sizemy)+sizeay;
+			}
+			else
+			{
+				sizex=data.sizex+sizeax;
+				sizey=data.sizey+sizeay;
+			}
+		}
+		else
+		{
+			if(sizemx!=NULL && sizemy!=NULL)
+			{
+				sizex=(((data.w*16384)/st.screenx)*sizemx)+sizeax;
+				sizey=(((data.h*8192)/st.screeny)*sizemy)+sizeay;
+			}
+			else
+			{
+				sizex=((data.w*16384)/st.screenx)+sizeax;
+				sizey=((data.h*8192)/st.screeny)+sizeay;
+			}
+		}
+	}
+
+	x+=data.x_offset;
+	y+=data.y_offset;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -5425,11 +5472,11 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 void SetAnim(int16 id, int16 sprite_id)
 {
-	if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10 || 
-		st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+	if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100 || 
+		st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
 	{
 		st.Current_Map.sprites[sprite_id].frame_ID=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID;
-		st.Current_Map.sprites[sprite_id].current_frame=st.Current_Map.sprites[sprite_id].frame_ID*10;
+		st.Current_Map.sprites[sprite_id].current_frame=st.Current_Map.sprites[sprite_id].frame_ID*100;
 	}
 }
 
@@ -5448,14 +5495,14 @@ int8 MAnim(int16 id, float speed_mul, int16 sprite_id, int8 loop)
 
 	if(speed>0)
 	{
-		if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10)
-			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+		if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100)
+			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100;
 	}
 	else
 	if(speed<0)
 	{
-		if(st.Current_Map.sprites[sprite_id].current_frame>mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10)
-			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+		if(st.Current_Map.sprites[sprite_id].current_frame>mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100)
+			st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100;
 	}
 
 
@@ -5465,32 +5512,67 @@ int8 MAnim(int16 id, float speed_mul, int16 sprite_id, int8 loop)
 	{
 		if(speed<0)
 		{
-			if(st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
-				st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+			if(st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
+				st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100;
 		}
 		else
 		{
-			if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
-				st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*10;
+			if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
+				st.Current_Map.sprites[sprite_id].current_frame=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100;
 		}
 	}
 	else
 	{
 		if(speed<0)
 		{
-			if(st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+			if(st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
 				return 1;
 		}
 		else
 		{
-			if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*10)
+			if(st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
 				return 1;
 		}
 	}
 
-	st.Current_Map.sprites[sprite_id].frame_ID=st.Current_Map.sprites[sprite_id].current_frame/10;
+	st.Current_Map.sprites[sprite_id].frame_ID=st.Current_Map.sprites[sprite_id].current_frame/100;
 
 	return 0;
+}
+
+void GetSpriteBodySize(int16 id, int16 gameid)
+{
+	if(st.Game_Sprites[gameid].flags & 4)
+	{
+		if(mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].vb_id!=-1)
+		{
+			if(st.Game_Sprites[gameid].size_m.x!=NULL && st.Game_Sprites[gameid].size_m.y!=NULL)
+			{
+				st.Current_Map.sprites[id].body.size.x=(mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].sizex*st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
+				st.Current_Map.sprites[id].body.size.y=(mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].sizey*st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
+			}
+			else
+			{
+				st.Current_Map.sprites[id].body.size.x=mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].sizex+st.Game_Sprites[gameid].size_a.x;
+				st.Current_Map.sprites[id].body.size.y=mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].sizey+st.Game_Sprites[gameid].size_a.y;
+			}
+		}
+		else
+		{
+			if(st.Game_Sprites[gameid].size_m.x!=NULL && st.Game_Sprites[gameid].size_m.y!=NULL)
+			{
+				st.Current_Map.sprites[id].body.size.x=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*16384)/st.screenx)*
+					st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
+				st.Current_Map.sprites[id].body.size.y=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*8192)/st.screeny)*
+					st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
+			}
+			else
+			{
+				st.Current_Map.sprites[id].body.size.x=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*16384)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
+				st.Current_Map.sprites[id].body.size.y=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*8192)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+			}
+		}
+	}
 }
 
 int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
@@ -7024,7 +7106,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 {
 	FILE *file;
 	int value, value2, value3;
-	uint16 i, id2, skip, num_frames;
+	uint16 i, id2, skip, num_frames, gameid;
 	char buf[1024], str[16], str2[16], str3[16], str4[8][16], *tok;
 
 	for(i=0;i<MAX_GAME_MGG;i++)
@@ -7227,6 +7309,43 @@ int32 LoadSpriteCFG(char *filename, int id)
 			continue;
 		}
 		else
+		if(strcmp(str,"ORIGINAL_SIZE")==NULL)
+		{
+			st.Game_Sprites[id].flags+=4;
+			
+			continue;
+		}
+		else
+		if(strcmp(str,"SIZE_MUL")==NULL)
+		{
+			tok=strtok(buf," ");
+
+			tok=strtok(NULL," ");
+
+			st.Game_Sprites[id].size_m.x=atoi(tok);
+
+			tok=strtok(NULL," ");
+
+			st.Game_Sprites[id].size_m.y=atoi(tok);
+			
+			continue;
+		}
+		else
+		if(strcmp(str,"SIZE_ADD")==NULL)
+		{
+			tok=strtok(buf," ");
+
+			tok=strtok(NULL," ");
+
+			st.Game_Sprites[id].size_a.x=atoi(tok);
+
+			tok=strtok(NULL," ");
+
+			st.Game_Sprites[id].size_a.y=atoi(tok);
+			
+			continue;
+		}
+		else
 		if(strcmp(str,"HIDDEN")==NULL)
 		{
 			st.Game_Sprites[id].flags+=2;
@@ -7308,6 +7427,40 @@ int32 LoadSpriteCFG(char *filename, int id)
 	}
 
 	fclose(file);
+
+	gameid=id;
+
+	if(st.Game_Sprites[gameid].flags & 4)
+	{
+		if(mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].vb_id!=-1)
+		{
+			if(st.Game_Sprites[gameid].size_m.x!=NULL && st.Game_Sprites[gameid].size_m.y!=NULL)
+			{
+				st.Game_Sprites[gameid].body.size.x=(mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizex*st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y=(mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey*st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
+			}
+			else
+			{
+				st.Game_Sprites[gameid].body.size.x=mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizex+st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y=mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey+st.Game_Sprites[gameid].size_a.y;
+			}
+		}
+		else
+		{
+			if(st.Game_Sprites[gameid].size_m.x!=NULL && st.Game_Sprites[gameid].size_m.y!=NULL)
+			{
+				st.Game_Sprites[gameid].body.size.x=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*16384)/st.screenx)*
+					st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*8192)/st.screeny)*
+					st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
+			}
+			else
+			{
+				st.Game_Sprites[gameid].body.size.x=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*16384)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*8192)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+			}
+		}
+	}
 
 	st.num_sprites++;
 
@@ -7662,7 +7815,8 @@ void DrawMap()
 						DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
 							st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,
 							mgg_game[st.Current_Map.sprites[i].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
-							st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z);
+							st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z,st.Current_Map.sprites[i].flags,
+							st.Current_Map.sprites[i].size_a.x,st.Current_Map.sprites[i].size_a.y,st.Current_Map.sprites[i].size_m.x,st.Current_Map.sprites[i].size_m.y);
 				}
 			}
 

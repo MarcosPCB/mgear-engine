@@ -184,6 +184,8 @@ struct _TEX_DATA
 	int w; 
 	int h; 
 	int channel; //texture dimensions
+	int16 x_offset;
+	int16 y_offset;
 };
 
 typedef struct _TEX_DATA TEX_DATA;
@@ -297,6 +299,7 @@ struct _MGGFORMAT_
 	size_t possize_offset;
 	size_t framesize_offset;
 	size_t framealone_offset;
+	size_t frameoffset_offset;
 	int8 mipmap;
 };
 
@@ -439,6 +442,8 @@ struct _SPRITES_
 	int16 health;
 	_SPRITE_G type;
 	int16 flags;
+	Pos size_a;
+	Pos size_m;
 	Body body;
 };
 
@@ -574,7 +579,8 @@ struct _MGMSPRITE_
 	int8 current_layer;
 
 	Pos position;
-	Pos size;
+	Pos size_a;
+	Pos size_m;
 
 	int16 angle;
 
@@ -1088,7 +1094,7 @@ void BASICBKD(uint8 r, uint8 g, uint8 b);
 
 int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, int16 lightmap_id);
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, uint16 flag);
-int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z);
+int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z, int16 flags, int32 sizeax, int32 sizeay, int32 sizemx, int32 sizemy);
 int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius);
 int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type, int16 ang);
 int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
@@ -1104,6 +1110,7 @@ int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 
 void SetAnim(int16 id, int16 sprite_id);
 int8 MAnim(uint16 id, float speed_mul, int16 sprite_id, int8 loop);
+void GetSpriteBodySize(int16 id, int16 gameid);
 
 void Renderer(uint8 type);
 

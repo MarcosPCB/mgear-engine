@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 	_MGGFORMAT mgg;
 	_MGGANIM *mga;
 	char FileName[256], filename[256], animfile[256], tmp[32], str[2][24], framename[256], framename2[256],  fileframe[32];
-	int16 t=0, value, p=0, a=-1, val[16];
+	int16 t=0, value, p=0, a=-1, val[16], *offx, *offy;
 	char header[21]={"MGG File Version 1.1"};
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas=0, *dimx, *dimy;
 	uint8 *imgatlas;
@@ -161,6 +161,9 @@ int main(int argc, char *argv[])
 			{
 				value=atoi(str[1]);
 				mgg.num_frames=value;
+
+				offx=calloc(value,sizeof(int16));
+				offy=calloc(value,sizeof(int16));
 			}
 			else
 			if(strcmp(str[0],"FRAMESALONE")==NULL)
@@ -293,6 +296,14 @@ int main(int argc, char *argv[])
 
 				for(i=val[0];i<=val[1];i++)
 					framealone[i]=1;
+			}
+			else
+			if(strcmp(str[0],"FRAMEOFFSET")==NULL)
+			{
+				sscanf(tmp,"%s %d %d %d", str[0], &val[0], &val[1], &val[2]);
+
+				offx[val[0]]=val[1];
+				offy[val[0]]=val[2];
 			}
 			else
 			if(strcmp(str[0],"ATLASDIM")==NULL)
@@ -513,6 +524,11 @@ int main(int argc, char *argv[])
 
 	fwrite(framealone,sizeof(uint32),mgg.num_frames,file);
 
+	mgg.frameoffset_offset=ftell(file);
+
+	fwrite(offx,sizeof(int16),mgg.num_frames,file);
+	fwrite(offy,sizeof(int16),mgg.num_frames,file);
+
 	fseek(file,21,SEEK_SET);
 
 	fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
@@ -548,6 +564,8 @@ int main(int argc, char *argv[])
 	//free(bufe);
 	//free(buf2);
 	free(mga);
+	free(offx);
+	free(offy);
 
 	fflush(stdin);
 	getch();

@@ -73,14 +73,14 @@ void Player_BaseCode(int16 id)
 	register int16 i, j, k;
 	int16 tmp, temp;
 	static int8 loop=0;
-	float speed=0.5;
+	static float speed=2;
 
 	if(st.keys[RIGHT_KEY].state)
 	{
 		st.Current_Map.sprites[id].position.x+=32;
 		st.Camera.position.x+=32;
 		playerc.current_anim=WALK;
-		speed=0.5;
+		speed=4;
 		//SetAnim(WALK,id);
 		loop=1;
 		//st.keys[RIGHT_KEY].state=0;
@@ -91,7 +91,7 @@ void Player_BaseCode(int16 id)
 		st.Current_Map.sprites[id].position.x-=32;
 		st.Camera.position.x-=32;
 		playerc.current_anim=WALKB;
-		speed=0.5;
+		speed=4;
 		//SetAnim(WALK,id);
 		loop=1;
 		//st.keys[LEFT_KEY].state=0;
@@ -102,7 +102,7 @@ void Player_BaseCode(int16 id)
 		playerc.current_anim=PUNCHS1;
 		SetAnim(PUNCHS1,id);
 		loop=0;
-		speed=0.02;
+		speed=5;
 		//st.keys[S_KEY].state=0;
 	}
 
@@ -111,7 +111,7 @@ void Player_BaseCode(int16 id)
 		playerc.current_anim=PUNCHM1;
 		SetAnim(PUNCHM1,id);
 		loop=0;
-		speed=0.02;
+		speed=5;
 		//st.keys[S_KEY].state=0;
 	}
 
@@ -120,18 +120,20 @@ void Player_BaseCode(int16 id)
 	if(tmp==1)
 	{
 		playerc.current_anim=STAND;
-		speed=0.5;
+		speed=2;
 		loop=1;
 	}
 
 	if((playerc.current_anim==WALK || playerc.current_anim==WALKB) && !st.keys[LEFT_KEY].state && !st.keys[RIGHT_KEY].state)
 	{
 		playerc.current_anim=STAND;
-		speed=0.5;
+		speed=2;
 		loop=1;
 	}
 	
 	st.Current_Map.sprites[id].position.y+=64;
+
+	GetSpriteBodySize(id,st.Current_Map.sprites[id].GameID);
 
 	if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,st.Current_Map.sprites[id].body.size.y,st.Current_Map.sprites[id].angle))!=-1)
 	{
@@ -150,7 +152,6 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 	st.Current_Map.sprites[i].angle=ang;
 	st.Current_Map.sprites[i].health=100;
 	st.Current_Map.sprites[i].color.r=st.Current_Map.sprites[i].color.g=st.Current_Map.sprites[i].color.b=st.Current_Map.sprites[i].color.a=255;
-	st.Current_Map.sprites[i].flags=0;
 	st.Current_Map.sprites[i].type_s=MIDGROUND;
 
 	st.Current_Map.sprites[i].stat=1;
@@ -161,8 +162,14 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 		{
 			st.Current_Map.sprites[i].frame_ID=st.Current_Map.sprites[i].current_frame=st.Game_Sprites[j].frame[0];
 			st.Current_Map.sprites[i].MGG_ID=st.Game_Sprites[j].MGG_ID;
-			st.Current_Map.sprites[i].body.size.x=st.Game_Sprites[j].body.size.x*2;
-			st.Current_Map.sprites[i].body.size.y=st.Game_Sprites[j].body.size.y*2;
+			st.Current_Map.sprites[i].body.size.x=st.Game_Sprites[j].body.size.x;
+			st.Current_Map.sprites[i].body.size.y=st.Game_Sprites[j].body.size.y;
+			st.Current_Map.sprites[i].size_a.x=st.Game_Sprites[j].size_a.x;
+			st.Current_Map.sprites[i].size_a.y=st.Game_Sprites[j].size_a.y;
+			st.Current_Map.sprites[i].flags=st.Game_Sprites[j].flags;
+			st.Current_Map.sprites[i].size_m.x=st.Game_Sprites[j].size_m.x+1;
+			st.Current_Map.sprites[i].size_m.y=st.Game_Sprites[j].size_m.y+1;
+
 			break;
 		}
 	}
