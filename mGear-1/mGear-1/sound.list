@@ -1,0 +1,6 @@
+//List of sounds in game
+SOUND 0 "glacius_a.wav" NOLOOP 
+
+//List of musics
+MUSIC 0 "glacius.mp3"
+MUSIC 1 "sabrewulf.mp3"

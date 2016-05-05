@@ -14,6 +14,27 @@ struct _PLAYER_BSE
 	int16 current_frame;
 
 	int16 state;
+	int16 key_state[8];
+	int16 key_pressed[8];
+	int16 key_time[8];
+	int16 combo_t;
+
+	int8 special[5];
+	int8 combo[6];
+
+	float speed;
+	uint8 anim_loop;
+
+	struct Hit
+	{
+		int8 anim;
+		float speed;
+		int8 damage;
+		int32 range;
+		int16 sound;
+	} hit[20];
+
+	int16 i;
 };
 
 typedef struct _PLAYER_BSE PLAYERC;
@@ -64,6 +85,15 @@ typedef struct _PLAYER_BSE PLAYERC;
 #define SPECIAL5 42
 #define SPECIAL6 43
 #define SPECIAL7 44
+
+#define WK 0
+#define SK 1
+#define EK 2
+#define DK 3
+#define UPK 4
+#define DWK 5
+#define LFK 6
+#define RGk 7
 
 uint16 WriteCFG();
 uint16 LoadCFG();

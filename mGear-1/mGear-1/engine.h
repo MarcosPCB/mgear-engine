@@ -40,7 +40,7 @@
 #define MAX_GRAPHICS 2048
 #define MAX_DRAWCALLS 1024
 #define TICSPERSECOND 125
-#define MAX_CHANNELS 32
+#define MAX_CHANNELS 256
 #define MUSIC_CHANNEL MAX_CHANNELS-1
 #define MAX_SOUNDS 32
 #define MUSIC_SLOT MAX_SOUNDS-1
@@ -260,6 +260,8 @@ struct _SOUNDSYS_
 	int16 slot_ID[MAX_SOUNDS];
 	Channel *channels[MAX_CHANNELS];
 	int16 slotch_ID[MAX_CHANNELS];
+
+	Channel *music;
 };
 
 typedef struct _SOUNDSYS_ _SOUNDSYS;
@@ -439,6 +441,10 @@ struct _SPRITES_
 	int16 tags[8];
 	char tag_names[8][16];
 	char tags_str[8][1024];
+	char tags_ext[8][6];
+	char tag_mod_list[8][32];
+	int8 num_ext;
+	int8 num_list_tag;
 	int16 health;
 	_SPRITE_G type;
 	int16 flags;
@@ -748,6 +754,15 @@ struct PROGRAM_SHADER
 
 typedef struct
 {
+	Sound *sound;
+	uint8 loop;
+	char path[256];
+	uint8 type;
+
+} SOUND_LIST;
+
+typedef struct
+{
 	uint8 type;
 
 	Pos pos;
@@ -898,6 +913,10 @@ struct _SETTINGS_
 	uint8 num_mgg_basic;
 
 	_GAME_LIGHTMAPS game_lightmaps[MAX_LIGHTMAPS];
+
+	uint16 num_sounds;
+
+	SOUND_LIST sounds[MAX_SOUNDS];
 
 	struct
 	{
@@ -1108,8 +1127,9 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z); 
 int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer); //Camera affected
 int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z); //Starts at the first vertice
 
+int8 CheckAnim(int16 sprite_id, int16 anim);
 void SetAnim(int16 id, int16 sprite_id);
-int8 MAnim(uint16 id, float speed_mul, int16 sprite_id, int8 loop);
+int8 MAnim(int16 id, float speed_mul, int16 sprite_id, int8 loop);
 void GetSpriteBodySize(int16 id, int16 gameid);
 
 void Renderer(uint8 type);

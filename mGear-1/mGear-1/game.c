@@ -68,6 +68,228 @@ uint16 LoadCFG()
 
 }
 
+void GameInput()
+{
+	register int16 i;
+
+	for(i=0;i<8;i++)
+	{
+		if(playerc.key_pressed[i])
+			playerc.key_time[i]++;
+	}
+
+	if(st.keys[W_KEY].state)
+	{
+		playerc.key_state[0]=1;
+
+		if(!playerc.key_pressed[0])
+		{
+			playerc.key_pressed[0]++;
+			playerc.key_time[0]=0;
+		}
+		else
+		{
+			playerc.key_time[0]++;
+			if(playerc.key_time[0]>32)
+				playerc.key_state[0]=2;
+		}
+	}
+
+	if(st.keys[S_KEY].state)
+	{
+		playerc.key_state[1]=1;
+
+		if(!playerc.key_pressed[1])
+		{
+			playerc.key_pressed[1]++;
+			playerc.key_time[1]=0;
+		}
+		else
+		{
+			playerc.key_time[1]++;
+			if(playerc.key_time[1]>32)
+				playerc.key_state[1]=2;
+		}
+	}
+
+	if(st.keys[E_KEY].state)
+	{
+		playerc.key_state[2]=1;
+
+		if(!playerc.key_pressed[2])
+		{
+			playerc.key_pressed[2]++;
+			playerc.key_time[2]=0;
+		}
+		else
+		{
+			playerc.key_time[2]++;
+			if(playerc.key_time[2]>32)
+				playerc.key_state[2]=2;
+		}
+	}
+
+	if(st.keys[D_KEY].state)
+	{
+		playerc.key_state[3]=1;
+
+		if(!playerc.key_pressed[3])
+		{
+			playerc.key_pressed[3]++;
+			playerc.key_time[3]=0;
+		}
+		else
+		{
+			playerc.key_time[3]++;
+			if(playerc.key_time[3]>32)
+				playerc.key_state[3]=2;
+		}
+	}
+
+	if(st.keys[UP_KEY].state)
+	{
+		playerc.key_state[4]=1;
+
+		if(!playerc.key_pressed[4])
+		{
+			playerc.key_pressed[4]++;
+			playerc.key_time[4]=0;
+		}
+		else
+		{
+			playerc.key_time[4]++;
+			if(playerc.key_time[4]>32)
+				playerc.key_state[4]=2;
+		}
+	}
+
+	if(st.keys[DOWN_KEY].state)
+	{
+		playerc.key_state[5]=1;
+
+		if(!playerc.key_pressed[5])
+		{
+			playerc.key_pressed[5]++;
+			playerc.key_time[5]=0;
+		}
+		else
+		{
+			playerc.key_time[5]++;
+			if(playerc.key_time[5]>32)
+				playerc.key_state[5]=2;
+		}
+	}
+
+	if(st.keys[LEFT_KEY].state)
+	{
+		playerc.key_state[6]=1;
+
+		if(!playerc.key_pressed[6])
+		{
+			playerc.key_pressed[6]++;
+			playerc.key_time[6]=0;
+		}
+		else
+		{
+			playerc.key_time[6]++;
+			if(playerc.key_time[6]>32)
+				playerc.key_state[6]=2;
+		}
+	}
+
+	if(st.keys[RIGHT_KEY].state)
+	{
+		playerc.key_state[7]=1;
+
+		if(!playerc.key_pressed[7])
+		{
+			playerc.key_pressed[7]++;
+			playerc.key_time[7]=0;
+		}
+		else
+		{
+			playerc.key_time[7]++;
+			if(playerc.key_time[7]>32)
+				playerc.key_state[7]=2;
+		}
+	}
+
+	if(!st.keys[W_KEY].state && playerc.key_state[0])
+	{
+		playerc.key_state[0]=0;
+		playerc.key_pressed[0]=0;
+		playerc.key_time[0]=0;
+	}
+
+	if(!st.keys[S_KEY].state && playerc.key_state[1])
+	{
+		playerc.key_state[1]=0;
+		playerc.key_pressed[1]=0;
+		playerc.key_time[1]=0;
+	}
+
+	if(!st.keys[E_KEY].state && playerc.key_state[2])
+	{
+		playerc.key_state[2]=0;
+		playerc.key_pressed[2]=0;
+		playerc.key_time[2]=0;
+	}
+
+	if(!st.keys[D_KEY].state && playerc.key_state[3])
+	{
+		playerc.key_state[3]=0;
+		playerc.key_pressed[3]=0;
+		playerc.key_time[3]=0;
+	}
+
+	if(!st.keys[UP_KEY].state && playerc.key_state[4])
+	{
+		playerc.key_state[4]=0;
+		playerc.key_pressed[4]=0;
+		playerc.key_time[4]=0;
+	}
+
+	if(!st.keys[DOWN_KEY].state && playerc.key_state[5])
+	{
+		playerc.key_state[5]=0;
+		playerc.key_pressed[5]=0;
+		playerc.key_time[5]=0;
+	}
+
+	if(!st.keys[LEFT_KEY].state && playerc.key_state[6])
+	{
+		playerc.key_state[6]=0;
+		playerc.key_pressed[6]=0;
+		playerc.key_time[6]=0;
+	}
+
+	if(!st.keys[RIGHT_KEY].state && playerc.key_state[7])
+	{
+		playerc.key_state[7]=0;
+		playerc.key_pressed[7]=0;
+		playerc.key_time[7]=0;
+	}
+}
+
+void SetPlayerAnim(uint16 id, uint16 anim, float speed, uint8 loop)
+{
+	playerc.current_anim=anim;
+	SetAnim(anim,id);
+	playerc.speed=speed;
+	playerc.anim_loop=loop;
+}
+/*
+int8 DoCombination(uint8 keys[4])
+{
+	if(playerc.key_pressed[0]>0)
+}
+*/
+
+void DoPlayerHit(int8 id)
+{
+	SetPlayerAnim(playerc.i,playerc.hit[id].anim,playerc.hit[id].speed,0);
+}
+
 void Player_BaseCode(int16 id)
 {
 	register int16 i, j, k;
@@ -75,70 +297,262 @@ void Player_BaseCode(int16 id)
 	static int8 loop=0;
 	static float speed=2;
 
-	if(st.keys[RIGHT_KEY].state)
+	if(playerc.key_state[RGK])
 	{
 		st.Current_Map.sprites[id].position.x+=32;
 		st.Camera.position.x+=32;
-		playerc.current_anim=WALK;
-		speed=4;
-		//SetAnim(WALK,id);
-		loop=1;
+		SetPlayerAnim(id,WALK,4,1);
 		//st.keys[RIGHT_KEY].state=0;
 	}
 	
-	if(st.keys[LEFT_KEY].state)
+	if(playerc.key_state[LFK])
 	{
 		st.Current_Map.sprites[id].position.x-=32;
 		st.Camera.position.x-=32;
-		playerc.current_anim=WALKB;
-		speed=4;
-		//SetAnim(WALK,id);
-		loop=1;
+		SetPlayerAnim(id,WALKB,4,1);
 		//st.keys[LEFT_KEY].state=0;
 	}
 
-	if(st.keys[S_KEY].state)
+	if(playerc.key_state[SK] && !playerc.key_state[1] && !CheckAnim(id,PUNCHS1) && !CheckAnim(id,PUNCHS2))
 	{
-		playerc.current_anim=PUNCHS1;
-		SetAnim(PUNCHS1,id);
+		if(playerc.state & 2)
+		{
+			playerc.state-=2;
+			SetPlayerAnim(id,PUNCHS2,5,0);
+		}
+		else
+		{
+			playerc.state+=2;
+			SetPlayerAnim(id,PUNCHS1,5,0);
+		}
+		//loop=0;
+		
+		PlaySound("glacius_a.wav",0);
+
+		playerc.key_state[1]=1;
+
+		if(!playerc.key_pressed[1])
+		{
+			playerc.key_pressed[1]++;
+			playerc.key_time[1]=0;
+			printf("test");
+		}
+		
+		if(playerc.key_time[1]==16)
+		{
+			playerc.key_time[1]=0;
+			playerc.key_pressed[1]++;
+		}
+	}
+
+	
+
+	if(st.keys[W_KEY].state && !playerc.key_state[0] && !CheckAnim(id,PUNCHM1) && !CheckAnim(id,PUNCHM2))
+	{
+		if(playerc.state & 1)
+		{
+			playerc.state-=1;
+			SetPlayerAnim(id,PUNCHM2,5,0);
+		}
+		else
+		{
+			playerc.state+=1;
+			SetPlayerAnim(id,PUNCHM1,6,0);
+		}
+
+		//loop=0;
+
+		PlaySound("glacius_a.wav",0);
+
+		playerc.key_state[0]=1;
+
+		if(!playerc.key_pressed[0])
+		{
+			playerc.key_pressed[0]++;
+			playerc.key_time[0]=0;
+			printf("test");
+		}
+
+		if(playerc.key_time[0]<=64 && playerc.key_pressed[0] && playerc.key_time[0]>0)
+		{
+			playerc.key_time[0]=0;
+			playerc.key_pressed[0]++;
+		}
+	}
+
+	if(st.keys[UP_KEY].state && !playerc.key_state[4] && !CheckAnim(id,JUMPING) && ~playerc.state & 4)
+	{
+		SetPlayerAnim(id,JUMPING,6,0);
+
+		playerc.key_state[4]=1;
+		playerc.state+=4;
+		st.Current_Map.sprites[id].body.velxy.y=256;
+	}
+
+	if(st.keys[E_KEY].state && !playerc.key_state[2] && !CheckAnim(id,KICKM))
+	{
+		
+			//playerc.state-=1;
+			SetPlayerAnim(id,KICKM,5,0);
+		
+			PlaySound("glacius_a.wav",0);
+
+		//loop=0;
+		//st.keys[W_KEY].state=0;
+		playerc.key_state[2]=1;
+
+		if(!playerc.key_pressed[2])
+		{
+			playerc.key_pressed[2]++;
+			playerc.key_time[2]=0;
+			printf("test");
+		}
+		
+		if(playerc.key_time[2]==16)
+		{
+			playerc.key_time[2]=0;
+			playerc.key_pressed[2]++;
+		}
+	}
+
+	if(st.keys[D_KEY].state && !playerc.key_state[3] && !CheckAnim(id,KICKS))
+	{
+		
+			//playerc.state-=1;
+			SetPlayerAnim(id,KICKS,5,0);
+		
+			PlaySound("glacius_a.wav",0);
+
 		loop=0;
-		speed=5;
-		//st.keys[S_KEY].state=0;
+		//st.keys[W_KEY].state=0;
+		playerc.key_state[3]=1;
+
+		if(!playerc.key_pressed[3])
+		{
+			playerc.key_pressed[3]++;
+			playerc.key_time[3]=0;
+			printf("test");
+		}
+		
+		if(playerc.key_time[3]==16)
+		{
+			playerc.key_time[3]=0;
+			playerc.key_pressed[3]++;
+		}
 	}
 
-	if(st.keys[W_KEY].state)
+	if(playerc.key_pressed[0]==2)
 	{
-		playerc.current_anim=PUNCHM1;
-		SetAnim(PUNCHM1,id);
-		loop=0;
-		speed=5;
-		//st.keys[S_KEY].state=0;
+		playerc.state=16;
+		playerc.combo_t=0;
 	}
 
-	tmp=MAnim(playerc.current_anim,speed,id,loop);
-
-	if(tmp==1)
+	if(playerc.state & 16)
 	{
-		playerc.current_anim=STAND;
-		speed=2;
-		loop=1;
-	}
-
-	if((playerc.current_anim==WALK || playerc.current_anim==WALKB) && !st.keys[LEFT_KEY].state && !st.keys[RIGHT_KEY].state)
-	{
-		playerc.current_anim=STAND;
-		speed=2;
-		loop=1;
+		if(playerc.combo_t==0)
+		{
+			SetPlayerAnim(id,PUNCHM1,7,0);
+			PlaySound("glacius_a.wav",0);
+			playerc.combo_t++;
+		}
+		else
+		if(playerc.combo_t==1 && !CheckAnim(id,PUNCHM1))
+		{
+			SetPlayerAnim(id,PUNCHM2,7,0);
+			PlaySound("glacius_a.wav",0);
+			playerc.combo_t++;
+		}
+		else
+		if(playerc.combo_t==2 && !CheckAnim(id,PUNCHM2))
+		{
+			SetPlayerAnim(id,PUNCHM1,7,0);
+			PlaySound("glacius_a.wav",0);
+			playerc.combo_t++;
+		}
+		else
+		if(playerc.combo_t==3 && !CheckAnim(id,PUNCHM2))
+		{
+			SetPlayerAnim(id,KICKS,5,0);
+			PlaySound("glacius_a.wav",0);
+			playerc.combo_t++;
+		}
+		else
+		if(playerc.combo_t==4 && !CheckAnim(id,KICKS))
+		{
+			SetPlayerAnim(id,PUNCHS1,7,0);
+			PlaySound("glacius_a.wav",0);
+			playerc.combo_t=0;
+			playerc.state=0;
+		}
 	}
 	
-	st.Current_Map.sprites[id].position.y+=64;
-
-	GetSpriteBodySize(id,st.Current_Map.sprites[id].GameID);
-
-	if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,st.Current_Map.sprites[id].body.size.y,st.Current_Map.sprites[id].angle))!=-1)
+	if(playerc.state & 4)
 	{
-		if((st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2))-st.Current_Map.sector[temp].base_y<=128)
-			st.Current_Map.sprites[id].position.y=st.Current_Map.sector[temp].base_y-(st.Current_Map.sprites[id].body.size.y/2);
+		
+			if(!CheckAnim(id,JUMPING))
+			{
+				SetPlayerAnim(id,JUMP,1,1);
+			}
+
+			st.Current_Map.sprites[id].position.y-=st.Current_Map.sprites[id].body.velxy.y;
+			st.Current_Map.sprites[id].body.velxy.y-=6;
+
+			if(st.Current_Map.sprites[id].body.velxy.y<0)
+			{
+				playerc.state+=4;
+				st.Current_Map.sprites[id].body.velxy.y=8;
+			}
+		
+	}
+	else
+	{
+		if(playerc.state & 8)
+		{
+			st.Current_Map.sprites[id].position.y+=st.Current_Map.sprites[id].body.velxy.y;
+			st.Current_Map.sprites[id].body.velxy.y+=8;
+		}
+		else
+			st.Current_Map.sprites[id].position.y+=64;
+
+		GetSpriteBodySize(id,st.Current_Map.sprites[id].GameID);
+
+		if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,st.Current_Map.sprites[id].body.size.y,
+			st.Current_Map.sprites[id].angle))!=-1)
+		{
+			if(abs((st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2))-st.Current_Map.sector[temp].base_y)<=256)
+			{
+				if(playerc.state & 8)
+				{
+					SetPlayerAnim(id,FALLING,5,0);
+					playerc.state-=8;
+				}
+
+				st.Current_Map.sprites[id].body.velxy.y=0;
+
+				st.Current_Map.sprites[id].position.y=st.Current_Map.sector[temp].base_y-(st.Current_Map.sprites[id].body.size.y/2);
+			}
+		}
+	}
+
+	tmp=MAnim(playerc.current_anim,playerc.speed,id,playerc.anim_loop);
+
+	if(tmp==1 && ~playerc.state & 4 && ~playerc.state & 8)
+	{
+		SetPlayerAnim(id,STAND,2,1);
+	}
+
+	if((playerc.current_anim==WALK || playerc.current_anim==WALKB) && !st.keys[LEFT_KEY].state && !st.keys[RIGHT_KEY].state && ~playerc.state & 4 && ~playerc.state & 8)
+	{
+		SetPlayerAnim(id,STAND,2,1);
+	}
+
+	if(st.Current_Map.cam_area.horiz_lim)
+	{
+		if(st.Current_Map.sprites[id].position.x+(st.Current_Map.sprites[id].body.size.x/2)>=st.Current_Map.cam_area.limit[1].x)
+			st.Current_Map.sprites[id].position.x=st.Current_Map.cam_area.limit[1].x-(st.Current_Map.sprites[id].body.size.x/2);
+
+		if(st.Current_Map.sprites[id].position.x-(st.Current_Map.sprites[id].body.size.x/2)<=st.Current_Map.cam_area.limit[0].x)
+			st.Current_Map.sprites[id].position.x=st.Current_Map.cam_area.limit[0].x+(st.Current_Map.sprites[id].body.size.x/2);
 	}
 	
 }
@@ -153,6 +567,7 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 	st.Current_Map.sprites[i].health=100;
 	st.Current_Map.sprites[i].color.r=st.Current_Map.sprites[i].color.g=st.Current_Map.sprites[i].color.b=st.Current_Map.sprites[i].color.a=255;
 	st.Current_Map.sprites[i].type_s=MIDGROUND;
+	playerc.state=0;
 
 	st.Current_Map.sprites[i].stat=1;
 
@@ -169,6 +584,54 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 			st.Current_Map.sprites[i].flags=st.Game_Sprites[j].flags;
 			st.Current_Map.sprites[i].size_m.x=st.Game_Sprites[j].size_m.x+1;
 			st.Current_Map.sprites[i].size_m.y=st.Game_Sprites[j].size_m.y+1;
+
+			playerc.i=i;
+
+			playerc.hit[0].anim=PUNCHM1;
+			playerc.hit[0].speed=6;
+
+			playerc.hit[1].anim=PUNCHM2;
+			playerc.hit[1].speed=5;
+
+			playerc.hit[2].anim=PUNCHS1;
+			playerc.hit[2].speed=5;
+
+			playerc.hit[3].anim=PUNCHS2;
+			playerc.hit[3].speed=4;
+
+			playerc.hit[4].anim=PUNCHS3;
+			playerc.hit[4].speed=5;
+
+			playerc.hit[5].anim=KICKS;
+			playerc.hit[5].speed=5;
+
+			playerc.hit[6].anim=KICKM;
+			playerc.hit[6].speed=5;
+			
+			playerc.hit[7].anim=CPUNCHS;
+			playerc.hit[7].speed=5;
+
+			playerc.hit[8].anim=CPUNCHM;
+			playerc.hit[8].speed=5;
+
+			playerc.hit[9].anim=CKICKS;
+			playerc.hit[9].speed=5;
+
+			playerc.hit[10].anim=CKICKM;
+			playerc.hit[10].speed=5;
+
+			playerc.hit[11].anim=JPUNCHM;
+			playerc.hit[11].speed=5;
+
+			playerc.hit[12].anim=JPUNCHS;
+			playerc.hit[12].speed=5;
+
+			playerc.hit[13].anim=JKICKS;
+			playerc.hit[13].speed=5;
+
+			playerc.hit[14].anim=JKICKM;
+			playerc.hit[14].speed=5;
+			
 
 			break;
 		}
@@ -315,6 +778,8 @@ int main(int argc, char *argv[])
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;
 			SetTimerM(1);
+
+			MainSound();
 
 		}
 

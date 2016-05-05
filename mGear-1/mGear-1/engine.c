@@ -5472,12 +5472,33 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 void SetAnim(int16 id, int16 sprite_id)
 {
-	if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100 || 
-		st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
+	if(mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID)
 	{
-		st.Current_Map.sprites[sprite_id].frame_ID=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID;
-		st.Current_Map.sprites[sprite_id].current_frame=st.Current_Map.sprites[sprite_id].frame_ID*100;
+		if(st.Current_Map.sprites[sprite_id].current_frame<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100 || 
+			st.Current_Map.sprites[sprite_id].current_frame>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
+		{
+			st.Current_Map.sprites[sprite_id].frame_ID=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID;
+			st.Current_Map.sprites[sprite_id].current_frame=st.Current_Map.sprites[sprite_id].frame_ID*100;
+		}
 	}
+	else
+	{
+		if(st.Current_Map.sprites[sprite_id].current_frame>mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID*100 || 
+			st.Current_Map.sprites[sprite_id].current_frame<=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].endID*100)
+		{
+			st.Current_Map.sprites[sprite_id].frame_ID=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[id].startID;
+			st.Current_Map.sprites[sprite_id].current_frame=st.Current_Map.sprites[sprite_id].frame_ID*100;
+		}
+	}
+}
+
+int8 CheckAnim(int16 sprite_id, int16 anim)
+{
+	if(st.Current_Map.sprites[sprite_id].frame_ID>=mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[anim].startID && 
+		st.Current_Map.sprites[sprite_id].frame_ID<mgg_game[st.Current_Map.sprites[sprite_id].MGG_ID].anim[anim].endID)
+		return 1;
+	else
+		return 0;
 }
 
 int8 MAnim(int16 id, float speed_mul, int16 sprite_id, int8 loop)
@@ -7471,9 +7492,9 @@ int32 LoadSpriteList(char *filename)
 {
 	FILE *file;
 	int value, value2, value3;
-	int16 i, j;
+	int16 i, j, k, l;
 	int lenght;
-	char buf[1024], str[16], str2[32], str3[64], str4[8][16];
+	char buf[1024], str[32], str2[32], str3[64], str4[8][16], *tok;
 
 	if((file=fopen(filename,"r"))==NULL)
 	{
@@ -7525,6 +7546,70 @@ int32 LoadSpriteList(char *filename)
 			}
 
 			continue;
+		}
+		else
+		if(strcmp(str,"SPRITE_S_TAG")==NULL)
+		{
+			tok=strtok(buf,", \"");
+			tok=strtok(NULL,", \"");
+
+			j=atoi(tok);
+
+			tok=strtok(NULL,", \"");
+			strcpy(str3,tok);
+
+			tok=strtok(NULL,", \"");
+
+			k=atoi(tok);
+
+			for(i=0;i<k;i++)
+			{
+				tok=strtok(NULL,", \"");
+				strcpy(str4[i],tok);
+			}
+
+			for(i=0;i<st.Game_Sprites[j].num_tags;i++)
+			{
+				if(strcmp(st.Game_Sprites[j].tag_names[i],str3)==NULL)
+				{
+					st.Game_Sprites[j].num_ext=k;
+
+					for(l=0;l<k;l++)
+						strcpy(st.Game_Sprites[j].tags_ext[l],str4[l]);
+				}
+			}
+		}
+		else
+		if(strcmp(str,"SPRITE_TAG_LIST")==NULL)
+		{
+			tok=strtok(buf," ");
+			tok=strtok(NULL," ");
+
+			j=atoi(tok);
+
+			tok=strtok(NULL," ");
+			strcpy(str3,tok);
+
+			tok=strtok(NULL," ");
+
+			k=atoi(tok);
+
+			for(i=0;i<k;i++)
+			{
+				tok=strtok(NULL," ");
+				strcpy(str4[i],tok);
+			}
+
+			for(i=0;i<st.Game_Sprites[j].num_tags;i++)
+			{
+				if(strcmp(st.Game_Sprites[j].tag_names[i],str3)==NULL)
+				{
+					st.Game_Sprites[j].num_list_tag=k;
+
+					for(l=0;l<k;l++)
+						strcpy(st.Game_Sprites[j].tag_mod_list[l],str4[l]);
+				}
+			}
 		}
 	}
 
@@ -8757,12 +8842,77 @@ void Finish()
 
 	memset(st.renderer.ppline,MAX_DRAWCALLS,sizeof(PIPELINE));
 }
-/*
-void LoadSoundList(char *name)
+
+int8 LoadSoundList(char *name)
 {
 	FILE *file;
+	int16 i, j, value;
+	char buf[1024], *tok, str[256];
+
+	if((file=fopen(name,"r"))==NULL)
+	{
+		LogApp("Error reading sound list file");
+		return 0;
+	}
+
+	while(!feof(file))
+	{
+		fgets(buf,1024,file);
+
+		tok=strtok(buf," \"");
+
+		if(strcmp(tok,"SOUND")==NULL)
+		{
+			tok=strtok(NULL," \"");
+
+			value=atoi(tok);
+
+			tok=strtok(NULL," \"");
+
+			strcpy(str,tok);
+			strcpy(st.sounds[value].path,tok);
+
+			tok=strtok(NULL," \"");
+
+			if(strcmp(tok,"NOLOOP")==NULL)
+				st.sounds[value].loop=0;
+
+			if(strcmp(tok,"LOOP")==NULL)
+				st.sounds[value].loop=1;
+
+			if(st.sounds[value].loop)
+				FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_NORMAL,0,&st.sounds[value].sound);
+			else
+				FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_OFF,0,&st.sounds[value].sound);
+
+			st.sounds[value].type=0;
+
+			st.num_sounds++;
+		}
+		else
+		if(strcmp(tok,"MUSIC")==NULL)
+		{
+			tok=strtok(NULL," \"");
+
+			value=atoi(tok);
+
+			tok=strtok(NULL," \"");
+
+			strcpy(str,tok);
+			strcpy(st.sounds[value].path,tok);
+
+			st.sounds[value].loop=1;
+
+			FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_NORMAL,0,&st.sounds[value].sound);
+
+			st.sounds[value].type=1;
+
+			st.num_sounds++;
+		}
+	}
+
 }
-*/
+
 void PlayMusic(const char *filename, uint8 loop)
 {
 	if(st.sound_sys.slot_ID[MUSIC_SLOT]==-1 && st.sound_sys.slotch_ID[MUSIC_CHANNEL]==-1)
@@ -8789,7 +8939,10 @@ void PlaySound(const char *filename, uint8 loop)
 		else
 		if(st.sound_sys.slot_ID[i]==-1)
 		{
-			FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | loop==1 ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF,0,&st.sound_sys.slots[i]);
+			if(loop)
+				FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | FMOD_LOOP_NORMAL,0,&st.sound_sys.slots[i]);
+			else
+				FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | FMOD_LOOP_OFF,0,&st.sound_sys.slots[i]);
 			st.sound_sys.slot_ID[i]=1;
 			id=i;
 			break;
@@ -8815,22 +8968,7 @@ void PlaySound(const char *filename, uint8 loop)
 	if(id!=666)
 		FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,st.sound_sys.slots[id],0,&st.sound_sys.channels[idc]);
 }
-/*
-void PlayMusic(const char *filename)
-{
-	StopMusic();
-	FreeMusic(st.music);
-	st.music=Mix_LoadMUS(filename);
-	Mix_PlayMusic(st.music,-1);
-}
-*/
-/*
-static void FinishMusic()
-{
-	StopMusic();
-	FreeMusic(st.music);
-}
-*/
+
 void MainSound()
 {
 	int p, i;
