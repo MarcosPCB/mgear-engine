@@ -1317,13 +1317,13 @@ void Init()
 	}
 
 	LogApp("FMOD system initialzed, %d channels",MAX_CHANNELS);
-	
+	/*
 	for(i=0;i<MAX_SOUNDS;i++)
 		st.sound_sys.slot_ID[i]=-1;
 
 	for(i=0;i<MAX_CHANNELS;i++)
 		st.sound_sys.slotch_ID[i]=-1;
-
+		*/
 	if(TTF_Init()==-1)
 	{
 		LogApp("Error while initializing SDL TTF : %s",TTF_GetError());
@@ -2087,7 +2087,7 @@ int32 CheckMGGInSystem(const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1.1")!=NULL)
+	if(strcmp(header,"MGG File Version 1")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",header);
 		fclose(file);
@@ -2154,7 +2154,7 @@ uint32 CheckMGGFile(const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1.1")!=NULL)
+	if(strcmp(header,"MGG File Version 1")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",name);
 		fclose(file);
@@ -2226,7 +2226,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1.1")!=NULL)
+	if(strcmp(header,"MGG File Version 1")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",header);
 		fclose(file);
@@ -7204,8 +7204,10 @@ int32 LoadSpriteCFG(char *filename, int id)
 				{
 					if(!LoadMGG(&mgg_game[id2],str2))
 					{
-						fclose(file);
-						return 0;
+						//fclose(file);
+						//return 0;
+						LogApp("Error: failed to load sprite's MGG");
+						st.Game_Sprites[id].MGG_ID = -1;
 					}
 
 					st.num_mgg++;
@@ -7266,8 +7268,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 			if(skip==1 || skip==2)
 			{
 				LogApp("Error: number of start frames not declared: %s", filename);
-				FreeMGG(&mgg_game[id2]);
-				st.num_mgg--;
+				//FreeMGG(&mgg_game[id2]);
+				//st.num_mgg--;
 				return 0;
 			}
 			else
@@ -7483,6 +7485,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 		}
 	}
 
+	st.sprite_id_list[st.num_sprites] = id;
+
 	st.num_sprites++;
 
 	return 1;
@@ -7532,6 +7536,8 @@ int32 LoadSpriteList(char *filename)
 				if(!LoadSpriteCFG(str3,value))
 				{
 					LogApp("failed loading sprite cfg: %s",str3);
+
+					//st.num_sprites++;
 
 					continue;
 				}
@@ -8845,8 +8851,8 @@ void Finish()
 
 int8 LoadSoundList(char *name)
 {
-	FILE *file;
-	int16 i, j, value;
+	FILE *file, *f;
+	int16 i, j, value, tmp;
 	char buf[1024], *tok, str[256];
 
 	if((file=fopen(name,"r"))==NULL)
@@ -8872,6 +8878,11 @@ int8 LoadSoundList(char *name)
 			strcpy(str,tok);
 			strcpy(st.sounds[value].path,tok);
 
+			if ((f = fopen(tok, "rb")) == NULL)
+				LogApp("Error opening audio file %s", tok);
+
+			fclose(f);
+
 			tok=strtok(NULL," \"");
 
 			if(strcmp(tok,"NOLOOP")==NULL)
@@ -8885,7 +8896,46 @@ int8 LoadSoundList(char *name)
 			else
 				FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_OFF,0,&st.sounds[value].sound);
 
-			st.sounds[value].type=0;
+			tok=strtok(NULL," \"");
+
+			if(strcmp(tok,"AMBIENT")==NULL)
+			{
+				st.sounds[value].type=0;
+				st.sounds[value].priority=151;
+			}
+
+			if(strcmp(tok,"FX")==NULL)
+			{
+				st.sounds[value].type=1;
+				st.sounds[value].priority=201;
+			}
+
+			if(strcmp(tok,"PLAYER")==NULL)
+			{
+				st.sounds[value].type=2;
+				st.sounds[value].priority=1;
+			}
+
+			if(strcmp(tok,"NPC")==NULL)
+			{
+				st.sounds[value].type=3;
+				st.sounds[value].priority=101;
+			}
+
+			if(strcmp(tok,"TALK")==NULL)
+			{
+				st.sounds[value].type=4;
+				st.sounds[value].priority=51;
+			}
+
+			tok=strtok(NULL," \"");
+
+			tmp=atoi(tok);
+
+			if(tmp>49)
+				tmp=49;
+
+			st.sounds[value].priority+=tmp;
 
 			st.num_sounds++;
 		}
@@ -8899,121 +8949,74 @@ int8 LoadSoundList(char *name)
 			tok=strtok(NULL," \"");
 
 			strcpy(str,tok);
-			strcpy(st.sounds[value].path,tok);
+			strcpy(st.musics[value].path,tok);
 
-			st.sounds[value].loop=1;
+			if ((f = fopen(tok, "rb")) == NULL)
+				LogApp("Error opening audio file %s", tok);
 
-			FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_NORMAL,0,&st.sounds[value].sound);
+			if(strcmp(tok,"NOLOOP")==NULL)
+				st.musics[value].loop=0;
 
-			st.sounds[value].type=1;
+			if(strcmp(tok,"LOOP")==NULL)
+				st.musics[value].loop=1;
 
-			st.num_sounds++;
-		}
-	}
-
-}
-
-void PlayMusic(const char *filename, uint8 loop)
-{
-	if(st.sound_sys.slot_ID[MUSIC_SLOT]==-1 && st.sound_sys.slotch_ID[MUSIC_CHANNEL]==-1)
-	{
-		FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | loop==1 ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF,0,&st.sound_sys.slots[MUSIC_SLOT]);
-		st.sound_sys.slot_ID[MUSIC_SLOT]=1;
-		st.sound_sys.slotch_ID[MUSIC_SLOT]=MUSIC_SLOT;
-	}
-	
-	if(st.sound_sys.slot_ID[MUSIC_SLOT]==1 || st.sound_sys.slotch_ID[MUSIC_CHANNEL]!=-1)
-		FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,st.sound_sys.slots[MUSIC_SLOT],0,&st.sound_sys.channels[MUSIC_CHANNEL]);
-}
-
-void PlaySound(const char *filename, uint8 loop)
-{
-	int16 id=0, idc=0, i;
-	for(i=0;i<MAX_SOUNDS-1;i++)
-	{
-		if(i==MAX_SOUNDS-1 && st.sound_sys.slot_ID[i]==1)
-		{
-			id=666; //Magic number
-			break;
-		}
-		else
-		if(st.sound_sys.slot_ID[i]==-1)
-		{
-			if(loop)
-				FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | FMOD_LOOP_NORMAL,0,&st.sound_sys.slots[i]);
+			if(st.sounds[value].loop)
+				FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_NORMAL,0,&st.musics[value].sound);
 			else
-				FMOD_System_CreateSound(st.sound_sys.Sound_System,filename,FMOD_HARDWARE | FMOD_LOOP_OFF,0,&st.sound_sys.slots[i]);
-			st.sound_sys.slot_ID[i]=1;
-			id=i;
-			break;
+				FMOD_System_CreateSound(st.sound_sys.Sound_System,str,FMOD_SOFTWARE | FMOD_LOOP_OFF,0,&st.musics[value].sound);
+
+			st.musics[value].type=5;
+			st.musics[value].priority=0;
+
+			st.num_musics++;
 		}
 	}
 
-	for(i=0;i<MAX_CHANNELS-1;i++)
-	{
-		if(i==MAX_CHANNELS-1 && st.sound_sys.slotch_ID[i]!=-1)
-		{
-			id=666; //Magic number
-			break;
-		}
-		else
-		if(st.sound_sys.slotch_ID[i]==-1)
-		{
-			idc=i;
-			st.sound_sys.slotch_ID[i]=id;
-			break;
-		}
-	}
+}
 
-	if(id!=666)
-		FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,st.sound_sys.slots[id],0,&st.sound_sys.channels[idc]);
+void PlayMusic(int16 id, uint8 loop)
+{
+	FMOD_CHANNEL *ch;
+
+	FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,st.musics[id].sound,0,&st.sound_sys.music);
+
+	FMOD_Channel_SetPriority(st.sound_sys.music,0);
+}
+
+void PlaySound(int16 id, uint8 loop)
+{
+	FMOD_CHANNEL *ch;
+
+	FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,st.sounds[id].sound,0,&ch);
+
+	FMOD_Channel_SetPriority(ch,st.sounds[id].priority);
 }
 
 void MainSound()
 {
-	int p, i;
-
 	FMOD_System_Update(st.sound_sys.Sound_System);
-
-	for(i=0;i<MAX_CHANNELS;i++)
-	{
-		if(st.sound_sys.slotch_ID[i]>-1)
-		{
-			FMOD_Channel_IsPlaying(st.sound_sys.channels[i],&p);
-			if(!p)
-			{
-				FMOD_Sound_Release(st.sound_sys.slots[st.sound_sys.slotch_ID[i]]);
-				st.sound_sys.slot_ID[st.sound_sys.slotch_ID[i]]=-1;
-				st.sound_sys.slotch_ID[i]=-1;
-			}
-		}
-	}
-
 }
 
 void StopAllSounds()
 {
-	uint8 i;
+	uint16 i;
 
-	for(i=0;i<MAX_CHANNELS-1;i++)
+	int ch;
+
+	FMOD_CHANNEL *chn;
+
+	FMOD_System_GetChannelsPlaying(st.sound_sys.Sound_System,&ch);
+
+	for(i=0;i<ch;i++)
 	{
-		if(st.sound_sys.slotch_ID[i]>-1)
-		{
-			FMOD_Channel_Stop(st.sound_sys.channels[i]);
-			FMOD_Sound_Release(st.sound_sys.slots[st.sound_sys.slotch_ID[i]]);
-			st.sound_sys.slot_ID[st.sound_sys.slotch_ID[i]]=-1;
-			st.sound_sys.slotch_ID[i]=-1;
-		}
+		FMOD_System_GetChannel(st.sound_sys.Sound_System,i,&chn);
+
+		if(chn)
+			FMOD_Channel_Stop(chn);
 	}
 }
 
 void StopMusic()
 {
-	if(st.sound_sys.slotch_ID[MUSIC_CHANNEL]>-1)
-	{
-		FMOD_Channel_Stop(st.sound_sys.channels[MUSIC_CHANNEL]);
-		FMOD_Sound_Release(st.sound_sys.slots[st.sound_sys.slotch_ID[MUSIC_CHANNEL]]);
-		st.sound_sys.slot_ID[st.sound_sys.slotch_ID[MUSIC_CHANNEL]]=-1;
-		st.sound_sys.slotch_ID[MUSIC_CHANNEL]=-1;
-	}
+	FMOD_Channel_Stop(st.sound_sys.music);
 }

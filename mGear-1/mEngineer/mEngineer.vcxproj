@@ -1,8 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release2|Win32">
+      <Configuration>Release2</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
@@ -20,18 +24,29 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -43,12 +58,42 @@
     <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\SDL2_image-2.0.0\include;$(SolutionDir)\APIs\SOIL\src;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SOIL;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\SDL2_image-2.0.0\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\SDL2_image-2.0.0\include;$(SolutionDir)\APIs\SOIL\src;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\APIs\SOIL;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\SDL2_image-2.0.0\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\SDL2_image-2.0.0\include;$(SolutionDir)\APIs\SOIL\src;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SOIL;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\SDL2_image-2.0.0\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;ENGINEER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <DisableSpecificWarnings>4996;4005;4101;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SOIL.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;SDL2_image.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
+      <Profile>true</Profile>
+    </Link>
+    <ProjectReference>
+      <UseLibraryDependencyInputs>true</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release2|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>

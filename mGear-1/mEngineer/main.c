@@ -221,14 +221,15 @@ void ImageList()
 
 void SpriteList()
 {
-	uint32 m=0, i=728, j=728, k=0, l=0;
+	uint32 m = 0, i = 728, j = 728, k = 0, l = 0, n = 0;
 
 	
 		if(meng.scroll<0)
-				m=(meng.scroll/1546)*(-10);
+				n=(meng.scroll/1546)*(-10);
 
-		for(m=0;m<st.num_sprites;m++)
+		for(n=0;n<st.num_sprites;n++)
 		{
+			m = st.sprite_id_list[n];
 			if(st.Game_Sprites[m].num_start_frames>0)
 			{
 				for(k=0;k<st.Game_Sprites[m].num_start_frames;k++)
@@ -1444,14 +1445,29 @@ static void PannelLeft()
 
 						if(st.mouse1)
 						{
-							if(st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
-								sprintf(st.TextInput,"%s",st.Game_Sprites[meng.sprite_selection].tags_str[i-1]);
+							if (strcmp(st.Game_Sprites[meng.sprite_selection].tag_names[i - 1], "SNDFX") == NULL)
+							{
+								st.mouse1 = 0;
+								meng.sub_com = i + 200;
+							}
 							else
-								sprintf(st.TextInput,"%d",st.Game_Sprites[meng.sprite_selection].tags[i-1]);
+							if (strcmp(st.Game_Sprites[meng.sprite_selection].tag_names[i - 1], "MUSFX") == NULL)
+							{
+								st.mouse1 = 0;
+								meng.sub_com = i + 300;
+							}
+							else
+							{
 
-							StartText();
-							st.mouse1=0;
-							meng.sub_com=i;
+								if (st.Game_Sprites[meng.sprite_selection].tag_names[i - 1][j - 1] == 'S' && st.Game_Sprites[meng.sprite_selection].tag_names[i - 1][j - 2] == '_')
+									sprintf(st.TextInput, "%s", st.Game_Sprites[meng.sprite_selection].tags_str[i - 1]);
+								else
+									sprintf(st.TextInput, "%d", st.Game_Sprites[meng.sprite_selection].tags[i - 1]);
+
+								StartText();
+								st.mouse1 = 0;
+								meng.sub_com = i;
+							}
 						}
 
 						if(st.mouse2 && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && 
@@ -1495,6 +1511,30 @@ static void PannelLeft()
 					{
 						st.keys[RETURN_KEY].state=0;
 						meng.sub_com=0;
+					}
+				}
+				else
+				if (meng.sub_com == i + 200)
+				{
+					if ((st.Game_Sprites[meng.sprite_selection].tags[i - 1] = UIMakeList(meng.soundlist, st.num_sounds)) != -1)
+						meng.sub_com = 0;
+
+					if (st.keys[RETURN_KEY].state)
+					{
+						st.keys[RETURN_KEY].state = 0;
+						meng.sub_com = 0;
+					}
+				}
+				else
+				if (meng.sub_com == i + 300)
+				{
+					if ((st.Game_Sprites[meng.sprite_selection].tags[i - 1] = UIMakeList(meng.musiclist, st.num_musics)) != -1)
+						meng.sub_com = 0;
+
+					if (st.keys[RETURN_KEY].state)
+					{
+						st.keys[RETURN_KEY].state = 0;
+						meng.sub_com = 0;
 					}
 				}
 			}
@@ -1646,43 +1686,52 @@ static void PannelLeft()
 
 	//Sprite editing
 
-	if(meng.command2==EDIT_SPRITE)
+	if (meng.command2 == EDIT_SPRITE)
 	{
-			p.x=st.Current_Map.sprites[meng.sprite_edit_selection].position.x;
-			p.y=st.Current_Map.sprites[meng.sprite_edit_selection].position.y-(st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y/2);
+		p.x = st.Current_Map.sprites[meng.sprite_edit_selection].position.x;
+		p.y = st.Current_Map.sprites[meng.sprite_edit_selection].position.y - (st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y / 2);
 
-			//p.x-=st.Camera.position.x;
-			//p.y-=st.Camera.position.y;
+		//p.x-=st.Camera.position.x;
+		//p.y-=st.Camera.position.y;
 
-			p2.x=1024*st.Camera.dimension.x;
-			p2.y=1024*st.Camera.dimension.y;
+		p2.x = 1024 * st.Camera.dimension.x;
+		p2.y = 1024 * st.Camera.dimension.y;
 
-			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
-			String2Data(str,p.x,p.y-227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
+		sprintf(str, "%d", st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
+		String2Data(str, p.x, p.y - 227, 810, 217, 0, 255, 255, 255, 255, ARIAL, p2.x, p2.y, st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
 
-			p.x=st.Current_Map.sprites[meng.sprite_edit_selection].position.x-(st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/2);
-			p.y=st.Current_Map.sprites[meng.sprite_edit_selection].position.y;
+		p.x = st.Current_Map.sprites[meng.sprite_edit_selection].position.x - (st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x / 2);
+		p.y = st.Current_Map.sprites[meng.sprite_edit_selection].position.y;
 
-			//p.x-=st.Camera.position.x;
-			//p.y-=st.Camera.position.y;
+		//p.x-=st.Camera.position.x;
+		//p.y-=st.Camera.position.y;
 
-			sprintf(str,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
-			String2Data(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
+		sprintf(str, "%d", st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
+		String2Data(str, p.x - 455, p.y, 810, 217, 0, 255, 255, 255, 255, ARIAL, p2.x, p2.y, st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
 
-			if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].name,"SOUNDFX")==NULL)
+		//if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].name,"SOUNDFX")==NULL)
+		//{
+		for (i = 1; i < st.Current_Map.sprites[meng.sprite_edit_selection].num_tags; i++)
+		{
+			if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "SNDFX") == NULL)
 			{
-				for(i=1;i<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++)
-				{
-					if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i],"PATH_S")==NULL && strlen(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i])>5)
-					{
-						if(UIStringButton(465,4300,"Play sound",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-							PlaySound(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i],0);
-					}
-				}
+				if (UIStringButton(465, 4300, "Play sound", ARIAL, 1536, 0, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
+					PlaySound(st.Current_Map.sprites[meng.sprite_edit_selection].tags[i], 0);
 			}
+			else
+				if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "MUSFX") == NULL)
+				{
+					if (UIStringButton(465, 4300, "Play music", ARIAL, 1536, 0, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
+						PlayMusic(st.Current_Map.sprites[meng.sprite_edit_selection].tags[i], 0);
+				}
+		}
+		//}
 
-			if(UIStringButton(465,4600,"Stop sound",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-				StopAllSounds();
+		if (UIStringButton(465, 4600, "Stop sound", ARIAL, 1536, 0, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
+		{
+			StopAllSounds();
+			StopMusic();
+		}
 
 			if(st.keys[DELETE_KEY].state)
 			{
@@ -2290,14 +2339,29 @@ static void PannelLeft()
 
 						if(st.mouse1)
 						{
-							if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
-								sprintf(st.TextInput,"%s",st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1]);
+							if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],"SNDFX")==NULL)
+							{
+								st.mouse1=0;
+								meng.sub_com=i+200;
+							}
 							else
-								sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
+							if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i - 1], "MUSFX") == NULL)
+							{
+								st.mouse1 = 0;
+								meng.sub_com = i + 300;
+							}
+							else
+							{
+								if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && 
+									st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
+									sprintf(st.TextInput,"%s",st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1]);
+								else
+									sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
 
-							StartText();
-							st.mouse1=0;
-							meng.sub_com=i;
+								StartText();
+								st.mouse1=0;
+								meng.sub_com=i;
+							}
 						}
 
 						if(st.mouse2 && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && 
@@ -2341,6 +2405,30 @@ static void PannelLeft()
 					{
 						st.keys[RETURN_KEY].state=0;
 						meng.sub_com=0;
+					}
+				}
+				else
+				if(meng.sub_com==i+200)
+				{
+					if((st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]=UIMakeList(meng.soundlist,st.num_sounds))!=-1)
+						meng.sub_com=0;
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						st.keys[RETURN_KEY].state=0;
+						meng.sub_com=0;
+					}
+				}
+				else
+				if(meng.sub_com == i + 300)
+				{
+					if((st.Current_Map.sprites[meng.sprite_edit_selection].tags[i - 1] = UIMakeList(meng.musiclist, st.num_musics)) != -1)
+						meng.sub_com = 0;
+
+					if(st.keys[RETURN_KEY].state)
+					{
+						st.keys[RETURN_KEY].state = 0;
+						meng.sub_com = 0;
 					}
 				}
 			}
@@ -5055,6 +5143,10 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].type_s=meng.spr.type;
 							st.Current_Map.sprites[i].flags=meng.spr.flags;
 							st.Current_Map.sprites[i].MGG_ID=st.Game_Sprites[meng.sprite_selection].MGG_ID;
+							st.Current_Map.sprites[i].size_a.x = st.Game_Sprites[meng.sprite_selection].size_a.x;
+							st.Current_Map.sprites[i].size_a.y = st.Game_Sprites[meng.sprite_selection].size_a.y;
+							st.Current_Map.sprites[i].size_m.x = st.Game_Sprites[meng.sprite_selection].size_m.x + 1;
+							st.Current_Map.sprites[i].size_m.y = st.Game_Sprites[meng.sprite_selection].size_m.y + 1;
 
 							st.Current_Map.sprites[i].position=st.mouse;
 							STWci(&st.Current_Map.sprites[i].position.x,&st.Current_Map.sprites[i].position.y);
@@ -8045,7 +8137,7 @@ int main(int argc, char *argv[])
 
 	InitMGG();
 
-	if(LoadMGG(&mgg_sys[0],"data//mEngUI.mgg")==NULL)
+	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
 		LogApp("Could not open UI mgg");
 		Quit();
@@ -8070,6 +8162,14 @@ int main(int argc, char *argv[])
 	Renderer(1);
 
 	LoadSpriteList("sprite.list");
+
+	LoadSoundList("sound.list");
+
+	for (i = 0; i < st.num_sounds; i++)
+		strcpy(meng.soundlist[i], st.sounds[i].path);
+
+	for (i = 0; i < st.num_musics; i++)
+		strcpy(meng.musiclist[i], st.musics[i].path);
 
 	st.FPSYes=1;
 

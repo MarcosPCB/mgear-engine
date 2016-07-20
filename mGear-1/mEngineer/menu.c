@@ -9,7 +9,7 @@ int16 scroll=0;
 
 void Menu()
 {
-	char files[512][512];
+	//char files[512][512];
 	uint16 num_files=0, i=0, j, a, m, n;
 	FILE *f;
 	DIR *dir;
@@ -236,7 +236,7 @@ void Menu()
 			{
 				if(LoadMap(path2))
 				{
-					memset(meng.mgg_list,0,64*256);
+					memset(meng.mgg_list,0,32*256);
 					meng.num_mgg=0;
 					LogApp("Map %s loaded",path2);
 

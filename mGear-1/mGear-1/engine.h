@@ -40,9 +40,10 @@
 #define MAX_GRAPHICS 2048
 #define MAX_DRAWCALLS 1024
 #define TICSPERSECOND 125
-#define MAX_CHANNELS 256
+#define MAX_CHANNELS 128
 #define MUSIC_CHANNEL MAX_CHANNELS-1
-#define MAX_SOUNDS 32
+#define MAX_SOUNDS 512
+#define MAX_MUSICS 32
 #define MUSIC_SLOT MAX_SOUNDS-1
 #define MAX_KEYS 128
 #define MAX_OBJS 1024
@@ -256,11 +257,6 @@ typedef struct _Key Key;
 struct _SOUNDSYS_
 {
 	FMOD_SYSTEM *Sound_System;
-	Sound *slots[MAX_SOUNDS];
-	int16 slot_ID[MAX_SOUNDS];
-	Channel *channels[MAX_CHANNELS];
-	int16 slotch_ID[MAX_CHANNELS];
-
 	Channel *music;
 };
 
@@ -757,7 +753,8 @@ typedef struct
 	Sound *sound;
 	uint8 loop;
 	char path[256];
-	uint8 type;
+	uint8 type; //0 = ambience sound; 1 = fx; 2 = player; 3 = npc; 4 = talk; 5 = music
+	uint8 priority;
 
 } SOUND_LIST;
 
@@ -915,8 +912,10 @@ struct _SETTINGS_
 	_GAME_LIGHTMAPS game_lightmaps[MAX_LIGHTMAPS];
 
 	uint16 num_sounds;
+	uint16 num_musics;
 
 	SOUND_LIST sounds[MAX_SOUNDS];
+	SOUND_LIST musics[MAX_MUSICS];
 
 	struct
 	{
@@ -945,6 +944,7 @@ struct _SETTINGS_
 
 	_MGM Current_Map;
 
+	uint8 sprite_id_list[MAX_SPRITES];
 	_SPRITES Game_Sprites[MAX_SPRITES];
 	uint16 num_sprites;
 
@@ -1134,8 +1134,9 @@ void GetSpriteBodySize(int16 id, int16 gameid);
 
 void Renderer(uint8 type);
 
-void PlaySound(const char *filename, uint8 loop);
-void PlayMusic(const char *filename, uint8 loop);
+int8 LoadSoundList(char *name);
+void PlaySound(int16 id, uint8 loop);
+void PlayMusic(int16 id, uint8 loop);
 void MainSound();
 void StopAllSounds();
 void StopMusic();

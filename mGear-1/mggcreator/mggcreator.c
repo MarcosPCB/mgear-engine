@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	_MGGANIM *mga;
 	char FileName[256], filename[256], animfile[256], tmp[32], str[2][24], framename[256], framename2[256],  fileframe[32];
 	int16 t=0, value, p=0, a=-1, val[16], *offx, *offy;
-	char header[21]={"MGG File Version 1.1"};
+	char header[21]={"MGG File Version 1"};
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas=0, *dimx, *dimy;
 	uint8 *imgatlas;
 	uint32 frameoffset[MAX_FRAMES];

@@ -172,6 +172,9 @@ struct _mEng
 	int8 editor;
 
 	int16 temp;
+
+	char soundlist[128][128];
+	char musiclist[32][128];
 };
 
 typedef struct _mEng mEng;

@@ -71,13 +71,21 @@ uint16 LoadCFG()
 void GameInput()
 {
 	register int16 i;
-
+	
 	for(i=0;i<8;i++)
 	{
 		if(playerc.key_pressed[i])
-			playerc.key_time[i]++;
-	}
+		{
+			playerc.key_time2[i]++;
 
+			if(playerc.key_time2[i]>64 && !playerc.key_state[i])
+			{
+				playerc.key_time2[i]=0;
+				playerc.key_pressed[i]=0;
+			}
+		}
+	}
+	
 	if(st.keys[W_KEY].state)
 	{
 		playerc.key_state[0]=1;
@@ -86,9 +94,18 @@ void GameInput()
 		{
 			playerc.key_pressed[0]++;
 			playerc.key_time[0]=0;
+			playerc.key_p[0]=1;
+			playerc.key_time2[0]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[0])
+			{
+				playerc.key_pressed[0]++;
+				playerc.key_time2[0]=0;
+				playerc.key_p[0]=1;
+			}
+
 			playerc.key_time[0]++;
 			if(playerc.key_time[0]>32)
 				playerc.key_state[0]=2;
@@ -103,9 +120,18 @@ void GameInput()
 		{
 			playerc.key_pressed[1]++;
 			playerc.key_time[1]=0;
+			playerc.key_p[1]=1;
+			playerc.key_time2[1]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[1])
+			{
+				playerc.key_pressed[1]++;
+				playerc.key_time2[1]=0;
+				playerc.key_p[1]=1;
+			}
+
 			playerc.key_time[1]++;
 			if(playerc.key_time[1]>32)
 				playerc.key_state[1]=2;
@@ -120,9 +146,18 @@ void GameInput()
 		{
 			playerc.key_pressed[2]++;
 			playerc.key_time[2]=0;
+			playerc.key_p[2]=1;
+			playerc.key_time2[2]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[2])
+			{
+				playerc.key_pressed[2]++;
+				playerc.key_time2[2]=0;
+				playerc.key_p[2]=1;
+			}
+
 			playerc.key_time[2]++;
 			if(playerc.key_time[2]>32)
 				playerc.key_state[2]=2;
@@ -137,9 +172,18 @@ void GameInput()
 		{
 			playerc.key_pressed[3]++;
 			playerc.key_time[3]=0;
+			playerc.key_p[3]=1;
+			playerc.key_time2[3]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[3])
+			{
+				playerc.key_pressed[3]++;
+				playerc.key_time2[3]=0;
+				playerc.key_p[3]=1;
+			}
+
 			playerc.key_time[3]++;
 			if(playerc.key_time[3]>32)
 				playerc.key_state[3]=2;
@@ -154,9 +198,18 @@ void GameInput()
 		{
 			playerc.key_pressed[4]++;
 			playerc.key_time[4]=0;
+			playerc.key_p[4]=1;
+			playerc.key_time2[4]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[4])
+			{
+				playerc.key_pressed[4]++;
+				playerc.key_time2[4]=0;
+				playerc.key_p[4]=1;
+			}
+
 			playerc.key_time[4]++;
 			if(playerc.key_time[4]>32)
 				playerc.key_state[4]=2;
@@ -171,9 +224,18 @@ void GameInput()
 		{
 			playerc.key_pressed[5]++;
 			playerc.key_time[5]=0;
+			playerc.key_p[5]=1;
+			playerc.key_time2[5]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[5])
+			{
+				playerc.key_pressed[5]++;
+				playerc.key_time2[5]=0;
+				playerc.key_p[5]=1;
+			}
+
 			playerc.key_time[5]++;
 			if(playerc.key_time[5]>32)
 				playerc.key_state[5]=2;
@@ -188,9 +250,18 @@ void GameInput()
 		{
 			playerc.key_pressed[6]++;
 			playerc.key_time[6]=0;
+			playerc.key_p[6]=1;
+			playerc.key_time2[6]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[6])
+			{
+				playerc.key_pressed[6]++;
+				playerc.key_time2[6]=0;
+				playerc.key_p[6]=1;
+			}
+
 			playerc.key_time[6]++;
 			if(playerc.key_time[6]>32)
 				playerc.key_state[6]=2;
@@ -205,9 +276,18 @@ void GameInput()
 		{
 			playerc.key_pressed[7]++;
 			playerc.key_time[7]=0;
+			playerc.key_p[7]=1;
+			playerc.key_time2[7]=0;
 		}
 		else
 		{
+			if(!playerc.key_p[7])
+			{
+				playerc.key_pressed[7]++;
+				playerc.key_time2[7]=0;
+				playerc.key_p[7]=1;
+			}
+
 			playerc.key_time[7]++;
 			if(playerc.key_time[7]>32)
 				playerc.key_state[7]=2;
@@ -217,57 +297,57 @@ void GameInput()
 	if(!st.keys[W_KEY].state && playerc.key_state[0])
 	{
 		playerc.key_state[0]=0;
-		playerc.key_pressed[0]=0;
 		playerc.key_time[0]=0;
+		playerc.key_p[0]=0;
 	}
 
 	if(!st.keys[S_KEY].state && playerc.key_state[1])
 	{
 		playerc.key_state[1]=0;
-		playerc.key_pressed[1]=0;
 		playerc.key_time[1]=0;
+		playerc.key_p[1]=0;
 	}
 
 	if(!st.keys[E_KEY].state && playerc.key_state[2])
 	{
 		playerc.key_state[2]=0;
-		playerc.key_pressed[2]=0;
 		playerc.key_time[2]=0;
+		playerc.key_p[2]=0;
 	}
 
 	if(!st.keys[D_KEY].state && playerc.key_state[3])
 	{
 		playerc.key_state[3]=0;
-		playerc.key_pressed[3]=0;
 		playerc.key_time[3]=0;
+		playerc.key_p[3]=0;
 	}
 
 	if(!st.keys[UP_KEY].state && playerc.key_state[4])
 	{
 		playerc.key_state[4]=0;
-		playerc.key_pressed[4]=0;
 		playerc.key_time[4]=0;
+		playerc.key_p[4]=0;
 	}
 
 	if(!st.keys[DOWN_KEY].state && playerc.key_state[5])
 	{
 		playerc.key_state[5]=0;
-		playerc.key_pressed[5]=0;
 		playerc.key_time[5]=0;
+		playerc.key_p[5]=0;
 	}
 
 	if(!st.keys[LEFT_KEY].state && playerc.key_state[6])
 	{
 		playerc.key_state[6]=0;
-		playerc.key_pressed[6]=0;
 		playerc.key_time[6]=0;
+		playerc.key_p[6]=0;
 	}
 
 	if(!st.keys[RIGHT_KEY].state && playerc.key_state[7])
 	{
 		playerc.key_state[7]=0;
-		playerc.key_pressed[7]=0;
 		playerc.key_time[7]=0;
+		playerc.key_p[7]=0;
 	}
 }
 
@@ -313,74 +393,42 @@ void Player_BaseCode(int16 id)
 		//st.keys[LEFT_KEY].state=0;
 	}
 
-	if(playerc.key_state[SK] && !playerc.key_state[1] && !CheckAnim(id,PUNCHS1) && !CheckAnim(id,PUNCHS2))
+	if(playerc.key_state[SK]==1 && !CheckAnim(id,PUNCHS1) && !CheckAnim(id,PUNCHS2))
 	{
 		if(playerc.state & 2)
 		{
 			playerc.state-=2;
-			SetPlayerAnim(id,PUNCHS2,5,0);
+			DoPlayerHit(2);
 		}
 		else
 		{
 			playerc.state+=2;
-			SetPlayerAnim(id,PUNCHS1,5,0);
+			DoPlayerHit(3);
 		}
 		//loop=0;
 		
-		PlaySound("glacius_a.wav",0);
-
-		playerc.key_state[1]=1;
-
-		if(!playerc.key_pressed[1])
-		{
-			playerc.key_pressed[1]++;
-			playerc.key_time[1]=0;
-			printf("test");
-		}
-		
-		if(playerc.key_time[1]==16)
-		{
-			playerc.key_time[1]=0;
-			playerc.key_pressed[1]++;
-		}
+		PlaySound(0,0);
 	}
 
 	
 
-	if(st.keys[W_KEY].state && !playerc.key_state[0] && !CheckAnim(id,PUNCHM1) && !CheckAnim(id,PUNCHM2))
+	if(playerc.key_state[WK]==1 && !CheckAnim(id,PUNCHM1) && !CheckAnim(id,PUNCHM2))
 	{
 		if(playerc.state & 1)
 		{
 			playerc.state-=1;
-			SetPlayerAnim(id,PUNCHM2,5,0);
+			DoPlayerHit(1);
 		}
 		else
 		{
 			playerc.state+=1;
-			SetPlayerAnim(id,PUNCHM1,6,0);
+			DoPlayerHit(0);
 		}
 
-		//loop=0;
-
-		PlaySound("glacius_a.wav",0);
-
-		playerc.key_state[0]=1;
-
-		if(!playerc.key_pressed[0])
-		{
-			playerc.key_pressed[0]++;
-			playerc.key_time[0]=0;
-			printf("test");
-		}
-
-		if(playerc.key_time[0]<=64 && playerc.key_pressed[0] && playerc.key_time[0]>0)
-		{
-			playerc.key_time[0]=0;
-			playerc.key_pressed[0]++;
-		}
+		PlaySound(0,0);
 	}
 
-	if(st.keys[UP_KEY].state && !playerc.key_state[4] && !CheckAnim(id,JUMPING) && ~playerc.state & 4)
+	if(playerc.key_state[UPK]==1 && !CheckAnim(id,JUMPING) && ~playerc.state & 4)
 	{
 		SetPlayerAnim(id,JUMPING,6,0);
 
@@ -389,59 +437,22 @@ void Player_BaseCode(int16 id)
 		st.Current_Map.sprites[id].body.velxy.y=256;
 	}
 
-	if(st.keys[E_KEY].state && !playerc.key_state[2] && !CheckAnim(id,KICKM))
+	if(playerc.key_state[EK]==1 && !CheckAnim(id,KICKM))
 	{
+		DoPlayerHit(6);
 		
-			//playerc.state-=1;
-			SetPlayerAnim(id,KICKM,5,0);
-		
-			PlaySound("glacius_a.wav",0);
+		PlaySound(0,0);
 
-		//loop=0;
-		//st.keys[W_KEY].state=0;
-		playerc.key_state[2]=1;
-
-		if(!playerc.key_pressed[2])
-		{
-			playerc.key_pressed[2]++;
-			playerc.key_time[2]=0;
-			printf("test");
-		}
-		
-		if(playerc.key_time[2]==16)
-		{
-			playerc.key_time[2]=0;
-			playerc.key_pressed[2]++;
-		}
 	}
 
-	if(st.keys[D_KEY].state && !playerc.key_state[3] && !CheckAnim(id,KICKS))
+	if(playerc.key_state[DK]==1  && !CheckAnim(id,KICKS))
 	{
+		DoPlayerHit(5);
 		
-			//playerc.state-=1;
-			SetPlayerAnim(id,KICKS,5,0);
-		
-			PlaySound("glacius_a.wav",0);
-
-		loop=0;
-		//st.keys[W_KEY].state=0;
-		playerc.key_state[3]=1;
-
-		if(!playerc.key_pressed[3])
-		{
-			playerc.key_pressed[3]++;
-			playerc.key_time[3]=0;
-			printf("test");
-		}
-		
-		if(playerc.key_time[3]==16)
-		{
-			playerc.key_time[3]=0;
-			playerc.key_pressed[3]++;
-		}
+		PlaySound(0,0);
 	}
 
-	if(playerc.key_pressed[0]==2)
+	if(playerc.key_pressed[RGK]==2 && playerc.key_pressed[WK]==1 && (~playerc.state & 16))
 	{
 		playerc.state=16;
 		playerc.combo_t=0;
@@ -452,35 +463,35 @@ void Player_BaseCode(int16 id)
 		if(playerc.combo_t==0)
 		{
 			SetPlayerAnim(id,PUNCHM1,7,0);
-			PlaySound("glacius_a.wav",0);
-			playerc.combo_t++;
+			PlaySound(0,0);
+			playerc.combo_t=1;
 		}
 		else
 		if(playerc.combo_t==1 && !CheckAnim(id,PUNCHM1))
 		{
 			SetPlayerAnim(id,PUNCHM2,7,0);
-			PlaySound("glacius_a.wav",0);
-			playerc.combo_t++;
+			PlaySound(0,0);
+			playerc.combo_t=2;
 		}
 		else
 		if(playerc.combo_t==2 && !CheckAnim(id,PUNCHM2))
 		{
 			SetPlayerAnim(id,PUNCHM1,7,0);
-			PlaySound("glacius_a.wav",0);
-			playerc.combo_t++;
+			PlaySound(0,0);
+			playerc.combo_t=3;
 		}
 		else
-		if(playerc.combo_t==3 && !CheckAnim(id,PUNCHM2))
+		if(playerc.combo_t==3 && !CheckAnim(id,PUNCHM1))
 		{
 			SetPlayerAnim(id,KICKS,5,0);
-			PlaySound("glacius_a.wav",0);
-			playerc.combo_t++;
+			PlaySound(0,0);
+			playerc.combo_t=4;
 		}
 		else
 		if(playerc.combo_t==4 && !CheckAnim(id,KICKS))
 		{
 			SetPlayerAnim(id,PUNCHS1,7,0);
-			PlaySound("glacius_a.wav",0);
+			PlaySound(0,0);
 			playerc.combo_t=0;
 			playerc.state=0;
 		}
@@ -597,7 +608,7 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 			playerc.hit[2].speed=5;
 
 			playerc.hit[3].anim=PUNCHS2;
-			playerc.hit[3].speed=4;
+			playerc.hit[3].speed=5;
 
 			playerc.hit[4].anim=PUNCHS3;
 			playerc.hit[4].speed=5;
@@ -685,7 +696,7 @@ void PreGameEvent()
 			for(j=0;j<st.Current_Map.sprites[i].num_tags;j++)
 			{
 				if(strcmp(st.Game_Sprites[SOUNDFX].tag_names[j],"PATH_S")==NULL && strlen(st.Current_Map.sprites[i].tags_str[j])>5)
-					PlaySound(st.Current_Map.sprites[i].tags_str[j],0);
+					PlayMusic(0,1);
 			}
 		}
 	}
@@ -747,6 +758,8 @@ int main(int argc, char *argv[])
 
 	LoadSpriteList("sprite.list");
 
+	LoadSoundList("sound.list");
+
 	st.gt=MAIN_MENU;
 
 	curr_tic=GetTicks();
@@ -759,18 +772,19 @@ int main(int argc, char *argv[])
 		if(st.FPSYes)
 			FPSCounter();
 
-		InputProcess();
-
 		loops=0;
 		while(GetTicks() > curr_tic && loops < 10)
 		{
 			Finish();
+
+			InputProcess();
 
 			if(st.gt==MAIN_MENU)
 				Menu();
 			else
 			if(st.gt==INGAME)
 			{
+				GameInput();
 				GameEvent();
 				LockCamera();
 			}

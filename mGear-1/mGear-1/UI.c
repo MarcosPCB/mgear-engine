@@ -2285,3 +2285,130 @@ int8 UISavePath(char *filename)
 
 	return NULL;
 }
+
+int16 UIMakeList(char list[128][128], int16 sizel)
+{
+	char path[2048];
+	int32 i, j, k, l, m, n, o, p;
+	static int32 m_sel=-1, time=0;
+	size_t size;
+	uint8 loop_c=0;
+
+	UI_Sys.sys_freeze=1;
+
+	UIData(8192,4096,8192,4096,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
+	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
+
+	if(sizel>13)
+	{
+		for(i=UI_Sys.mouse_scroll, j=0;i<UI_Sys.mouse_scroll+13;i++)
+		{
+			if(i>sizel-1)
+				break;
+
+			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			{
+				if((GetTimerM()-time)<50)
+				{
+					UI_Sys.mouse_scroll=0;
+
+					m_sel=-1;
+
+					st.mouse1=0;
+					time=0;
+					
+					return i;
+				}
+
+				time=GetTimerM();
+
+				st.mouse1=0;
+			}
+
+			if (m_sel == i)
+			{
+				UIData(8192, 4096 - ((4096 - 512) / 2) + 256 + (j * 256), 8192 - 512, 256, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+				StringUIvData(list[i], 8192 - ((8192 - 512) / 2) + 256, 4096 - ((4096 - 512) / 2) + 256 + (j * 256), 0, 0, 0, 255, 255, 255, 255, 0, 2048, 2048, 0);
+			}
+			else
+				StringUIvData(list[i],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+
+			j++;
+
+		}
+
+		UIData(8192+((8192-512)/2)-128,4096,256,4096-512,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+		UIData(8192+((8192-512)/2)-128,4096-((4096-512)/2)+128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
+		UIData(8192+((8192-512)/2)-128,4096+((4096-512)/2)-128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
+
+		UIData(8192+((8192-512)/2)-128,4096-((4096-1024)/2)+(UI_Sys.mouse_scroll*((4096-1024)/(UI_Sys.num_files-13))),256,256,
+			0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+
+		if(st.mouse_wheel>0)
+		{
+			UI_Sys.mouse_scroll--;
+			st.mouse_wheel=0;
+		}
+		else
+		if(st.mouse_wheel<0)
+		{
+			UI_Sys.mouse_scroll++;
+			st.mouse_wheel=0;
+		}
+
+		if(UI_Sys.mouse_scroll<0)
+			UI_Sys.mouse_scroll=0;
+		else
+		if(UI_Sys.mouse_scroll>sizel-13)
+			UI_Sys.mouse_scroll=sizel-13;
+	}
+	else
+	{
+		for(i=0;i<sizel;i++)
+		{
+
+			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			{
+				if((GetTimerM()-time)<50)
+				{
+					UI_Sys.mouse_scroll=0;
+
+					m_sel=-1;
+
+					st.mouse1=0;
+					time=0;
+
+					return i;
+				}
+
+				time=GetTimerM();
+
+				m_sel = i;
+				
+				st.mouse1=0;
+			}
+
+			if (m_sel == i)
+			{
+				UIData(8192, 4096 - ((4096 - 512) / 2) + 256 + (i * 256), 8192 - 512, 256, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+				StringUIvData(list[i], 8192 - ((8192 - 512) / 2) + 256, 4096 - ((4096 - 512) / 2) + 256 + (i * 256), 0, 0, 0, 255, 255, 255, 255, 0, 2048, 2048, 0);
+			}
+			else
+				StringUIvData(list[i],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+		}
+	}
+
+	if(UIStringButton(8192+2048+1024,4096+2048-64-32-16,"Select",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	{
+		UI_Sys.mouse_scroll=0;
+
+		j = m_sel;
+
+		m_sel=-1;
+
+		st.mouse1=0;
+		return j;
+	}
+
+	return -1;
+}

@@ -182,4 +182,6 @@ int8 UISelectFile(char *filename);
 
 int8 UISavePath(char *filename);
 
+int16 UIMakeList(char list[128][128], int16 sizel);
+
 #endif
