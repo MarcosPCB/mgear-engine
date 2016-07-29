@@ -403,6 +403,7 @@ struct _BODY
 	int16 total_vel;
 	Pos velxy;
 	int16 acceleration;
+	int16 acc_ang;
 	int16 energy;
 	int16 temperature;
 	int16 ang;
@@ -1141,10 +1142,12 @@ void MainSound();
 void StopAllSounds();
 void StopMusic();
 
-uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt);
-uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang);
-uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang, int8 z);
+uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 ang2);
+uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang);
+uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang, int8 z);
 int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
+int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
+uint8 CheckCollisionPossibility(uint16 id, uint16 id2, int32 *dist); //Checks if the two sprites are in the possibility of a collision and returns the distance they are of each other
 
 void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);

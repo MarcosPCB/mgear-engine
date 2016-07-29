@@ -2,40 +2,77 @@
 #include "physics.h"
 #include "engine.h"
 
-#ifdef TEST
-void Physics(_SPRITES actor)
+Physics physics;
+
+void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 air)
 {
-	Pos Layer, Layer_size;
-	float deformation;
+	physics.gravity = gravity;
+	physics.gravity_vel = gravity_vel;
+	physics.gravity_direction = gravity_direction;
+	physics.air = air;
+	physics.physics_active = 1;
+}
 
-	Layer.y=st.Current_Map.sector[actor.current_sector].Layer[actor.current_layer].position.y;
-	Layer.x=st.Current_Map.sector[actor.current_sector].Layer[actor.current_layer].position.x;
+int8 AddDynamicSprite(int16 id)
+{
+	int16 i;
 
-	Layer.y=st.Current_Map.sector[actor.current_sector].Layer[actor.current_layer].size.y;
-	Layer.x=st.Current_Map.sector[actor.current_sector].Layer[actor.current_layer].size.x;
-
-	if(actor.body.position.y<Layer.y)
-		actor.body.total_vel+=GRAVITY;
-	else
-	if(CheckColision(actor.body.position,actor.body.size,Layer,Layer_size))
+	if (physics.num_sprites < MAX_DYNAMIC_SPRITES)
 	{
-		actor.body.energy=(actor.body.mass*pow(actor.body.total_vel,2))/2;
-		deformation=actor.body.energy/actor.body.max_elasticy;
-
-		if(deformation>=actor.body.max_elasticy)
+		//Check if it's already there
+		for (i = 0; i < physics.num_sprites; i++)
 		{
-			//Breaks
-			actor.health=0;
-			//Further coding
+			if (physics.sprite_list[i] == id)
+			{
+				LogApp("Sprite %d already dynamic", id);
+				return NULL;
+			}
 		}
-		else
+
+		physics.sprite_list[physics.num_sprites] = id;
+		physics.num_sprites++;
+
+		st.Current_Map.sprites[id].body.velxy.x = 0;
+		st.Current_Map.sprites[id].body.velxy.y = 0;
+		st.Current_Map.sprites[id].body.total_vel = 0;
+		st.Current_Map.sprites[id].body.acceleration = 0;
+		st.Current_Map.sprites[id].body.energy = 0;
+	}
+
+	return 1;
+}
+
+int8 MainPhysics()
+{
+	int32 i, j;
+
+	if (physics.physics_active)
+	{
+		for (i = 0; i < physics.num_sprites; i++)
 		{
-			actor.body.energy=(actor.body.max_elasticy*pow(deformation,2))/2;
-			actor.body.total_vel=sqrt14((actor.body.energy*2)/actor.body.mass);
-			actor.body.ang+=180;
-			actor.body.velxy.x=actor.body.total_vel*cos(actor.body.ang);
-			actor.body.velxy.y=actor.body.total_vel*sin(actor.body.ang);
+			if (physics.gravity)
+			{
+				j = physics.sprite_list[i];
+
+				if (CheckCollisionSector(st.Current_Map.sprites[j].position.x, st.Current_Map.sprites[j].position.y, st.Current_Map.sprites[j].body.size.x,
+					st.Current_Map.sprites[j].body.size.y, st.Current_Map.sprites[j].body.ang))
+				{
+					if (st.Current_Map.sprites[j].body.velxy.y > 0)
+						st.Current_Map.sprites[j].body.velxy.y = 0;
+				}
+				else
+				{
+					st.Current_Map.sprites[j].body.velxy.x += mCos(physics.gravity_direction) * physics.gravity_vel;
+					st.Current_Map.sprites[j].body.velxy.y += mSin(physics.gravity_direction) * physics.gravity_vel;
+				}
+			}
+
+			if (CheckCollisionSectorWall(st.Current_Map.sprites[j].position.x, st.Current_Map.sprites[j].position.y, st.Current_Map.sprites[j].body.size.x,
+				st.Current_Map.sprites[j].body.size.y, st.Current_Map.sprites[j].body.ang))
+			{
+				if (st.Current_Map.sprites[j].body.velxy.x > 0)
+					st.Current_Map.sprites[j].body.velxy.x = 0;
+			}
 		}
 	}
 }
-#endif

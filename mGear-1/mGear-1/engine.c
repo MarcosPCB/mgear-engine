@@ -4,6 +4,10 @@
 #include <math.h>
 #include <SDL_image.h>
 
+//#ifndef ENGINEER
+	
+//#endif
+
 #ifdef _VBO_RENDER
 	#include "shader110.h"
 #endif
@@ -3102,27 +3106,40 @@ int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang
 {
 	register uint16 i;
 	int32 ydist;
-	int16 sector=-1;
+	int16 sector = -1, ang2;
+	float f;
 
 	for(i=0;i<st.Current_Map.num_sector;i++)
 	{
-		if((x-(xsize/2)>st.Current_Map.sector[i].vertex[0].x && x-(xsize/2)<st.Current_Map.sector[i].vertex[1].x) || (x+(xsize/2)>st.Current_Map.sector[i].vertex[0].x && x+(xsize/2)<st.Current_Map.sector[i].vertex[1].x))
+		f = atan2(st.Current_Map.sector[i].vertex[1].y - st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
+
+		if (f == pi)
+			f = 0;
+
+		f += pi;
+		f = (180 / pi)*f;
+		ang2 = f * 10;
+
+		if (ang2<451)
 		{
-			if(!st.Current_Map.sector[i].sloped)
+			if ((x - (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x - (xsize / 2) < st.Current_Map.sector[i].vertex[1].x) || (x + (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x + (xsize / 2) < st.Current_Map.sector[i].vertex[1].x))
 			{
-				if((y-(ysize/2))<st.Current_Map.sector[i].base_y)
+				if (!st.Current_Map.sector[i].sloped)
 				{
-					if(sector==-1)
+					if ((y - (ysize / 2)) < st.Current_Map.sector[i].base_y)
 					{
-						ydist=abs((y-(ysize/2))-st.Current_Map.sector[i].base_y);
-						sector=i;
-					}
-					else
-					{
-						if(((y-(ysize/2)))-st.Current_Map.sector[i].base_y<ydist)
+						if (sector == -1)
 						{
-							ydist=abs(((y+(ysize/2)))-st.Current_Map.sector[i].base_y);
-							sector=i;
+							ydist = abs((y - (ysize / 2)) - st.Current_Map.sector[i].base_y);
+							sector = i;
+						}
+						else
+						{
+							if (((y - (ysize / 2))) - st.Current_Map.sector[i].base_y < ydist)
+							{
+								ydist = abs(((y + (ysize / 2))) - st.Current_Map.sector[i].base_y);
+								sector = i;
+							}
 						}
 					}
 				}
@@ -3136,121 +3153,212 @@ int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang
 		return -1;
 }
 
-uint8 CheckColision(float x, float y, float xsize, float ysize, float tx, float ty, float txsize, float tysize, float ang, float angt)
+int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang)
 {
-	uint8 i;
+	register uint16 i;
+	int32 ydist;
+	int16 sector = -1, ang2;
+	float f;
 
-	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
-
-	x-=st.Camera.position.x;
-	y-=st.Camera.position.y;
-
-	tx-=st.Camera.position.x;
-	ty-=st.Camera.position.y;
-
-	for(i=0;i<8;i++)
+	for (i = 0; i<st.Current_Map.num_sector; i++)
 	{
-		if(i<4)
+		f = atan2(st.Current_Map.sector[i].vertex[1].y - st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
+
+		if (f == pi)
+			f = 0;
+
+		f += pi;
+		f = (180 / pi)*f;
+		ang2 = f * 10;
+
+		if (ang2>450)
 		{
-			if(i==0)
+			if ((x - (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x - (xsize / 2) < st.Current_Map.sector[i].vertex[1].x) || (x + (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x + (xsize / 2) < st.Current_Map.sector[i].vertex[1].x))
 			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
-				xb=xl=tmpx;
-				yb=yl=tmpy;
-			}
-			else
-			if(i==1)
-			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
-				if(tmpx>xb) xb=tmpx;
-				else if(tmpx<xl) xl=tmpx;
+				if (!st.Current_Map.sector[i].sloped)
+					sector = i;
 
-				if(tmpy>yb) yb=tmpy;
-				else if(tmpy<yl) yl=tmpy;
-			}
-			else
-			if(i==2)
-			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
-				if(tmpx>xb) xb=tmpx;
-				else if(tmpx<xl) xl=tmpx;
-
-				if(tmpy>yb) yb=tmpy;
-				else if(tmpy<yl) yl=tmpy;
-			}
-			else
-			if(i==3)
-			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
-				if(tmpx>xb) xb=tmpx;
-				else if(tmpx<xl) xl=tmpx;
-
-				if(tmpy>yb) yb=tmpy;
-				else if(tmpy<yl) yl=tmpy;
-			}
-		}
-		else
-		if(i>3)
-		{
-			if(i==4)
-			{
-				tmpx=tx+(((tx-(txsize/2))-tx)*cos((angt*pi)/180) - ((ty-(tysize/2))-ty)*sin((angt*pi)/180));
-				tmpy=ty+(((tx-(txsize/2))-tx)*sin((angt*pi)/180) + ((ty-(tysize/2))-ty)*cos((angt*pi)/180));
-				xtb=xtl=tmpx;
-				ytb=ytl=tmpy;
-			}
-			else
-			if(i==5)
-			{
-				tmpx=tx+(((tx+(txsize/2))-tx)*cos((angt*pi)/180) - ((ty-(tysize/2))-ty)*sin((angt*pi)/180));
-				tmpy=ty+(((tx+(txsize/2))-tx)*sin((angt*pi)/180) + ((ty-(tysize/2))-ty)*cos((angt*pi)/180));
-				if(tmpx>xtb) xtb=tmpx;
-				else if(tmpx<xtl) xtl=tmpx;
-
-				if(tmpy>ytb) ytb=tmpy;
-				else if(tmpy<ytl) ytl=tmpy;
-			}
-			else
-			if(i==6)
-			{
-				tmpx=tx+(((tx+(txsize/2))-tx)*cos((angt*pi)/180) - ((ty+(tysize/2))-ty)*sin((angt*pi)/180));
-				tmpy=ty+(((tx+(txsize/2))-tx)*sin((angt*pi)/180) + ((ty+(tysize/2))-ty)*cos((angt*pi)/180));
-				if(tmpx>xtb) xtb=tmpx;
-				else if(tmpx<xtl) xtl=tmpx;
-
-				if(tmpy>ytb) ytb=tmpy;
-				else if(tmpy<ytl) ytl=tmpy;
-			}
-			else
-			if(i==7)
-			{
-				tmpx=tx+(((tx-(txsize/2))-tx)*cos((angt*pi)/180) - ((ty+(tysize/2))-ty)*sin((angt*pi)/180));
-				tmpy=ty+(((tx-(txsize/2))-tx)*sin((angt*pi)/180) + ((ty+(tysize/2))-ty)*cos((angt*pi)/180));
-				if(tmpx>xtb) xtb=tmpx;
-				else if(tmpx<xtl) xtl=tmpx;
-
-				if(tmpy>ytb) ytb=tmpy;
-				else if(tmpy<ytl) ytl=tmpy;
+/*					if ((y - (ysize / 2)) < st.Current_Map.sector[i].base_y)
+					{
+						if (sector == -1)
+						{
+							ydist = abs((y - (ysize / 2)) - st.Current_Map.sector[i].base_y);
+							sector = i;
+						}
+						else
+						{
+							if (((y - (ysize / 2))) - st.Current_Map.sector[i].base_y < ydist)
+							{
+								ydist = abs(((y + (ysize / 2))) - st.Current_Map.sector[i].base_y);
+								sector = i;
+							}
+						}
+					}
+				
+				}
+*/
 			}
 		}
 	}
 
-	if((xtb>xl && xtb<xb && ytb>yl && ytb<yb) || (xtl>xl && xtl<xb && ytl>yl && ytl<yb))
-		return 1; //Collided
+	if (sector != -1)
+		return sector;
 	else
-		return 0; //No collision
-	
+		return -1;
 }
 
-uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
-{
-	uint8 i;
 
-	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+uint8 CheckCollisionPossibility(uint16 id, uint16 id2, int32 *dist)
+{
+	int32 x, y, radius, radius2;
+
+	if (st.Current_Map.sprites[id].body.size.x > st.Current_Map.sprites[id].body.size.y)
+		radius = st.Current_Map.sprites[id].body.size.x;
+	else
+		radius = st.Current_Map.sprites[id].body.size.y;
+
+	if (st.Current_Map.sprites[id2].body.size.x > st.Current_Map.sprites[id2].body.size.y)
+		radius2 = st.Current_Map.sprites[id2].body.size.x;
+	else
+		radius2 = st.Current_Map.sprites[id2].body.size.y;
+
+	x = st.Current_Map.sprites[id2].position.x - st.Current_Map.sprites[id].position.x;
+	y = st.Current_Map.sprites[id2].position.y - st.Current_Map.sprites[id].position.y;
+
+	*dist = mSqrt((x*x) + (y*y));
+
+	if (*dist < radius || *dist < radius2)
+		return 1;
+	else
+		return 0;
+}
+
+uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 ang2)
+{
+	register uint8 i;
+
+	uint16 collision = 0;
+
+	int32 vert[8], vert2[8], minx, miny, maxx, maxy;
+
+	//Get the vertices coordinates
+
+	vert[0] = (float) pos.x + (((pos.x - (size.x / 2)) - pos.x)*mCos(ang) - ((pos.y - (size.y / 2)) - pos.y)*mSin(ang));
+	vert[1] = (float) pos.y + (((pos.x - (size.x / 2)) - pos.x)*mSin(ang) + ((pos.y - (size.y / 2)) - pos.y)*mCos(ang));
+
+	vert[2] = (float) pos.x + (((pos.x + (size.x / 2)) - pos.x)*mCos(ang) - ((pos.y - (size.y / 2)) - pos.y)*mSin(ang));
+	vert[3] = (float) pos.y + (((pos.x + (size.x / 2)) - pos.x)*mSin(ang) + ((pos.y - (size.y / 2)) - pos.y)*mCos(ang));
+
+	vert[4] = (float) pos.x + (((pos.x + (size.x / 2)) - pos.x)*mCos(ang) - ((pos.y + (size.y / 2)) - pos.y)*mSin(ang));
+	vert[5] = (float) pos.y + (((pos.x + (size.x / 2)) - pos.x)*mSin(ang) + ((pos.y + (size.y / 2)) - pos.y)*mCos(ang));
+
+	vert[6] = (float) pos.x + (((pos.x - (size.x / 2)) - pos.x)*mCos(ang) - ((pos.y + (size.y / 2)) - pos.y)*mSin(ang));
+	vert[7] = (float) pos.y + (((pos.x - (size.x / 2)) - pos.x)*mSin(ang) + ((pos.y + (size.y / 2)) - pos.y)*mCos(ang));
+
+	vert2[0] = (float) pos2.x + (((pos2.x - (size2.x / 2)) - pos2.x)*mCos(ang2) - ((pos2.y - (size2.y / 2)) - pos2.y)*mSin(ang2));
+	vert2[1] = (float) pos2.y + (((pos2.x - (size2.x / 2)) - pos2.x)*mSin(ang2) + ((pos2.y - (size2.y / 2)) - pos2.y)*mCos(ang2));
+
+	vert2[2] = (float) pos2.x + (((pos2.x + (size2.x / 2)) - pos2.x)*mCos(ang2) - ((pos2.y - (size2.y / 2)) - pos2.y)*mSin(ang2));
+	vert2[3] = (float) pos2.y + (((pos2.x + (size2.x / 2)) - pos2.x)*mSin(ang2) + ((pos2.y - (size2.y / 2)) - pos2.y)*mCos(ang2));
+
+	vert2[4] = (float) pos2.x + (((pos2.x + (size2.x / 2)) - pos2.x)*mCos(ang2) - ((pos2.y + (size2.y / 2)) - pos2.y)*mSin(ang2));
+	vert2[5] = (float) pos2.y + (((pos2.x + (size2.x / 2)) - pos2.x)*mSin(ang2) + ((pos2.y + (size2.y / 2)) - pos2.y)*mCos(ang2));
+
+	vert2[6] = (float) pos2.x + (((pos2.x - (size2.x / 2)) - pos2.x)*mCos(ang2) - ((pos2.y + (size2.y / 2)) - pos2.y)*mSin(ang2));
+	vert2[7] = (float) pos2.y + (((pos2.x - (size2.x / 2)) - pos2.x)*mSin(ang2) + ((pos2.y + (size2.y / 2)) - pos2.y)*mCos(ang2));
+
+	//Get the min and max values for box2
+
+	for (i = 2, minx=vert2[0], miny=vert2[1], maxx=vert2[0], maxy=vert2[1]; i < 8; i++)
+	{
+		if (i % 2 == 0)
+		{
+			if (vert2[i] < minx)
+				minx = vert2[i];
+			else
+			if (vert2[i] > maxx)
+				maxx = vert2[i];
+		}
+		else
+		{
+			if (vert2[i] < miny)
+				miny = vert2[i];
+			else
+			if (vert2[i] > maxy)
+				maxy = vert2[i];
+		}
+	}
+
+	//Check every vertice from box 1 collinding with box 2
+
+	for (i = 0; i < 8; i += 2)
+	{
+		if ((vert[i] > minx && vert[i] < maxx) && (vert[i + 1] > miny && vert[i + 1] < maxy))
+		{
+			if (i == 0)
+				collision += 1;
+			else
+			if (i == 2)
+				collision += 2;
+			else
+			if (i == 4)
+				collision += 4;
+			else
+			if (i == 6)
+				collision += 8;
+		}
+	}
+	
+	//Get the min and max values for box 1
+
+	for (i = 2, minx = vert[0], miny = vert[1], maxx = vert[0], maxy = vert[1]; i < 8; i++)
+	{
+		if (i % 2 == 0)
+		{
+			if (vert[i] < minx)
+				minx = vert[i];
+			else
+				if (vert[i] > maxx)
+					maxx = vert[i];
+		}
+		else
+		{
+			if (vert[i] < miny)
+				miny = vert[i];
+			else
+				if (vert[i] > maxy)
+					maxy = vert[i];
+		}
+	}
+
+	//Check every vertice from box 2 collinding with box 1
+
+	for (i = 0; i < 8; i += 2)
+	{
+		if ((vert2[i] > minx && vert2[i] < maxx) && (vert2[i + 1] > miny && vert2[i + 1] < maxy))
+		{
+			if (i == 0)
+				collision += 16;
+			else
+			if (i == 2)
+				collision += 32;
+			else
+			if (i == 4)
+				collision += 64;
+			else
+			if (i == 6)
+				collision += 128;
+		}
+	}
+
+	return collision;
+}
+
+uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang)
+{
+	register uint8 i;
+
+	int32 xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	int32 mx, my;
 
@@ -3258,16 +3366,16 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 	{
 			if(i==0)
 			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx=(float)x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=(float)y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
 				xb=xl=tmpx;
 				yb=yl=tmpy;
 			}
 			else
 			if(i==1)
 			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx=(float)x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=(float)y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
 				if(tmpx>xb) xb=tmpx;
 				else if(tmpx<xl) xl=tmpx;
 
@@ -3277,8 +3385,8 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 			else
 			if(i==2)
 			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx=(float)x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=(float)y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
 				if(tmpx>xb) xb=tmpx;
 				else if(tmpx<xl) xl=tmpx;
 
@@ -3288,8 +3396,8 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 			else
 			if(i==3)
 			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx=(float)x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
+				tmpy=(float)y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
 				if(tmpx>xb) xb=tmpx;
 				else if(tmpx<xl) xl=tmpx;
 
@@ -3313,11 +3421,11 @@ uint8 CheckColisionMouse(float x, float y, float xsize, float ysize, float ang)
 	
 }
 
-uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float ang, int8 z)
+uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang, int8 z)
 {
-	uint8 i;
+	register uint8 i;
 
-	float xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
+	int32 xb, xl, yb, yl, xtb, xtl, ytb, ytl, tmpx, tmpy;
 
 	int32 mx, my;
 
@@ -3339,16 +3447,16 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 	{
 			if(i==0)
 			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx = (float)x + (((x - (xsize / 2)) - x)*cos((ang*pi) / 180) - ((y - (ysize / 2)) - y)*sin((ang*pi) / 180));
+				tmpy = (float)y + (((x - (xsize / 2)) - x)*sin((ang*pi) / 180) + ((y - (ysize / 2)) - y)*cos((ang*pi) / 180));
 				xb=xl=tmpx;
 				yb=yl=tmpy;
 			}
 			else
 			if(i==1)
 			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y-(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y-(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx = (float)x + (((x + (xsize / 2)) - x)*cos((ang*pi) / 180) - ((y - (ysize / 2)) - y)*sin((ang*pi) / 180));
+				tmpy = (float)y + (((x + (xsize / 2)) - x)*sin((ang*pi) / 180) + ((y - (ysize / 2)) - y)*cos((ang*pi) / 180));
 				if(tmpx>xb) xb=tmpx;
 				else if(tmpx<xl) xl=tmpx;
 
@@ -3358,8 +3466,8 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 			else
 			if(i==2)
 			{
-				tmpx=x+(((x+(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x+(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx = (float)x + (((x + (xsize / 2)) - x)*cos((ang*pi) / 180) - ((y + (ysize / 2)) - y)*sin((ang*pi) / 180));
+				tmpy = (float)y + (((x + (xsize / 2)) - x)*sin((ang*pi) / 180) + ((y + (ysize / 2)) - y)*cos((ang*pi) / 180));
 				if(tmpx>xb) xb=tmpx;
 				else if(tmpx<xl) xl=tmpx;
 
@@ -3369,8 +3477,8 @@ uint8 CheckColisionMouseWorld(float x, float y, float xsize, float ysize, float 
 			else
 			if(i==3)
 			{
-				tmpx=x+(((x-(xsize/2))-x)*cos((ang*pi)/180) - ((y+(ysize/2))-y)*sin((ang*pi)/180));
-				tmpy=y+(((x-(xsize/2))-x)*sin((ang*pi)/180) + ((y+(ysize/2))-y)*cos((ang*pi)/180));
+				tmpx = (float)x + (((x - (xsize / 2)) - x)*cos((ang*pi) / 180) - ((y + (ysize / 2)) - y)*sin((ang*pi) / 180));
+				tmpy = (float)y + (((x - (xsize / 2)) - x)*sin((ang*pi) / 180) + ((y + (ysize / 2)) - y)*cos((ang*pi) / 180));
 				if(tmpx>xb) xb=tmpx;
 				else if(tmpx<xl) xl=tmpx;
 

@@ -30,7 +30,7 @@ void Menu()
 				st.keys[ESC_KEY].state=0;
 			}
 
-			if(CheckColisionMouse(8192,4096-1820,1820,455,0))
+			if(CheckCollisionMouse(8192,4096-1820,1820,455,0))
 			{
 				StringUIData("Start New Map",8192,4096-1820,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
@@ -171,7 +171,7 @@ void Menu()
 
 			if(st.gt==GAME_MENU) 
 			{
-				if(CheckColisionMouse(8192,(4096)-2275,1365,455,0))
+				if(CheckCollisionMouse(8192,(4096)-2275,1365,455,0))
 				{
 					StringUIData("Save Map",8192,(4096)-2275,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 					if(st.mouse1)
@@ -194,7 +194,7 @@ void Menu()
 				}
 			}
 
-			if(CheckColisionMouse(8192,(4096)-910,1365,455,0))
+			if(CheckCollisionMouse(8192,(4096)-910,1365,455,0))
 			{
 				StringUIData("Load Map",8192,(4096)-910,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
@@ -207,7 +207,7 @@ void Menu()
 			else
 				StringUI2Data("Load Map",8192,(4096)-910,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 
-			if(CheckColisionMouse(8192,(4096)-455,910,455,0))
+			if(CheckCollisionMouse(8192,(4096)-455,910,455,0))
 			{
 				StringUIData("Options",8192,(4096)-455,910,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
@@ -220,7 +220,7 @@ void Menu()
 			else
 				StringUI2Data("Options",8192,(4096)-455,910,455,0,255,255,255,255,ARIAL,0,0,0);
 
-			if(CheckColisionMouse(8192,(4096),455,455,0))
+			if(CheckCollisionMouse(8192,(4096),455,455,0))
 			{
 				StringUIData("Quit",8192,(4096),455,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)

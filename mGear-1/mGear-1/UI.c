@@ -264,7 +264,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 
 	if(num_options==1 || !num_options)
 	{
-		if(CheckColisionMouse(x,y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0))
+		if(CheckCollisionMouse(x,y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0))
 		{
 			StringUIData("OK",x,y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
@@ -277,7 +277,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 	else
 	if(num_options==2)
 	{
-		if(CheckColisionMouse(x-((text_size-256)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
+		if(CheckCollisionMouse(x-((text_size-256)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
 			if(st.mouse1)
 				return UI_YES;
@@ -285,7 +285,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 		else
 			StringUIData("Yes",x-((text_size-256)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 
-		if(CheckColisionMouse(x+((text_size-256)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
+		if(CheckCollisionMouse(x+((text_size-256)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
 			if(st.mouse1)
 				return UI_NO;
@@ -296,7 +296,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 	else
 	if(num_options==3)
 	{
-		if(CheckColisionMouse(x-((text_size-128)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
+		if(CheckCollisionMouse(x-((text_size-128)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
 			StringUIData("Yes",x-((text_size-128)/2),y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
@@ -306,7 +306,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 		else
 			StringUIData("Yes",x-((text_size-128)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 
-		if(CheckColisionMouse(x+((text_size-128)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
+		if(CheckCollisionMouse(x+((text_size-128)/2),y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
 			StringUIData("No",x+((text_size-128)/2),y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
@@ -316,7 +316,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 		else
 			StringUIData("No",x+((text_size-128)/2),y+((height_size-256)/2),0,0,0,rn,gn,bn,255,0,2048,2048,5);
 
-		if(CheckColisionMouse(x,y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
+		if(CheckCollisionMouse(x,y+((height_size-256)/2),2*((st.fonts[font].size_w_gm*font_size)/FONT_SIZE),((st.fonts[font].size_h_gm*font_size)/FONT_SIZE),0) && st.mouse1)
 		{
 			StringUIData("Cancel",x,y+((height_size-256)/2),0,0,0,rs,gs,bs,255,0,2048,2048,5);
 
@@ -371,7 +371,7 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 
 	for(i=0;i<num_options;i++)
 	{
-		if(CheckColisionMouse(x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),text_size,(st.fonts[font].size_h_gm*font_size)/FONT_SIZE,0))
+		if(CheckCollisionMouse(x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),text_size,(st.fonts[font].size_h_gm*font_size)/FONT_SIZE,0))
 		{
 			StringUIData(options[i],x,(y+(i*(st.fonts[font].size_h_gm*font_size)/FONT_SIZE))-((height_size-128-gsize)/2),0,0,0,rs,gs,bs,255,font,font_size,font_size,5);
 
@@ -414,7 +414,7 @@ int8 UIWin2_StringButton(int8 uiwinid, int8 pos,char *text, int32 colorN, int32 
 
 	lenght=strlen(text2);
 
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),(st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,
@@ -453,7 +453,7 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 
 	text_size=gsizew*strlen(text);
 
-	if(CheckColisionMouse(x,y,text_size,gsize,0))
+	if(CheckCollisionMouse(x,y,text_size,gsize,0))
 	{
 		StringUIData(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
@@ -489,7 +489,7 @@ int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size
 
 	text_size=gsizew*strlen(text);
 
-	if(CheckColisionMouseWorld(x,y,text_size,gsize,0,layer))
+	if(CheckCollisionMouseWorld(x,y,text_size,gsize,0,layer))
 	{
 		String2Data(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
@@ -630,7 +630,7 @@ int8 UIWin2_MarkBox(int8 uiwinid, int8 pos, uint8 marked, char *text, int32 colo
 
 	if(!marked || marked==1)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),(st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*((st.fonts[UI_Win[uiwinid].font].size_h_gm*UI_Win[uiwinid].font_size)/FONT_SIZE))+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,
@@ -688,7 +688,7 @@ void UIWin2_NumberBoxui8(int8 uiwinid, int8 pos, uint8 *value, char *text, int32
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -753,7 +753,7 @@ void UIWin2_NumberBoxi8(int8 uiwinid, int8 pos, int8 *value, char *text, int32 c
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -818,7 +818,7 @@ void UIWin2_NumberBoxui16(int8 uiwinid, int8 pos, uint16 *value, char *text, int
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -883,7 +883,7 @@ void UIWin2_NumberBoxi16(int8 uiwinid, int8 pos, int16 *value, char *text, int32
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -947,7 +947,7 @@ void UIWin2_NumberBoxui32(int8 uiwinid, int8 pos, uint32 *value, char *text, int
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -1012,7 +1012,7 @@ void UIWin2_NumberBoxi32(int8 uiwinid, int8 pos, int32 *value, char *text, int32
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -1077,7 +1077,7 @@ void UIWin2_NumberBoxf(int8 uiwinid, int8 pos, float *value, char *text, int32 c
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text2,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -1142,7 +1142,7 @@ void UIWin2_TextBox(int8 uiwinid, int8 pos, char *text, int32 colorN, int32 colo
 
 	if(UI_Win[uiwinid].current!=pos)
 	{
-		if(CheckColisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
+		if(CheckCollisionMouse(UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),
 			lenght*((st.fonts[UI_Win[uiwinid].font].size_w_gm*UI_Win[uiwinid].font_size)/FONT_SIZE),gsize,0))
 		{
 			StringUIData(text,UI_Win[uiwinid].pos.x,(pos*gsize)+UI_Win[uiwinid].pos.y-((UI_Win[uiwinid].size.y/2)-128-gsize),0,0,0,rs,gs,bs,255,UI_Win[uiwinid].font,
@@ -1196,7 +1196,7 @@ int8 UIWin_Button(int8 uiwinid, int32 x, int32 y, char *text, uint8 font, uint8 
 
 	if(!blocked)
 	{
-		if(CheckColisionMouse(x,y,lenght*gsizew,gsize,0) && st.mouse1)
+		if(CheckCollisionMouse(x,y,lenght*gsizew,gsize,0) && st.mouse1)
 		{
 			UIData(x,y,lenght*gsizew,gsize,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame1],255,UI_Win[uiwinid].layer-1);
 			StringUIData(text,x,y,0,0,0,255,255,255,255,UI_Win[uiwinid].font,UI_Win[uiwinid].font_size,UI_Win[uiwinid].font_size,UI_Win[uiwinid].layer-1);
@@ -1238,7 +1238,7 @@ int8 UIWin_ButtonIcon(int8 uiwinid, int32 x, int32 y, int32 sizex, int32 sizey, 
 
 	if(!blocked)
 	{
-		if(CheckColisionMouse(x,y,sizex,sizey,0) && st.mouse1)
+		if(CheckCollisionMouse(x,y,sizex,sizey,0) && st.mouse1)
 		{
 			UIData(x,y,sizex,sizey,0,r,g,b,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id2].frames[UI_Sys.frames[frame]],255,UI_Win[uiwinid].layer-1);
 
@@ -1327,7 +1327,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 
 	if(st.mouse1)
 	{
-		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
+		if(CheckCollisionMouseWorld(x-sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
@@ -1338,7 +1338,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=1;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
+		if(CheckCollisionMouseWorld(x+sx,y-sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
@@ -1349,7 +1349,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=2;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
+		if(CheckCollisionMouseWorld(x+sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DRIGHT;
 
@@ -1360,7 +1360,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=3;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
+		if(CheckCollisionMouseWorld(x-sx,y+sy,256,256,ang,z) && !UI_Sys.mouse_flag)
 		{
 			st.cursor_type=CURSOR_RESIZE_DLEFT;
 
@@ -1371,7 +1371,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=4;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckCollisionMouseWorld(x,y-sy,*sizex,256,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
@@ -1379,7 +1379,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=5;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckCollisionMouseWorld(x,y+sy,*sizex,256,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_VERTICAL;
 
@@ -1387,7 +1387,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=6;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckCollisionMouseWorld(x-sx,y,256,*sizey,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
@@ -1395,7 +1395,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=7;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
+		if(CheckCollisionMouseWorld(x+sx,y,256,*sizey,ang,z) && !UI_Sys.mouse_flag && !keepaspect)
 		{
 			st.cursor_type=CURSOR_RESIZE_HORIZONTAL;
 
@@ -1403,7 +1403,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			UI_Sys.mouse_flag=8;
 		}
 		
-		if(CheckColisionMouseWorld(x-sx,y-sy,256,256,ang,z) && UI_Sys.mouse_flag==1)
+		if(CheckCollisionMouseWorld(x-sx,y-sy,256,256,ang,z) && UI_Sys.mouse_flag==1)
 		{
 			size2=st.mouse;
 
@@ -1421,7 +1421,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y-sy,256,256,ang,z) && UI_Sys.mouse_flag==2)
+		if(CheckCollisionMouseWorld(x+sx,y-sy,256,256,ang,z) && UI_Sys.mouse_flag==2)
 		{
 			size2=st.mouse;
 
@@ -1440,7 +1440,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y+sy,256,256,ang,z) && UI_Sys.mouse_flag==3)
+		if(CheckCollisionMouseWorld(x+sx,y+sy,256,256,ang,z) && UI_Sys.mouse_flag==3)
 		{
 			size2=st.mouse;
 
@@ -1459,7 +1459,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y+sy,256,256,ang,z) && UI_Sys.mouse_flag==4)
+		if(CheckCollisionMouseWorld(x-sx,y+sy,256,256,ang,z) && UI_Sys.mouse_flag==4)
 		{
 			size2=st.mouse;
 
@@ -1478,7 +1478,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y-sy,*sizex,256,ang,z) && UI_Sys.mouse_flag==5)
+		if(CheckCollisionMouseWorld(x,y-sy,*sizex,256,ang,z) && UI_Sys.mouse_flag==5)
 		{
 			size2=st.mouse;
 
@@ -1493,7 +1493,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x,y+sy,*sizex,256,ang,z) && UI_Sys.mouse_flag==6)
+		if(CheckCollisionMouseWorld(x,y+sy,*sizex,256,ang,z) && UI_Sys.mouse_flag==6)
 		{
 			size2=st.mouse;
 
@@ -1508,7 +1508,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x-sx,y,256,*sizey,ang,z) && UI_Sys.mouse_flag==7)
+		if(CheckCollisionMouseWorld(x-sx,y,256,*sizey,ang,z) && UI_Sys.mouse_flag==7)
 		{
 			size2=st.mouse;
 
@@ -1523,7 +1523,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 			size=st.mouse;
 		}
 		else
-		if(CheckColisionMouseWorld(x+sx,y,256,*sizey,ang,z) && UI_Sys.mouse_flag==8)
+		if(CheckCollisionMouseWorld(x+sx,y,256,*sizey,ang,z) && UI_Sys.mouse_flag==8)
 		{
 			size2=st.mouse;
 
@@ -1556,7 +1556,7 @@ void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b)
 
 	UIData(14336,1536,4096,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[10],255,0);
 
-	if(CheckColisionMouse(14336,1536,4096,2048,0) && st.mouse1)
+	if(CheckCollisionMouse(14336,1536,4096,2048,0) && st.mouse1)
 	{
 		p=st.mouse;
 
@@ -1596,7 +1596,7 @@ void UITextBox(int32 x, int32 y, int32 sizex, char *text, int8 font, int16 font_
 
 	if(UI_Sys.current_option!=option_number)
 	{
-		if(CheckColisionMouse(x,y,sizex,gsize,0))
+		if(CheckCollisionMouse(x,y,sizex,gsize,0))
 		{
 			StringUIvData(text,x-(sizex/2),y,0,0,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
@@ -1761,7 +1761,7 @@ int8 UISelectFile(char *filename)
 			if(i>UI_Sys.num_files-1)
 				break;
 
-			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -1863,7 +1863,7 @@ int8 UISelectFile(char *filename)
 		for(i=0;i<UI_Sys.num_files;i++)
 		{
 
-			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -1991,7 +1991,7 @@ int8 UISavePath(char *filename)
 			if(i>UI_Sys.num_files-1)
 				break;
 
-			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2130,7 +2130,7 @@ int8 UISavePath(char *filename)
 		for(i=0;i<UI_Sys.num_files;i++)
 		{
 
-			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2306,7 +2306,7 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 			if(i>sizel-1)
 				break;
 
-			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2367,7 +2367,7 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 		for(i=0;i<sizel;i++)
 		{
 
-			if(CheckColisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{

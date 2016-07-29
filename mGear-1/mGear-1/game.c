@@ -5,6 +5,7 @@
 
 PLAYERC playerc;
 
+
 uint16 WriteCFG()
 {
 	FILE *file;
@@ -723,7 +724,9 @@ void GameEvent()
 int main(int argc, char *argv[])
 {
 	int loops;
-	int prev_tic, curr_tic, delta;
+	int prev_tic, curr_tic, delta, mx, my;
+
+	Pos mp, ms, mp2, ms2;
 
 	st.FPSYes=1;
 
@@ -779,8 +782,10 @@ int main(int argc, char *argv[])
 
 			InputProcess();
 
-			if(st.gt==MAIN_MENU)
+			if (st.gt == MAIN_MENU)
+			{
 				Menu();
+			}
 			else
 			if(st.gt==INGAME)
 			{

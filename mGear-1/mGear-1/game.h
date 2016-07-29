@@ -17,6 +17,8 @@ struct _PLAYER_BSE
 	int16 key_state[8];
 	int16 key_pressed[8];
 	int16 key_time[8];
+	int16 key_time2[8];
+	int16 key_p[8];
 	int16 combo_t;
 
 	int8 special[5];
@@ -93,7 +95,7 @@ typedef struct _PLAYER_BSE PLAYERC;
 #define UPK 4
 #define DWK 5
 #define LFK 6
-#define RGk 7
+#define RGK 7
 
 uint16 WriteCFG();
 uint16 LoadCFG();
