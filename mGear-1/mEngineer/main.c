@@ -4635,10 +4635,11 @@ static void ViewPortCommands()
 						{
 							if(st.mouse1)
 							{
-								if(meng.got_it==-1)
-								{
-									meng.got_it=i;
-								}
+								if (meng.got_it == -1)
+									meng.got_it = i;
+								else
+								if (meng.got_it != -1 && meng.got_it != i)
+									continue;
 
 								p=st.mouse;
 
@@ -4646,6 +4647,8 @@ static void ViewPortCommands()
 
 								if(CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,484,484,0,0))
 								{
+									got_it = 1;
+
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[0]=p;
 									else
@@ -4671,6 +4674,8 @@ static void ViewPortCommands()
 								else
 								if(CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,484,484,0,0))
 								{
+									got_it = 1;
+
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[1]=p;
 									else

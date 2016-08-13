@@ -333,17 +333,70 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
-int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int8 z)
+int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
 {
-	int32 vertex[8];
-	/*
-	if(sizex>16384 || sizey>8192 || z>47)
-		return 1;
-	else
-	{
-		if(z>
-	} */
+	int32 radius, dist, x2, y2;
 
+	if (z>39 && z<48)
+	{
+
+		x -= (float)st.Camera.position.x*st.Current_Map.bck2_v;
+		y -= (float)st.Camera.position.y*st.Current_Map.bck2_v;
+
+	}
+	else
+	if (z>31 && z<40)
+	{
+
+		x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+		y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+
+		sizex *= st.Camera.dimension.x;
+		sizey *= st.Camera.dimension.y;
+
+		x *= st.Camera.dimension.x;
+		y *= st.Camera.dimension.y;
+
+	}
+	else
+	if (z>23 && z < 32)
+	{
+		x -= st.Camera.position.x;
+		y -= st.Camera.position.y;
+
+		sizex *= st.Camera.dimension.x;
+		sizey *= st.Camera.dimension.y;
+
+		x *= st.Camera.dimension.x;
+		y *= st.Camera.dimension.y;
+	}
+	else
+	if (z>15 && z<24)
+	{
+		x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+		y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+		sizex *= st.Camera.dimension.x;
+		sizey *= st.Camera.dimension.y;
+
+		x *= st.Camera.dimension.x;
+		y *= st.Camera.dimension.y;
+	}
+
+	if (sizex>sizey)
+		radius = sizex;
+	else
+		radius = sizey;
+
+	x2 = (GAME_SCREEN_WIDTH / 2) - x;
+	y2 = (GAME_SCREEN_HEIGHT / 2) - y;
+
+	dist = mSqrt((x2*x2) + (y2*y2));
+
+	if (dist < radius || dist < GAME_SCREEN_WIDTH)
+		return 0;
+	else
+		return 1;
 }
 
 void Quit()
@@ -3102,109 +3155,88 @@ int8 LoadLightmapFromFile(const char *file)
 	return 1;
 }
 
-int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang)
+int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, uint16 sectorid)
 {
-	register uint16 i;
-	int32 ydist;
-	int16 sector = -1, ang2;
-	float f;
+	uint16 i;
+	int32 ydist, my, mx, my2;
+	float m;
 
-	for(i=0;i<st.Current_Map.num_sector;i++)
+	i = sectorid;
+
+	if ((x - (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x - (xsize / 2) < st.Current_Map.sector[i].vertex[1].x) ||
+		(x + (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x + (xsize / 2) < st.Current_Map.sector[i].vertex[1].x))
 	{
-		f = atan2(st.Current_Map.sector[i].vertex[1].y - st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
-
-		if (f == pi)
-			f = 0;
-
-		f += pi;
-		f = (180 / pi)*f;
-		ang2 = f * 10;
-
-		if (ang2<451)
+		if (!st.Current_Map.sector[i].sloped)
 		{
-			if ((x - (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x - (xsize / 2) < st.Current_Map.sector[i].vertex[1].x) || (x + (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x + (xsize / 2) < st.Current_Map.sector[i].vertex[1].x))
+			if ((y < st.Current_Map.sector[i].base_y && ( y - (ysize / 2)) < st.Current_Map.sector[i].base_y) && (y + (ysize / 2)) > st.Current_Map.sector[i].base_y)
 			{
-				if (!st.Current_Map.sector[i].sloped)
+				*sety = st.Current_Map.sector[i].base_y;
+				return 1;
+			}
+			else
+				return NULL;
+		}
+		else
+		{
+			if (abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) > 512)
+			{
+
+				m = (float)(st.Current_Map.sector[i].vertex[1].y - st.Current_Map.sector[i].vertex[0].y) /
+					(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
+
+				if (st.Current_Map.sector[i].vertex[1].y < st.Current_Map.sector[i].vertex[0].y)
+					my = st.Current_Map.sector[i].vertex[1].y;
+				else
+					my = st.Current_Map.sector[i].vertex[0].y;
+
+				my2 = (float)m*x + my;
+
+				if ((y < my2 && (y - (ysize / 2)) < my2) && (y + (ysize / 2)) > my2)
 				{
-					if ((y - (ysize / 2)) < st.Current_Map.sector[i].base_y)
-					{
-						if (sector == -1)
-						{
-							ydist = abs((y - (ysize / 2)) - st.Current_Map.sector[i].base_y);
-							sector = i;
-						}
-						else
-						{
-							if (((y - (ysize / 2))) - st.Current_Map.sector[i].base_y < ydist)
-							{
-								ydist = abs(((y + (ysize / 2))) - st.Current_Map.sector[i].base_y);
-								sector = i;
-							}
-						}
-					}
+					*sety = my2;
+					return 1;
 				}
+				else
+					return 0;
 			}
 		}
 	}
-
-	if(sector!=-1)
-		return sector;
-	else
-		return -1;
 }
 
 int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang)
 {
 	register uint16 i;
-	int32 ydist;
-	int16 sector = -1, ang2;
-	float f;
+	int32 my, my2;
 
 	for (i = 0; i<st.Current_Map.num_sector; i++)
 	{
-		f = atan2(st.Current_Map.sector[i].vertex[1].y - st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
-
-		if (f == pi)
-			f = 0;
-
-		f += pi;
-		f = (180 / pi)*f;
-		ang2 = f * 10;
-
-		if (ang2>450)
+		if (st.Current_Map.sector[i].sloped)
 		{
-			if ((x - (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x - (xsize / 2) < st.Current_Map.sector[i].vertex[1].x) || (x + (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x + (xsize / 2) < st.Current_Map.sector[i].vertex[1].x))
-			{
-				if (!st.Current_Map.sector[i].sloped)
-					sector = i;
 
-/*					if ((y - (ysize / 2)) < st.Current_Map.sector[i].base_y)
+			if (abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) < 512)
+			{
+				if (((x + (xsize / 2)) > st.Current_Map.sector[i].vertex[1].x && (x + (xsize / 2)) > st.Current_Map.sector[i].vertex[0].x) &&
+					((x - (xsize / 2)) < st.Current_Map.sector[i].vertex[1].x && (x - (xsize / 2)) < st.Current_Map.sector[i].vertex[0].x))
+				{
+					if (st.Current_Map.sector[i].vertex[1].y < st.Current_Map.sector[i].vertex[0].y)
 					{
-						if (sector == -1)
-						{
-							ydist = abs((y - (ysize / 2)) - st.Current_Map.sector[i].base_y);
-							sector = i;
-						}
-						else
-						{
-							if (((y - (ysize / 2))) - st.Current_Map.sector[i].base_y < ydist)
-							{
-								ydist = abs(((y + (ysize / 2))) - st.Current_Map.sector[i].base_y);
-								sector = i;
-							}
-						}
+						my = st.Current_Map.sector[i].vertex[1].y;
+						my2 = st.Current_Map.sector[i].vertex[0].y;
 					}
-				
+					else
+					{
+						my = st.Current_Map.sector[i].vertex[0].y;
+						my2 = st.Current_Map.sector[i].vertex[1].y;
+					}
+
+					if ((y - (ysize / 2)) < my2 && (y - (ysize / 2)) > my)
+						return i;
 				}
-*/
 			}
 		}
 	}
 
-	if (sector != -1)
-		return sector;
-	else
-		return -1;
+	return 0;
 }
 
 
@@ -3659,26 +3691,9 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z, int16 flags, int32 sizeax, int32 sizeay, int32 sizemx, int32 sizemy)
 {
-	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
-	uint8 valx=0, valy=0;
-	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
-	
-	PosF dim=st.Camera.dimension;
-	
-	if(dim.x<0) dim.x*=-1;
-	if(dim.y<0) dim.y*=-1;
-
-	if(dim.x<10) dim.x=16384/dim.x;
-	else dim.x*=16384;
-	if(dim.y<10) dim.y=8192/dim.y;
-	else dim.y*=8192;
-
-	t3=(int32) dim.x;
-	t4=(int32) dim.y;
-	
-	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	register uint32 i=0, j=0, k=0;
 
 	if(flags & 4)
 	{
@@ -3712,6 +3727,9 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 	x+=data.x_offset;
 	y+=data.y_offset;
+
+	if (CheckBounds(x, y, sizex, sizey, z))
+		return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4023,11 +4041,10 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 	uint8 val=0;
 
-	//int16 ang=0;
-
 	uint32 i=0, j=0, k=0;
-	
-	PosF dim=st.Camera.dimension;
+
+	if (CheckBounds(x, y, sizex, sizey, 17))
+		return 1;
 	
 	x-=st.Camera.position.x;
 	y-=st.Camera.position.y;
@@ -4042,14 +4059,6 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 	x*=st.Camera.dimension.x;
 	y*=st.Camera.dimension.y;
-
-	if(dim.x<0) dim.x*=-1;
-	if(dim.y<0) dim.y*=-1;
-
-	if(dim.x<10) dim.x=16384/dim.x;
-	else dim.x*=16384;
-	if(dim.y<10) dim.y=8192/dim.y;
-	else dim.y*=8192;
 
 	lmp[i].data.data=data;
 
@@ -4395,27 +4404,10 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
 
-	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel, xp1, yp1, xs2, ys2;
 
-	PosF dim=st.Camera.dimension;
-	
-	//if((!(st.viewmode & 1) && z<24) || (!(st.viewmode & 2) && z>23 && z<31) || (!(st.viewmode & 4) && z>31 && z<40) || (!(st.viewmode & 8) && z>39 && z<48) || (!(st.viewmode & 16) && z>47))
-		//return 3;
-	
-	if(dim.x<0) dim.x*=-1;
-	if(dim.y<0) dim.y*=-1;
-
-	if(dim.x<10) dim.x=16384/dim.x;
-	else dim.x*=16384;
-	if(dim.y<10) dim.y=8192/dim.y;
-	else dim.y*=8192;
-
-	t3=(int32) dim.x;
-	t4=(int32) dim.y;
-
-	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
+	if (CheckBounds(x, y, sizex, sizey, z))
+		return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4708,14 +4700,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
-	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
-
-	t3=16384;
-	t4=8192;
-
-	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -4868,15 +4853,8 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
-
-	uint8 valx=0, valy=0;
+	
 	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
-
-	t3=16384;
-	t4=8192;
-
-	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -5030,14 +5008,7 @@ int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
-	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0;
-	int32 t1, t2, t3, t4, timej, timel;
-
-	t3=16384;
-	t4=8192;
-
-	//Checkbounds(x,y,sizex,sizey,ang,t3,t4)) return 1;
 			
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
@@ -5711,8 +5682,6 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	int32 t1, t2, t3, t4, timej, timel, id=-1;
 	float tx1, ty1, tx2, ty2;
 
-	PosF dim=st.Camera.dimension;
-
 	SDL_Color co;
 	uint16 formatt;
 
@@ -5993,11 +5962,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 
 int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
-	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
 	int32 t1, t2, t3, t4, timej, timel, id=-1;
-	
-	PosF dim=st.Camera.dimension;
 
 	SDL_Color co;
 	uint16 formatt;
@@ -6447,7 +6413,6 @@ if(st.num_entities==MAX_GRAPHICS-1)
 
 int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
-	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
 	int32 t1, t2, t3, t4, timej, timel, id=-1;
 
@@ -6652,7 +6617,6 @@ if(st.num_entities==MAX_GRAPHICS-1)
 
 int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
-	uint8 valx=0, valy=0;
 	uint32 i=0, j=0, k=0, checked=0;
 	int32 t1, t2, t3, t4, timej, timel, id=-1;
 
@@ -7324,14 +7288,22 @@ int32 LoadSpriteCFG(char *filename, int id)
 				else
 				if(value==-2)
 				{
-					fclose(file);
-					return 0;
+					//fclose(file);
+					//return 0;
+
+					st.Game_Sprites[id].MGG_ID = -1;
+
+					st.num_mgg++;
+					st.Game_Sprites[id].MGG_ID = id2;
 				}
 			}
 			else
 			{
 				LogApp("Error loading sprite MGG: %s",str2);
-				return 0;
+				st.Game_Sprites[id].MGG_ID = -1;
+
+				st.num_mgg++;
+				st.Game_Sprites[id].MGG_ID = id2;
 			}
 
 			if(strcmp(str3,"ALL")==NULL)

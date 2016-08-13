@@ -10,10 +10,11 @@
 #define SOUNDFX 6
 #define ACTIVATOR 7
 #define SPAWNER 8
+#define MUSICTRACK 9
 
-#define FULGORE 9
-#define GLACIUS 10
-#define SEKTOR 11
+#define FULGORE 10
+#define GLACIUS 11
+#define SEKTOR 12
 
 #define PLAYER1 64
 #define PLAYER2 65

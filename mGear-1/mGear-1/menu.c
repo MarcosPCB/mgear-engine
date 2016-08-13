@@ -8,7 +8,7 @@ void Menu()
 
 	if(UIStringButton(8192,4096-1024,"New Game",FIGHTFONT,4096,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
-		LoadMap("STAGE02.MGM");
+		LoadMap("STAGE5.mgm");
 
 		for(i=0,j=0;i<st.Current_Map.num_mgg;i++)
 		{

@@ -94,7 +94,10 @@ typedef FMOD_CHANNEL Channel;
 #define BCK1_DEFAULT_VEL 0.5
 #define FR_DEFAULT_VEL 1.3
 
-//double inline  sqrt14(double n)
+#define GAME_SCREEN_WIDTH 16384
+#define GAME_SCREEN_HEIGHT 8192
+
+double _inline sqrt14(double n);
 
 #define LogApp SDL_Log
 #define LogErr SDL_LogError
@@ -400,13 +403,16 @@ struct _BODY
 	uint8 flamable;
 	uint8 explosive;
 	Pos position;
-	int16 total_vel;
+	//int16 total_vel;
 	Pos velxy;
 	int16 acceleration;
 	int16 acc_ang;
 	int16 energy;
 	int16 temperature;
 	int16 ang;
+	int16 sector_id;
+	//int16 collision_id[8];
+	//int16 collision_side[8];
 };
 
 typedef struct _BODY Body;
@@ -1106,7 +1112,8 @@ void CalCos32u(int16 ang, uint32 *val);
 void CalSin32u(int16 ang, uint32 *val);
 void CalTan32u(int16 ang, uint32 *val);
 
-int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int32 dimx, int32 dimy);
+//Checks if the object/sprite/graphic is inside the screen bounds
+int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z);
 
 //Draws the ambient light
 //THIS MUST GO BEFORE ANY DRAWING COMMAND
@@ -1145,7 +1152,7 @@ void StopMusic();
 uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 ang2);
 uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang);
 uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang, int8 z);
-int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
+int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, uint16 sectorid);
 int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
 uint8 CheckCollisionPossibility(uint16 id, uint16 id2, int32 *dist); //Checks if the two sprites are in the possibility of a collision and returns the distance they are of each other
 

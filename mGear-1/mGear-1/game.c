@@ -2,6 +2,7 @@
 #include "input.h"
 #include "UI.h"
 #include "actors.h"
+#include "physics.h"
 
 PLAYERC playerc;
 
@@ -377,6 +378,7 @@ void Player_BaseCode(int16 id)
 	int16 tmp, temp;
 	static int8 loop=0;
 	static float speed=2;
+	int32 sety;
 
 	if(playerc.key_state[RGK])
 	{
@@ -435,7 +437,7 @@ void Player_BaseCode(int16 id)
 
 		playerc.key_state[4]=1;
 		playerc.state+=4;
-		st.Current_Map.sprites[id].body.velxy.y=256;
+		st.Current_Map.sprites[id].body.velxy.y=-256;
 	}
 
 	if(playerc.key_state[EK]==1 && !CheckAnim(id,KICKM))
@@ -506,32 +508,33 @@ void Player_BaseCode(int16 id)
 				SetPlayerAnim(id,JUMP,1,1);
 			}
 
-			st.Current_Map.sprites[id].position.y-=st.Current_Map.sprites[id].body.velxy.y;
-			st.Current_Map.sprites[id].body.velxy.y-=6;
+			//st.Current_Map.sprites[id].position.y-=st.Current_Map.sprites[id].body.velxy.y;
+			//st.Current_Map.sprites[id].body.velxy.y-=6;
 
 			if(st.Current_Map.sprites[id].body.velxy.y<0)
 			{
 				playerc.state+=4;
-				st.Current_Map.sprites[id].body.velxy.y=8;
+				//st.Current_Map.sprites[id].body.velxy.y=0;
 			}
 		
 	}
 	else
 	{
+		/*
 		if(playerc.state & 8)
 		{
-			st.Current_Map.sprites[id].position.y+=st.Current_Map.sprites[id].body.velxy.y;
-			st.Current_Map.sprites[id].body.velxy.y+=8;
+			//st.Current_Map.sprites[id].position.y+=st.Current_Map.sprites[id].body.velxy.y;
+			//st.Current_Map.sprites[id].body.velxy.y+=8;
 		}
-		else
-			st.Current_Map.sprites[id].position.y+=64;
-
+		//else
+			//st.Current_Map.sprites[id].position.y+=64;
+		*/
 		GetSpriteBodySize(id,st.Current_Map.sprites[id].GameID);
-
-		if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,st.Current_Map.sprites[id].body.size.y,
-			st.Current_Map.sprites[id].angle))!=-1)
+		/*
+		if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,
+			st.Current_Map.sprites[id].body.size.y,st.Current_Map.sprites[id].angle,&sety))!=-1)
 		{
-			if(abs((st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2))-st.Current_Map.sector[temp].base_y)<=256)
+			if(abs((st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2))-sety)<=256)
 			{
 				if(playerc.state & 8)
 				{
@@ -541,9 +544,10 @@ void Player_BaseCode(int16 id)
 
 				st.Current_Map.sprites[id].body.velxy.y=0;
 
-				st.Current_Map.sprites[id].position.y=st.Current_Map.sector[temp].base_y-(st.Current_Map.sprites[id].body.size.y/2);
+				st.Current_Map.sprites[id].position.y=sety-(st.Current_Map.sprites[id].body.size.y/2);
 			}
 		}
+		*/
 	}
 
 	tmp=MAnim(playerc.current_anim,playerc.speed,id,playerc.anim_loop);
@@ -643,6 +647,8 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 
 			playerc.hit[14].anim=JKICKM;
 			playerc.hit[14].speed=5;
+
+			AddDynamicSprite(i);
 			
 
 			break;
@@ -692,12 +698,12 @@ void PreGameEvent()
 			starter=1;
 		}
 		else
-		if(st.Current_Map.sprites[i].GameID==SOUNDFX)
+		if(st.Current_Map.sprites[i].GameID==MUSICTRACK)
 		{
 			for(j=0;j<st.Current_Map.sprites[i].num_tags;j++)
 			{
-				if(strcmp(st.Game_Sprites[SOUNDFX].tag_names[j],"PATH_S")==NULL && strlen(st.Current_Map.sprites[i].tags_str[j])>5)
-					PlayMusic(0,1);
+				if(strcmp(st.Game_Sprites[MUSICTRACK].tag_names[j],"MUSFX")==NULL)
+					PlayMusic(st.Current_Map.sprites[i].tags[j],1);
 			}
 		}
 	}
@@ -770,6 +776,8 @@ int main(int argc, char *argv[])
 
 	st.viewmode=31+32;
 
+	InitPhysics(1, DEFAULT_GRAVITY, 900, 0);
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
@@ -783,9 +791,7 @@ int main(int argc, char *argv[])
 			InputProcess();
 
 			if (st.gt == MAIN_MENU)
-			{
 				Menu();
-			}
 			else
 			if(st.gt==INGAME)
 			{
@@ -797,6 +803,8 @@ int main(int argc, char *argv[])
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;
 			SetTimerM(1);
+
+			MainPhysics();
 
 			MainSound();
 
