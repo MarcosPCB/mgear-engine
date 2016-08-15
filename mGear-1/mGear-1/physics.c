@@ -64,11 +64,14 @@ void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 
 
 	memset(&physics.sectorarea, 0, MAX_SECTORS * sizeof(uint16));
 	memset(&physics.sectorarea_ids, -1, MAX_SECTORS * MAX_DYNAMIC_SPRITES * sizeof(int16));
+
+	memset(&physics.spritesectornum, 0, MAX_ACTIVE_DYNAMIC_SPRITES*sizeof(int16));
+	memset(&physics.spritesectors, 0, MAX_ACTIVE_DYNAMIC_SPRITES*MAX_SECTORS*sizeof(int8));
 }
 
 int16 UpdateSector(int16 id)
 {
-	int32 ydist, ydist2;
+	int32 ydist, ydist2, first = 0, x1, x2, base_y;
 	int16 sector_id = -1, i;
 	Pos pos, size;
 
@@ -77,12 +80,33 @@ int16 UpdateSector(int16 id)
 
 	for (i = 0; i < st.Current_Map.num_sector; i++)
 	{
-		if (pos.x < st.Current_Map.sector[i].vertex[1].x && pos.x > st.Current_Map.sector[i].vertex[0].x &&
-			pos.y < st.Current_Map.sector[i].base_y)
+		if (st.Current_Map.sector[i].sloped)
+		{
+			if (st.Current_Map.sector[i].vertex[0].y > st.Current_Map.sector[i].vertex[1].y)
+				base_y = st.Current_Map.sector[i].vertex[0].y;
+			else
+				base_y = st.Current_Map.sector[i].vertex[1].y;
+		}
+		else
+			base_y = st.Current_Map.sector[i].base_y;
+
+		if (st.Current_Map.sector[i].vertex[0].x > st.Current_Map.sector[i].vertex[1].x)
+		{
+			x2 = st.Current_Map.sector[i].vertex[0].x;
+			x1 = st.Current_Map.sector[i].vertex[1].x;
+		}
+		else
+		{
+			x2 = st.Current_Map.sector[i].vertex[1].x;
+			x1 = st.Current_Map.sector[i].vertex[0].x;
+		}
+
+		if (pos.x <= x2 && pos.x >= x1 &&
+			pos.y <= base_y)
 		{
 			if (st.Current_Map.sector[i].sloped)
 			{
-				if (st.Current_Map.sector[i].vertex[0].y < st.Current_Map.sector[i].vertex[1].y)
+				if (st.Current_Map.sector[i].vertex[0].y > st.Current_Map.sector[i].vertex[1].y)
 					ydist2 = st.Current_Map.sector[i].vertex[0].y;
 				else
 					ydist2 = st.Current_Map.sector[i].vertex[1].y;
@@ -90,10 +114,11 @@ int16 UpdateSector(int16 id)
 			else
 				ydist2 = st.Current_Map.sector[i].base_y;
 
-			if (i == 0)
+			if (first == 0)
 			{
 				ydist = ydist2;
 				sector_id = i;
+				first = 1;
 			}
 			else
 			{
@@ -109,18 +134,64 @@ int16 UpdateSector(int16 id)
 	return sector_id;
 }
 
+void UpdateSectorRange(int16 id, int16 phy_id)
+{
+	register int16 i;
+
+	int32 x1, x2, base_y;
+
+	Pos pos, size;
+
+	pos = st.Current_Map.sprites[id].position;
+	size = st.Current_Map.sprites[id].body.size;
+
+	for (i = 0; i < st.Current_Map.num_sector; i++)
+	{
+		if (st.Current_Map.sector[i].sloped)
+		{
+			if (st.Current_Map.sector[i].vertex[0].y > st.Current_Map.sector[i].vertex[1].y)
+				base_y = st.Current_Map.sector[i].vertex[0].y;
+			else
+				base_y = st.Current_Map.sector[i].vertex[1].y;
+		}
+		else
+			base_y = st.Current_Map.sector[i].base_y;
+
+		if (st.Current_Map.sector[i].vertex[0].x > st.Current_Map.sector[i].vertex[1].x)
+		{
+			x2 = st.Current_Map.sector[i].vertex[0].x;
+			x1 = st.Current_Map.sector[i].vertex[1].x;
+		}
+		else
+		{
+			x2 = st.Current_Map.sector[i].vertex[1].x;
+			x1 = st.Current_Map.sector[i].vertex[0].x;
+		}
+
+		if (pos.x <= x2 && pos.x >= x1 &&
+			pos.y - (size.y / 2) < base_y)
+		{
+			physics.sectorarea[i]++;
+			physics.sectorarea_ids[i][physics.sectorarea[i]] = id;
+			physics.spritesectornum[phy_id]++;
+			physics.spritesectors[phy_id][physics.spritesectornum[phy_id]-1] = i;
+		}
+	}
+}
+
 void ActivateDynamicSprite (int16 id)
 {
 	int32 x, y, radius;
-	int8 node, i;
+	int16 node, i;
 	int16 id2 = id;
 
 	physics.active_sprites[physics.num_active_sprites] = id;
 
 	physics.num_active_sprites++;
 
-	id = physics.sprite_list[id];
+	//id = physics.sprite_list[id];
 
+	/*
 	if (st.Current_Map.sprites[id].body.size.x > st.Current_Map.sprites[id].body.size.y)
 		radius = st.Current_Map.sprites[id].body.size.x;
 	else
@@ -172,6 +243,7 @@ void ActivateDynamicSprite (int16 id)
 			}
 		}
 	}
+	*/
 }
 
 void DeactivateDynamicSprite(int16 id)
@@ -199,7 +271,7 @@ void DeactivateDynamicSprite(int16 id)
 
 		physics.num_active_sprites--;
 	}
-
+	/*
 	for (i = 0; i < NODES + 1; i++)
 	{
 		if (i == 5 && found)
@@ -229,6 +301,7 @@ void DeactivateDynamicSprite(int16 id)
 				break;
 		}
 	}
+	*/
 }
 
 int8 AddDynamicSprite(int16 id)
@@ -288,11 +361,26 @@ void RemoveDynamicSprite(int16 id)
 	physics.num_sprites--;
 }
 
+int8 OnTheGround(int16 id, int32 *y)
+{
+	if (st.Current_Map.sprites[id].body.sector_id != -1)
+	{
+		if (CheckCollisionSector(st.Current_Map.sprites[id].position.x, st.Current_Map.sprites[id].position.y, st.Current_Map.sprites[id].body.size.x,
+			st.Current_Map.sprites[id].body.size.y, st.Current_Map.sprites[id].body.ang, &y, st.Current_Map.sprites[id].body.sector_id))
+			return 1;
+		else
+			return NULL;
+	}
+	else
+		return NULL;
+}
+
 int8 MainPhysics()
 {
 	int32 i, j, k, l, m, sety;
 	int16 id, id2, side;
 	Pos pos, pos2, size, size2;
+	int8 collided = 0;
 
 	//Dynamic sprite activation/deactivation and removal
 
@@ -334,10 +422,18 @@ int8 MainPhysics()
 		}
 	}
 
+	for (i = 0; i < physics.num_active_sprites; i++)
+	{
+		j = physics.sprite_list[physics.active_sprites[i]];
+
+		UpdateSectorRange(j, i);
+	}
+
 	//Collision detection
 
 	if (physics.physics_active)
 	{
+		/*
 		for (i = 5; i < NODES + 1; i++)
 		{
 			if (physics.nodes[i].num_sprites > 0)
@@ -631,9 +727,79 @@ int8 MainPhysics()
 				//}
 			}
 		}
+		*/
 
 		for (i = 0; i < physics.num_active_sprites; i++)
 		{
+			collided = 0;
+
+			for (j = 0; j < physics.spritesectornum[i]; j++)
+			{
+				for (l = 0; l < physics.spritesectors[i][j]; l++)
+				{
+					//for (m = 0; m < physics.sectorarea[j]; m++)
+					//{
+					m = physics.spritesectors[i][j];
+					if (physics.sectorarea[m] > 0)
+					{
+						for (k = 0; k < physics.sectorarea[m]; k++)
+						{
+							if (k == i)
+								continue;
+
+							id = physics.sprite_list[physics.active_sprites[i]];
+							id2 = physics.sprite_list[physics.active_sprites[k]];
+
+							if (/*st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 &&*/ (side = CheckCollision(st.Current_Map.sprites[id].position,
+								st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, st.Current_Map.sprites[id2].position,
+								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang)) > 0)
+							{
+								//Check relative position for velocity cancelation
+
+								pos = st.Current_Map.sprites[id].position;
+								pos2 = st.Current_Map.sprites[id2].position;
+
+								if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
+								{
+									if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
+										st.Current_Map.sprites[id].body.velxy.y = 0;
+									else
+										if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
+											st.Current_Map.sprites[id].body.velxy.y = 0;
+
+									if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
+										st.Current_Map.sprites[id].body.velxy.x = 0;
+									else
+										if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
+											st.Current_Map.sprites[id].body.velxy.x = 0;
+								}
+
+								if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
+								{
+									if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
+										st.Current_Map.sprites[id2].body.velxy.y = 0;
+									else
+										if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
+											st.Current_Map.sprites[id2].body.velxy.y = 0;
+
+									if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
+										st.Current_Map.sprites[id2].body.velxy.x = 0;
+									else
+										if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
+											st.Current_Map.sprites[id2].body.velxy.x = 0;
+								}
+
+								collided = 1;
+							}
+						}
+					}
+					//}
+				}
+			}
+
+			if (collided)
+				continue;
+
 			j = physics.sprite_list[i];
 
 			if (st.Current_Map.sprites[j].body.velxy.x != 0 || st.Current_Map.sprites[j].body.velxy.y != 0)
@@ -659,6 +825,14 @@ int8 MainPhysics()
 						}
 					}
 				}
+				else
+				{
+					if (physics.gravity)
+					{
+						st.Current_Map.sprites[j].body.velxy.x += (float)mCos(physics.gravity_direction) * physics.gravity_vel;
+						st.Current_Map.sprites[j].body.velxy.y += (float)mSin(physics.gravity_direction) * physics.gravity_vel;
+					}
+				}
 			//}
 
 			if (CheckCollisionSectorWall(st.Current_Map.sprites[j].position.x, st.Current_Map.sprites[j].position.y, st.Current_Map.sprites[j].body.size.x,
@@ -671,5 +845,12 @@ int8 MainPhysics()
 			st.Current_Map.sprites[j].position.x += st.Current_Map.sprites[j].body.velxy.x;
 			st.Current_Map.sprites[j].position.y += st.Current_Map.sprites[j].body.velxy.y;
 		}
+
 	}
+
+	memset(&physics.sectorarea, 0, MAX_SECTORS * sizeof(uint16));
+	memset(&physics.sectorarea_ids, -1, MAX_SECTORS * MAX_DYNAMIC_SPRITES * sizeof(int16));
+
+	memset(&physics.spritesectornum, 0, MAX_ACTIVE_DYNAMIC_SPRITES*sizeof(int16));
+	memset(&physics.spritesectors, 0, MAX_ACTIVE_DYNAMIC_SPRITES*MAX_SECTORS*sizeof(int8));
 }

@@ -382,7 +382,7 @@ void Player_BaseCode(int16 id)
 
 	if(playerc.key_state[RGK])
 	{
-		st.Current_Map.sprites[id].position.x+=32;
+		st.Current_Map.sprites[id].body.velxy.x=64;
 		st.Camera.position.x+=32;
 		SetPlayerAnim(id,WALK,4,1);
 		//st.keys[RIGHT_KEY].state=0;
@@ -390,7 +390,7 @@ void Player_BaseCode(int16 id)
 	
 	if(playerc.key_state[LFK])
 	{
-		st.Current_Map.sprites[id].position.x-=32;
+		st.Current_Map.sprites[id].body.velxy.x = -64;
 		st.Camera.position.x-=32;
 		SetPlayerAnim(id,WALKB,4,1);
 		//st.keys[LEFT_KEY].state=0;
@@ -502,63 +502,32 @@ void Player_BaseCode(int16 id)
 	
 	if(playerc.state & 4)
 	{
-		
-			if(!CheckAnim(id,JUMPING))
-			{
-				SetPlayerAnim(id,JUMP,1,1);
-			}
+		if(!CheckAnim(id,JUMPING))
+			SetPlayerAnim(id,JUMP,1,1);
 
-			//st.Current_Map.sprites[id].position.y-=st.Current_Map.sprites[id].body.velxy.y;
-			//st.Current_Map.sprites[id].body.velxy.y-=6;
-
-			if(st.Current_Map.sprites[id].body.velxy.y<0)
-			{
-				playerc.state+=4;
-				//st.Current_Map.sprites[id].body.velxy.y=0;
-			}
+		if(st.Current_Map.sprites[id].body.velxy.y>0)
+		{
+			playerc.state+=4;
+			SetPlayerAnim(id, FALLING, 5, 0);
+		}
 		
 	}
-	else
-	{
-		/*
-		if(playerc.state & 8)
-		{
-			//st.Current_Map.sprites[id].position.y+=st.Current_Map.sprites[id].body.velxy.y;
-			//st.Current_Map.sprites[id].body.velxy.y+=8;
-		}
-		//else
-			//st.Current_Map.sprites[id].position.y+=64;
-		*/
-		GetSpriteBodySize(id,st.Current_Map.sprites[id].GameID);
-		/*
-		if((temp=CheckCollisionSector(st.Current_Map.sprites[id].position.x,st.Current_Map.sprites[id].position.y,st.Current_Map.sprites[id].body.size.x,
-			st.Current_Map.sprites[id].body.size.y,st.Current_Map.sprites[id].angle,&sety))!=-1)
-		{
-			if(abs((st.Current_Map.sprites[id].position.y+(st.Current_Map.sprites[id].body.size.y/2))-sety)<=256)
-			{
-				if(playerc.state & 8)
-				{
-					SetPlayerAnim(id,FALLING,5,0);
-					playerc.state-=8;
-				}
-
-				st.Current_Map.sprites[id].body.velxy.y=0;
-
-				st.Current_Map.sprites[id].position.y=sety-(st.Current_Map.sprites[id].body.size.y/2);
-			}
-		}
-		*/
-	}
+	
+	if (playerc.state & 8)
+		if (OnTheGround(id, NULL))
+			playerc.state -= 8;
 
 	tmp=MAnim(playerc.current_anim,playerc.speed,id,playerc.anim_loop);
 
 	if(tmp==1 && ~playerc.state & 4 && ~playerc.state & 8)
 	{
+		st.Current_Map.sprites[id].body.velxy.x = 0;
 		SetPlayerAnim(id,STAND,2,1);
 	}
 
 	if((playerc.current_anim==WALK || playerc.current_anim==WALKB) && !st.keys[LEFT_KEY].state && !st.keys[RIGHT_KEY].state && ~playerc.state & 4 && ~playerc.state & 8)
 	{
+		st.Current_Map.sprites[id].body.velxy.x = 0;
 		SetPlayerAnim(id,STAND,2,1);
 	}
 
@@ -698,6 +667,11 @@ void PreGameEvent()
 			starter=1;
 		}
 		else
+		if (st.Current_Map.sprites[i].GameID == SEKTOR)
+		{
+			AddDynamicSprite(i);
+		}
+		else
 		if(st.Current_Map.sprites[i].GameID==MUSICTRACK)
 		{
 			for(j=0;j<st.Current_Map.sprites[i].num_tags;j++)
@@ -774,7 +748,9 @@ int main(int argc, char *argv[])
 	curr_tic=GetTicks();
 	delta=1;
 
-	st.viewmode=31+32;
+	st.viewmode=31;
+
+	st.Developer_Mode = 1;
 
 	InitPhysics(1, DEFAULT_GRAVITY, 900, 0);
 

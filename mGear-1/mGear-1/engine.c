@@ -3158,17 +3158,28 @@ int8 LoadLightmapFromFile(const char *file)
 int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, uint16 sectorid)
 {
 	uint16 i;
-	int32 ydist, my, mx, my2;
+	int32 ydist, my, mx, my2, x1, x2;
 	float m;
 
 	i = sectorid;
 
-	if ((x - (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x - (xsize / 2) < st.Current_Map.sector[i].vertex[1].x) ||
-		(x + (xsize / 2) > st.Current_Map.sector[i].vertex[0].x && x + (xsize / 2) < st.Current_Map.sector[i].vertex[1].x))
+	if (st.Current_Map.sector[i].vertex[0].x > st.Current_Map.sector[i].vertex[1].x)
+	{
+		x2 = st.Current_Map.sector[i].vertex[0].x;
+		x1 = st.Current_Map.sector[i].vertex[1].x;
+	}
+	else
+	{
+		x2 = st.Current_Map.sector[i].vertex[1].x;
+		x1 = st.Current_Map.sector[i].vertex[0].x;
+	}
+
+	if ((x - (xsize / 2) >= x1 && x - (xsize / 2) <= x2) ||
+		(x + (xsize / 2) >= x1 && x + (xsize / 2) <= x2))
 	{
 		if (!st.Current_Map.sector[i].sloped)
 		{
-			if ((y < st.Current_Map.sector[i].base_y && ( y - (ysize / 2)) < st.Current_Map.sector[i].base_y) && (y + (ysize / 2)) > st.Current_Map.sector[i].base_y)
+			if ((y <= st.Current_Map.sector[i].base_y && ( y - (ysize / 2)) <= st.Current_Map.sector[i].base_y) && (y + (ysize / 2)) >= st.Current_Map.sector[i].base_y)
 			{
 				*sety = st.Current_Map.sector[i].base_y;
 				return 1;
@@ -3178,27 +3189,22 @@ int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang
 		}
 		else
 		{
-			if (abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) > 512)
-			{
+			//if (abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) > 24)
+			//{
 
 				m = (float)(st.Current_Map.sector[i].vertex[1].y - st.Current_Map.sector[i].vertex[0].y) /
 					(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
 
-				if (st.Current_Map.sector[i].vertex[1].y < st.Current_Map.sector[i].vertex[0].y)
-					my = st.Current_Map.sector[i].vertex[1].y;
-				else
-					my = st.Current_Map.sector[i].vertex[0].y;
+				my2 = (float)m*(x - st.Current_Map.sector[i].vertex[0].x) + st.Current_Map.sector[i].vertex[0].y;
 
-				my2 = (float)m*x + my;
-
-				if ((y < my2 && (y - (ysize / 2)) < my2) && (y + (ysize / 2)) > my2)
+				if ((y <= my2 && (y - (ysize / 2)) <= my2) && (y + (ysize / 2)) >= my2)
 				{
 					*sety = my2;
 					return 1;
 				}
 				else
 					return 0;
-			}
+			//}
 		}
 	}
 }

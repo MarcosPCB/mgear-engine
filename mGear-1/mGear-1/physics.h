@@ -34,6 +34,9 @@ struct _Physics
 	uint16 sectorarea[MAX_SECTORS];
 	int16 sectorarea_ids[MAX_SECTORS][MAX_DYNAMIC_SPRITES];
 
+	int16 spritesectornum[MAX_ACTIVE_DYNAMIC_SPRITES];
+	int8 spritesectors[MAX_ACTIVE_DYNAMIC_SPRITES][MAX_SECTORS];
+
 };
 
 typedef struct _Physics Physics;
@@ -44,4 +47,5 @@ void ActivateDynamicSprite(int16 id);
 void DeactivateDynamicSprite(int16 id);
 int8 AddDynamicSprite(int16 id);
 void RemoveDynamicSprite(int16 id);
+int8 OnTheGround(int16 id, int32 *y);
 int8 MainPhysics();
