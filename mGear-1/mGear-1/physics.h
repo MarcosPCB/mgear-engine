@@ -48,4 +48,5 @@ void DeactivateDynamicSprite(int16 id);
 int8 AddDynamicSprite(int16 id);
 void RemoveDynamicSprite(int16 id);
 int8 OnTheGround(int16 id, int32 *y);
+int8 HitSprite(int16 id);
 int8 MainPhysics();

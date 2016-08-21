@@ -375,12 +375,56 @@ int8 OnTheGround(int16 id, int32 *y)
 		return NULL;
 }
 
+int8 HitSprite(int16 id)
+{
+	register int16 i, j, k, l;
+
+	int16 as, id3, id4, side;
+
+	for (i = 0; i < physics.num_active_sprites; i++)
+	{
+		if (physics.sprite_list[physics.active_sprites[i]] == id)
+		{
+			as = i;
+			break;
+		}
+	}
+
+	for (i = 0; i < physics.spritesectornum[as]; i++)
+	{
+		j = physics.spritesectors[as][i];
+		for (k = 0; k < physics.sectorarea[j]; k++)
+		{
+			if (k == as)
+				continue;
+
+			id3 = physics.sprite_list[physics.active_sprites[as]];
+			id4 = physics.sprite_list[physics.active_sprites[k]];
+
+			if (/*st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 &&*/ (side = CheckCollision(st.Current_Map.sprites[id3].position,
+				st.Current_Map.sprites[id3].body.size, st.Current_Map.sprites[id3].angle, st.Current_Map.sprites[id4].position,
+				st.Current_Map.sprites[id4].body.size, st.Current_Map.sprites[id4].angle)) > 0)
+			{
+				return 1;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 int8 MainPhysics()
 {
-	int32 i, j, k, l, m, sety;
+	int32 i, j, k, l, m, sety, pen;
 	int16 id, id2, side;
 	Pos pos, pos2, size, size2;
 	int8 collided = 0;
+
+	memset(&physics.sectorarea, 0, st.Current_Map.num_sector * sizeof(uint16));
+	memset(&physics.sectorarea_ids, -1, st.Current_Map.num_sector * physics.num_sprites * sizeof(int16));
+
+	memset(&physics.spritesectornum, 0, physics.num_active_sprites*sizeof(int16));
+	memset(&physics.spritesectors, 0, physics.num_active_sprites*st.Current_Map.num_sector*sizeof(int8));
 
 	//Dynamic sprite activation/deactivation and removal
 
@@ -421,7 +465,7 @@ int8 MainPhysics()
 			}
 		}
 	}
-
+	
 	for (i = 0; i < physics.num_active_sprites; i++)
 	{
 		j = physics.sprite_list[physics.active_sprites[i]];
@@ -431,312 +475,15 @@ int8 MainPhysics()
 
 	//Collision detection
 
-	if (physics.physics_active)
-	{
-		/*
-		for (i = 5; i < NODES + 1; i++)
-		{
-			if (physics.nodes[i].num_sprites > 0)
-			{
-				//if (physics.nodes[i].num_sprites > 1)
-				//{
-					for (j = 0; j < physics.nodes[i].num_sprites; j++)
-					{
-						for (k = 0; k < physics.nodes[i].num_sprites; k++)
-						{
-							if (k == j)
-								continue;
-
-							id = physics.sprite_list[physics.active_sprites[j]];
-							id2 = physics.sprite_list[physics.active_sprites[k]];
-
-							if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && (side=CheckCollision(st.Current_Map.sprites[id].position, 
-								st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, st.Current_Map.sprites[id2].position, 
-								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang))>0)
-							{
-								//Check relative position for velocity cancelation
-
-								pos = st.Current_Map.sprites[id].position;
-								pos2 = st.Current_Map.sprites[id2].position;
-
-								if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
-								{
-									if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
-										st.Current_Map.sprites[id].body.velxy.y = 0;
-									else
-									if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
-										st.Current_Map.sprites[id].body.velxy.y = 0;
-
-									if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
-										st.Current_Map.sprites[id].body.velxy.x = 0;
-									else
-									if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
-										st.Current_Map.sprites[id].body.velxy.x = 0;
-								}
-
-								if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
-								{
-									if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
-										st.Current_Map.sprites[id2].body.velxy.y = 0;
-									else
-									if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
-										st.Current_Map.sprites[id2].body.velxy.y = 0;
-
-									if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
-										st.Current_Map.sprites[id2].body.velxy.x = 0;
-									else
-									if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
-										st.Current_Map.sprites[id2].body.velxy.x = 0;
-								}
-							}
-						}
-
-						for (m = 0; m < 5; m++)
-						{
-							if (physics.nodes[m].num_sprites > 0)
-							{
-								for (k = 0; k < physics.nodes[m].num_sprites; k++)
-								{
-									if (k == j)
-										continue;
-
-									id = physics.sprite_list[physics.active_sprites[j]];
-									id2 = physics.sprite_list[physics.active_sprites[k]];
-
-									if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && (side = CheckCollision(st.Current_Map.sprites[id].position,
-										st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, st.Current_Map.sprites[id2].position,
-										st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang)) > 0)
-									{
-										//Check relative position for velocity cancelation
-
-										pos = st.Current_Map.sprites[id].position;
-										pos2 = st.Current_Map.sprites[id2].position;
-
-										if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
-										{
-											if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
-												st.Current_Map.sprites[id].body.velxy.y = 0;
-											else
-												if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
-													st.Current_Map.sprites[id].body.velxy.y = 0;
-
-											if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
-												st.Current_Map.sprites[id].body.velxy.x = 0;
-											else
-												if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
-													st.Current_Map.sprites[id].body.velxy.x = 0;
-										}
-
-										if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
-										{
-											if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
-												st.Current_Map.sprites[id2].body.velxy.y = 0;
-											else
-												if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
-													st.Current_Map.sprites[id2].body.velxy.y = 0;
-
-											if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
-												st.Current_Map.sprites[id2].body.velxy.x = 0;
-											else
-												if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
-													st.Current_Map.sprites[id2].body.velxy.x = 0;
-										}
-									}
-								}
-							}
-						}
-					//}
-				}
-			}
-		}
-
-		for (i = 1; i < 5; i++)
-		{
-			if (physics.nodes[i].num_sprites > 0)
-			{
-				//if (physics.nodes[i].num_sprites > 1)
-				//{
-				for (j = 0; j < physics.nodes[i].num_sprites; j++)
-				{
-					for (k = 0; k < physics.nodes[i].num_sprites; k++)
-					{
-						if (k == j)
-							continue;
-
-						id = physics.sprite_list[physics.active_sprites[j]];
-						id2 = physics.sprite_list[physics.active_sprites[k]];
-
-						if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && (side = CheckCollision(st.Current_Map.sprites[id].position,
-							st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, st.Current_Map.sprites[id2].position,
-							st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang))>0)
-						{
-							//Check relative position for velocity cancelation
-
-							pos = st.Current_Map.sprites[id].position;
-							pos2 = st.Current_Map.sprites[id2].position;
-
-							if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
-							{
-								if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
-									st.Current_Map.sprites[id].body.velxy.y = 0;
-								else
-									if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
-										st.Current_Map.sprites[id].body.velxy.y = 0;
-
-								if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
-									st.Current_Map.sprites[id].body.velxy.x = 0;
-								else
-									if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
-										st.Current_Map.sprites[id].body.velxy.x = 0;
-							}
-
-							if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
-							{
-								if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
-									st.Current_Map.sprites[id2].body.velxy.y = 0;
-								else
-									if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
-										st.Current_Map.sprites[id2].body.velxy.y = 0;
-
-								if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
-									st.Current_Map.sprites[id2].body.velxy.x = 0;
-								else
-									if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
-										st.Current_Map.sprites[id2].body.velxy.x = 0;
-							}
-						}
-					}
-
-					m = 0;
-					//for (m = 0; m < 5; m++)
-					//{
-						if (physics.nodes[m].num_sprites > 0)
-						{
-							for (k = 0; k < physics.nodes[m].num_sprites; k++)
-							{
-								if (k == j)
-									continue;
-
-								id = physics.sprite_list[physics.active_sprites[j]];
-								id2 = physics.sprite_list[physics.active_sprites[k]];
-
-								if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && (side = CheckCollision(st.Current_Map.sprites[id].position,
-									st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, st.Current_Map.sprites[id2].position,
-									st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang)) > 0)
-								{
-									//Check relative position for velocity cancelation
-
-									pos = st.Current_Map.sprites[id].position;
-									pos2 = st.Current_Map.sprites[id2].position;
-
-									if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
-									{
-										if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
-											st.Current_Map.sprites[id].body.velxy.y = 0;
-										else
-											if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
-												st.Current_Map.sprites[id].body.velxy.y = 0;
-
-										if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
-											st.Current_Map.sprites[id].body.velxy.x = 0;
-										else
-											if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
-												st.Current_Map.sprites[id].body.velxy.x = 0;
-									}
-
-									if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
-									{
-										if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
-											st.Current_Map.sprites[id2].body.velxy.y = 0;
-										else
-											if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
-												st.Current_Map.sprites[id2].body.velxy.y = 0;
-
-										if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
-											st.Current_Map.sprites[id2].body.velxy.x = 0;
-										else
-											if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
-												st.Current_Map.sprites[id2].body.velxy.x = 0;
-									}
-								}
-							}
-						}
-					//}
-					//}
-				}
-			}
-		}
-
-		i = 0;
-		if (physics.nodes[i].num_sprites > 0)
-		{
-			//if (physics.nodes[i].num_sprites > 1)
-			//{
-			for (j = 0; j < physics.nodes[i].num_sprites; j++)
-			{
-				for (k = 0; k < physics.nodes[i].num_sprites; k++)
-				{
-					if (k == j)
-						continue;
-
-					id = physics.sprite_list[physics.active_sprites[j]];
-					id2 = physics.sprite_list[physics.active_sprites[k]];
-
-					if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && 
-						//(st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0) && 
-						(side = CheckCollision(st.Current_Map.sprites[id].position, st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, 
-						st.Current_Map.sprites[id2].position, st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang))>0)
-					{
-						//Check relative position for velocity cancelation
-
-						pos = st.Current_Map.sprites[id].position;
-						pos2 = st.Current_Map.sprites[id2].position;
-
-						if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
-						{
-							if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
-								st.Current_Map.sprites[id].body.velxy.y = 0;
-							else
-								if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
-									st.Current_Map.sprites[id].body.velxy.y = 0;
-
-							if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
-								st.Current_Map.sprites[id].body.velxy.x = 0;
-							else
-								if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
-									st.Current_Map.sprites[id].body.velxy.x = 0;
-						}
-
-						if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
-						{
-							if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
-								st.Current_Map.sprites[id2].body.velxy.y = 0;
-							else
-								if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
-									st.Current_Map.sprites[id2].body.velxy.y = 0;
-
-							if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
-								st.Current_Map.sprites[id2].body.velxy.x = 0;
-							else
-								if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
-									st.Current_Map.sprites[id2].body.velxy.x = 0;
-						}
-					}
-				}
-
-				//}
-			}
-		}
-		*/
-
 		for (i = 0; i < physics.num_active_sprites; i++)
 		{
+			
 			collided = 0;
 
 			for (j = 0; j < physics.spritesectornum[i]; j++)
 			{
-				for (l = 0; l < physics.spritesectors[i][j]; l++)
-				{
+				//for (l = 0; l < physics.spritesectors[i][j]; l++)
+				//{
 					//for (m = 0; m < physics.sectorarea[j]; m++)
 					//{
 					m = physics.spritesectors[i][j];
@@ -750,55 +497,58 @@ int8 MainPhysics()
 							id = physics.sprite_list[physics.active_sprites[i]];
 							id2 = physics.sprite_list[physics.active_sprites[k]];
 
-							if (/*st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 &&*/ (side = CheckCollision(st.Current_Map.sprites[id].position,
-								st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].body.ang, st.Current_Map.sprites[id2].position,
-								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].body.ang)) > 0)
+							if ( (side = CheckCollision(st.Current_Map.sprites[id].position,
+								st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].angle, st.Current_Map.sprites[id2].position,
+								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].angle)) > 0)
 							{
 								//Check relative position for velocity cancelation
 
 								pos = st.Current_Map.sprites[id].position;
 								pos2 = st.Current_Map.sprites[id2].position;
+								size = st.Current_Map.sprites[id].body.size;
+								size2 = st.Current_Map.sprites[id2].body.size;
 
-								if (st.Current_Map.sprites[id].body.velxy.x != 0 || st.Current_Map.sprites[id].body.velxy.y != 0)
+								if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y!=0)
 								{
-									if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y < 0)
-										st.Current_Map.sprites[id].body.velxy.y = 0;
-									else
-										if (pos.y < pos2.y && st.Current_Map.sprites[id].body.velxy.y > 0)
-											st.Current_Map.sprites[id].body.velxy.y = 0;
+									//st.Current_Map.sprites[id].body.velxy.y = 0;
+									st.Current_Map.sprites[id].position.y = pos2.y - (size2.y / 2) - (size.y / 2);
 
-									if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x < 0)
-										st.Current_Map.sprites[id].body.velxy.x = 0;
-									else
-										if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x > 0)
-											st.Current_Map.sprites[id].body.velxy.x = 0;
+									collided = 1;
 								}
-
-								if (st.Current_Map.sprites[id2].body.velxy.x != 0 || st.Current_Map.sprites[id2].body.velxy.y != 0)
+								else
+								if (pos.y > pos2.y && st.Current_Map.sprites[id].body.velxy.y != 0)
 								{
-									if (pos.y > pos2.y && st.Current_Map.sprites[id2].body.velxy.y > 0)
-										st.Current_Map.sprites[id2].body.velxy.y = 0;
-									else
-										if (pos.y < pos2.y && st.Current_Map.sprites[id2].body.velxy.y < 0)
-											st.Current_Map.sprites[id2].body.velxy.y = 0;
+									//st.Current_Map.sprites[id].body.velxy.y = 0;
+									st.Current_Map.sprites[id].position.y = pos2.y + (size2.y / 2) + (size.y / 2);
 
-									if (pos.x > pos2.x && st.Current_Map.sprites[id2].body.velxy.x > 0)
-										st.Current_Map.sprites[id2].body.velxy.x = 0;
-									else
-										if (pos.x < pos2.x && st.Current_Map.sprites[id2].body.velxy.x < 0)
-											st.Current_Map.sprites[id2].body.velxy.x = 0;
+									collided = 1;
 								}
+								else
+								if (pos.x < pos2.x && st.Current_Map.sprites[id].body.velxy.x != 0)
+								{
+									//st.Current_Map.sprites[id].body.velxy.x = 0;
+									st.Current_Map.sprites[id].position.x = pos2.x - (size2.x / 2) - (size.x/2);
 
-								collided = 1;
+									//collided = 1;
+								}
+								else
+								if (pos.x > pos2.x && st.Current_Map.sprites[id].body.velxy.x != 0)
+								{
+									//st.Current_Map.sprites[id].body.velxy.x = 0;
+
+									st.Current_Map.sprites[id].position.x = pos2.x + (size2.x / 2) + (size.x / 2);
+
+									//collided = 1;
+								}
 							}
 						}
 					}
 					//}
-				}
+				//}
 			}
-
-			if (collided)
-				continue;
+			
+			//if (collided)
+				//continue;
 
 			j = physics.sprite_list[i];
 
@@ -818,7 +568,7 @@ int8 MainPhysics()
 					}
 					else
 					{
-						if (physics.gravity)
+						if (physics.gravity && collided!=1)
 						{
 							st.Current_Map.sprites[j].body.velxy.x += (float) mCos(physics.gravity_direction) * physics.gravity_vel;
 							st.Current_Map.sprites[j].body.velxy.y += (float) mSin(physics.gravity_direction) * physics.gravity_vel;
@@ -827,7 +577,7 @@ int8 MainPhysics()
 				}
 				else
 				{
-					if (physics.gravity)
+					if (physics.gravity && collided != 1)
 					{
 						st.Current_Map.sprites[j].body.velxy.x += (float)mCos(physics.gravity_direction) * physics.gravity_vel;
 						st.Current_Map.sprites[j].body.velxy.y += (float)mSin(physics.gravity_direction) * physics.gravity_vel;
@@ -846,11 +596,8 @@ int8 MainPhysics()
 			st.Current_Map.sprites[j].position.y += st.Current_Map.sprites[j].body.velxy.y;
 		}
 
-	}
 
-	memset(&physics.sectorarea, 0, MAX_SECTORS * sizeof(uint16));
-	memset(&physics.sectorarea_ids, -1, MAX_SECTORS * MAX_DYNAMIC_SPRITES * sizeof(int16));
 
-	memset(&physics.spritesectornum, 0, MAX_ACTIVE_DYNAMIC_SPRITES*sizeof(int16));
-	memset(&physics.spritesectors, 0, MAX_ACTIVE_DYNAMIC_SPRITES*MAX_SECTORS*sizeof(int8));
+	//}
+	
 }

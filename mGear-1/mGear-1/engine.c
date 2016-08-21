@@ -3280,7 +3280,7 @@ uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 a
 	int32 vert[8], vert2[8], minx, miny, maxx, maxy;
 
 	//Get the vertices coordinates
-
+	
 	vert[0] = (float) pos.x + (((pos.x - (size.x / 2)) - pos.x)*mCos(ang) - ((pos.y - (size.y / 2)) - pos.y)*mSin(ang));
 	vert[1] = (float) pos.y + (((pos.x - (size.x / 2)) - pos.x)*mSin(ang) + ((pos.y - (size.y / 2)) - pos.y)*mCos(ang));
 
@@ -3304,7 +3304,26 @@ uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 a
 
 	vert2[6] = (float) pos2.x + (((pos2.x - (size2.x / 2)) - pos2.x)*mCos(ang2) - ((pos2.y + (size2.y / 2)) - pos2.y)*mSin(ang2));
 	vert2[7] = (float) pos2.y + (((pos2.x - (size2.x / 2)) - pos2.x)*mSin(ang2) + ((pos2.y + (size2.y / 2)) - pos2.y)*mCos(ang2));
+	
+	/*
+	vert[0] = pos.x - (size.x / 2);
+	vert[1] = pos.y - (size.y / 2);
+	vert[2] = pos.x + (size.x / 2);
+	vert[3] = pos.y - (size.y / 2);
+	vert[4] = pos.x + (size.x / 2);
+	vert[5] = pos.y + (size.y / 2);
+	vert[6] = pos.x - (size.x / 2);
+	vert[7] = pos.y + (size.y / 2);
 
+	vert2[0] = pos2.x - (size2.x / 2);
+	vert2[1] = pos2.y - (size2.y / 2);
+	vert2[2] = pos2.x + (size2.x / 2);
+	vert2[3] = pos2.y - (size2.y / 2);
+	vert2[4] = pos2.x + (size2.x / 2);
+	vert2[5] = pos2.y + (size2.y / 2);
+	vert2[6] = pos2.x - (size2.x / 2);
+	vert2[7] = pos2.y + (size2.y / 2);
+	*/
 	//Get the min and max values for box2
 
 	for (i = 2, minx=vert2[0], miny=vert2[1], maxx=vert2[0], maxy=vert2[1]; i < 8; i++)

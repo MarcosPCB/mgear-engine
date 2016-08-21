@@ -514,7 +514,7 @@ void Player_BaseCode(int16 id)
 	}
 	
 	if (playerc.state & 8)
-		if (OnTheGround(id, NULL))
+		if (OnTheGround(id, NULL) || HitSprite(id))
 			playerc.state -= 8;
 
 	tmp=MAnim(playerc.current_anim,playerc.speed,id,playerc.anim_loop);
@@ -748,9 +748,9 @@ int main(int argc, char *argv[])
 	curr_tic=GetTicks();
 	delta=1;
 
-	st.viewmode=31;
+	st.viewmode=31+INGAME_VIEW;
 
-	st.Developer_Mode = 1;
+	//st.Developer_Mode = 1;
 
 	InitPhysics(1, DEFAULT_GRAVITY, 900, 0);
 
