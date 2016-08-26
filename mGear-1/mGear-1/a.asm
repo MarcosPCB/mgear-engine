@@ -1,15 +1,20 @@
 .586P
 
 .MODEL FLAT
-.DATA
 
 .STACK
+.DATA
 
 .CODE
 
-PUBLIC 
- proc near
-	
- ENDP
+_mSqrt32 PROC
+	push ebp
+	mov ebp, esp
+	fld dword ptr [ebp+8]
+	fsqrt
+	mov esp, ebp
+	pop ebp
+	ret
+_mSqrt32 ENDP
 
 END

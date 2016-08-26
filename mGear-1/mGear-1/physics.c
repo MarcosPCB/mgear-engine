@@ -16,7 +16,7 @@ void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 
 
 	//Create the quadtree nodes and subnodes
 	//By default there are 21 nodes
-
+	/*
 	physics.nodes[0].min.x = 0;
 	physics.nodes[0].min.y = 0;
 	physics.nodes[0].max.x = GAME_SCREEN_WIDTH;
@@ -61,7 +61,7 @@ void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 
 
 		memset(physics.nodes[i].sprites, -1, MAX_ACTIVE_DYNAMIC_SPRITES*sizeof(int16));
 	}
-
+	*/
 	memset(&physics.sectorarea, 0, MAX_SECTORS * sizeof(uint16));
 	memset(&physics.sectorarea_ids, -1, MAX_SECTORS * MAX_DYNAMIC_SPRITES * sizeof(int16));
 
@@ -181,9 +181,6 @@ void UpdateSectorRange(int16 id, int16 phy_id)
 
 void ActivateDynamicSprite (int16 id)
 {
-	int32 x, y, radius;
-	int16 node, i;
-	int16 id2 = id;
 
 	physics.active_sprites[physics.num_active_sprites] = id;
 
@@ -401,7 +398,7 @@ int8 HitSprite(int16 id)
 			id3 = physics.sprite_list[physics.active_sprites[as]];
 			id4 = physics.sprite_list[physics.active_sprites[k]];
 
-			if (/*st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 &&*/ (side = CheckCollision(st.Current_Map.sprites[id3].position,
+			if (st.Current_Map.sprites[id3].flags & 8 && st.Current_Map.sprites[id4].flags & 8 && (side = CheckCollision(st.Current_Map.sprites[id3].position,
 				st.Current_Map.sprites[id3].body.size, st.Current_Map.sprites[id3].angle, st.Current_Map.sprites[id4].position,
 				st.Current_Map.sprites[id4].body.size, st.Current_Map.sprites[id4].angle)) > 0)
 			{
@@ -497,7 +494,7 @@ int8 MainPhysics()
 							id = physics.sprite_list[physics.active_sprites[i]];
 							id2 = physics.sprite_list[physics.active_sprites[k]];
 
-							if ( (side = CheckCollision(st.Current_Map.sprites[id].position,
+							if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && (side = CheckCollision(st.Current_Map.sprites[id].position,
 								st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].angle, st.Current_Map.sprites[id2].position,
 								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].angle)) > 0)
 							{
@@ -550,6 +547,13 @@ int8 MainPhysics()
 			//if (collided)
 				//continue;
 
+			if (st.Current_Map.sprites[j].body.total_vel != 0 && st.Current_Map.sprites[j].body.total_vel< MAX_SPEED  && 
+				abs(st.Current_Map.sprites[j].body.velxy.x) < MAX_SPEED &&  abs(st.Current_Map.sprites[j].body.velxy.y) < MAX_SPEED)
+			{
+				st.Current_Map.sprites[j].body.velxy.x = (float)st.Current_Map.sprites[j].body.total_vel * mCos(st.Current_Map.sprites[j].body.ang);
+				st.Current_Map.sprites[j].body.velxy.y = (float)st.Current_Map.sprites[j].body.total_vel * mSin(st.Current_Map.sprites[j].body.ang);
+			}
+
 			j = physics.sprite_list[i];
 
 			if (st.Current_Map.sprites[j].body.velxy.x != 0 || st.Current_Map.sprites[j].body.velxy.y != 0)
@@ -568,7 +572,7 @@ int8 MainPhysics()
 					}
 					else
 					{
-						if (physics.gravity && collided!=1)
+						if (physics.gravity && collided != 1 && abs(st.Current_Map.sprites[j].body.velxy.x) < MAX_SPEED &&  abs(st.Current_Map.sprites[j].body.velxy.y) < MAX_SPEED)
 						{
 							st.Current_Map.sprites[j].body.velxy.x += (float) mCos(physics.gravity_direction) * physics.gravity_vel;
 							st.Current_Map.sprites[j].body.velxy.y += (float) mSin(physics.gravity_direction) * physics.gravity_vel;
@@ -577,7 +581,7 @@ int8 MainPhysics()
 				}
 				else
 				{
-					if (physics.gravity && collided != 1)
+					if (physics.gravity && collided != 1 && abs(st.Current_Map.sprites[j].body.velxy.x) < MAX_SPEED &&  abs(st.Current_Map.sprites[j].body.velxy.y) < MAX_SPEED)
 					{
 						st.Current_Map.sprites[j].body.velxy.x += (float)mCos(physics.gravity_direction) * physics.gravity_vel;
 						st.Current_Map.sprites[j].body.velxy.y += (float)mSin(physics.gravity_direction) * physics.gravity_vel;

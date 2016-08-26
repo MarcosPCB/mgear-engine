@@ -146,7 +146,9 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalOptions>-Dinline=__inline %(AdditionalOptions)</AdditionalOptions>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <CompileAs>CompileAsC</CompileAs>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -251,6 +253,9 @@
       <DisableSpecificWarnings>4996;4101;4244;4005;4049;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <WholeProgramOptimization>true</WholeProgramOptimization>
       <AdditionalOptions>-Dinline=__inline %(AdditionalOptions)</AdditionalOptions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -327,6 +332,12 @@
     <ClCompile Include="physics.c" />
     <ClCompile Include="quicklz.c" />
     <ClCompile Include="UI.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="a.asm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release2|x64'">true</ExcludedFromBuild>
+    </MASM>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

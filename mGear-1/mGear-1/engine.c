@@ -57,12 +57,13 @@ SDL_Window *wn;
 #define timer SDL_Delay
 
 //Faster square root
+/*
 float _fastcall mSqrt(float x)
 {
 	_asm fld x
 	_asm fsqrt
 }
-
+*/
 void LogIn(void *userdata, int category, SDL_LogPriority log, const char *message)
 {
 	FILE *file;
@@ -103,6 +104,7 @@ void StartTimer()
 	GetTicks();
 }
 */
+
 void _fastcall SetTimerM(unsigned long long int x)
 {
 	st.time+=x;
@@ -127,25 +129,25 @@ void FPSCounter()
 	}
 }
 
-void _fastcall STW(int32 *x, int32 *y)
+void _inline STW(int32 *x, int32 *y)
 {
 	*x=((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
 	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
-void _fastcall STWci(int32 *x, int32 *y)
+void _inline STWci(int32 *x, int32 *y)
 {
 	*x=((((*x*16384)/st.screenx)));
 	*y=((((*y*8192)/st.screeny)));
 }
 
-void _fastcall STWf(float *x, float *y)
+void _inline STWf(float *x, float *y)
 {
 	*x=(float) ((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
 	*y=(float) ((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
-void _fastcall STWcf(float *x, float *y)
+void _inline STWcf(float *x, float *y)
 {
 	*x=(float) ((((*x*16384)/st.screenx)/st.Camera.dimension.x));
 	*y=(float) ((((*y*8192)/st.screeny)/st.Camera.dimension.y));
@@ -176,13 +178,13 @@ void _fastcall WTS(int32 *x, int32 *y)
 	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
 }
 
-void _fastcall WTSci(int32 *x, int32 *y)
+void _inline WTSci(int32 *x, int32 *y)
 {
 	*x=((*x*st.screenx)/16384)*st.Camera.dimension.x;
 	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
 }
 
-void _fastcall WTSf(float *x, float *y)
+void _inline WTSf(float *x, float *y)
 {
 	*x-=st.Camera.position.x;
 	*y-=st.Camera.position.y;
@@ -191,7 +193,7 @@ void _fastcall WTSf(float *x, float *y)
 	*y=(float) ((*y*st.screeny)/8192)*st.Camera.dimension.y;
 }
 
-void _fastcall WTScf(float *x, float *y)
+void _inline WTScf(float *x, float *y)
 {
 	*x=(float) ((*x*st.screenx)/16384)*st.Camera.dimension.x;
 	*y=(float) ((*y*st.screeny)/8192)*st.Camera.dimension.y;
@@ -8454,8 +8456,8 @@ void Renderer(uint8 type)
 			if(i==0) break;
 		}
 
-		memset(z_buffer,0,((7*8)+1)*(2048)*sizeof(int16));
-		memset(z_slot,0,((7*8)+1)*sizeof(int16));
+		memset(z_buffer,0,z_used*(2048)*sizeof(int16));
+		memset(z_slot,0,z_used*sizeof(int16));
 		z_used=0;
 
 		for(i=0;i<MAX_STRINGS;i++)

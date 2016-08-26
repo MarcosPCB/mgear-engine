@@ -8,7 +8,8 @@
 	#include <fmod_errors.h>
 	#include <SDL_ttf.h>
 	#include <SOIL.h>
-	#include "a.h" 
+	//#include "a.h" 
+	#include <immintrin.h>
 #else
 	#include <dos.h>
 	#include <conio.h>
@@ -403,7 +404,7 @@ struct _BODY
 	uint8 flamable;
 	uint8 explosive;
 	Pos position;
-	//int16 total_vel;
+	int16 total_vel;
 	Pos velxy;
 	int16 acceleration;
 	int16 acc_ang;
@@ -1049,23 +1050,23 @@ void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
 
 void RestartVideo();
 
-void _fastcall STW(int32 *x, int32 *y);
+void _inline STW(int32 *x, int32 *y);
 
-void _fastcall STWci(int32 *x, int32 *y); //No camera position in calculation
+void _inline STWci(int32 *x, int32 *y); //No camera position in calculation
 
-void _fastcall STWf(float *x, float *y);
+void _inline STWf(float *x, float *y);
 
-void _fastcall STWcf(float *x, float *y); //No camera position in calculation
+void _inline STWcf(float *x, float *y); //No camera position in calculation
 
 uint32 POT(uint32 value);
 
 void _fastcall WTS(int32 *x, int32 *y);
 
-void _fastcall WTSci(int32 *x, int32 *y); //No camera position in calculation
+void _inline WTSci(int32 *x, int32 *y); //No camera position in calculation
 
-void _fastcall WTSf(float *x, float *y);
+void _inline WTSf(float *x, float *y);
 
-void _fastcall WTScf(float *x, float *y); ////No camera position in calculation
+void _inline WTScf(float *x, float *y); ////No camera position in calculation
 
 uint32 PlayMovie(const char *name);
 
@@ -1087,7 +1088,14 @@ uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
 
 //Faster square root
-float _fastcall mSqrt(float x);
+
+#ifdef _WIN64
+	float _cdecl mSqrt64(float);
+	#define mSqrt mSqrt64
+#elif _WIN32
+	float _cdecl mSqrt32(float);
+	#define mSqrt mSqrt32
+#endif
 
 //Faster than math.h functions
 float mCos(int16 ang);
