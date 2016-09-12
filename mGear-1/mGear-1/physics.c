@@ -6,7 +6,7 @@ Physics physics;
 
 void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 air)
 {
-	int8 tmp = 0, i = 0, k = 4;
+	int16 tmp = 0, i = 0, k = 4;
 
 	physics.gravity = gravity;
 	physics.gravity_vel = gravity_vel;
@@ -67,16 +67,191 @@ void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 
 
 	memset(&physics.spritesectornum, 0, MAX_ACTIVE_DYNAMIC_SPRITES*sizeof(int16));
 	memset(&physics.spritesectors, 0, MAX_ACTIVE_DYNAMIC_SPRITES*MAX_SECTORS*sizeof(int8));
+
+	physics.num_particles = physics.num_proj = 0;
+
+	for (i = 0; i < MAX_PROJECTILES; i++)
+	{
+		physics.proj[i].owner = -1;
+		physics.proj[i].stat = -1;
+	}
+
+	for (i = 0; i < MAX_PARTICLES; i++)
+	{
+		physics.particles[i].stat = -1;
+	}
+
+	physics.num_particles = 0;
+	physics.num_proj = 0;
 }
 
-int16 UpdateSector(int16 id)
+uint8 DefineProjectileProperties(int8 id, enum PROJ_TYPE type, int16 damage, uint32 radius, uint32 time, int16 trail, uint8 num_trail, int16 spawns)
+{
+	if (id >= MAX_GAME_PROJECTILES)
+	{
+		LogApp("Error: projectile ID %d above maximum limit", id);
+		return NULL;
+	}
+	else
+	{
+		physics.game_proj[id].type = type;
+		physics.game_proj[id].damage = damage;
+		physics.game_proj[id].radius = radius;
+		physics.game_proj[id].time = time;
+		physics.game_proj[id].trail = trail;
+		physics.game_proj[id].num_trail = num_trail;
+		physics.game_proj[id].spawns = spawns;
+		return 1;
+	}
+}
+
+uint8 DefineProjectilePhysics(int8 id, uint8 bounce, uint8 num_bounces, uint8 rnd_bounce, uint8 vel_bounce, int16 mass, int32 sizex, int32 sizey, int32 speed)
+{
+	if (id >= MAX_GAME_PROJECTILES)
+	{
+		LogApp("Error: projectile ID %d above maximum limit", id);
+		return NULL;
+	}
+	else
+	{
+		physics.game_proj[id].bounce = bounce;
+		physics.game_proj[id].num_bounces = num_bounces;
+		physics.game_proj[id].rnd_bounce = rnd_bounce;
+		physics.game_proj[id].vel_bounce = vel_bounce;
+		physics.game_proj[id].mass = mass;
+		physics.game_proj[id].size.x = sizex;
+		physics.game_proj[id].size.y = sizey;
+		physics.game_proj[id].speed = speed;
+		return 1;
+	}
+}
+
+uint8 DefineProjectileVisual(int8 id, int16 frame, uint8 mgg, uint8 anim_id, uint8 animated, float speed_mul)
+{
+	if (id >= MAX_GAME_PROJECTILES)
+	{
+		LogApp("Error: projectile ID %d above maximum limit", id);
+		return NULL;
+	}
+	else
+	{
+		physics.game_proj[id].frame_id = frame;
+		physics.game_proj[id].mgg_id = mgg;
+		physics.game_proj[id].anim_id = anim_id;
+		physics.game_proj[id].animated = animated;
+		physics.game_proj[id].speed_mul = speed_mul;
+		return 1;
+	}
+}
+
+uint8 ShootProjectile(int8 id, int16 ang, int16 owner, Pos pos)
+{
+	register int8 i = 0;
+
+	if (id >= MAX_GAME_PROJECTILES)
+	{
+		LogApp("Error: projectile ID %d above maximum limit, unable to shoot it", id);
+		return NULL;
+	}
+	else
+	{
+		for (i = 0; i < MAX_PROJECTILES; i++)
+		{
+			if (physics.proj[i].stat == -1)
+			{
+				physics.proj[i].stat = 1;
+				physics.proj[i].ang = ang;
+				physics.proj[i].vel.x = physics.game_proj[i].speed * mCos(ang);
+				physics.proj[i].vel.y = physics.game_proj[i].speed * mSin(ang);
+				physics.proj[i].animated = physics.game_proj[id].animated;
+				physics.proj[i].anim_id = physics.game_proj[id].anim_id;
+				physics.proj[i].bounce = physics.game_proj[id].bounce;
+				physics.proj[i].damage = physics.game_proj[id].damage;
+				physics.proj[i].frame_id = physics.game_proj[id].frame_id;
+				physics.proj[i].mass = physics.game_proj[id].mass;
+				physics.proj[i].mgg_id = physics.game_proj[id].mgg_id;
+				physics.proj[i].num_bounces = physics.game_proj[id].num_bounces;
+				physics.proj[i].pos = pos;
+				physics.proj[i].owner = owner;
+				physics.proj[i].radius = physics.game_proj[id].radius;
+				physics.proj[i].rnd_bounce = physics.game_proj[id].rnd_bounce;
+				physics.proj[i].size = physics.game_proj[id].size;
+				physics.proj[i].speed_mul = physics.game_proj[id].speed_mul;
+				physics.proj[i].time = physics.game_proj[id].time;
+				physics.proj[i].type = physics.game_proj[id].type;
+				physics.proj[i].vel_bounce = physics.game_proj[id].vel_bounce;
+				physics.proj[i].spawns = physics.game_proj[id].spawns;
+				physics.proj[i].trail = physics.game_proj[id].trail;
+				physics.proj[i].num_trail = physics.game_proj[id].num_trail;
+
+				return 1;
+			}
+		}
+	}
+}
+
+uint8 DefineParticle(int8 id, int16 frame, uint8 mgg, uint8 anim_id, uint8 animated, float speed_mul, int16 speed, void (*func)(PARTICLES))
+{
+	if (id >= MAX_PARTICLES)
+	{
+		LogApp("Error: particle ID %d above maximum limit", id);
+		return NULL;
+	}
+	else
+	{
+		physics.game_part[id].frame_id = frame;
+		physics.game_part[id].anim_id = anim_id;
+		physics.game_part[id].mgg_id = mgg;
+		physics.game_part[id].animated = animated;
+		physics.game_part[id].speed_mul = speed_mul;
+		physics.game_part[id].speed = speed;
+		physics.game_part[id].func = func;
+
+		return 1;
+	}
+}
+
+uint8 SpawnParticle(int8 id, Pos pos, int16 ang)
+{
+	register uint8 i;
+
+	if (id >= MAX_PARTICLES)
+	{
+		LogApp("Error: particle ID %d above maximum limit", id);
+		return NULL;
+	}
+	else
+	{
+		if (physics.num_particles < MAX_PARTICLES)
+		{
+			for (i = 0; i < MAX_PARTICLES; i++)
+			{
+				if (physics.particles[i].stat == -1)
+				{
+					physics.particles[i].stat = 1;
+					physics.particles[i].id = id;
+					physics.particles[i].animated = physics.game_part[id].animated;
+					physics.particles[i].ang = ang;
+					physics.particles[i].pos = pos;
+					physics.particles[i].size = physics.game_part[id].size;
+					physics.particles[i].anim_id = physics.game_part[id].anim_id;
+					physics.particles[i].func = physics.game_part[id].func;
+					physics.particles[i].frame_id = physics.game_part[id].frame_id;
+					physics.particles[i].mgg_id = physics.game_part[id].mgg_id;
+					physics.particles[i].speed = physics.game_part[id].speed;
+					physics.particles[i].speed_mul = physics.game_part[id].speed_mul;
+					
+					return 1;
+				}
+			}
+		}
+	}
+}
+
+int16 UpdateSector(Pos pos, Pos size)
 {
 	int32 ydist, ydist2, first = 0, x1, x2, base_y;
 	int16 sector_id = -1, i;
-	Pos pos, size;
-
-	pos = st.Current_Map.sprites[id].position;
-	size = st.Current_Map.sprites[id].body.size;
 
 	for (i = 0; i < st.Current_Map.num_sector; i++)
 	{
@@ -329,7 +504,7 @@ int8 AddDynamicSprite(int16 id)
 
 		st.Current_Map.sprites[id].flags += 16;
 
-		st.Current_Map.sprites[id].body.sector_id = UpdateSector(id);
+		st.Current_Map.sprites[id].body.sector_id = UpdateSector(st.Current_Map.sprites[id].position,st.Current_Map.sprites[id].body.size);
 	}
 
 	return 1;
@@ -410,18 +585,237 @@ int8 HitSprite(int16 id)
 	return NULL;
 }
 
+int8 HitscanID(Pos pos, int16 ang, int16 spr_id, Pos *rpos)
+{
+	register int32 i = spr_id;
+	Pos pos2, size;
+	float m;
+
+	size.x = size.y = 10;
+
+	pos2 = pos;
+
+	if (st.Current_Map.sprites[i].flags & 8)
+	{
+		m = mTan(ang);
+
+		pos2.x = st.Current_Map.sprites[i].position.x;
+
+		pos2.y = (float)m*(pos2.x - pos.x) + pos.y;
+
+		if (CheckCollision(pos2, size, ang, st.Current_Map.sprites[i].position, st.Current_Map.sprites[i].body.size, st.Current_Map.sprites[i].angle))
+		{
+			*rpos = pos2;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int8 Hitscan(Pos pos, int16 ang, int16  *spr_id, int16 *sector_id, Pos *rpos)
+{
+	register int32 i, j;
+	Pos pos2, size;
+	float m;
+
+	size.x = size.y = 10;
+
+	*sector_id = -1;
+
+	pos2 = pos;
+
+	for (j = 0; j < physics.num_active_sprites; j++)
+	{
+		i = physics.sprite_list[physics.active_sprites[j]];
+
+		if (st.Current_Map.sprites[i].flags & 8)
+		{
+			m = mTan(ang);
+
+			pos2.x = st.Current_Map.sprites[i].position.x;
+
+			pos2.y = (float)m*(pos2.x - pos.x) + pos.y;
+
+			if (CheckCollision(pos2, size, ang, st.Current_Map.sprites[i].position, st.Current_Map.sprites[i].body.size, st.Current_Map.sprites[i].angle))
+			{
+				*spr_id = i;
+				*rpos = pos2;
+				return 1;
+			}
+		}
+	}
+
+	*spr_id = -1;
+
+	for (i = 0; i < st.Current_Map.num_sector; i++)
+	{
+		if (st.Current_Map.sector[i].sloped && abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) < 512)
+		{
+			m = mTan(ang);
+
+			pos2.x = st.Current_Map.sector[i].vertex[0].x;
+
+			pos2.y = (float)m*(pos2.x - pos.x) + pos.y;
+
+			if (CheckCollisionSectorWallID(pos2.x, pos2.y, 10, 10, ang, i))
+			{
+				*sector_id = i;
+				*rpos = pos2;
+				return 1;
+			}
+		}
+		else
+		if (st.Current_Map.sector[i].sloped  && abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) > 512)
+		{
+			m = mTan(ang);
+
+			pos2.x = st.Current_Map.sector[i].vertex[0].x;
+
+			pos2.y = (float)m*(pos2.x - pos.x) + pos.y;
+
+			if (CheckCollisionSector(pos2.x, pos2.y, 10, 10, ang, NULL, i))
+			{
+				*sector_id = i;
+				*rpos = pos2;
+				return 1;
+			}
+		}
+		else
+		if (!st.Current_Map.sector[i].sloped)
+		{
+			m = mTan(ang);
+
+			pos2.x = st.Current_Map.sector[i].vertex[0].x;
+
+			pos2.y = (float)m*(pos2.x - pos.x) + pos.y;
+
+			if (CheckCollisionSector(pos2.x, pos2.y, 10, 10, ang, NULL, i))
+			{
+				*sector_id = i;
+				*rpos = pos2;
+				return 1;
+			}
+		}
+	}
+
+	*sector_id = -1;
+
+	return 0;
+}
+
+int8 HitProj(int16 id, uint8 *proj_id)
+{
+	register uint8 i;
+
+	int16 as, id3, id4, side;
+
+	for (i = 0; i < physics.num_active_sprites; i++)
+	{
+		if (physics.sprite_list[physics.active_sprites[i]] == id)
+		{
+			as = i;
+			break;
+		}
+	}
+
+	for (i = 0; i < physics.num_proj; i++)
+	{
+		if (physics.proj[i].stat > -1 && physics.proj[i].type & PROJ_BULLET)
+		{
+			if (HitscanID(physics.proj[i].pos, physics.proj[i].ang, id, NULL))
+			{
+				*proj_id = physics.proj[i].id;
+				return 1;
+			}
+		}
+		else
+		if (physics.proj[i].stat > -1 && physics.proj[i].type & PROJ_REGULAR && 
+			CheckCollision(physics.proj[i].pos, physics.proj[i].size, physics.proj[i].ang, 
+			st.Current_Map.sprites[id].position, st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].angle))
+		{
+			*proj_id = physics.proj[i].id;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int8 HitProjID(int16 id, uint8 proj_id)
+{
+	register uint8 i;
+
+	int16 as, id3, id4, side;
+
+	for (i = 0; i < physics.num_active_sprites; i++)
+	{
+		if (physics.sprite_list[physics.active_sprites[i]] == id)
+		{
+			as = i;
+			break;
+		}
+	}
+
+	for (i = 0; i < physics.num_proj; i++)
+	{
+		if (physics.proj[i].stat > -1 && physics.proj[i].type & PROJ_BULLET && physics.proj[i].id==proj_id)
+		{
+			if (HitscanID(physics.proj[i].pos, physics.proj[i].ang, id, NULL))
+				return 1;
+		}
+		else
+		if (physics.proj[i].stat > -1 && physics.proj[i].id==proj_id && physics.proj[i].type & PROJ_REGULAR &&
+			CheckCollision(physics.proj[i].pos, physics.proj[i].size, physics.proj[i].ang,
+			st.Current_Map.sprites[id].position, st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].angle))
+			return 1;
+	}
+
+	return 0;
+}
+
 int8 MainPhysics()
 {
-	int32 i, j, k, l, m, sety, pen;
-	int16 id, id2, side;
+	register int16 i, j; 
+	int16 k, l, m, pen;
+	int16 id, id2, side, sector_id;
 	Pos pos, pos2, size, size2;
 	int8 collided = 0;
+	int32 sety;
 
 	memset(&physics.sectorarea, 0, st.Current_Map.num_sector * sizeof(uint16));
 	memset(&physics.sectorarea_ids, -1, st.Current_Map.num_sector * physics.num_sprites * sizeof(int16));
 
 	memset(&physics.spritesectornum, 0, physics.num_active_sprites*sizeof(int16));
 	memset(&physics.spritesectors, 0, physics.num_active_sprites*st.Current_Map.num_sector*sizeof(int8));
+
+	memset(&physics.proj_list, -1, MAX_PROJECTILES*sizeof(int16));
+
+	memset(&physics.part_list, -1, MAX_PARTICLES*sizeof(int16));
+
+	for (i = 0, j = 0, physics.num_particles = 0; i < MAX_PARTICLES; i++)
+	{
+		if (physics.particles[i].stat > -1)
+		{
+			//Add it to the list
+
+			physics.part_list[j] = i;
+			j++;
+			physics.num_particles++;
+		}
+	}
+
+	for (i = 0, j = 0, physics.num_proj = 0; i < MAX_PROJECTILES; i++)
+	{
+		if (physics.proj[i].stat > -1)
+		{
+			//Add it to the list
+
+			physics.proj_list[j] = i;
+			j++;
+			physics.num_proj++;
+		}
+	}
 
 	//Dynamic sprite activation/deactivation and removal
 
@@ -470,6 +864,82 @@ int8 MainPhysics()
 		UpdateSectorRange(j, i);
 	}
 
+	//Particle system
+
+	for (i = 0; i < physics.num_particles; i++)
+	{
+		j = physics.part_list[i];
+
+		sector_id = UpdateSector(physics.particles[j].pos, physics.particles[j].size);
+
+		(*physics.particles[j].func)(physics.particles[j]);
+	}
+
+	//Projectile system
+
+	for (i = 0; i < physics.num_proj; i++)
+	{
+		j = physics.proj_list[i];
+
+		sector_id = UpdateSector(physics.proj[j].pos, physics.proj[j].size);
+
+		if (physics.proj[j].type & PROJ_BULLET)
+		{
+			if (Hitscan(physics.proj[j].pos, physics.proj[j].ang, &k, &l,&pos2))
+			{
+				if (k != -1 || l!=-1)
+				{
+					if (physics.proj[j].type & PROJ_SPAWNS_SPRITE)
+						SpawnSprite(physics.proj[j].spawns, pos2, st.Game_Sprites[physics.proj[j].spawns].body.size, 0);
+
+					if (k!=-1)
+						st.Current_Map.sprites[k].body.damage_owner = physics.proj[j].owner;
+
+					physics.proj[j].stat = -1; //Kill the projectile
+
+					continue;
+				}
+			}
+		}
+		else
+		if (physics.proj[j].type & PROJ_REGULAR)
+		{
+			if (CheckCollisionSectorWall(physics.proj[j].pos.x, physics.proj[j].pos.y, physics.proj[j].size.x, physics.proj[j].size.y, physics.proj[j].ang)!=-1 || 
+				CheckCollisionSector(physics.proj[j].pos.x, physics.proj[j].pos.y, physics.proj[j].size.x, physics.proj[j].size.y, physics.proj[j].ang, NULL, sector_id))
+			{
+				if (physics.proj[j].type & PROJ_SPAWNS_SPRITE)
+					SpawnSprite(physics.proj[j].spawns, physics.proj[j].pos, st.Game_Sprites[physics.proj[j].spawns].body.size, 0);
+
+				physics.proj[j].stat = -1; //Kill the projectile
+
+				continue;
+			}
+
+			for (k = 0; k < physics.num_active_sprites; k++)
+			{
+				l = physics.sprite_list[physics.active_sprites[k]];
+
+				if (l != physics.proj[j].owner)
+
+				if (st.Current_Map.sprites[l].flags & 8 && CheckCollision(physics.proj[j].pos, physics.proj[j].size, physics.proj[j].ang,
+					st.Current_Map.sprites[l].position, st.Current_Map.sprites[l].body.size, st.Current_Map.sprites[l].angle))
+				{
+					if (physics.proj[j].type & PROJ_SPAWNS_SPRITE)
+						SpawnSprite(physics.proj[j].spawns, physics.proj[j].pos, st.Game_Sprites[physics.proj[j].spawns].body.size, 0);
+
+					st.Current_Map.sprites[l].body.damage_owner = physics.proj[j].owner;
+
+					physics.proj[j].stat = -1; //Kill the projectile
+
+					break;
+				}
+			}
+
+			physics.proj[j].pos.x += physics.proj[j].vel.x;
+			physics.proj[j].pos.y += physics.proj[j].vel.y;
+		}
+	}
+
 	//Collision detection
 
 		for (i = 0; i < physics.num_active_sprites; i++)
@@ -496,7 +966,7 @@ int8 MainPhysics()
 
 							if (st.Current_Map.sprites[id].flags & 8 && st.Current_Map.sprites[id2].flags & 8 && (side = CheckCollision(st.Current_Map.sprites[id].position,
 								st.Current_Map.sprites[id].body.size, st.Current_Map.sprites[id].angle, st.Current_Map.sprites[id2].position,
-								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].angle)) > 0)
+								st.Current_Map.sprites[id2].body.size, st.Current_Map.sprites[id2].angle)) > NULL)
 							{
 								//Check relative position for velocity cancelation
 
@@ -546,19 +1016,19 @@ int8 MainPhysics()
 			
 			//if (collided)
 				//continue;
-
+			/*
 			if (st.Current_Map.sprites[j].body.total_vel != 0 && st.Current_Map.sprites[j].body.total_vel< MAX_SPEED  && 
 				abs(st.Current_Map.sprites[j].body.velxy.x) < MAX_SPEED &&  abs(st.Current_Map.sprites[j].body.velxy.y) < MAX_SPEED)
 			{
 				st.Current_Map.sprites[j].body.velxy.x = (float)st.Current_Map.sprites[j].body.total_vel * mCos(st.Current_Map.sprites[j].body.ang);
 				st.Current_Map.sprites[j].body.velxy.y = (float)st.Current_Map.sprites[j].body.total_vel * mSin(st.Current_Map.sprites[j].body.ang);
 			}
-
+			*/
 			j = physics.sprite_list[i];
 
 			if (st.Current_Map.sprites[j].body.velxy.x != 0 || st.Current_Map.sprites[j].body.velxy.y != 0)
 			{
-				st.Current_Map.sprites[j].body.sector_id = UpdateSector(j);
+				st.Current_Map.sprites[j].body.sector_id = UpdateSector(st.Current_Map.sprites[j].position, st.Current_Map.sprites[j].body.size);
 			}
 				if (st.Current_Map.sprites[j].body.sector_id != -1)
 				{
@@ -590,7 +1060,7 @@ int8 MainPhysics()
 			//}
 
 			if (CheckCollisionSectorWall(st.Current_Map.sprites[j].position.x, st.Current_Map.sprites[j].position.y, st.Current_Map.sprites[j].body.size.x,
-				st.Current_Map.sprites[j].body.size.y, st.Current_Map.sprites[j].body.ang))
+				st.Current_Map.sprites[j].body.size.y, st.Current_Map.sprites[j].body.ang)!=-1)
 			{
 				if (st.Current_Map.sprites[j].body.velxy.x > 0)
 					st.Current_Map.sprites[j].body.velxy.x = 0;

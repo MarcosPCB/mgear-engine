@@ -428,6 +428,8 @@ void Player_BaseCode(int16 id)
 			DoPlayerHit(0);
 		}
 
+		ShootProjectile(0, 0, id, st.Current_Map.sprites[id].position);
+
 		PlaySound(0,0);
 	}
 
@@ -627,25 +629,6 @@ void SpawnPlayer(Pos pos, Pos size, int16 ang)
 	st.Current_Map.num_sprites++;
 }
 
-void SpawnSprite(int16 game_id, Pos pos, Pos size, int16 ang)
-{
-	int16 i=st.Current_Map.num_sprites;
-
-	st.Current_Map.sprites[i].GameID=game_id;
-	st.Current_Map.sprites[i].position=pos;
-	st.Current_Map.sprites[i].body.size=size;
-	st.Current_Map.sprites[i].angle=ang;
-	st.Current_Map.sprites[i].color.r=st.Current_Map.sprites[i].color.g=st.Current_Map.sprites[i].color.b=255;
-	st.Current_Map.sprites[i].flags=0;
-	st.Current_Map.sprites[i].type_s=MIDGROUND;
-
-	st.Current_Map.sprites[i].MGG_ID=st.Game_Sprites[game_id].MGG_ID;
-	st.Current_Map.sprites[i].frame_ID=st.Current_Map.sprites[i].current_frame=st.Game_Sprites[game_id].frame[0];
-	st.Current_Map.sprites[i].stat=1;
-
-	st.Current_Map.num_sprites++;
-}
-
 void PreGameEvent()
 {
 	register int16 i, j;
@@ -748,11 +731,16 @@ int main(int argc, char *argv[])
 	curr_tic=GetTicks();
 	delta=1;
 
-	st.viewmode=31+INGAME_VIEW;
+	st.viewmode=31;
 
-	//st.Developer_Mode = 1;
+	st.Developer_Mode = 1;
 
 	InitPhysics(1, DEFAULT_GRAVITY, 900, 0);
+
+	DefineProjectileProperties(0, PROJ_REGULAR | PROJ_SPAWNS_SPRITE, 15, 0, 0, 0, 0, GLACIUS);
+	DefineProjectilePhysics(0, 0, 0, 0, 0, 50, 2048, 2048,64);
+	DefineProjectileVisual(0, 0, 0, 0, 0, 0);
+
 
 	while(!st.quit)
 	{

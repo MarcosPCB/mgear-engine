@@ -1833,30 +1833,33 @@ int8 UISelectFile(char *filename)
 
 		}
 
-		UIData(8192+((8192-512)/2)-128,4096,256,4096-512,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
-		UIData(8192+((8192-512)/2)-128,4096-((4096-512)/2)+128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
-		UIData(8192+((8192-512)/2)-128,4096+((4096-512)/2)-128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
-
-		UIData(8192+((8192-512)/2)-128,4096-((4096-1024)/2)+(UI_Sys.mouse_scroll*((4096-1024)/(UI_Sys.num_files-13))),256,256,
-			0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
-
-		if(st.mouse_wheel>0)
+		if (UI_Sys.num_files > 13)
 		{
-			UI_Sys.mouse_scroll--;
-			st.mouse_wheel=0;
-		}
-		else
-		if(st.mouse_wheel<0)
-		{
-			UI_Sys.mouse_scroll++;
-			st.mouse_wheel=0;
-		}
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096, 256, 4096 - 512, 0, 128, 128, 128, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 512) / 2) + 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 + ((4096 - 512) / 2) - 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
 
-		if(UI_Sys.mouse_scroll<0)
-			UI_Sys.mouse_scroll=0;
-		else
-		if(UI_Sys.mouse_scroll>UI_Sys.num_files-13)
-			UI_Sys.mouse_scroll=UI_Sys.num_files-13;
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 1024) / 2) + (UI_Sys.mouse_scroll*((4096 - 1024) / (UI_Sys.num_files - 13))), 256, 256,
+				0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+
+			if (st.mouse_wheel > 0)
+			{
+				UI_Sys.mouse_scroll--;
+				st.mouse_wheel = 0;
+			}
+			else
+				if (st.mouse_wheel < 0)
+				{
+					UI_Sys.mouse_scroll++;
+					st.mouse_wheel = 0;
+				}
+
+			if (UI_Sys.mouse_scroll<0)
+				UI_Sys.mouse_scroll = 0;
+			else
+				if (UI_Sys.mouse_scroll>UI_Sys.num_files - 13)
+					UI_Sys.mouse_scroll = UI_Sys.num_files - 13;
+		}
 	}
 	else
 	{
@@ -2100,30 +2103,34 @@ int8 UISavePath(char *filename)
 
 		}
 
-		UIData(8192+((8192-512)/2)-128,4096,256,4096-512,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
-		UIData(8192+((8192-512)/2)-128,4096-((4096-512)/2)+128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
-		UIData(8192+((8192-512)/2)-128,4096+((4096-512)/2)-128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
-
-		UIData(8192+((8192-512)/2)-128,4096-((4096-1024)/2)+(UI_Sys.mouse_scroll*((4096-1024)/(UI_Sys.num_files-13))),256,256,
-			0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
-
-		if(st.mouse_wheel>0)
+		if (UI_Sys.num_files > 13)
 		{
-			UI_Sys.mouse_scroll--;
-			st.mouse_wheel=0;
-		}
-		else
-		if(st.mouse_wheel<0)
-		{
-			UI_Sys.mouse_scroll++;
-			st.mouse_wheel=0;
-		}
 
-		if(UI_Sys.mouse_scroll<0)
-			UI_Sys.mouse_scroll=0;
-		else
-		if(UI_Sys.mouse_scroll>UI_Sys.num_files-13)
-			UI_Sys.mouse_scroll=UI_Sys.num_files-13;
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096, 256, 4096 - 512, 0, 128, 128, 128, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 512) / 2) + 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 + ((4096 - 512) / 2) - 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 1024) / 2) + (UI_Sys.mouse_scroll*((4096 - 1024) / (UI_Sys.num_files - 13))), 256, 256,
+				0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+
+			if (st.mouse_wheel > 0)
+			{
+				UI_Sys.mouse_scroll--;
+				st.mouse_wheel = 0;
+			}
+			else
+				if (st.mouse_wheel < 0)
+				{
+					UI_Sys.mouse_scroll++;
+					st.mouse_wheel = 0;
+				}
+
+			if (UI_Sys.mouse_scroll<0)
+				UI_Sys.mouse_scroll = 0;
+			else
+				if (UI_Sys.mouse_scroll>UI_Sys.num_files - 13)
+					UI_Sys.mouse_scroll = UI_Sys.num_files - 13;
+		}
 	}
 	else
 	{

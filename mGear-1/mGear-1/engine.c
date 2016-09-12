@@ -3157,6 +3157,32 @@ int8 LoadLightmapFromFile(const char *file)
 	return 1;
 }
 
+void SpawnSprite(int16 game_id, Pos pos, Pos size, int16 ang)
+{
+	int16 i = st.Current_Map.num_sprites;
+
+	if (st.Current_Map.num_sprites < MAX_SPRITES)
+	{
+		st.Current_Map.sprites[i].GameID = game_id;
+		st.Current_Map.sprites[i].position = pos;
+		st.Current_Map.sprites[i].body.size = size;
+		st.Current_Map.sprites[i].angle = ang;
+		st.Current_Map.sprites[i].color.r = st.Current_Map.sprites[i].color.g = st.Current_Map.sprites[i].color.b = 255;
+		st.Current_Map.sprites[i].flags = 0;
+		st.Current_Map.sprites[i].type_s = MIDGROUND;
+
+		st.Current_Map.sprites[i].MGG_ID = st.Game_Sprites[game_id].MGG_ID;
+		st.Current_Map.sprites[i].frame_ID = st.Current_Map.sprites[i].current_frame = st.Game_Sprites[game_id].frame[0];
+		st.Current_Map.sprites[i].stat = 1;
+
+		st.Current_Map.num_sprites++;
+	}
+	else
+	{
+		LogApp("Error: max number of sprites reached");
+	}
+}
+
 int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, uint16 sectorid)
 {
 	uint16 i;
@@ -3244,7 +3270,41 @@ int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16
 		}
 	}
 
-	return 0;
+	return -1;
+}
+
+int16 CheckCollisionSectorWallID(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int16 id)
+{
+	register uint16 i=id;
+	int32 my, my2;
+
+
+		if (st.Current_Map.sector[i].sloped)
+		{
+
+			if (abs(st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) < 512)
+			{
+				if (((x + (xsize / 2)) > st.Current_Map.sector[i].vertex[1].x && (x + (xsize / 2)) > st.Current_Map.sector[i].vertex[0].x) &&
+					((x - (xsize / 2)) < st.Current_Map.sector[i].vertex[1].x && (x - (xsize / 2)) < st.Current_Map.sector[i].vertex[0].x))
+				{
+					if (st.Current_Map.sector[i].vertex[1].y < st.Current_Map.sector[i].vertex[0].y)
+					{
+						my = st.Current_Map.sector[i].vertex[1].y;
+						my2 = st.Current_Map.sector[i].vertex[0].y;
+					}
+					else
+					{
+						my = st.Current_Map.sector[i].vertex[0].y;
+						my2 = st.Current_Map.sector[i].vertex[1].y;
+					}
+
+					if ((y - (ysize / 2)) < my2 && (y - (ysize / 2)) > my)
+						return i;
+				}
+			}
+		}
+
+	return -1;
 }
 
 
@@ -8456,8 +8516,8 @@ void Renderer(uint8 type)
 			if(i==0) break;
 		}
 
-		memset(z_buffer,0,z_used*(2048)*sizeof(int16));
-		memset(z_slot,0,z_used*sizeof(int16));
+		memset(z_buffer,0,57*(2048)*sizeof(int16));
+		memset(z_slot,0,57*sizeof(int16));
 		z_used=0;
 
 		for(i=0;i<MAX_STRINGS;i++)
