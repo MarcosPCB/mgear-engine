@@ -1,30 +1,34 @@
-// mggcreator.cpp : Defines the entry point for the console application.
-//
-
-//#include "stdafx.h"
 #include <stdlib.h>
 #include <string.h>
 #include "mgg.h"
 //#include "quicklz.h"
 #include <conio.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#define STBI_NO_PSD
+#define STBI_NO_HDR
+#define STBI_NO_PIC
+#define STBI_NO_GIF
+#define STBI_NO_PNM
 
 int main(int argc, char *argv[])
 {
 	FILE *file, *file2, *file3, *file4;
 	_MGGFORMAT mgg;
 	_MGGANIM *mga;
-	char FileName[256], filename[256], animfile[256], tmp[32], str[2][24], framename[256], framename2[256],  fileframe[32];
+	unsigned char FileName[256], filename[256], animfile[256], tmp[MAX_FILES * 24], str[2][24], framename[256], framename2[256], fileframe[32], files[MAX_FILES][24], *token;
 	int16 t=0, value, p=0, a=-1, val[16], *offx, *offy;
-	char header[21]={"MGG File Version 1"};
-	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas=0, *dimx, *dimy;
-	uint8 *imgatlas;
+	unsigned char header[21] = { "MGG File Version 1" }, *MGIbuf, *MGIimagedata, *imagebuf, *error_str;
+	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas = 0, *dimx, *dimy, numfiles = 0;
+	uint8 *imgatlas, sequence=2;
 	uint32 frameoffset[MAX_FRAMES];
 	uint32 framesize[MAX_FRAMES];
 	uint8 normals[MAX_FRAMES];
 	uint32 normalsize[MAX_FRAMES];
 	size_t totalsize;
-	uint16 i=0, j=0, k=0;
+	uint16 i = 0, j = 0, k = 0, width, height, MGIcolor, RLE;
 	uint32 framealone[MAX_FRAMES];
 	size_t size;
 	void *buf;
@@ -151,8 +155,59 @@ int main(int argc, char *argv[])
 		else
 		if(p==0)
 		{
-			if(strcmp(str[0],"MGGNAME")==NULL)
-				strcpy(mgg.name,str[1]);
+			if (strcmp(str[0], "MGGNAME") == NULL)
+				strcpy(mgg.name, str[1]);
+			else
+			if (strcmp(str[0], "SEQUENCE") == NULL)
+				sequence = 1;
+			else
+			if (strcmp(str[0], "NOTSEQUENCE") == NULL)
+				sequence = 0;
+			else
+				if (strcmp(str[0], "NUMFILES") == NULL)
+				{
+					if (sequence != 0)
+					{
+						printf("Error: cannot define NUMFILES for a sequence type MGG\n");
+						fflush(stdin);
+						getch();
+						exit(1);
+					}
+					else
+					{
+						numfiles = atoi(str[1]);
+						printf("Number o files selected is: %d\n", numfiles);
+					}
+				}
+				else
+					if (strcmp(str[0], "FILES") == NULL)
+					{
+						if (sequence != 0)
+						{
+							printf("Error: cannot define FILES for a sequence type MGG\n");
+							fflush(stdin);
+							getch();
+							exit(1);
+						}
+						else
+						{
+							if (numfiles == 0)
+							{
+								printf("Error: number of files not defined\n");
+								fflush(stdin);
+								getch();
+								exit(1);
+							}
+
+							strtok(tmp, " \"");
+
+							for (i = 0; i < numfiles; i++)
+							{
+								token=strtok(NULL, " \"");
+								strcpy(files[i], token);
+							}
+						}
+					}
 			else
 			if(strcmp(str[0],"FRAMENAMES")==NULL)
 				strcpy(fileframe,str[1]);
@@ -410,18 +465,29 @@ int main(int argc, char *argv[])
 	for(i=0;i<mgg.num_singletex+mgg.num_atlas;i++)
 	{
 		//if(i==33) j=42;
-		strcpy(framename2,framename);
-		if(j<10) sprintf(filename,"//%s000%d.tga",fileframe,j); else
-		if(j<100) sprintf(filename,"//%s00%d.tga",fileframe,j); else
-		if(j<1000) sprintf(filename,"//%s0%d.tga",fileframe,j); else
-		if(j<10000) sprintf(filename,"//%s0%d.tga",fileframe,j); else
-		if(j<100000) sprintf(filename,"//%s%d.tga",fileframe,j);
 
-		strcat(framename2,filename);
+		strcpy(framename2, framename);
+
+		if (sequence)
+		{
+			if (j < 10) sprintf(filename, "//%s000%d.tga", fileframe, j); else
+			if (j < 100) sprintf(filename, "//%s00%d.tga", fileframe, j); else
+			if (j < 1000) sprintf(filename, "//%s0%d.tga", fileframe, j); else
+			if (j < 10000) sprintf(filename, "//%s0%d.tga", fileframe, j); else
+			if (j < 100000) sprintf(filename, "//%s%d.tga", fileframe, j);
+
+			strcat(framename2, filename);
+		}
+		else
+		{
+			strcat(framename2, "/");
+			strcat(framename2, files[j]);
+		}
 
 		if((file2=fopen(framename2,"rb"))==NULL)
 		{
 			printf("Error: could not read frame number %d\n",j);
+			printf("Could not open file: %s\n", framename2);
 			fflush(stdin);
 			getch();
 			j++;
@@ -430,15 +496,53 @@ int main(int argc, char *argv[])
 		else
 		{
 			printf("Writing frame number %d ...\n",j);
+			printf("File: %s\n", framename2);
+			
+			
 			fseek(file2,0,SEEK_END);
 
 			size=ftell(file2);
 			rewind(file2);
+			
+			imagebuf = malloc(size);
+
+			fread(imagebuf, size, 1, file2);
+
+			MGIimagedata = stbi_load_from_memory(imagebuf, size, &width, &height, &MGIcolor, 0);
+
+			if (!MGIimagedata)
+			{
+				printf("Could not read image file format: %s\n", framename2);
+				error_str = stbi_failure_reason();
+				printf("%s\n", error_str);
+				fclose(file2);
+				free(imagebuf);
+				fflush(stdin);
+				getch();
+				j++;
+				continue;
+			}
+
+			MGIbuf = malloc((width*height*MGIcolor) + 9);
+
+			MGIbuf[0] = 'M';
+			MGIbuf[1] = 'G';
+			MGIbuf[2] = 'I';
+			MGIbuf[3] = MGIcolor;
+			MGIbuf[4] = 0;
+			MGIbuf[5] = width >> 8;
+			MGIbuf[6] = width & 0xFF;
+			MGIbuf[7] = height >> 8;
+			MGIbuf[8] = height & 0xFF;
+
+			memcpy(MGIbuf + 9, MGIimagedata, width*height*MGIcolor);
+
+			size = width*height*MGIcolor;
 
 			framesize[i]=size;
 	
-			buf=(void*) malloc(size);
-			fread(buf,size,1,file2);
+			//buf=(void*) malloc(size);
+			//fread(buf,size,1,file2);
 			//rewind(file);
 			
 			if(i==0) fseek(file,mgg.textures_offset+1,SEEK_SET); 
@@ -448,9 +552,11 @@ int main(int argc, char *argv[])
 				fseek(file,frameoffset[i-1]+1,SEEK_SET);
 			}
 			
-			fwrite(buf,size,1,file);
+			fwrite(MGIbuf,size,1,file);
 			fclose(file2);
-			free(buf);
+			free(MGIbuf);
+			free(imagebuf);
+			free(MGIimagedata);
 
 			frameoffset[i]=ftell(file);
 
@@ -459,39 +565,87 @@ int main(int argc, char *argv[])
 			if(normals[i])
 			{
 				strcpy(framename2,framename);
-				if(j<10) sprintf(filename,"//%s_n000%d.tga",fileframe,j); else
-				if(j<100) sprintf(filename,"//%s_n00%d.tga",fileframe,j); else
-				if(j<1000) sprintf(filename,"//%s_n0%d.tga",fileframe,j); else
-				if(j<10000) sprintf(filename,"//%s_n0%d.tga",fileframe,j); else
-				if(j<100000) sprintf(filename,"//%s_n%d.tga",fileframe,j);
-
-				strcat(framename2,filename);
-
-				if((file2=fopen(framename2,"rb"))==NULL)
+				
+				if (sequence)
 				{
-					printf("Error: could not read normal mapping frame number %d\n",j);
+					if (j < 10) sprintf(filename, "//%s_n000%d.tga", fileframe, j); else
+					if (j < 100) sprintf(filename, "//%s_n00%d.tga", fileframe, j); else
+					if (j < 1000) sprintf(filename, "//%s_n0%d.tga", fileframe, j); else
+					if (j < 10000) sprintf(filename, "//%s_n0%d.tga", fileframe, j); else
+					if (j < 100000) sprintf(filename, "//%s_n%d.tga", fileframe, j);
+
+
+					strcat(framename2, filename);
+				}
+				else
+				{
+					strcat(framename2, "/n_");
+					strcat(framename2, files[j]);
+				}
+
+				if ((file2 = fopen(framename2, "rb")) == NULL)
+				{
+					printf("Error: could not read normal map frame number %d\n", j);
+					printf("Could not open file: %s\n", framename2);
 					fflush(stdin);
 					getch();
+					j++;
+					continue;
 				}
 				else
 				{
 					printf("Writing normal mapping frame number %d ...\n",j);
-					fseek(file2,0,SEEK_END);
+					printf("File: %s\n", framename2);
 
-					size=ftell(file2);
+					fseek(file2, 0, SEEK_END);
+
+					size = ftell(file2);
 					rewind(file2);
 
+					imagebuf = malloc(size);
+
+					fread(imagebuf, size, 1, file2);
+
+					MGIimagedata = stbi_load_from_memory(imagebuf, size, &width, &height, &MGIcolor, 0);
+
+					if (!MGIimagedata)
+					{
+						printf("Could not read image file format: %s\n", framename2);
+						error_str = stbi_failure_reason();
+						printf("%s\n", error_str);
+						fclose(file2);
+						free(imagebuf);
+						fflush(stdin);
+						getch();
+						j++;
+						continue;
+					}
+
+					MGIbuf = malloc((width*height*MGIcolor) + 9);
+
+					MGIbuf[0] = 'M';
+					MGIbuf[1] = 'G';
+					MGIbuf[2] = 'I';
+					MGIbuf[3] = MGIcolor;
+					MGIbuf[4] = 0;
+					MGIbuf[5] = width >> 8;
+					MGIbuf[6] = width & 0xFF;
+					MGIbuf[7] = height >> 8;
+					MGIbuf[8] = height & 0xFF;
+
+					memcpy(MGIbuf + 9, MGIimagedata, width*height*MGIcolor);
+
+					size = width*height*MGIcolor;
+
 					normalsize[i]=size;
-	
-					buf=(void*) malloc(size);
-					fread(buf,size,1,file2);
-					//rewind(file);
 			
 					fseek(file,frameoffset[i]+1,SEEK_SET);
 			
-					fwrite(buf,size,1,file);
+					fwrite(MGIbuf,size,1,file);
 					fclose(file2);
-					free(buf);
+					free(MGIbuf);
+					free(MGIimagedata);
+					free(imagebuf);
 
 					frameoffset[i]=ftell(file);
 
@@ -563,7 +717,9 @@ int main(int argc, char *argv[])
 
 	//free(bufe);
 	//free(buf2);
-	free(mga);
+	if (mga)
+		free(mga);
+
 	free(offx);
 	free(offy);
 

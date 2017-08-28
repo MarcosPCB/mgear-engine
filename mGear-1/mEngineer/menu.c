@@ -30,9 +30,9 @@ void Menu()
 				st.keys[ESC_KEY].state=0;
 			}
 
-			if(CheckCollisionMouse(8192,4096-1820,1820,455,0))
+			if(CheckCollisionMouse(8192,4608-1820,1820,455,0))
 			{
-				StringUIData("Start New Map",8192,4096-1820,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Start New Map",8192,4608-1820,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					meng.scroll=0;
@@ -167,13 +167,13 @@ void Menu()
 				}
 			}
 			else
-				StringUI2Data("Start New Map",8192,(4096)-1820,1820,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Start New Map",8192,(4608)-1820,1820,455,0,255,255,255,255,ARIAL,0,0,0);
 
 			if(st.gt==GAME_MENU) 
 			{
-				if(CheckCollisionMouse(8192,(4096)-2275,1365,455,0))
+				if(CheckCollisionMouse(8192,(4608)-2275,1365,455,0))
 				{
-					StringUIData("Save Map",8192,(4096)-2275,1365,455,0,255,128,32,255,ARIAL,0,0,0);
+					StringUIData("Save Map",8192,(4608)-2275,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 					if(st.mouse1)
 					{
 						strcpy(UI_Sys.file_name,"newmap");
@@ -183,20 +183,20 @@ void Menu()
 					}
 				}
 				else
-					StringUI2Data("Save Map",8192,(4096)-2275,1365,455,0,255,255,255,255,ARIAL,0,0,0);
+					StringUI2Data("Save Map",8192,(4608)-2275,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 			}
 
 			if(st.gt==MAIN_MENU)
 			{
-				if(UIStringButton(8192,4096-1365,"MGG Editor",ARIAL,2048,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+				if(UIStringButton(8192,4608-1365,"MGG Editor",ARIAL,2048,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 				{
 					meng.menu_sel=4;
 				}
 			}
 
-			if(CheckCollisionMouse(8192,(4096)-910,1365,455,0))
+			if(CheckCollisionMouse(8192,(4608)-910,1365,455,0))
 			{
-				StringUIData("Load Map",8192,(4096)-910,1365,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Load Map",8192,(4608)-910,1365,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					meng.menu_sel=2;
@@ -205,11 +205,11 @@ void Menu()
 				}
 			}
 			else
-				StringUI2Data("Load Map",8192,(4096)-910,1365,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Load Map",8192,(4608)-910,1365,455,0,255,255,255,255,ARIAL,0,0,0);
 
-			if(CheckCollisionMouse(8192,(4096)-455,910,455,0))
+			if(CheckCollisionMouse(8192,(4608)-455,910,455,0))
 			{
-				StringUIData("Options",8192,(4096)-455,910,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Options",8192,(4608)-455,910,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 				{
 					winid=UICreateWindow2(0,0,CENTER,5,16,2048,64,ARIAL);
@@ -218,16 +218,16 @@ void Menu()
 				}
 			}
 			else
-				StringUI2Data("Options",8192,(4096)-455,910,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Options",8192,(4608)-455,910,455,0,255,255,255,255,ARIAL,0,0,0);
 
-			if(CheckCollisionMouse(8192,(4096),455,455,0))
+			if(CheckCollisionMouse(8192,(4608),455,455,0))
 			{
-				StringUIData("Quit",8192,(4096),455,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Quit",8192,(4608),455,455,0,255,128,32,255,ARIAL,0,0,0);
 				if(st.mouse1)
 					Quit();
 			}
 			else
-				StringUI2Data("Quit",8192,(4096),455,455,0,255,255,255,255,ARIAL,0,0,0);
+				StringUI2Data("Quit",8192,(4608),455,455,0,255,255,255,255,ARIAL,0,0,0);
 		}
 		else
 		if(meng.menu_sel==2)
@@ -245,9 +245,9 @@ void Menu()
 
 					for(a=0;a<st.Current_Map.num_mgg;a++)
 					{
-						DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+						DrawUI(8192,4608,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
 						sprintf(lo,"Loading %d%",(a/st.Current_Map.num_mgg)*100);
-						DrawString2UI(lo,8192,4096,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*2,FONT_SIZE*2,0);
+						DrawString2UI(lo,8192,4608,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*2,FONT_SIZE*2,0);
 						if(CheckMGGFile(st.Current_Map.MGG_FILES[a]))
 						{
 							LoadMGG(&mgg_map[id],st.Current_Map.MGG_FILES[a]);

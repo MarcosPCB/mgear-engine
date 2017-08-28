@@ -156,9 +156,9 @@ void UILoadSystem(char *filename)
 		UI_Sys.window_frame0=6;
 		UI_Sys.window_frame1=7;
 		UI_Sys.window_frame2=8;
-		UI_Sys.button_frame0=9;
+		UI_Sys.button_frame0=15;
 		UI_Sys.button_frame1=10;
-		UI_Sys.button_frame2=11;
+		UI_Sys.button_frame2=9;
 		UI_Sys.tab_frame=12;
 		UI_Sys.close_frame=13;
 		UI_Sys.subwindow_frame0=14;
@@ -201,7 +201,7 @@ int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_op
 	if(bpos==CENTER)
 	{
 		x=8192;
-		y=4096;
+		y=GAME_HEIGHT/2;
 	}
 
 	str_len=strlen(text);
@@ -348,7 +348,7 @@ int16 UIOptionBox(int32 x, int32 y, UI_POS bpos, const char options[8][16], uint
 	if(bpos==CENTER)
 	{
 		x=8192;
-		y=4096;
+		y=GAME_HEIGHT/2;
 	}
 
 	height_size=(((st.fonts[font].size_h_gm*font_size)/FONT_SIZE)*num_options)+256;
@@ -469,6 +469,41 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 	return UI_NULLOP;
 }
 
+int8 UIButton(int32 x, int32 y, char *text, int8 font, int16 font_size, int8 layer, uint8 select_mode)
+{
+	int32 text_size;
+	int16 gsize, gsizew;
+
+	gsize = (st.fonts[font].size_h_gm*font_size) / FONT_SIZE;
+	gsizew = (st.fonts[font].size_w_gm*font_size) / FONT_SIZE;
+
+	text_size = gsizew*strlen(text);
+
+	if (CheckCollisionMouse(x, y, text_size, gsize, 0))
+	{
+		if (st.mouse1)
+		{
+			st.mouse1 = 0;
+
+			if (select_mode==1) select_mode = 0;
+			else select_mode = 1;
+		}
+	}
+
+	if (select_mode)
+	{
+		UIData(x, y, text_size + 512, gsize + 512, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame2], 255, layer);
+		StringUIData(text, x, y, text_size, gsize, 0, 255, 255, 255, 255, font, font_size, font_size, layer);
+		return UI_SEL;
+	}
+	else
+	{
+		UIData(x, y, text_size + 512, gsize + 512, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.button_frame0], 255, layer);
+		StringUIData(text, x, y, text_size, gsize, 0, 0, 0, 0, 255, font, font_size, font_size, layer);
+		return UI_NULLOP;
+	}
+}
+
 int8 UIStringButtonWorld(int32 x, int32 y,char *text, int8 font, int16 font_size, int8 layer, int32 colorN, int32 colorS)
 {
 	int32 text_size;
@@ -512,7 +547,7 @@ int8 UICreateWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int
 	if(bpos==CENTER)
 	{
 		x=8192;
-		y=4096;
+		y=GAME_HEIGHT/2;
 	}
 
 	if(st.num_uiwindow<MAX_UIWINDOWS)
@@ -558,7 +593,7 @@ int8 UICreateWindow2(int32 x, int32 y, UI_POS bpos, int8 layer, uint8 num_avail_
 	if(bpos==CENTER)
 	{
 		x=8192;
-		y=4096;
+		y=GAME_HEIGHT/2;
 	}
 
 	if(st.num_uiwindow<MAX_UIWINDOWS)
@@ -1294,8 +1329,8 @@ void UIMain_DrawSystem()
 		
 		p=st.mouse;
 
-		p.x=(p.x*16384)/st.screenx;
-		p.y=(p.y*8192)/st.screeny;
+		p.x=(p.x*GAME_WIDTH)/st.screenx;
+		p.y=(p.y*9216)/st.screeny;
 
 		if(st.cursor_type==1)
 			DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
@@ -1554,9 +1589,9 @@ void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b)
 {
 	Pos p;
 
-	UIData(14336,1536,4096,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[10],255,0);
+	UIData(14336,1536,GAME_HEIGHT/2,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[10],255,0);
 
-	if(CheckCollisionMouse(14336,1536,4096,2048,0) && st.mouse1)
+	if(CheckCollisionMouse(14336,1536,GAME_HEIGHT/2,2048,0) && st.mouse1)
 	{
 		p=st.mouse;
 
@@ -1751,8 +1786,8 @@ int8 UISelectFile(char *filename)
 
 	UI_Sys.sys_freeze=1;
 
-	UIData(8192,4096,8192,4096,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
-	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
+	UIData(8192,GAME_HEIGHT/2,8192,GAME_HEIGHT/2,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
+	UIData(8192,GAME_HEIGHT/2,8192-512,GAME_HEIGHT/2-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
 
 	if(UI_Sys.num_files>13)
 	{
@@ -1761,7 +1796,7 @@ int8 UISelectFile(char *filename)
 			if(i>UI_Sys.num_files-1)
 				break;
 
-			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4608-((4608-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -1812,22 +1847,22 @@ int8 UISelectFile(char *filename)
 
 			if(m_sel==UI_Sys.filesp[i])
 			{
-				UIData(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+				UIData(8192,4608-((4608-512)/2)+256+(j*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
 			}
 			else
 			{
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
 			}
 
 			if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-				UIData(8192-((8192-512)/2)+128,4096-((4096-512)/2)+256+(j*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
+				UIData(8192-((8192-512)/2)+128,4608-((4608-512)/2)+256+(j*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
 
 			j++;
 
@@ -1835,11 +1870,11 @@ int8 UISelectFile(char *filename)
 
 		if (UI_Sys.num_files > 13)
 		{
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096, 256, 4096 - 512, 0, 128, 128, 128, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 512) / 2) + 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 + ((4096 - 512) / 2) - 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608, 256, 4608 - 512, 0, 128, 128, 128, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608 - ((4608 - 512) / 2) + 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608 + ((4608 - 512) / 2) - 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
 
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 1024) / 2) + (UI_Sys.mouse_scroll*((4096 - 1024) / (UI_Sys.num_files - 13))), 256, 256,
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608 - ((4608 - 1024) / 2) + (UI_Sys.mouse_scroll*((4608 - 1024) / (UI_Sys.num_files - 13))), 256, 256,
 				0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
 
 			if (st.mouse_wheel > 0)
@@ -1866,7 +1901,7 @@ int8 UISelectFile(char *filename)
 		for(i=0;i<UI_Sys.num_files;i++)
 		{
 
-			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4608-((4608-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -1916,26 +1951,26 @@ int8 UISelectFile(char *filename)
 
 			if(m_sel==UI_Sys.filesp[i])
 			{
-				UIData(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+				UIData(8192,4608-((4608-512)/2)+256+(i*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
 			}
 			else
 			{
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
 			}
 
 			if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-				UIData(8192-((8192-512)/2)+128,4096-((4096-512)/2)+256+(i*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
+				UIData(8192-((8192-512)/2)+128,4608-((4608-512)/2)+256+(i*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
 		}
 	}
 
-	if(UIStringButton(8192+2048+1024,4096+2048-64-32-16,"Open",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	if(UIStringButton(8192+2048+1024,4608+2048+64+32+16,"Open",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		UI_Sys.mouse_scroll=0;
 
@@ -1984,8 +2019,8 @@ int8 UISavePath(char *filename)
 
 	UI_Sys.sys_freeze=1;
 
-	UIData(8192,4096,8192,4096+1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
-	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
+	UIData(8192,4608,8192,4608+1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
+	UIData(8192,4608,8192-512,4608-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
 
 	if(UI_Sys.num_files>13)
 	{
@@ -1994,7 +2029,7 @@ int8 UISavePath(char *filename)
 			if(i>UI_Sys.num_files-1)
 				break;
 
-			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4608-((4608-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2082,22 +2117,22 @@ int8 UISavePath(char *filename)
 
 			if(m_sel==UI_Sys.filesp[i])
 			{
-				UIData(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+				UIData(8192,4608-((4608-512)/2)+256+(j*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,255,255,255,255,0,2048,2048,0);
 			}
 			else
 			{
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
 			}
 
 			if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-				UIData(8192-((8192-512)/2)+128,4096-((4096-512)/2)+256+(j*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
+				UIData(8192-((8192-512)/2)+128,4608-((4608-512)/2)+256+(j*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
 
 			j++;
 
@@ -2106,11 +2141,11 @@ int8 UISavePath(char *filename)
 		if (UI_Sys.num_files > 13)
 		{
 
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096, 256, 4096 - 512, 0, 128, 128, 128, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 512) / 2) + 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 + ((4096 - 512) / 2) - 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608, 256, 4608 - 512, 0, 128, 128, 128, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608 - ((4608 - 512) / 2) + 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608 + ((4608 - 512) / 2) - 128, 256, 128, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0], 255, 0);
 
-			UIData(8192 + ((8192 - 512) / 2) - 128, 4096 - ((4096 - 1024) / 2) + (UI_Sys.mouse_scroll*((4096 - 1024) / (UI_Sys.num_files - 13))), 256, 256,
+			UIData(8192 + ((8192 - 512) / 2) - 128, 4608 - ((4608 - 1024) / 2) + (UI_Sys.mouse_scroll*((4608 - 1024) / (UI_Sys.num_files - 13))), 256, 256,
 				0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
 
 			if (st.mouse_wheel > 0)
@@ -2137,7 +2172,7 @@ int8 UISavePath(char *filename)
 		for(i=0;i<UI_Sys.num_files;i++)
 		{
 
-			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4608-((4608-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2224,28 +2259,28 @@ int8 UISavePath(char *filename)
 
 			if(m_sel==UI_Sys.filesp[i])
 			{
-				UIData(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+				UIData(8192,4608-((4608-512)/2)+256+(i*256),8192-512,256,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,255,255,255,255,0,2048,2048,0);
 			}
 			else
 			{
 				if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.foldersp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
 				else
-					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+					StringUIvData(UI_Sys.files[UI_Sys.filesp[i]],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
 			}
 
 			if(UI_Sys.filesp[i]==UI_Sys.foldersp[i])
-				UIData(8192-((8192-512)/2)+128,4096-((4096-512)/2)+256+(i*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
+				UIData(8192-((8192-512)/2)+128,4608-((4608-512)/2)+256+(i*256),256,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon],255,0);
 		}
 	}
 
-	UITextBox(8192,4096+2048-64-32,4096-256,UI_Sys.file_name,0,2048,0,UI_COL_SELECTED,UI_COL_CLICKED,0,1);
+	UITextBox(8192,4608+2048-64-32,4608-256,UI_Sys.file_name,0,2048,0,UI_COL_SELECTED,UI_COL_CLICKED,0,1);
 
-	if(UIStringButton(8192+2048+1024,4096+2048,"Save",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	if(UIStringButton(8192+2048+1024,4608+2048,"Save",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		UI_Sys.mouse_scroll=0;
 
@@ -2303,8 +2338,8 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 
 	UI_Sys.sys_freeze=1;
 
-	UIData(8192,4096,8192,4096,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
-	UIData(8192,4096,8192-512,4096-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
+	UIData(8192,4608,8192,4608,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window2_frame],255,1);
+	UIData(8192,4608,8192-512,4608-512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.window_frame2],255,1);
 
 	if(sizel>13)
 	{
@@ -2313,7 +2348,7 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 			if(i>sizel-1)
 				break;
 
-			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4608-((4608-512)/2)+256+(j*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2334,21 +2369,21 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 
 			if (m_sel == i)
 			{
-				UIData(8192, 4096 - ((4096 - 512) / 2) + 256 + (j * 256), 8192 - 512, 256, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
-				StringUIvData(list[i], 8192 - ((8192 - 512) / 2) + 256, 4096 - ((4096 - 512) / 2) + 256 + (j * 256), 0, 0, 0, 255, 255, 255, 255, 0, 2048, 2048, 0);
+				UIData(8192, 4608 - ((4608 - 512) / 2) + 256 + (j * 256), 8192 - 512, 256, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+				StringUIvData(list[i], 8192 - ((8192 - 512) / 2) + 256, 4608 - ((4608 - 512) / 2) + 256 + (j * 256), 0, 0, 0, 255, 255, 255, 255, 0, 2048, 2048, 0);
 			}
 			else
-				StringUIvData(list[i],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
+				StringUIvData(list[i],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(j*256),0,0,0,0,0,0,255,0,2048,2048,0);
 
 			j++;
 
 		}
 
-		UIData(8192+((8192-512)/2)-128,4096,256,4096-512,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
-		UIData(8192+((8192-512)/2)-128,4096-((4096-512)/2)+128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
-		UIData(8192+((8192-512)/2)-128,4096+((4096-512)/2)-128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
+		UIData(8192+((8192-512)/2)-128,4608,256,4608-512,0,128,128,128,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
+		UIData(8192+((8192-512)/2)-128,4608-((4608-512)/2)+128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
+		UIData(8192+((8192-512)/2)-128,4608+((4608-512)/2)-128,256,128,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame0],255,0);
 
-		UIData(8192+((8192-512)/2)-128,4096-((4096-1024)/2)+(UI_Sys.mouse_scroll*((4096-1024)/(UI_Sys.num_files-13))),256,256,
+		UIData(8192+((8192-512)/2)-128,4608-((4608-1024)/2)+(UI_Sys.mouse_scroll*((4608-1024)/(UI_Sys.num_files-13))),256,256,
 			0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1],255,0);
 
 		if(st.mouse_wheel>0)
@@ -2374,7 +2409,7 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 		for(i=0;i<sizel;i++)
 		{
 
-			if(CheckCollisionMouse(8192,4096-((4096-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
+			if(CheckCollisionMouse(8192,4608-((4608-512)/2)+256+(i*256),8192-512,256,0) && st.mouse1)
 			{
 				if((GetTimerM()-time)<50)
 				{
@@ -2397,15 +2432,15 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 
 			if (m_sel == i)
 			{
-				UIData(8192, 4096 - ((4096 - 512) / 2) + 256 + (i * 256), 8192 - 512, 256, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
-				StringUIvData(list[i], 8192 - ((8192 - 512) / 2) + 256, 4096 - ((4096 - 512) / 2) + 256 + (i * 256), 0, 0, 0, 255, 255, 255, 255, 0, 2048, 2048, 0);
+				UIData(8192, 4608 - ((4608 - 512) / 2) + 256 + (i * 256), 8192 - 512, 256, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.scroll_frame1], 255, 0);
+				StringUIvData(list[i], 8192 - ((8192 - 512) / 2) + 256, 4608 - ((4608 - 512) / 2) + 256 + (i * 256), 0, 0, 0, 255, 255, 255, 255, 0, 2048, 2048, 0);
 			}
 			else
-				StringUIvData(list[i],8192-((8192-512)/2)+256,4096-((4096-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
+				StringUIvData(list[i],8192-((8192-512)/2)+256,4608-((4608-512)/2)+256+(i*256),0,0,0,0,0,0,255,0,2048,2048,0);
 		}
 	}
 
-	if(UIStringButton(8192+2048+1024,4096+2048-64-32-16,"Select",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	if(UIStringButton(8192+2048+1024,4608+2048+64+32+16,"Select",0,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		UI_Sys.mouse_scroll=0;
 

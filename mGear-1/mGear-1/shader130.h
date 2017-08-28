@@ -1,7 +1,7 @@
-#ifndef _SHADER130_C
-#define _SHADER130_C
+#ifndef SHADER130_H
+#define SHADER130_H
 
-const char *Texture_VShader[64]={
+static const char *Texture_VShader[64]={
 	"#version 130\n"
 
 	"in vec3 Position;\n"
@@ -22,7 +22,7 @@ const char *Texture_VShader[64]={
 	"};\n"
 };
 
-const char *Texture_FShader[64]={
+static const char *Texture_FShader[64]={
 	"#version 130\n"
 
 	"uniform sampler2D texu;\n"
@@ -49,7 +49,7 @@ const char *Texture_FShader[64]={
 
 };
 
-const char *TextureNoT_FShader[64]={
+static const char *TextureNoT_FShader[64]={
 	"#version 130\n"
 
 	"uniform sampler2D texu;\n"
@@ -72,7 +72,7 @@ const char *TextureNoT_FShader[64]={
 
 };
 
-const char *TextureT_FShader[64]={
+static const char *TextureT_FShader[64]={
 	"#version 130\n"
 
 	"uniform sampler2D texu;\n"
@@ -106,7 +106,7 @@ const char *TextureT_FShader[64]={
 
 };
 
-const char *Blend_FShader[64]={
+static const char *Blend_FShader[64]={
 	"#version 130\n"
 
 	"uniform sampler2D texu;\n"
@@ -260,7 +260,7 @@ const char *Lightmap_FShader[128]={
 };
 */
 
-const char *Lightmap_FShader[128]={
+static const char *Lightmap_FShader[128]={
 	"#version 130\n"
 	
 	"in vec2 TexCoord2;\n"

@@ -15,6 +15,7 @@ typedef long long unsigned uint64;
 #define MAX_FRAMES 8192
 #define MAX_ANIMATIONS 64
 #define TEX_RANGE 32768 //16-bit precision
+#define MAX_FILES 512
 
 #define LINEAR 0
 #define NEAREST 1

@@ -1,7 +1,7 @@
-#ifndef _SHADER110_C
-#define _SHADER110_C
+#ifndef SHADER110_H
+#define SHADER110_H
 
-const char *Texture_VShader110[64]={
+static const char *Texture_VShader110[64]={
 	"#version 110\n"
 
 	"varying in vec3 Position;\n"
@@ -19,7 +19,7 @@ const char *Texture_VShader110[64]={
 	"};\n"
 };
 
-const char *Texture_FShader110[64]={
+static const char *Texture_FShader110[64]={
 	"#version 110\n"
 
 	"uniform sampler2D texu;\n"
@@ -36,7 +36,7 @@ const char *Texture_FShader110[64]={
 	"{\n"
 		//"vec4 NormalColor = vec4(0.501, 0.501, 1.0, 1.0);\n"
 
-		"if(normal == 0.0 || normal == 1.0)\n"
+		//"if(normal == 0.0 || normal == 1.0)\n"
 			"FColor = texture2D(texu,TexCoord2) * colore;\n"
 /*
 		"else\n"
@@ -47,7 +47,7 @@ const char *Texture_FShader110[64]={
 
 };
 
-const char *TextureNoT_FShader110[64]={
+static const char *TextureNoT_FShader110[64]={
 	"#version 110\n"
 
 	"uniform sampler2D texu;\n"
@@ -70,7 +70,7 @@ const char *TextureNoT_FShader110[64]={
 
 };
 
-const char *TextureT_FShader110[64]={
+static const char *TextureT_FShader110[64]={
 	"#version 110\n"
 
 	"uniform sampler2D texu;\n"
@@ -101,7 +101,7 @@ const char *TextureT_FShader110[64]={
 
 };
 
-const char *Blend_FShader110[64]={
+static const char *Blend_FShader110[64]={
 	"#version 110\n"
 
 	"uniform sampler2D texu;\n"
@@ -124,7 +124,7 @@ const char *Blend_FShader110[64]={
 
 };
 
-const char *Lightmap_FShader110[128]={
+static const char *Lightmap_FShader110[128]={
 	"#version 110\n"
 	
 	"varying in vec2 TexCoord2;\n"
@@ -154,11 +154,15 @@ const char *Lightmap_FShader110[128]={
 			"FColor = (texture2D(texu, TexCoord2) * colore) * ((Lightmap) * max(dot(N, L), 0.0));\n"
 		"}\n"
 		"else\n"
+		"if(normal == 0.0 || normal == 2.0)\n"
 		"{\n"
 			"vec3 NormalColor = vec3(0.501, 0.501, 1.0);\n"
 
 			"FColor = (texture2D(texu, TexCoord2) * colore) * ((Lightmap) * max(dot(NormalColor, L), 0.0));\n"
 		"}\n"
+		"else\n"
+		"if(normal == 3.0)\n"
+			"FColor = texture2D(texu, TexCoord2) * colore;\n"
 	"}\n"
 };
 

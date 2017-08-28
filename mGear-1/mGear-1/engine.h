@@ -7,13 +7,23 @@
 	#include <fmod.h>
 	#include <fmod_errors.h>
 	#include <SDL_ttf.h>
-	#include <SOIL.h>
+	//#include <SOIL.h>
+
 	//#include "a.h" 
 	#include <immintrin.h>
 #else
 	#include <dos.h>
 	#include <conio.h>
 #endif
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
+#define STBI_NO_PSD
+#define STBI_NO_GIF
+#define STBI_NO_PNM
+#define STBI_NO_HDR
+#define STBI_NO_PIC
 
 #ifdef WIN32
 	#include <Windows.h>
@@ -95,8 +105,10 @@ typedef FMOD_CHANNEL Channel;
 #define BCK1_DEFAULT_VEL 0.5
 #define FR_DEFAULT_VEL 1.3
 
-#define GAME_SCREEN_WIDTH 16384
-#define GAME_SCREEN_HEIGHT 8192
+#define GAME_WIDTH 16384 //1024 * 16
+#define GAME_HEIGHT 9216 //576 * 16
+
+#define GAME_ASPECT 1.777777777778
 
 double _inline sqrt14(double n);
 
@@ -820,6 +832,8 @@ struct _Render
 	uint16 shader_version;
 
 	PIPELINE ppline[MAX_DRAWCALLS];
+
+	uint16 vpx, vpy;
 };
 
 typedef struct _Render Render;
@@ -1034,6 +1048,8 @@ void InitMGG(); //Inits all MGG structs
 int32 LoadSpriteCFG(char *filename, int id);
 int32 LoadSpriteList(char *filename);
 
+uint8 LoadMGGList(const char *file);
+
 uint32 LoadMap(const char *name);
 void FreeMap();
 
@@ -1048,6 +1064,8 @@ void CreateLog();
 void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
 
 void RestartVideo();
+
+void WindowEvent();
 
 void _inline STW(int32 *x, int32 *y);
 
@@ -1161,7 +1179,7 @@ void SpawnSprite(int16 game_id, Pos pos, Pos size, int16 ang);
 uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 ang2);
 uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang);
 uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang, int8 z);
-int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, uint16 sectorid);
+int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, int16 sectorid);
 int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
 int16 CheckCollisionSectorWallID(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int16 id);
 uint8 CheckCollisionPossibility(uint16 id, uint16 id2, int32 *dist); //Checks if the two sprites are in the possibility of a collision and returns the distance they are of each other

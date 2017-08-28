@@ -184,4 +184,6 @@ int8 UISavePath(char *filename);
 
 int16 UIMakeList(char list[128][128], int16 sizel);
 
+int8 UIButton(int32 x, int32 y, char *text, int8 font, int16 font_size, int8 layer, uint8 select_mode);
+
 #endif

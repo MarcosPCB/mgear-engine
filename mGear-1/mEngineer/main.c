@@ -24,8 +24,8 @@ uint16 WriteCFG()
 	if((file=fopen("settings.cfg","w"))==NULL)
 		return 0;
 
-	st.screenx=960;
-	st.screeny=540;
+	st.screenx=1024;
+	st.screeny=576;
 	st.fullscreen=0;
 	st.bpp=32;
 	st.audiof=44100;
@@ -110,7 +110,7 @@ int16 DirFiles(const char *path, char content[512][512])
 static void MGGList()
 {
 	uint16 j=0, i;
-	UIData(8192,4096,2275,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,5);
+	UIData(8192,4608,2275,GAME_HEIGHT,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,5);
 	if(st.Current_Map.num_mgg>0)
 	{
 		for(i=227;i<454*st.Current_Map.num_mgg;i+=454)
@@ -159,7 +159,7 @@ void ImageList()
 	uint32 m=0, i=728, j=728, id=0, l=0;
 
 	if(!st.Current_Map.num_mgg)
-		StringUIData("No MGGs loaded",8192,4096,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+		StringUIData("No MGGs loaded",8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 	else
 	{
 		if(meng.scroll<0)
@@ -184,7 +184,7 @@ void ImageList()
 							else
 							{
 								meng.pre_size.x=(mgg_map[id].frames[m].w*16384)/st.screenx;
-								meng.pre_size.y=(mgg_map[id].frames[m].h*8192)/st.screeny;
+								meng.pre_size.y=(mgg_map[id].frames[m].h*9216)/st.screeny;
 							}
 						}
 						else
@@ -374,8 +374,8 @@ static int16 MGGLoad()
 							continue;
 						}
 
-						DrawUI(8192,4096,16384,8192,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
-						DrawString2UI("Loading...",8192,4096,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*3,FONT_SIZE*3,0);
+						DrawUI(8192,4608,16384,4608,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+						DrawString2UI("Loading...",8192,4608,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*3,FONT_SIZE*3,0);
 						Renderer(1);
 						LoadMGG(&mgg_map[id],path2);
 
@@ -476,25 +476,25 @@ static void PannelLeft()
 	static int8 winid[4];
 
 	UIData(8192,128,16384,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
-	UIData(455,4096,455*2,8192,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+	UIData(455,4608,455*2,9216,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
-	UIData(16384-1024,8192-512,2048,1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+	UIData(16384-1024,9216-512,2048,1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
-	sprintf(str,"MX: %d - MY: %d",(st.mouse.x*16384)/st.screenx, (st.mouse.y*8192)/st.screeny);
-	StringUIData(str,16384-1024,8192-512-256,0,0,0,255,255,255,255,ARIAL,1536,1536,0);
+	sprintf(str,"MX: %d - MY: %d",(st.mouse.x*16384)/st.screenx, (st.mouse.y*9216)/st.screeny);
+	StringUIData(str,16384-1024,9216-512-256,0,0,0,255,255,255,255,ARIAL,1536,1536,0);
 
 	sprintf(str,"X: %d - Y: %d",st.Camera.position.x, st.Camera.position.y);
-	StringUIData(str,16384-1024,8192-512,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
+	StringUIData(str,16384-1024,9216-512,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
 
 	sprintf(str,"W: %0.2f - H: %0.2f",st.Camera.dimension.x, st.Camera.dimension.y);
-	StringUIData(str,16384-1024,8192-256,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
+	StringUIData(str,16384-1024,9216-256,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
 
 	if(UIStringButton(8096,128,"Camera Area",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 	{
 		meng.pannel_choice=1;
 		meng.command=CAM_AREA;
 		meng.command2=0;
-		winid[1]=UICreateWindow2(8192,4096,CENTER,6,16,2048,32,ARIAL);
+		winid[1]=UICreateWindow2(8192,4608,CENTER,6,16,2048,32,ARIAL);
 	}
 
 	if(meng.command==CAM_AREA)
@@ -583,8 +583,8 @@ static void PannelLeft()
 			{
 				if(CheckMGGInSystem(filen)<99999)
 				{
-					DrawUI(8192,4096,4096,2048,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
-					DrawString2UI("Loading...",8192,4096,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*3,FONT_SIZE*3,0);
+					DrawUI(8192,4608,4096,2048,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
+					DrawString2UI("Loading...",8192,4608,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*3,FONT_SIZE*3,0);
 					Renderer(1);
 					LoadMGG(&mgg_map[st.Current_Map.num_mgg],filen);
 
@@ -784,7 +784,7 @@ static void PannelLeft()
 		//time++;
 		//if((st.time-time)==1000)
 		//{
-		StringUIData("Draw a sector",8192,8192-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+		StringUIData("Draw a sector",8192,9216-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 		//}
 
 			if(st.mouse1 && !meng.current_command)
@@ -804,7 +804,7 @@ static void PannelLeft()
 		UIData(682,227,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[2],255,7);
 		//if((st.time-time)==1000)
 		//{
-		StringUIData("Select and edit",8192,8192-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+		StringUIData("Select and edit",8192,9216-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 		//}
 
 		if(st.mouse1 && !meng.current_command) meng.command=meng.pannel_choice=meng.command2=2;
@@ -820,7 +820,7 @@ static void PannelLeft()
 		UIData(227,682,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[1],255,7);
 		//if((st.time-time)==1000)
 		//{
-		StringUIData("Add an OBJ",8192,8192-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+		StringUIData("Add an OBJ",8192,9216-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 		//}
 
 		if(st.mouse1 && !meng.current_command)
@@ -843,7 +843,7 @@ static void PannelLeft()
 		UIData(682,682,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[3],255,7);
 		//if((st.time-time)==1000)
 		//{
-		StringUIData("Add a sprite",8192,8192-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+		StringUIData("Add a sprite",8192,9216-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 		//}
 
 			if(st.mouse1 && !meng.current_command)
@@ -861,7 +861,7 @@ static void PannelLeft()
 	{
 		UIData(227,1137,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[5],255,7);
 
-		StringUIData("Add a lightmap",8192,8192-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
+		StringUIData("Add a lightmap",8192,9216-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
 
 		if(st.mouse1)
 		{
@@ -880,19 +880,19 @@ static void PannelLeft()
 		else
 			sprintf(str,"Sprite Sel.");
 
-		if(!CheckCollisionMouse(458,8192-2275,490,223,0))
+		if(!CheckCollisionMouse(458,9216-2275,490,223,0))
 		{
-			StringUIData(str,458,8192-2275,490,223,0,255,255,255,255,ARIAL,0,0,0);
+			StringUIData(str,458,9216-2275,490,223,0,255,255,255,255,ARIAL,0,0,0);
 		}
 		else
 		{
-			StringUIData(str,458,8192-2275,490,223,0,255,128,32,255,ARIAL,0,0,0);
+			StringUIData(str,458,9216-2275,490,223,0,255,128,32,255,ARIAL,0,0,0);
 
 
 			if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-				StringUIData("Texture Selection",8192,8192-455,2730,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Texture Selection",8192,9216-455,2730,455,0,255,128,32,255,ARIAL,0,0,0);
 			else
-				StringUIData("Sprite Selection",8192,8192-455,2730,455,0,255,128,32,255,ARIAL,0,0,0);
+				StringUIData("Sprite Selection",8192,9216-455,2730,455,0,255,128,32,255,ARIAL,0,0,0);
 
 
 			if(st.mouse1)
@@ -911,7 +911,7 @@ static void PannelLeft()
 	}
 
 	if(meng.pannel_choice==ADD_OBJ)
-		UIData(455,8192-910,910,910,0,255,255,255,0,0,32768,32768,meng.tex_selection,255,0);
+		UIData(455,9216-910,910,910,0,255,255,255,0,0,32768,32768,meng.tex_selection,255,0);
 
 	if(meng.pannel_choice==0)
 		UIData(227,227,455,455,0,128,32,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[0],255,0);
@@ -956,7 +956,7 @@ static void PannelLeft()
 		{
 			StringUIData("Lightmap Res.",455,2710+810,810,227,0,255,128,32,255,ARIAL,0,0,0);
 
-			StringUIData("Set the lightmap resolution",8192,8192-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+			StringUIData("Set the lightmap resolution",8192,9216-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 			if(st.mouse1 && !meng.current_command)
 			{
@@ -969,13 +969,13 @@ static void PannelLeft()
 
 		if(meng.command==LIGHTMAP_RES)
 		{
-			UIData(8192,4096,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
 			sprintf(str,"Res. Width %d",meng.lightmap_res.x);
 
-			if(CheckCollisionMouse(8192,4096-512,810,455,0))
+			if(CheckCollisionMouse(8192,4608-512,810,455,0))
 			{
-				StringUIData(str,8192,4096-512,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-512,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -986,13 +986,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,4096-512,810,227,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-512,810,227,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.sub_com==1)
 			{
 				meng.lightmap_res.x=atoi(st.TextInput);
 
-				StringUIData(str,8192,4096-512,810,227,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-512,810,227,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				if(st.keys[RETURN_KEY].state)
 				{
@@ -1004,9 +1004,9 @@ static void PannelLeft()
 
 			sprintf(str,"Res. Height %d",meng.lightmap_res.y);
 
-			if(CheckCollisionMouse(8192,4096+512,810,455,0))
+			if(CheckCollisionMouse(8192,4608+512,810,455,0))
 			{
-				StringUIData(str,8192,4096+512,810,227,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+512,810,227,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -1017,13 +1017,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,4096+512,810,227,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+512,810,227,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.sub_com==2)
 			{
 				meng.lightmap_res.y=atoi(st.TextInput);
 
-				StringUIData(str,8192,4096+512,810,227,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+512,810,227,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				if(st.keys[RETURN_KEY].state)
 				{
@@ -1084,7 +1084,7 @@ static void PannelLeft()
 	{
 		UIData(682,682,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[3],255,0);
 
-		UIData(455,8192-910,910,910,0,255,255,255,0,0,32768,32768,mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[meng.sprite_frame_selection],255,0);
+		UIData(455,9216-910,910,910,0,255,255,255,0,0,32768,32768,mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[meng.sprite_frame_selection],255,0);
 
 		if(meng.spr.type==MIDGROUND)
 		{
@@ -1426,9 +1426,9 @@ static void PannelLeft()
 		
 		if(meng.command==SPRITE_TAG)
 		{
-			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+			UIData(8192,4608,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
-			for(i=1, yt=4096-2560;(i-1)<st.Game_Sprites[meng.sprite_selection].num_tags;i++, yt+=512)
+			for(i=1, yt=4608-2560;(i-1)<st.Game_Sprites[meng.sprite_selection].num_tags;i++, yt+=512)
 			{
 				j=strlen(st.Game_Sprites[meng.sprite_selection].tag_names[i-1]);
 
@@ -1592,13 +1592,13 @@ static void PannelLeft()
 
 		if(meng.command==SPRITE_PHY)
 		{
-			DrawHud(8192, 4096, 2120,4096,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
+			DrawHud(8192, 4608, 2120,4608,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
 
 			sprintf(str,"Physics? %d",meng.spr.body.physics_on);
 
-			if(CheckCollisionMouse(8192, 4096-1420,810,405,0))
+			if(CheckCollisionMouse(8192, 4608-1420,810,405,0))
 			{
-				StringUIData(str,8192, 4096-1420,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-1420,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -1609,13 +1609,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096-1420,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-1420,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			sprintf(str,"Mass %.2f",meng.spr.body.mass);
 
-			if(CheckCollisionMouse(8192, 4096-710,810,405,0))
+			if(CheckCollisionMouse(8192, 4608-710,810,405,0))
 			{
-				StringUIData(str,8192, 4096-710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1 && !StartText())
 				{
@@ -1628,11 +1628,11 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096-710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			if(meng.sub_com==10)
 			{
-				StringUIData(str,8192, 4096-1420,0,0,0,255,32,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-1420,0,0,0,255,32,32,255,ARIAL,512*4,512*4,0);
 				meng.spr.body.mass=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -1644,9 +1644,9 @@ static void PannelLeft()
 
 			sprintf(str,"Flammable? %d",meng.spr.body.flamable);
 
-			if(CheckCollisionMouse(8192, 4096,810,405,0))
+			if(CheckCollisionMouse(8192, 4608,810,405,0))
 			{
-				StringUIData(str,8192, 4096,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -1657,13 +1657,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			sprintf(str,"Explosive? %d",meng.spr.body.explosive);
 
-			if(CheckCollisionMouse(8192, 4096+710,810,405,0))
+			if(CheckCollisionMouse(8192, 4608+710,810,405,0))
 			{
-				StringUIData(str,8192, 4096+710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608+710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -1674,7 +1674,7 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096+710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608+710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			if(st.keys[ESC_KEY].state)
 			{
@@ -1774,13 +1774,13 @@ static void PannelLeft()
 
 			if(meng.command==SPRITE_EDIT_BOX)
 			{
-				UIData(8192,4096,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,1);
+				UIData(8192,4608,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,1);
 
 				sprintf(str,"X %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.x);
 
-				if(CheckCollisionMouse(8192,(4096)-681,1720,455,0) && !meng.sub_com)
+				if(CheckCollisionMouse(8192,(4608)-681,1720,455,0) && !meng.sub_com)
 				{
-					StringUIData(str,8192,(4096)-681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)-681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 					if(st.mouse1)
 					{
 						meng.sub_com=1;
@@ -1793,7 +1793,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==1)
 				{
-					StringUIData(str,8192,(4096)-681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)-681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 					st.Current_Map.sprites[meng.sprite_edit_selection].position.x=atof(st.TextInput);
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -1804,13 +1804,13 @@ static void PannelLeft()
 					}
 				}
 				else
-					StringUIData(str,8192,(4096)-681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)-681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				sprintf(str,"Y %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.y);
 
-				if(CheckCollisionMouse(8192,(4096)-227,1720,455,0) && !meng.sub_com)
+				if(CheckCollisionMouse(8192,(4608)-227,1720,455,0) && !meng.sub_com)
 				{
-					StringUIData(str,8192,(4096)-227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)-227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 					if(st.mouse1)
 					{
 						meng.sub_com=2;
@@ -1823,7 +1823,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==2)
 				{
-					StringUIData(str,8192,(4096)-227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)-227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 					st.Current_Map.sprites[meng.sprite_edit_selection].position.y=atof(st.TextInput);
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -1834,13 +1834,13 @@ static void PannelLeft()
 					}
 				}
 				else
-					StringUIData(str,8192,(4096)-227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)-227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				sprintf(str,"SX %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
 
-				if(CheckCollisionMouse(8192,(4096)+227,1720,455,0) && !meng.sub_com)
+				if(CheckCollisionMouse(8192,(4608)+227,1720,455,0) && !meng.sub_com)
 				{
-					StringUIData(str,8192,(4096)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 					if(st.mouse1 || st.mouse2)
 					{
 						if(st.mouse1)
@@ -1859,7 +1859,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==3)
 				{
-					StringUIData(str,8192,(4096)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=atof(st.TextInput);
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -1872,7 +1872,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==6)
 				{
-					StringUIData(str,8192,(4096)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=atof(st.TextInput);
 					
@@ -1887,13 +1887,13 @@ static void PannelLeft()
 					}
 				}
 				else
-					StringUIData(str,8192,(4096)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				sprintf(str,"SY %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
 
-				if(CheckCollisionMouse(8192,(4096)+681,1720,455,0) && !meng.sub_com)
+				if(CheckCollisionMouse(8192,(4608)+681,1720,455,0) && !meng.sub_com)
 				{
-					StringUIData(str,8192,(4096)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 					if(st.mouse1 || st.mouse2)
 					{
 						if(st.mouse1)
@@ -1912,7 +1912,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==4)
 				{
-					StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -1925,7 +1925,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==7)
 				{
-					StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
 					
@@ -1940,13 +1940,13 @@ static void PannelLeft()
 					}
 				}
 				else
-					StringUIData(str,8192,(4096)+681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				sprintf(str,"Z %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
 
-				if(CheckCollisionMouse(8192,(4096)+1137,1720,455,0) && !meng.sub_com)
+				if(CheckCollisionMouse(8192,(4608)+1137,1720,455,0) && !meng.sub_com)
 				{
-					StringUIData(str,8192,(4096)+1137,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+1137,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 					if(st.mouse1)
 					{
 						meng.sub_com=5;
@@ -1959,7 +1959,7 @@ static void PannelLeft()
 				else
 				if(meng.sub_com==5)
 				{
-					StringUIData(str,8192,(4096)+1137,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+1137,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=atoi(st.TextInput);
 					if(st.Current_Map.sprites[meng.sprite_edit_selection].position.z>56) st.Current_Map.sprites[meng.sprite_edit_selection].position.z=56;
 					if(st.keys[RETURN_KEY].state)
@@ -1971,7 +1971,7 @@ static void PannelLeft()
 					}
 				}
 				else
-					StringUIData(str,8192,(4096)+1137,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,(4608)+1137,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(st.keys[ESC_KEY].state && !meng.sub_com)
 				{
@@ -2320,9 +2320,9 @@ static void PannelLeft()
 		if(meng.command==SPRITE_TAG)
 		{
 
-			UIData(8192,4096,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+			UIData(8192,4608,9216,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
-			for(i=1, yt=4096-2560;(i-1)<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
+			for(i=1, yt=4608-2560;(i-1)<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
 			{
 				j=strlen(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1]);
 
@@ -2488,13 +2488,13 @@ static void PannelLeft()
 
 		if(meng.command==SPRITE_PHY)
 		{
-			DrawHud(8192, 4096, 2120,4096,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
+			DrawHud(8192, 4608, 2120,4608,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
 
 			sprintf(str,"Physics? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on);
 
-			if(CheckCollisionMouse(8192, 4096-1420,810,405,0))
+			if(CheckCollisionMouse(8192, 4608-1420,810,405,0))
 			{
-				StringUIData(str,8192, 4096-1420,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-1420,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -2505,13 +2505,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096-1420,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-1420,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			sprintf(str,"Mass %.2f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
 
-			if(CheckCollisionMouse(8192, 4096-710,810,405,0))
+			if(CheckCollisionMouse(8192, 4608-710,810,405,0))
 			{
-				StringUIData(str,8192, 4096-710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1 && !StartText())
 				{
@@ -2524,11 +2524,11 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096-710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			if(meng.sub_com==10)
 			{
-				StringUIData(str,8192, 4096-1420,0,0,0,255,32,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608-1420,0,0,0,255,32,32,255,ARIAL,512*4,512*4,0);
 				st.Current_Map.sprites[meng.sprite_edit_selection].body.mass=atof(st.TextInput);
 				if(st.keys[ESC_KEY].state)
 				{
@@ -2540,9 +2540,9 @@ static void PannelLeft()
 
 			sprintf(str,"Flammable? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable);
 
-			if(CheckCollisionMouse(8192, 4096,810,405,0))
+			if(CheckCollisionMouse(8192, 4608,810,405,0))
 			{
-				StringUIData(str,8192, 4096,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -2553,13 +2553,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			sprintf(str,"Explosive? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive);
 
-			if(CheckCollisionMouse(8192, 4096+710,810,405,0))
+			if(CheckCollisionMouse(8192, 4608+710,810,405,0))
 			{
-				StringUIData(str,8192, 4096+710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608+710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
 
 				if(st.mouse1)
 				{
@@ -2570,7 +2570,7 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192, 4096+710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
+				StringUIData(str,8192, 4608+710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
 
 			if(st.keys[ESC_KEY].state)
 			{
@@ -2705,13 +2705,13 @@ static void PannelLeft()
 
 		if(meng.command==OBJ_EDIT_BOX)
 		{
-			UIData(8192,4096,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
+			UIData(8192,4608,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
 
 			sprintf(str,"X %d",st.Current_Map.obj[i].position.x);
 
-			if(CheckCollisionMouse(8192,(4096)-681,1720,455,0) && !meng.sub_com)
+			if(CheckCollisionMouse(8192,(4608)-681,1720,455,0) && !meng.sub_com)
 			{
-				StringUIData(str,8192,(4096)-681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)-681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=1;
@@ -2724,7 +2724,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==1)
 			{
-				StringUIData(str,8192,(4096)-681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)-681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 				st.Current_Map.obj[i].position.x=atof(st.TextInput);
 				if(st.keys[RETURN_KEY].state)
 				{
@@ -2735,13 +2735,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,(4096)-681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)-681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"Y %d",st.Current_Map.obj[i].position.y);
 
-			if(CheckCollisionMouse(8192,(4096)-227,1720,455,0) && !meng.sub_com)
+			if(CheckCollisionMouse(8192,(4608)-227,1720,455,0) && !meng.sub_com)
 			{
-				StringUIData(str,8192,(4096)-227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)-227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=2;
@@ -2754,7 +2754,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==2)
 			{
-				StringUIData(str,8192,(4096)-227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)-227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 				st.Current_Map.obj[i].position.y=atof(st.TextInput);
 				if(st.keys[RETURN_KEY].state)
 				{
@@ -2765,13 +2765,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,(4096)-227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)-227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"SX %d",st.Current_Map.obj[i].size.x);
 
-			if(CheckCollisionMouse(8192,(4096)+227,1720,455,0) && !meng.sub_com)
+			if(CheckCollisionMouse(8192,(4608)+227,1720,455,0) && !meng.sub_com)
 			{
-				StringUIData(str,8192,(4096)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 				if(st.mouse1 || st.mouse2)
 				{
 					if(st.mouse1)
@@ -2791,7 +2791,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==3)
 			{
-				StringUIData(str,8192,(4096)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 				st.Current_Map.obj[i].size.x=atof(st.TextInput);
 				if(st.keys[RETURN_KEY].state)
 				{
@@ -2804,7 +2804,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==6)
 			{
-				StringUIData(str,8192,(4096)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				st.Current_Map.obj[i].size.x=atof(st.TextInput);
 				//asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
@@ -2819,13 +2819,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,(4096)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"SY %d",st.Current_Map.obj[i].size.y);
 
-			if(CheckCollisionMouse(8192,(4096)+681,1720,455,0) && !meng.sub_com)
+			if(CheckCollisionMouse(8192,(4608)+681,1720,455,0) && !meng.sub_com)
 			{
-				StringUIData(str,8192,(4096)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 				if(st.mouse1 || st.mouse2)
 				{
 					if(st.mouse1)
@@ -2845,7 +2845,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==4)
 			{
-				StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 				st.Current_Map.obj[i].size.y=atof(st.TextInput);
 				if(st.keys[RETURN_KEY].state)
 				{
@@ -2858,7 +2858,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==7)
 			{
-				StringUIData(str,8192,(4096)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				st.Current_Map.obj[i].size.y=atof(st.TextInput);
 
@@ -2872,13 +2872,13 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,(4096)+681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			sprintf(str,"Z %d",st.Current_Map.obj[i].position.z);
 
-			if(CheckCollisionMouse(8192,(4096)+1137,1720,455,0) && !meng.sub_com)
+			if(CheckCollisionMouse(8192,(4608)+1137,1720,455,0) && !meng.sub_com)
 			{
-				StringUIData(str,8192,(4096)+1137,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+1137,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
 				if(st.mouse1)
 				{
 					meng.sub_com=5;
@@ -2891,7 +2891,7 @@ static void PannelLeft()
 			else
 			if(meng.sub_com==5)
 			{
-				StringUIData(str,8192,(4096)+1137,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+1137,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
 				st.Current_Map.obj[i].position.z=atoi(st.TextInput);
 				if(st.Current_Map.obj[i].position.z>56) st.Current_Map.obj[i].position.z=56;
 				if(st.keys[RETURN_KEY].state)
@@ -2903,7 +2903,7 @@ static void PannelLeft()
 				}
 			}
 			else
-				StringUIData(str,8192,(4096)+1137,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,(4608)+1137,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(st.keys[ESC_KEY].state && !meng.sub_com)
 			{
@@ -3208,7 +3208,7 @@ static void PannelLeft()
 
 		if(meng.command==TEX_SIZE_OBJ)
 		{
-			UIData(8192,4096,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
 			sprintf(str,"X %d",meng.obj2.texsize.x);
 
@@ -3331,7 +3331,7 @@ static void PannelLeft()
 
 		if(meng.command==TEX_PAN_OBJ)
 		{
-			UIData(8192,4096,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
 			sprintf(str,"X %d",meng.obj2.texpan.x);
 
@@ -3819,7 +3819,7 @@ static void PannelLeft()
 			
 		if(meng.command==TEX_SIZE_OBJ)
 		{
-			UIData(8192,4096,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
 			sprintf(str,"X %d",meng.obj.texsize.x);
 
@@ -3942,7 +3942,7 @@ static void PannelLeft()
 
 		if(meng.command==TEX_PAN_OBJ)
 		{
-			UIData(8192,4096,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
 			sprintf(str,"X %d",meng.obj.texpan.x);
 
@@ -4287,11 +4287,11 @@ static void ViewPortCommands()
 		meng.current_command=0;
 	}	
 
-	if(!CheckCollisionMouse(455,4096,910,8192,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
+	if(!CheckCollisionMouse(455,4608,910,9216,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
 	{
 		if(meng.command==CAM_LIM_X)
 		{
-			if(CheckCollisionMouseWorld(st.Current_Map.cam_area.limit[0].x,4096,256,16384,0,24) && st.mouse1)
+			if(CheckCollisionMouseWorld(st.Current_Map.cam_area.limit[0].x,4608,256,16384,0,24) && st.mouse1)
 			{
 				p=st.mouse;
 				STW(&p.x,&p.y);
@@ -4300,7 +4300,7 @@ static void ViewPortCommands()
 				//st.mouse1=0;
 			}
 			else
-			if(CheckCollisionMouseWorld(st.Current_Map.cam_area.limit[1].x,4096,256,16384,0,24) && st.mouse1)
+			if(CheckCollisionMouseWorld(st.Current_Map.cam_area.limit[1].x,4608,256,16384,0,24) && st.mouse1)
 			{
 				p=st.mouse;
 				STW(&p.x,&p.y);
@@ -4578,7 +4578,7 @@ static void ViewPortCommands()
 
 				if(meng.sub_com==1)
 				{
-					switch(UIOptionBox(8192+2048,4096,CUSTOM,options,5,ARIAL,1536,UI_COL_NORMAL,UI_COL_SELECTED))
+					switch(UIOptionBox(8192+2048,4608,CUSTOM,options,5,ARIAL,1536,UI_COL_NORMAL,UI_COL_SELECTED))
 					{
 						case UI_SEL:
 							st.Current_Map.sector[i].material=METAL;
@@ -5379,7 +5379,7 @@ static void ViewPortCommands()
 		{
 			if(st.num_lights>0)
 			{
-				StringUIData("Select a lightmap to be deleted",8192,8192-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData("Select a lightmap to be deleted",8192,9216-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				for(j=st.num_lights;j>=1;j--)
 				{
@@ -5883,9 +5883,9 @@ static void ViewPortCommands()
 
 					sprintf(str,"R %d",st.game_lightmaps[i].color[temp].r);
 
-					if(CheckCollisionMouse(8192,4096-(341*3),341,341,0))
+					if(CheckCollisionMouse(8192,4608-(341*3),341,341,0))
 					{
-						StringUIData(str,8192,4096-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -5896,11 +5896,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==1)
 					{
-						StringUIData(str,8192,4096-(341*3),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-(341*3),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].color[temp].r=atoi(st.TextInput);
 
@@ -5914,9 +5914,9 @@ static void ViewPortCommands()
 
 					sprintf(str,"G %d",st.game_lightmaps[i].color[temp].g);
 
-					if(CheckCollisionMouse(8192,4096-(341*2),341,341,0))
+					if(CheckCollisionMouse(8192,4608-(341*2),341,341,0))
 					{
-						StringUIData(str,8192,4096-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -5927,11 +5927,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==2)
 					{
-						StringUIData(str,8192,4096-(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].color[temp].g=atoi(st.TextInput);
 
@@ -5945,9 +5945,9 @@ static void ViewPortCommands()
 
 					sprintf(str,"B %d",st.game_lightmaps[i].color[temp].b);
 
-					if(CheckCollisionMouse(8192,4096-341,341,341,0))
+					if(CheckCollisionMouse(8192,4608-341,341,341,0))
 					{
-						StringUIData(str,8192,4096-341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -5958,11 +5958,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096-341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==3)
 					{
-						StringUIData(str,8192,4096-341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608-341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].color[temp].b=atoi(st.TextInput);
 
@@ -5979,9 +5979,9 @@ static void ViewPortCommands()
 					else
 						strcpy(str,st.TextInput);
 
-					if(CheckCollisionMouse(8192,4096,341,341,0))
+					if(CheckCollisionMouse(8192,4608,341,341,0))
 					{
-						StringUIData(str,8192,4096,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -5992,11 +5992,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==4)
 					{
-						StringUIData(str,8192,4096,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].color[temp].a=atoi(st.TextInput);
 
@@ -6013,9 +6013,9 @@ static void ViewPortCommands()
 					else
 						strcpy(str,st.TextInput);
 
-					if(CheckCollisionMouse(8192,4096+341,341,341,0))
+					if(CheckCollisionMouse(8192,4608+341,341,341,0))
 					{
-						StringUIData(str,8192,4096+341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -6026,11 +6026,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096+341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==5)
 					{
-						StringUIData(str,8192,4096+341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].falloff[temp]=atof(st.TextInput);
 
@@ -6044,9 +6044,9 @@ static void ViewPortCommands()
 
 					sprintf(str,"Z %d",st.game_lightmaps[i].t_pos[temp].z);
 
-					if(CheckCollisionMouse(8192,4096+(341*2),341,341,0))
+					if(CheckCollisionMouse(8192,4608+(341*2),341,341,0))
 					{
-						StringUIData(str,8192,4096+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -6057,11 +6057,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==6)
 					{
-						StringUIData(str,8192,4096+(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].t_pos[temp].z=atoi(st.TextInput);
 
@@ -6080,9 +6080,9 @@ static void ViewPortCommands()
 					else if(st.game_lightmaps[i].type[temp]==SPOTLIGHT_STRONG) strcpy(str,"Spotlight strong");
 					else if(st.game_lightmaps[i].type[temp]==SPOTLIGHT_NORMAL) strcpy(str,"Spotlight normal");
 
-					if(CheckCollisionMouse(8192,4096+(341*3),341,341,0))
+					if(CheckCollisionMouse(8192,4608+(341*3),341,341,0))
 					{
-						StringUIData(str,8192,4096+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -6091,15 +6091,15 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==7)
 					{
-						UIData(11264,4096,3072,3072,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+						UIData(11264,4608,3072,3072,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
-						if(CheckCollisionMouse(11264,4096-(341*3),341,341,0))
+						if(CheckCollisionMouse(11264,4608-(341*3),341,341,0))
 						{
-							StringUIData("Point medium",11264,4096-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+							StringUIData("Point medium",11264,4608-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 							if(st.mouse1)
 							{
@@ -6109,11 +6109,11 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Point medium",11264,4096-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Point medium",11264,4608-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-						if(CheckCollisionMouse(11264,4096-(341*2),341,341,0))
+						if(CheckCollisionMouse(11264,4608-(341*2),341,341,0))
 						{
-							StringUIData("Point strong",11264,4096-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+							StringUIData("Point strong",11264,4608-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 							if(st.mouse1)
 							{
@@ -6123,11 +6123,11 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Point strong",11264,4096-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Point strong",11264,4608-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-						if(CheckCollisionMouse(11264,4096-(341),341,341,0))
+						if(CheckCollisionMouse(11264,4608-(341),341,341,0))
 						{
-							StringUIData("Point normal",11264,4096-(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+							StringUIData("Point normal",11264,4608-(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 							if(st.mouse1)
 							{
@@ -6137,11 +6137,11 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Point normal",11264,4096-(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Point normal",11264,4608-(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-						if(CheckCollisionMouse(11264,4096+(341),341,341,0))
+						if(CheckCollisionMouse(11264,4608+(341),341,341,0))
 						{
-							StringUIData("Spotlight medium",11264,4096+(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight medium",11264,4608+(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 							if(st.mouse1)
 							{
@@ -6151,11 +6151,11 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Spotlight medium",11264,4096+(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight medium",11264,4608+(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-						if(CheckCollisionMouse(11264,4096+(341*2),341,341,0))
+						if(CheckCollisionMouse(11264,4608+(341*2),341,341,0))
 						{
-							StringUIData("Spotlight strong",11264,4096+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight strong",11264,4608+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 							if(st.mouse1)
 							{
@@ -6165,11 +6165,11 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Spotlight Strong",11264,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight Strong",11264,4608+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-						if(CheckCollisionMouse(11264,4096+(341*3),341,341,0))
+						if(CheckCollisionMouse(11264,4608+(341*3),341,341,0))
 						{
-							StringUIData("Spotlight normal",11264,4096+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight normal",11264,4608+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 							if(st.mouse1)
 							{
@@ -6179,7 +6179,7 @@ static void ViewPortCommands()
 							}
 						}
 						else
-							StringUIData("Spotlight normal",11264,4096+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+							StringUIData("Spotlight normal",11264,4608+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 						if(st.keys[RETURN_KEY].state)
 						{
@@ -6190,9 +6190,9 @@ static void ViewPortCommands()
 
 					sprintf(str,"Spot angle %d",st.game_lightmaps[i].spot_ang[temp]);
 
-					if(CheckCollisionMouse(8192,4096+(341*4),341,341,0))
+					if(CheckCollisionMouse(8192,4608+(341*4),341,341,0))
 					{
-						StringUIData(str,8192,4096+(341*4),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*4),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -6203,11 +6203,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData(str,8192,4096+(341*4),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*4),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(meng.command2==8)
 					{
-						StringUIData(str,8192,4096+(341*4),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+						StringUIData(str,8192,4608+(341*4),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 						st.game_lightmaps[i].spot_ang[temp]=atoi(st.TextInput);
 
@@ -6220,9 +6220,9 @@ static void ViewPortCommands()
 					}
 
 
-					if(CheckCollisionMouse(8192,4096+(341*5),455,455,0))
+					if(CheckCollisionMouse(8192,4608+(341*5),455,455,0))
 					{
-						StringUIData("Done",8192,4096+(341*5),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Done",8192,4608+(341*5),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -6270,13 +6270,13 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Done",8192,4096+(341*5),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Done",8192,4608+(341*5),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 				}
 			}
 			else
 			if(meng.sub_com==2)
 			{
-				StringUIData("Select the light",8192,8192-455,0,0,0,255,128,32,255,ARIAL,4096,4096,0);
+				StringUIData("Select the light",8192,9216-455,0,0,0,255,128,32,255,ARIAL,4608,4608,0);
 
 				for(j=0;j<st.game_lightmaps[i].num_lights;j++)
 				{
@@ -6768,15 +6768,15 @@ static void ViewPortCommands()
 		{
 			i=meng.command2;
 
-			UIData(8192,4096,2048,2730,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
+			UIData(8192,4608,2048,2730,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 
 			Sys_ColorPicker(&meng.lightmap_color.r,&meng.lightmap_color.g,&meng.lightmap_color.b);
 
 			sprintf(str,"R %d",meng.lightmap_color.r);
 
-			if(CheckCollisionMouse(8192,4096-(341*2),341,341,0))
+			if(CheckCollisionMouse(8192,4608-(341*2),341,341,0))
 			{
-				StringUIData(str,8192,4096-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -6787,11 +6787,11 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				StringUIData(str,8192,4096-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.got_it==1)
 			{
-				StringUIData(str,8192,4096-(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				meng.lightmap_color.r=atoi(st.TextInput);
 
@@ -6805,9 +6805,9 @@ static void ViewPortCommands()
 
 			sprintf(str,"G %d",meng.lightmap_color.g);
 
-			if(CheckCollisionMouse(8192,4096-(341),341,341,0))
+			if(CheckCollisionMouse(8192,4608-(341),341,341,0))
 			{
-				StringUIData(str,8192,4096-(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -6818,11 +6818,11 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				StringUIData(str,8192,4096-(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.got_it==2)
 			{
-				StringUIData(str,8192,4096-(341),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608-(341),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				meng.lightmap_color.g=atoi(st.TextInput);
 
@@ -6836,9 +6836,9 @@ static void ViewPortCommands()
 
 			sprintf(str,"B %d",meng.lightmap_color.b);
 
-			if(CheckCollisionMouse(8192,4096,341,341,0))
+			if(CheckCollisionMouse(8192,4608,341,341,0))
 			{
-				StringUIData(str,8192,4096,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -6849,11 +6849,11 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				StringUIData(str,8192,4096,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.got_it==3)
 			{
-				StringUIData(str,8192,4096,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				meng.lightmap_color.b=atoi(st.TextInput);
 
@@ -6867,9 +6867,9 @@ static void ViewPortCommands()
 
 			sprintf(str,"Res. Width %d",st.game_lightmaps[i].T_w);
 
-			if(CheckCollisionMouse(8192,4096+(341),341,341,0))
+			if(CheckCollisionMouse(8192,4608+(341),341,341,0))
 			{
-				StringUIData(str,8192,4096+(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -6880,11 +6880,11 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				StringUIData(str,8192,4096+(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.got_it==4)
 			{
-				StringUIData(str,8192,4096+(341),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+(341),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				st.game_lightmaps[i].T_w=atoi(st.TextInput);
 
@@ -6898,9 +6898,9 @@ static void ViewPortCommands()
 
 			sprintf(str,"Res. Height %d",st.game_lightmaps[i].T_h);
 
-			if(CheckCollisionMouse(8192,4096+(341*2),341,341,0))
+			if(CheckCollisionMouse(8192,4608+(341*2),341,341,0))
 			{
-				StringUIData(str,8192,4096+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -6911,11 +6911,11 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				StringUIData(str,8192,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 			if(meng.got_it==5)
 			{
-				StringUIData(str,8192,4096+(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+				StringUIData(str,8192,4608+(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 				st.game_lightmaps[i].T_h=atoi(st.TextInput);
 
@@ -6927,9 +6927,9 @@ static void ViewPortCommands()
 				}
 			}
 
-			if(CheckCollisionMouse(8192,4096+(341*3),455,455,0))
+			if(CheckCollisionMouse(8192,4608+(341*3),455,455,0))
 			{
-				StringUIData("Done",8192,4096+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+				StringUIData("Done",8192,4608+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 				if(st.mouse1)
 				{
@@ -7002,7 +7002,7 @@ static void ViewPortCommands()
 				}
 			}
 			else
-				StringUIData("Done",8192,4096+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+				StringUIData("Done",8192,4608+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 		}
 		else
 		if(meng.pannel_choice==ADD_LIGHT && meng.command==ADD_LIGHT_TO_LIGHTMAP)
@@ -7399,9 +7399,9 @@ static void ViewPortCommands()
 
 				sprintf(str,"R %d",meng.light.color.r);
 
-				if(CheckCollisionMouse(8192,4096-(341*3),341,341,0))
+				if(CheckCollisionMouse(8192,4608-(341*3),341,341,0))
 				{
-					StringUIData(str,8192,4096-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7412,11 +7412,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==1)
 				{
-					StringUIData(str,8192,4096-(341*3),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-(341*3),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					meng.light.color.r=atoi(st.TextInput);
 
@@ -7430,9 +7430,9 @@ static void ViewPortCommands()
 
 				sprintf(str,"G %d",meng.light.color.g);
 
-				if(CheckCollisionMouse(8192,4096-(341*2),341,341,0))
+				if(CheckCollisionMouse(8192,4608-(341*2),341,341,0))
 				{
-					StringUIData(str,8192,4096-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7443,11 +7443,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==2)
 				{
-					StringUIData(str,8192,4096-(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					meng.light.color.g=atoi(st.TextInput);
 
@@ -7461,9 +7461,9 @@ static void ViewPortCommands()
 
 				sprintf(str,"B %d",meng.light.color.b);
 
-				if(CheckCollisionMouse(8192,4096-341,341,341,0))
+				if(CheckCollisionMouse(8192,4608-341,341,341,0))
 				{
-					StringUIData(str,8192,4096-341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7474,11 +7474,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096-341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==3)
 				{
-					StringUIData(str,8192,4096-341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608-341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					meng.light.color.b=atoi(st.TextInput);
 
@@ -7495,9 +7495,9 @@ static void ViewPortCommands()
 				else
 					strcpy(str,st.TextInput);
 
-				if(CheckCollisionMouse(8192,4096,341,341,0))
+				if(CheckCollisionMouse(8192,4608,341,341,0))
 				{
-					StringUIData(str,8192,4096,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7508,11 +7508,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==4)
 				{
-					StringUIData(str,8192,4096,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					meng.light.intensity=atoi(st.TextInput);
 
@@ -7529,9 +7529,9 @@ static void ViewPortCommands()
 				else
 					strcpy(str,st.TextInput);
 
-				if(CheckCollisionMouse(8192,4096+341,341,341,0))
+				if(CheckCollisionMouse(8192,4608+341,341,341,0))
 				{
-					StringUIData(str,8192,4096+341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+341,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7542,11 +7542,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096+341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+341,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==5)
 				{
-					StringUIData(str,8192,4096+341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+341,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					meng.light.falloff=atof(st.TextInput);
 
@@ -7560,9 +7560,9 @@ static void ViewPortCommands()
 
 				sprintf(str,"Z %d",st.game_lightmaps[i].t_pos[meng.light.light_id].z);
 
-				if(CheckCollisionMouse(8192,4096+(341*2),341,341,0))
+				if(CheckCollisionMouse(8192,4608+(341*2),341,341,0))
 				{
-					StringUIData(str,8192,4096+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7573,11 +7573,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==6)
 				{
-					StringUIData(str,8192,4096+(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*2),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					st.game_lightmaps[i].t_pos[meng.light.light_id].z=atoi(st.TextInput);
 
@@ -7596,9 +7596,9 @@ static void ViewPortCommands()
 				else if(meng.light.type==SPOTLIGHT_STRONG) strcpy(str,"Spotlight strong");
 				else if(meng.light.type==SPOTLIGHT_NORMAL) strcpy(str,"Spotlight normal");
 
-				if(CheckCollisionMouse(8192,4096+(341*3),341,341,0))
+				if(CheckCollisionMouse(8192,4608+(341*3),341,341,0))
 				{
-					StringUIData(str,8192,4096+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7607,15 +7607,15 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==7)
 				{
-					UIData(11264,4096,3072,3072,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
+					UIData(11264,4608,3072,3072,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
 
-					if(CheckCollisionMouse(11264,4096-(341*3),341,341,0))
+					if(CheckCollisionMouse(11264,4608-(341*3),341,341,0))
 					{
-						StringUIData("Point medium",11264,4096-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Point medium",11264,4608-(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -7625,11 +7625,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Point medium",11264,4096-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Point medium",11264,4608-(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-					if(CheckCollisionMouse(11264,4096-(341*2),341,341,0))
+					if(CheckCollisionMouse(11264,4608-(341*2),341,341,0))
 					{
-						StringUIData("Point strong",11264,4096-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Point strong",11264,4608-(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -7639,11 +7639,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Point strong",11264,4096-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Point strong",11264,4608-(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-					if(CheckCollisionMouse(11264,4096-(341),341,341,0))
+					if(CheckCollisionMouse(11264,4608-(341),341,341,0))
 					{
-						StringUIData("Point normal",11264,4096-(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Point normal",11264,4608-(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -7653,11 +7653,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Point normal",11264,4096-(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Point normal",11264,4608-(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-					if(CheckCollisionMouse(11264,4096+(341),341,341,0))
+					if(CheckCollisionMouse(11264,4608+(341),341,341,0))
 					{
-						StringUIData("Spotlight medium",11264,4096+(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight medium",11264,4608+(341),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -7667,11 +7667,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Spotlight medium",11264,4096+(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight medium",11264,4608+(341),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-					if(CheckCollisionMouse(11264,4096+(341*2),341,341,0))
+					if(CheckCollisionMouse(11264,4608+(341*2),341,341,0))
 					{
-						StringUIData("Spotlight strong",11264,4096+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight strong",11264,4608+(341*2),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -7681,11 +7681,11 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Spotlight Strong",11264,4096+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight Strong",11264,4608+(341*2),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
-					if(CheckCollisionMouse(11264,4096+(341*3),341,341,0))
+					if(CheckCollisionMouse(11264,4608+(341*3),341,341,0))
 					{
-						StringUIData("Spotlight normal",11264,4096+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight normal",11264,4608+(341*3),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 						if(st.mouse1)
 						{
@@ -7695,7 +7695,7 @@ static void ViewPortCommands()
 						}
 					}
 					else
-						StringUIData("Spotlight normal",11264,4096+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+						StringUIData("Spotlight normal",11264,4608+(341*3),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 					if(st.keys[RETURN_KEY].state)
 					{
@@ -7706,9 +7706,9 @@ static void ViewPortCommands()
 
 				sprintf(str,"Spot angle %d",st.game_lightmaps[i].spot_ang[meng.light.light_id]);
 
-				if(CheckCollisionMouse(8192,4096+(341*4),341,341,0))
+				if(CheckCollisionMouse(8192,4608+(341*4),341,341,0))
 				{
-					StringUIData(str,8192,4096+(341*4),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*4),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7719,11 +7719,11 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData(str,8192,4096+(341*4),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*4),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 
 				if(meng.got_it==8)
 				{
-					StringUIData(str,8192,4096+(341*4),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
+					StringUIData(str,8192,4608+(341*4),0,0,0,255,32,32,255,ARIAL,2048,2048,0);
 
 					st.game_lightmaps[i].spot_ang[meng.light.light_id]=atoi(st.TextInput);
 
@@ -7736,9 +7736,9 @@ static void ViewPortCommands()
 				}
 
 
-				if(CheckCollisionMouse(8192,4096+(341*5),455,455,0))
+				if(CheckCollisionMouse(8192,4608+(341*5),455,455,0))
 				{
-					StringUIData("Done",8192,4096+(341*5),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
+					StringUIData("Done",8192,4608+(341*5),0,0,0,255,128,32,255,ARIAL,2048,2048,0);
 
 					if(st.mouse1)
 					{
@@ -7786,7 +7786,7 @@ static void ViewPortCommands()
 					}
 				}
 				else
-					StringUIData("Done",8192,4096+(341*5),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
+					StringUIData("Done",8192,4608+(341*5),0,0,0,255,255,255,255,ARIAL,2048,2048,0);
 			}
 		}
 	}
@@ -7903,8 +7903,8 @@ static void ENGDrawLight()
 	{
 		if(st.Current_Map.cam_area.horiz_lim)
 		{
-			DrawLine((float)(st.Current_Map.cam_area.limit[0].x-st.Camera.position.x)*st.Camera.dimension.x,0,(float)(st.Current_Map.cam_area.limit[0].x-st.Camera.position.x)*st.Camera.dimension.x,8192,230,255,0,255,64,15);
-			DrawLine((float)(st.Current_Map.cam_area.limit[1].x-st.Camera.position.x)*st.Camera.dimension.x,0,(float)(st.Current_Map.cam_area.limit[1].x-st.Camera.position.x)*st.Camera.dimension.x,8192,230,255,0,255,64,15);
+			DrawLine((float)(st.Current_Map.cam_area.limit[0].x-st.Camera.position.x)*st.Camera.dimension.x,0,(float)(st.Current_Map.cam_area.limit[0].x-st.Camera.position.x)*st.Camera.dimension.x,9216,230,255,0,255,64,15);
+			DrawLine((float)(st.Current_Map.cam_area.limit[1].x-st.Camera.position.x)*st.Camera.dimension.x,0,(float)(st.Current_Map.cam_area.limit[1].x-st.Camera.position.x)*st.Camera.dimension.x,9216,230,255,0,255,64,15);
 		}
 
 		if(st.Current_Map.cam_area.vert_lim)
@@ -8142,12 +8142,14 @@ int main(int argc, char *argv[])
 
 	InitMGG();
 
+	//LoadMGG(&mgg_map[0], "tex01n.mgg");
+	
 	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
-
+	
 	UILoadSystem("UI_Sys.cfg");
 
 	meng.num_mgg=0;
@@ -8162,7 +8164,7 @@ int main(int argc, char *argv[])
 	//SpriteListLoad();
 
 	BASICBKD(255,255,255);
-	DrawString2UI("Loading sprites...",8192,4096,0,0,0,255,255,255,255,ARIAL,2048,2048,6);
+	DrawString2UI("Loading sprites...",8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,6);
 
 	Renderer(1);
 
@@ -8208,7 +8210,7 @@ int main(int argc, char *argv[])
 		if(st.FPSYes)
 			FPSCounter();
 
-		InputProcess();
+		WindowEvents();
 
 		if(meng.viewmode==LIGHTVIEW_MODE || meng.viewmode==INGAMEVIEW_MODE)
 			BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);

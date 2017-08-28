@@ -152,9 +152,7 @@ void InputProcess()
 {
 	size_t len;
 	uint16 i, j;
-		while(SDL_PollEvent(&events))
-		{
-				if(events.type==SDL_QUIT) st.quit=1;
+		//while(SDL_PollEvent(&events))
 
 				for(i=0;i<MAX_KEYS;i++)
 				{
@@ -245,7 +243,7 @@ void InputProcess()
 				if(events.type==SDL_MOUSEWHEEL)
 					st.mouse_wheel=events.wheel.y;
 
-		}
+		
 
 		if(st.keys[RETURN_KEY].state && st.PlayingVideo)
 		{

@@ -1,13 +1,3 @@
-#include "engine.h"
-#include "quicklz.h"
-#include "input.h"
-#include <math.h>
-#include <SDL_image.h>
-
-//#ifndef ENGINEER
-	
-//#endif
-
 #ifdef _VBO_RENDER
 	#include "shader110.h"
 #endif
@@ -15,6 +5,15 @@
 #ifdef _VAO_RENDER
 	#include "shader130.h"
 #endif
+
+#include "engine.h"
+#include "quicklz.h"
+#include "input.h"
+#include <math.h>
+
+//#ifndef ENGINEER
+	
+//#endif
 
 _SETTINGS st;
 _ENTITIES ent[MAX_GRAPHICS];
@@ -131,26 +130,26 @@ void FPSCounter()
 
 void _inline STW(int32 *x, int32 *y)
 {
-	*x=((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
-	*y=((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+	*x=((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
+	*y=((((*y*9216)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
 void _inline STWci(int32 *x, int32 *y)
 {
-	*x=((((*x*16384)/st.screenx)));
-	*y=((((*y*8192)/st.screeny)));
+	*x=((((*x*GAME_WIDTH)/st.screenx)));
+	*y=((((*y*GAME_HEIGHT)/st.screeny)));
 }
 
 void _inline STWf(float *x, float *y)
 {
-	*x=(float) ((((*x*16384)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
-	*y=(float) ((((*y*8192)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
+	*y=(float) ((((*y*GAME_HEIGHT)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
 void _inline STWcf(float *x, float *y)
 {
-	*x=(float) ((((*x*16384)/st.screenx)/st.Camera.dimension.x));
-	*y=(float) ((((*y*8192)/st.screeny)/st.Camera.dimension.y));
+	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x));
+	*y=(float) ((((*y*GAME_HEIGHT)/st.screeny)/st.Camera.dimension.y));
 }
 
 uint32 POT(uint32 value)
@@ -174,14 +173,14 @@ void _fastcall WTS(int32 *x, int32 *y)
 	*x-=st.Camera.position.x;
 	*y-=st.Camera.position.y;
 
-	*x=((*x*st.screenx)/16384)*st.Camera.dimension.x;
-	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
+	*x=((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
+	*y=((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 }
 
 void _inline WTSci(int32 *x, int32 *y)
 {
-	*x=((*x*st.screenx)/16384)*st.Camera.dimension.x;
-	*y=((*y*st.screeny)/8192)*st.Camera.dimension.y;
+	*x=((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
+	*y=((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 }
 
 void _inline WTSf(float *x, float *y)
@@ -189,14 +188,14 @@ void _inline WTSf(float *x, float *y)
 	*x-=st.Camera.position.x;
 	*y-=st.Camera.position.y;
 
-	*x=(float) ((*x*st.screenx)/16384)*st.Camera.dimension.x;
-	*y=(float) ((*y*st.screeny)/8192)*st.Camera.dimension.y;
+	*x=(float) ((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
+	*y=(float) ((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 }
 
 void _inline WTScf(float *x, float *y)
 {
-	*x=(float) ((*x*st.screenx)/16384)*st.Camera.dimension.x;
-	*y=(float) ((*y*st.screeny)/8192)*st.Camera.dimension.y;
+	*x=(float) ((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
+	*y=(float) ((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 }
 
 float mCos(int16 ang)
@@ -390,12 +389,12 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
 	else
 		radius = sizey;
 
-	x2 = (GAME_SCREEN_WIDTH / 2) - x;
-	y2 = (GAME_SCREEN_HEIGHT / 2) - y;
+	x2 = (GAME_WIDTH / 2) - x;
+	y2 = (GAME_HEIGHT / 2) - y;
 
 	dist = mSqrt((x2*x2) + (y2*y2));
 
-	if (dist < radius || dist < GAME_SCREEN_WIDTH)
+	if (dist < radius || dist < GAME_WIDTH)
 		return 0;
 	else
 		return 1;
@@ -1406,7 +1405,7 @@ void Init()
 	else
 	if(!st.fullscreen)
 	{
-		if((wn=SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_OPENGL))==NULL)
+		if((wn=SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE))==NULL)
 		{
 			LogApp("Error setting widowed video mode %d x %d %d bits - %s",st.screenx,st.screeny,st.bpp,SDL_GetError());
 				Quit();
@@ -1971,14 +1970,14 @@ SHADER_CREATION:
 
 	st.game_lightmaps[0].stat=1;
 
-	st.game_lightmaps[0].W_w=16384;
-	st.game_lightmaps[0].W_h=8192;
+	st.game_lightmaps[0].W_w=GAME_WIDTH;
+	st.game_lightmaps[0].W_h=GAME_HEIGHT;
 
 	st.game_lightmaps[0].T_w=4;
 	st.game_lightmaps[0].T_h=2;
 
 	st.game_lightmaps[0].num_lights=1;
-	st.game_lightmaps[0].w_pos.x=8192;
+	st.game_lightmaps[0].w_pos.x=GAME_HEIGHT;
 	st.game_lightmaps[0].w_pos.y=4096;
 	st.game_lightmaps[0].w_pos.z=0;
 
@@ -2048,7 +2047,7 @@ void RestartVideo()
 	
 	LogApp("Video restarted");
 
-	SDL_DestroyWindow(wn);
+	//SDL_DestroyWindow(wn);
 
 //	wn=SDL_CreateWindow(st.WINDOW_NAME,SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,st.screenx,st.screeny, st.fullscreen==1 ? SDL_WINDOW_FULLSCREEN : NULL | SDL_WINDOW_OPENGL);
 
@@ -2058,11 +2057,12 @@ void RestartVideo()
 		else LogApp("Error setting windowed video mode %d x %d %d bits - %s",st.screenx,st.screeny,st.bpp,SDL_GetError());
 	}
 
-	LogApp("Window created, %d x %d, %d bits",st.screenx,st.screeny,st.bpp);
+	//LogApp("Window created, %d x %d, %d bits",st.screenx,st.screeny,st.bpp);
 
-	SDL_GL_MakeCurrent(wn,st.glc);
+	//SDL_GL_MakeCurrent(wn,st.glc);
 
-	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	//SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+//	SDL_RenderPresent(st.glc);
 
 	glViewport(0,0,st.screenx,st.screeny);
 
@@ -2076,6 +2076,35 @@ void RestartVideo()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_2D);
 	SDL_GL_SetSwapInterval(st.vsync);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, st.renderer.RBO[0]);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, st.screenx, st.screeny);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, st.renderer.FBTex[0], 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, st.renderer.RBO[0]);
+
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[1]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, st.renderer.FBTex[1], 0);
+
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[2]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, st.renderer.FBTex[2], 0);
+
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[3]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, st.renderer.FBTex[3], 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	if(SDL_GetRelativeMouseMode())
 	{
@@ -2083,6 +2112,27 @@ void RestartVideo()
 		SDL_SetRelativeMouseMode(SDL_TRUE);
 	}
 	
+}
+
+void WindowEvents()
+{
+	while (SDL_PollEvent(&events))
+	{
+		if (events.type == SDL_QUIT) st.quit = 1;
+
+		InputProcess();
+
+		if (events.type == SDL_WINDOWEVENT)
+		{
+			if (events.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+			{
+				LogApp("Window resized to %d x %d", events.window.data1, events.window.data2);
+				st.screenx = events.window.data1;
+				st.screeny = events.window.data2;
+				RestartVideo();
+			}
+		}
+	}
 }
 
 static FILE *DecompressFile(const char *name)
@@ -2238,20 +2288,28 @@ uint32 CheckMGGFile(const char *name)
 uint32 LoadMGG(_MGG *mgg, const char *name)
 {
 	FILE *file, *file2;
-	void *data;
+	unsigned char *data;
 	_MGGFORMAT mggf;
 	char header[21];
 	 uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
 	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES], *framealone;
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
 	uint8 *imgatlas;
-	int16 *w, *h, *currh, *offx, *offy;
+	uint16 *w, *h, *currh, *offx, *offy;
 	int width, height, channel;
 	unsigned char *imgdata;
 	uint8 normals[MAX_FRAMES];
 	uint32 normalsize[MAX_FRAMES];
 	_MGGANIM *mga;
 	int32 checkmgg;
+
+	//MGI format specs
+	char mgiheader[3];
+	uint8 MGIcolor;
+	uint8 RLE;
+	uint16 imgw, imgh;
+
+	size_t mgisize;
 
 	checkmgg=CheckMGGInSystem(name);
 
@@ -2353,9 +2411,39 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 		if(j<mggf.num_atlas)
 		{
-			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+			//imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 
-			mgg->atlas[i]=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS); //mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+			//mgg->atlas[i]=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS); //mgg->atlas[i]=SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+			if (data[0] == 'M' && data[1] == 'G' && data[2] == 'I')
+			{
+				MGIcolor = data[3];
+				RLE = data[4];
+				imgw = data[5] << 8;
+				imgw |= data[6];
+
+				imgh = data[7] << 8;
+				imgh |= data[8];
+				
+				mgisize = imgw * imgh * MGIcolor;
+
+				imgdata = malloc(mgisize);
+
+				memcpy(imgdata, data + 9, mgisize);
+
+				glGenTextures(1, &mgg->atlas[i]);
+				glBindTexture(GL_TEXTURE_2D,mgg->atlas[i]);
+
+				if (MGIcolor == 3)
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
+				else
+				if (MGIcolor == 4)
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imgw, imgh, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgdata);
+
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+			}
 
 			if(mggf.mipmap)
 			{
@@ -2365,17 +2453,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			else
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-			mgg->frames[i].channel=channel;
-			mgg->frames[i].w=width;
-			mgg->frames[i].h=height;
+			mgg->frames[i].channel=MGIcolor;
+			mgg->frames[i].w=imgw;
+			mgg->frames[i].h=imgh;
 
 			if(mgg->atlas[i]==NULL)
 				LogApp("Error loading texture from memory");
 
 			if (data)						
 				free(data);
-			if(imgdata)
-				SOIL_free_image_data(imgdata);
+			if (imgdata)
+				free(imgdata);
 
 			if(normals[i])
 			{
@@ -2391,8 +2479,38 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				fread(data,normalsize[i],1,file);
 
-				imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
-				mgg->frames[i].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);
+				//imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+				//mgg->frames[i].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+				if (data[0] == 'M' && data[1] == 'G' && data[2] == 'I')
+				{
+					MGIcolor = data[3];
+					RLE = data[4];
+					imgw = data[5] << 8;
+					imgw |= data[6];
+
+					imgh = data[7] << 8;
+					imgh |= data[8];
+
+					mgisize = imgw * imgh * MGIcolor;
+
+					imgdata = malloc(mgisize);
+
+					memcpy(imgdata, data + 9, mgisize);
+
+					glGenTextures(1, &mgg->frames[i].Ndata);
+					glBindTexture(GL_TEXTURE_2D, mgg->frames[i].Ndata);
+
+					if (MGIcolor == 3)
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
+					else
+					if (MGIcolor == 4)
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imgw, imgh, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgdata);
+
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+				}
 
 				if(mggf.mipmap)
 				{
@@ -2409,8 +2527,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 					if (data)						
 						free(data);
-					if(imgdata)
-						SOIL_free_image_data(imgdata);
+					if (imgdata)
+						free(imgdata);
 			}
 			else
 				mgg->frames[i].normal=0;
@@ -2420,8 +2538,38 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		else
 		{
 			i-=mggf.num_atlas;
-			imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
-			mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+			//imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+			//mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
+
+			if (data[0] == 'M' && data[1] == 'G' && data[2] == 'I')
+			{
+				MGIcolor = data[3];
+				RLE = data[4];
+				imgw = data[5] << 8;
+				imgw |= data[6];
+
+				imgh = data[7] << 8;
+				imgh |= data[8];
+
+				mgisize = imgw * imgh * MGIcolor;
+
+				imgdata = malloc(mgisize);
+
+				memcpy(imgdata, data + 9, mgisize);
+
+				glGenTextures(1, &mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].data);
+				glBindTexture(GL_TEXTURE_2D, mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].data);
+
+				if (MGIcolor == 3)
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
+				else
+				if (MGIcolor == 4)
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imgw, imgh, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgdata);
+
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+			}
 
 			//glGenerateMipmap(GL_TEXTURE_2D);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -2435,9 +2583,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			else
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-			mgg->frames[i+(mggf.num_texinatlas)].w=width;
-			mgg->frames[i+(mggf.num_texinatlas)].h=height;
-			mgg->frames[i+(mggf.num_texinatlas)].channel=channel;
+			mgg->frames[i+(mggf.num_texinatlas)].w=imgw;
+			mgg->frames[i+(mggf.num_texinatlas)].h=imgh;
+			mgg->frames[i+(mggf.num_texinatlas)].channel=MGIcolor;
 
 			mgg->frames[i+(mggf.num_texinatlas)].posx=0;
 			mgg->frames[i+(mggf.num_texinatlas)].posy=0;
@@ -2449,7 +2597,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			if (data)						
 				free(data);
 			if(imgdata)
-				SOIL_free_image_data(imgdata);
+				free(imgdata);
 
 			if(normals[i])
 			{
@@ -2465,14 +2613,49 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				fread(data,normalsize[i],1,file);
 
-				imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
-				mgg->frames[i+(mggf.num_texinatlas)].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);
+				//imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
+				//mgg->frames[i+(mggf.num_texinatlas)].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS || SOIL_FLAG_MIPMAPS);
+
+				if (data[0] == 'M' && data[1] == 'G' && data[2] == 'I')
+				{
+					MGIcolor = data[3];
+					RLE = data[4];
+					imgw = data[5] << 8;
+					imgw |= data[6];
+
+					imgh = data[7] << 8;
+					imgh |= data[8];
+
+					mgisize = imgw * imgh * MGIcolor;
+
+					imgdata = malloc(mgisize);
+
+					memcpy(imgdata, data + 9, mgisize);
+
+					//glGenTextures(1, &mgg->frames[i + (mggf.num_texinatlas)].Ndata);
+					//glBindTexture(GL_TEXTURE_2D, mgg->frames[i + (mggf.num_texinatlas)].Ndata);
+
+					glGenTextures(1, &mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].Ndata);
+					glBindTexture(GL_TEXTURE_2D, mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].Ndata);
+					
+					if (MGIcolor == 3)
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
+					else
+					if (MGIcolor == 4)
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imgw, imgh, 0, GL_RGBA, GL_UNSIGNED_BYTE, imgdata);
+
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+
+				}
 
 				if(mggf.mipmap)
 				{
 					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
 					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 				}
+				else
+					glGenerateMipmap(GL_TEXTURE_2D);
 
 				mgg->frames[i+(mggf.num_texinatlas)].normal=1;
 
@@ -2482,7 +2665,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				if(data)						
 					free(data);
 				if(imgdata)
-					SOIL_free_image_data(imgdata);
+					free(imgdata);
 
 			}
 			else
@@ -2573,8 +2756,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	for(i=0;i<mgg->num_frames;i++)
 	{
-		mgg->frames[i].x_offset=(offx[i]*16384)/st.screenx;
-		mgg->frames[i].y_offset=(offy[i]*8192)/st.screeny;
+		mgg->frames[i].x_offset=(offx[i]*GAME_WIDTH)/st.screenx;
+		mgg->frames[i].y_offset=(offy[i]*GAME_HEIGHT)/st.screeny;
 	}
 
 
@@ -2656,30 +2839,36 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,2048,2048,0,GL_BGRA,GL_UNSIGNED_BYTE,NULL);
 
-				glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+				//glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
-				data=malloc(framesize[j]);
-
+				//data=malloc(framesize[j]);
+				/*
 				if(data==NULL)
 				{
 					LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
 					continue;
 				}
-
-				glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
+				*/
+				
 			
-				if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
-				else fseek(file,frameoffset[j-1]+1,SEEK_SET);
+				//if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
+				//else fseek(file,frameoffset[j-1]+1,SEEK_SET);
 
-				fread(data,framesize[j],1,file);
+				//fread(data,framesize[j],1,file);
 
-				imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
+				//imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
 
-				if(mgg->frames[i].channel==4)
-					channel2=GL_RGBA;
+				if (mgg->frames[i].channel == 4)
+					channel2 = GL_RGBA;
 				else
-				if(mgg->frames[i].channel==3)
-					channel2=GL_RGB;
+				if (mgg->frames[i].channel == 3)
+					channel2 = GL_RGB;
+
+				imgdata = malloc(mgg->frames[i].w*mgg->frames[i].h*mgg->frames[i].channel);
+				glBindTexture(GL_TEXTURE_2D, mgg->frames[i].data);
+				glGetTexImage(GL_TEXTURE_2D, 0, channel2, GL_UNSIGNED_BYTE, imgdata);
+
+				glBindTexture(GL_TEXTURE_2D, vbdt[l].texture);
 
 				glTexSubImage2D(GL_TEXTURE_2D,0,w[l],currh[l],mgg->frames[i].w,mgg->frames[i].h,channel2,GL_UNSIGNED_BYTE,imgdata);
 
@@ -2698,35 +2887,40 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				mgg->frames[i].vb_id=l;
 
-				free(data);
+				//free(data);
+				free(imgdata);
 
-				SOIL_free_image_data(imgdata);
+				//SOIL_free_image_data(imgdata);
 			}
 			else
 			{
 				if((mgg->frames[i].w+w[l]<2048 && mgg->frames[i].h+currh[l]<2048) && (mgg->frames[i].w<1024 && mgg->frames[i].h<1024) && !mgg->frames[i].normal)
 				{
-					glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+					//glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
-					data=malloc(framesize[j]);
-
+					//data=malloc(framesize[j]);
+					/*
 					if(data==NULL)
 					{
 						LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
 						continue;
 					}
+					*/
+					//fseek(file,frameoffset[j-1]+1,SEEK_SET);
 
-					fseek(file,frameoffset[j-1]+1,SEEK_SET);
+					//fread(data,framesize[j],1,file);
 
-					fread(data,framesize[j],1,file);
+					//imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
 
-					imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
-
-					if(mgg->frames[i].channel==4)
-						channel2=GL_RGBA;
+					if (mgg->frames[i].channel == 4)
+						channel2 = GL_RGBA;
 					else
-					if(mgg->frames[i].channel==3)
-						channel2=GL_RGB;
+						if (mgg->frames[i].channel == 3)
+							channel2 = GL_RGB;
+
+					imgdata = malloc(mgg->frames[i].w*mgg->frames[i].h*mgg->frames[i].channel);
+					glBindTexture(GL_TEXTURE_2D, mgg->frames[i].data);
+					glGetTexImage(GL_TEXTURE_2D, 0, channel2, GL_UNSIGNED_BYTE, imgdata);
 
 					glBindTexture(GL_TEXTURE_2D,vbdt[l].texture);
 
@@ -2749,9 +2943,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 					mgg->frames[i].vb_id=l;
 
-					free(data);
+					//free(data);
 
-					SOIL_free_image_data(imgdata);
+					free(imgdata);
 
 					if(2048-w[l]<128 && 2048-currh[l]>128)
 					{
@@ -2817,29 +3011,33 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 						glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,2048,2048,0,GL_BGRA,GL_UNSIGNED_BYTE,NULL);
 
-						glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+						//glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
-						data=malloc(framesize[j]);
-
+						//data=malloc(framesize[j]);
+						/*
 						if(data==NULL)
 						{
 							LogApp("Error allocating memory for texture %d, size %d, file %s during atlas creating",i,framesize[i],name);
 							continue;
 						}
+						*/
+						//fseek(file,frameoffset[j-1]+1,SEEK_SET);
 
-						fseek(file,frameoffset[j-1]+1,SEEK_SET);
+						//fread(data,framesize[j],1,file);
 
-						fread(data,framesize[j],1,file);
+						//imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
 
-						imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
-
-						if(mgg->frames[i].channel==4)
-							channel2=GL_RGBA;
+						if (mgg->frames[i].channel == 4)
+							channel2 = GL_RGBA;
 						else
-						if(mgg->frames[i].channel==3)
-							channel2=GL_RGB;
+						if (mgg->frames[i].channel == 3)
+							channel2 = GL_RGB;
 
-						glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
+						imgdata = malloc(mgg->frames[i].w*mgg->frames[i].h*mgg->frames[i].channel);
+						glBindTexture(GL_TEXTURE_2D, mgg->frames[i].data);
+						glGetTexImage(GL_TEXTURE_2D, 0, channel2, GL_UNSIGNED_BYTE, imgdata);
+
+						glBindTexture(GL_TEXTURE_2D, vbdt[l].texture);
 				
 						glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],currh[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,channel2,GL_UNSIGNED_BYTE,imgdata);
 
@@ -2858,9 +3056,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 						mgg->frames[i].vb_id=vbdt_num-1;
 
-						free(data);
+						//free(data);
 
-						SOIL_free_image_data(imgdata);
+						free(imgdata);
 					}
 					else
 					{
@@ -2868,8 +3066,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 						{
 							if(mgg->frames[i].w+w[n]<2048 || mgg->frames[i].h+currh[n]<2048)
 							{
-								glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+								//glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
+								/*
 								data=malloc(framesize[j]);
 
 								if(data==NULL)
@@ -2883,14 +3082,19 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 								fread(data,framesize[j],1,file);
 
 								imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
+								*/
 
-								if(mgg->frames[i].channel==4)
-									channel2=GL_RGBA;
+								if (mgg->frames[i].channel == 4)
+									channel2 = GL_RGBA;
 								else
-								if(mgg->frames[i].channel==3)
-									channel2=GL_RGB;
+									if (mgg->frames[i].channel == 3)
+										channel2 = GL_RGB;
 
-								glBindTexture(GL_TEXTURE_2D,vbdt[n].texture);
+								imgdata = malloc(mgg->frames[i].w*mgg->frames[i].h*mgg->frames[i].channel);
+								glBindTexture(GL_TEXTURE_2D, mgg->frames[i].data);
+								glGetTexImage(GL_TEXTURE_2D, 0, channel2, GL_UNSIGNED_BYTE, imgdata);
+
+								glBindTexture(GL_TEXTURE_2D, vbdt[l].texture);
 				
 								glTexSubImage2D(GL_TEXTURE_2D,0,w[n],h[n],mgg->frames[i].w,mgg->frames[i].h,channel2,GL_UNSIGNED_BYTE,imgdata);
 	
@@ -2911,9 +3115,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 								mgg->frames[i].vb_id=n;
 
-								free(data);
+							//	free(data);
 
-								SOIL_free_image_data(imgdata);
+								free(imgdata);
 
 								if(2048-w[n]<128 && 2048-currh[n]>128)
 								{
@@ -2950,8 +3154,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 								glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA8,2048,2048,0,GL_BGRA,GL_UNSIGNED_BYTE,NULL);
 
-								glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
+								//glBindTexture(GL_TEXTURE_2D,mgg->frames[i].data);
 
+								/*
 								data=malloc(framesize[j]);
 
 								if(data==NULL)
@@ -2965,14 +3170,19 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 								fread(data,framesize[j],1,file);
 
 								imgdata=SOIL_load_image_from_memory((unsigned char*) data,framesize[j],&width,&height,&channel,0);
+								*/
 
-								if(mgg->frames[i].channel==4)
-									channel2=GL_RGBA;
+								if (mgg->frames[i].channel == 4)
+									channel2 = GL_RGBA;
 								else
-								if(mgg->frames[i].channel==3)
-									channel2=GL_RGB;
+									if (mgg->frames[i].channel == 3)
+										channel2 = GL_RGB;
 
-								glBindTexture(GL_TEXTURE_2D,vbdt[vbdt_num-1].texture);
+								imgdata = malloc(mgg->frames[i].w*mgg->frames[i].h*mgg->frames[i].channel);
+								glBindTexture(GL_TEXTURE_2D, mgg->frames[i].data);
+								glGetTexImage(GL_TEXTURE_2D, 0, channel2, GL_UNSIGNED_BYTE, imgdata);
+
+								glBindTexture(GL_TEXTURE_2D, vbdt[l].texture);
 				
 								glTexSubImage2D(GL_TEXTURE_2D,0,w[vbdt_num-1],h[vbdt_num-1],mgg->frames[i].w,mgg->frames[i].h,channel2,GL_UNSIGNED_BYTE,imgdata);
 
@@ -2991,9 +3201,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 								mgg->frames[i].vb_id=vbdt_num-1;
 
-								free(data);
+							//	free(data);
 
-								SOIL_free_image_data(imgdata);
+								free(imgdata);
 
 								free(w);
 								free(h);
@@ -3142,8 +3352,8 @@ int8 LoadLightmapFromFile(const char *file)
 		else
 			st.game_lightmaps[i].alpha=0;
 
-		st.game_lightmaps[i].W_w=(w*16384)/st.screenx;
-		st.game_lightmaps[i].W_h=(h*8192)/st.screeny;
+		st.game_lightmaps[i].W_w=(w*GAME_WIDTH)/st.screenx;
+		st.game_lightmaps[i].W_h=(h*GAME_HEIGHT)/st.screeny;
 	}
 	else
 	{
@@ -3183,9 +3393,9 @@ void SpawnSprite(int16 game_id, Pos pos, Pos size, int16 ang)
 	}
 }
 
-int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, uint16 sectorid)
+int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, int16 sectorid)
 {
-	uint16 i;
+	int16 i;
 	int32 ydist, my, mx, my2, x1, x2;
 	float m;
 
@@ -3239,7 +3449,7 @@ int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang
 
 int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang)
 {
-	register uint16 i;
+	register int16 i;
 	int32 my, my2;
 
 	for (i = 0; i<st.Current_Map.num_sector; i++)
@@ -3275,7 +3485,7 @@ int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16
 
 int16 CheckCollisionSectorWallID(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int16 id)
 {
-	register uint16 i=id;
+	register int16 i=id;
 	int32 my, my2;
 
 
@@ -3530,8 +3740,8 @@ uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang)
 
 	//STW(&mx, &my);
 
-	mx=((((mx*16384)/st.screenx)));
-	my=((((my*8192)/st.screeny)));
+	mx=((((mx*GAME_WIDTH)/st.screenx)));
+	my=((((my*GAME_HEIGHT)/st.screeny)));
 
 	if(mx>xl && mx<xb && my>yl && my<yb)
 		return 1; //Collided
@@ -3549,11 +3759,11 @@ uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32
 	int32 mx, my;
 
 	/*
-	x=((x*st.screenx)/16384)*st.Camera.dimension.x;
-	y=((y*st.screeny)/8192)*st.Camera.dimension.y;
+	x=((x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
+	y=((y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 
-	xsize=((xsize*st.screenx)/16384)*st.Camera.dimension.x;
-	ysize=((ysize*st.screeny)/8192)*st.Camera.dimension.y;
+	xsize=((xsize*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
+	ysize=((ysize*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 	*/
 
 	//x*=st.Camera.dimension.x;
@@ -3676,7 +3886,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 	Pos vertex[4];
 
-	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+	float ax=1/(GAME_WIDTH/2), ay=1/(GAME_HEIGHT/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
 
 	memcpy(vertex,vertex_s,4*sizeof(Pos));
 
@@ -3741,8 +3951,8 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 		ent[i].texcor[7]=0;
 
 
-		ax=(float) 1/(16384/2);
-		ay=(float) 1/(8192/2);
+		ax=(float) 1/(GAME_WIDTH/2);
+		ay=(float) 1/(GAME_HEIGHT/2);
 
 		ay*=-1.0f;
 
@@ -3801,13 +4011,13 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 		{
 			if(sizemx!=NULL && sizemy!=NULL)
 			{
-				sizex=(((data.w*16384)/st.screenx)*sizemx)+sizeax;
-				sizey=(((data.h*8192)/st.screeny)*sizemy)+sizeay;
+				sizex=(((data.w*GAME_WIDTH)/st.screenx)*sizemx)+sizeax;
+				sizey=(((data.h*GAME_HEIGHT)/st.screeny)*sizemy)+sizeay;
 			}
 			else
 			{
-				sizex=((data.w*16384)/st.screenx)+sizeax;
-				sizey=((data.h*8192)/st.screeny)+sizeay;
+				sizex=((data.w*GAME_WIDTH)/st.screenx)+sizeax;
+				sizey=((data.h*GAME_HEIGHT)/st.screeny)+sizeay;
 			}
 		}
 	}
@@ -3933,8 +4143,8 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 			//ang/=10;
 	
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(GAME_HEIGHT/2);
 
 			ay*=-1.0f;
 
@@ -4062,10 +4272,10 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 	if(dim.x<0) dim.x*=-1;
 	if(dim.y<0) dim.y*=-1;
 
-	if(dim.x<1) dim.x=16384/dim.x;
-	else dim.x*=16384;
-	if(dim.y<1) dim.y=8192/dim.y;
-	else dim.y*=8192;
+	if(dim.x<1) dim.x=GAME_WIDTH/dim.x;
+	else dim.x*=GAME_WIDTH;
+	if(dim.y<1) dim.y=GAME_HEIGHT/dim.y;
+	else dim.y*=GAME_HEIGHT;
 
 	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
 	if(tmp>dim.x) val++;
@@ -4101,13 +4311,13 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 	if(i==MAX_LIGHTS-1)
 		return 2;
 
-	game_lights[i].pos.x=(float) x/16384;
-	game_lights[i].pos.y=(float) y/8192;
+	game_lights[i].pos.x=(float) x/GAME_WIDTH;
+	game_lights[i].pos.y=(float) y/GAME_HEIGHT;
 	game_lights[i].pos.y*=-1.0f;
 	game_lights[i].pos.y+=1.0f;
 	game_lights[i].pos.z=(float) z/4096;
 
-	game_lights[i].radius=(float) radius/8192;
+	game_lights[i].radius=(float) radius/GAME_HEIGHT;
 	
 	game_lights[i].color.r=(float) r/255;
 	game_lights[i].color.g=(float) g/255;
@@ -4175,8 +4385,8 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 			lmp[i].vertex[11]=0;
 
 
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(GAME_HEIGHT/2);
 
 			ay*=-1.0f;
 
@@ -4236,15 +4446,15 @@ void BASICBKD(uint8 r, uint8 g, uint8 b)
 			lmp[i].vertex[5]=0.0f;
 
 			lmp[i].vertex[6]=16384.0f;
-			lmp[i].vertex[7]=8192.0f;
+			lmp[i].vertex[7]=9216.0f;
 			lmp[i].vertex[8]=0.0f;
 
 			lmp[i].vertex[9]=0.0f;
-			lmp[i].vertex[10]=8192.0f;
+			lmp[i].vertex[10]=9216.0f;
 			lmp[i].vertex[11]=0.0f;
 
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(GAME_HEIGHT/2);
 
 			ay*=-1.0f;
 
@@ -4299,10 +4509,10 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	if(dim.x<0) dim.x*=-1;
 	if(dim.y<0) dim.y*=-1;
 
-	if(dim.x<10) dim.x=16384/dim.x;
-	else dim.x*=16384;
-	if(dim.y<10) dim.y=8192/dim.y;
-	else dim.y*=8192;
+	if(dim.x<10) dim.x=GAME_WIDTH/dim.x;
+	else dim.x*=GAME_WIDTH;
+	if(dim.y<10) dim.y=GAME_HEIGHT/dim.y;
+	else dim.y*=GAME_HEIGHT;
 
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
@@ -4391,8 +4601,8 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(GAME_HEIGHT/2);
 
 			ay*=-1.0f;
 
@@ -4634,8 +4844,8 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			ent[i].vertex[10]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y+(sizey/2))-y)*mCos(ang));
 			ent[i].vertex[11]=z;
 	
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(GAME_HEIGHT/2);
 
 			ay*=-1.0f;
 
@@ -4853,8 +5063,8 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(GAME_HEIGHT/2);
 
 			ay*=-1.0f;
 
@@ -4939,7 +5149,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 
 int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
-	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, sy, py;
 	
 	uint32 i=0, j=0, k=0;
 			
@@ -4968,6 +5178,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 			ent[i].data=data;
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
 
 			if(r==0 && g==0 && b==0)
 				r=g=b=1;
@@ -5007,8 +5218,8 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	*/
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax = (float) 1/(16384.0f  / 2.0f);
+			ay=(float) 1/(9216.0f / 2.0f);
 
 			ay*=-1.0f;
 
@@ -5152,8 +5363,8 @@ int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	*/
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH / 2);
+			ay=(float) 1/(9216.0f / 2);
 
 			ay*=-1.0f;
 
@@ -5468,7 +5679,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	int16 ang;
 
-	float ax=1/(16384/2), ay=1/(8192/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+	float ax=1/(GAME_WIDTH/2), ay=1/(9216.0f/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
 
 	i=st.num_entities;
 
@@ -5544,8 +5755,8 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ent[i].vertex[10]=(float) y-(linewidth*mCos(ang));
 		ent[i].vertex[11]=z;
 
-		ax=(float) 1/(16384/2);
-		ay=(float) 1/(8192/2);
+		ax=(float) 1/(GAME_WIDTH/2);
+		ay=(float) 1/(9216.0f/2);
 
 		ay*=-1.0f;
 
@@ -5748,15 +5959,15 @@ void GetSpriteBodySize(int16 id, int16 gameid)
 		{
 			if(st.Game_Sprites[gameid].size_m.x!=NULL && st.Game_Sprites[gameid].size_m.y!=NULL)
 			{
-				st.Current_Map.sprites[id].body.size.x=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*16384)/st.screenx)*
+				st.Current_Map.sprites[id].body.size.x=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*GAME_WIDTH)/st.screenx)*
 					st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
-				st.Current_Map.sprites[id].body.size.y=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*8192)/st.screeny)*
+				st.Current_Map.sprites[id].body.size.y=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*9216)/st.screeny)*
 					st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
 			}
 			else
 			{
-				st.Current_Map.sprites[id].body.size.x=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*16384)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
-				st.Current_Map.sprites[id].body.size.y=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*8192)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+				st.Current_Map.sprites[id].body.size.x=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*GAME_WIDTH)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
+				st.Current_Map.sprites[id].body.size.y=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*9216)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 	}
@@ -5781,7 +5992,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,9216)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -5967,8 +6178,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(9216.0f/2);
 
 			ay*=-1.0f;
 
@@ -6064,7 +6275,7 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,9216)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -6246,8 +6457,8 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(16384.0f/2);
+			ay=(float) 1/(9216.0f/2);
 
 			ay*=-1.0f;
 
@@ -6312,7 +6523,7 @@ int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,GAME_HEIGHT)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -6449,8 +6660,8 @@ if(st.num_entities==MAX_GRAPHICS-1)
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	*/
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(9216.0f/2);
 
 			ay*=-1.0f;
 
@@ -6514,7 +6725,7 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,GAME_HEIGHT)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -6653,8 +6864,8 @@ if(st.num_entities==MAX_GRAPHICS-1)
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	*/
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(9216.0f/2);
 
 			ay*=-1.0f;
 
@@ -6719,7 +6930,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,16384,8192)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,GAME_HEIGHT)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -6857,8 +7068,8 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 			tmp=cos((ang*pi)/180);
 			tmp=mCos(ang*10);
 	*/
-			ax=(float) 1/(16384/2);
-			ay=(float) 1/(8192/2);
+			ax=(float) 1/(GAME_WIDTH/2);
+			ay=(float) 1/(9216.0f/2);
 
 			ay*=-1.0f;
 
@@ -6911,10 +7122,14 @@ uint32 PlayMovie(const char *name)
 	SDL_Thread *t;
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
 	unsigned int ms, ms1, ms2, o;
-	int ms3;
+	int ms3, ms4;
 	 uint32 i=0, j=0;
 	char header[21];
 	GLint unif;
+	GLint tex;
+	void *framedata, *texdata;
+
+	int w, h, channel;
 
 	void *buffer;
 
@@ -7047,15 +7262,18 @@ uint32 PlayMovie(const char *name)
 
 	glActiveTexture(GL_TEXTURE0);
 
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	//glGenerateMipmap(GL_TEXTURE_2D);
+
 	while(st.PlayingVideo)
 	{
-		InputProcess();
+
+		WindowEvents();
 
 		if(st.quit) break;
 		
-		glClear(GL_COLOR_BUFFER_BIT);
-		
-		ms1=GetTicks();
+		//glClear(GL_COLOR_BUFFER_BIT);
 		
 		FMOD_System_Update(st.sound_sys.Sound_System);
 		
@@ -7065,100 +7283,43 @@ uint32 PlayMovie(const char *name)
 		
 		FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
 
-		ms2=ms-(j*(1000/mgv->fps));
-		ms3=(j*(1000/mgv->fps))-ms;
-
-		if(ms2 > 30)
-		{
-			free(mgv->frames[i].buffer);
-			SDL_FreeRW(mgv->frames[i].rw);
-			SDL_FreeSurface(mgv->frames[i].data);
-			glDeleteTextures(1,&mgv->frames[i].ID);
-
-			i=j;
-
-			if(i>mgv->num_frames-1) break;
-
-			rewind(mgv->file);
-			fseek(mgv->file,mgv->seeker[i],SEEK_SET);
-
-			mgv->frames[i].buffer=malloc(mgv->framesize[i]);
-
-			if(mgv->frames[i].buffer==NULL)
-			{
-				LogApp("Unable to allocate memory for MGV frame %d",i);
-				continue;
-			}
-
-			fread(mgv->frames[i].buffer,mgv->framesize[i],1,mgv->file);
-
-			mgv->frames[i].rw=SDL_RWFromMem(mgv->frames[i].buffer,mgv->framesize[i]);
-
-			mgv->frames[i].data=IMG_LoadJPG_RW(mgv->frames[i].rw);
-
-			glGenTextures(1,&mgv->frames[i].ID);
-			glBindTexture(GL_TEXTURE_2D,mgv->frames[i].ID);
-			glTexImage2D(GL_TEXTURE_2D,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
-
-			glGenerateMipmap(GL_TEXTURE_2D);
-		}
+		i = (ms*mgv->fps) / 1000;
 		
-		if(ms3 < 30 && ms2 < 30)
+		if (i > 0)
 		{
-			if(j>0)
-			{
-				free(mgv->frames[i].buffer);
-				SDL_FreeRW(mgv->frames[i].rw);
-				SDL_FreeSurface(mgv->frames[i].data);
-				glDeleteTextures(1,&mgv->frames[i].ID);
+			if (framedata)
+				free(framedata);
 
-				i++;
-			}
-
-			if(i>mgv->num_frames-1) break;
-
-			rewind(mgv->file);
-			fseek(mgv->file,mgv->seeker[i],SEEK_SET);
-
-			mgv->frames[i].buffer=malloc(mgv->framesize[i]);
-
-			if(mgv->frames[i].buffer==NULL)
-			{
-				LogApp("Unable to allocate memory for MGV frame %d",i);
-				continue;
-			}
-
-			fread(mgv->frames[i].buffer,mgv->framesize[i],1,mgv->file);
-
-			mgv->frames[i].rw=SDL_RWFromMem(mgv->frames[i].buffer,mgv->framesize[i]);
-
-			mgv->frames[i].data=IMG_LoadJPG_RW(mgv->frames[i].rw);
-
-			glGenTextures(1,&mgv->frames[i].ID);
-			glBindTexture(GL_TEXTURE_2D,mgv->frames[i].ID);
-			glTexImage2D(GL_TEXTURE_2D,0,3,mgv->frames[i].data->w,mgv->frames[i].data->h,0,GL_RGB,GL_UNSIGNED_BYTE,mgv->frames[i].data->pixels);
-
-			glGenerateMipmap(GL_TEXTURE_2D);
+			if (texdata)
+				free(texdata);
 		}
 
-		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+		if (i>mgv->num_frames - 1) break;
 
-			
-		j++;
+		rewind(mgv->file);
+		fseek(mgv->file, mgv->seeker[i], SEEK_SET);
+
+		framedata = malloc(mgv->framesize[i]);
+
+		if (framedata == NULL)
+		{
+			LogApp("Unable to allocate memory for MGV frame %d", i);
+			continue;
+		}
+
+		fread(framedata, mgv->framesize[i], 1, mgv->file);
+
+		texdata = SOIL_load_image_from_memory(framedata, mgv->framesize[i], &w, &h, &channel, NULL);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, texdata);
+
+		glGenerateMipmap(GL_TEXTURE_2D);
+		
+		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
 		SDL_GL_SwapWindow(wn);
 
-		ms2=GetTicks();
-
-		ms3=ms2-ms1;
-
-		ms3=(1000/(mgv->fps+1))-ms3;
-
-		if(ms3<0) ms3=0;
-
-		SDL_Delay(ms3);
-
-		if(st.FPSYes)
+		//if(st.FPSYes)
 			FPSCounter();
 		
 	}
@@ -7168,6 +7329,13 @@ uint32 PlayMovie(const char *name)
 	glUseProgram(0);
 	glBindVertexArray(0);
 
+	if (framedata)
+		free(framedata);
+
+	if (texdata)
+		free(texdata);
+
+	glDeleteTextures(1, &tex);
 	free(mgv->framesize);
 	free(mgv->frames);
 	free(buffer);
@@ -7639,15 +7807,15 @@ int32 LoadSpriteCFG(char *filename, int id)
 		{
 			if(st.Game_Sprites[gameid].size_m.x!=NULL && st.Game_Sprites[gameid].size_m.y!=NULL)
 			{
-				st.Game_Sprites[gameid].body.size.x=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*16384)/st.screenx)*
+				st.Game_Sprites[gameid].body.size.x=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH)/st.screenx)*
 					st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*8192)/st.screeny)*
+				st.Game_Sprites[gameid].body.size.y=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*9216)/st.screeny)*
 					st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
 			}
 			else
 			{
-				st.Game_Sprites[gameid].body.size.x=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*16384)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*8192)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+				st.Game_Sprites[gameid].body.size.x=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*9216)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 	}
@@ -7797,12 +7965,69 @@ int32 LoadSpriteList(char *filename)
 	return 1;
 }
 
+uint8 LoadMGGList(const char *file)
+{
+	FILE *f;
+	register uint8 i, id;
+	char buf[1024], *str, *str2;
+
+	if ((f = fopen(file, "r")) == NULL)
+	{
+		LogApp("Unable to load mgg list: %s", file);
+		return NULL;
+	}
+
+	while (!feof(f))
+	{
+		memset(buf, 0, 1024);
+
+		fgets(buf, 1024, f);
+
+		if (buf[0] == '/'  && buf[1] == '/')
+			continue;
+
+		if (buf[0] == '/0')
+			continue;
+
+		str = strtok(buf, " \"");
+
+		if (strcmp(str, "LOAD") == NULL)
+		{
+			str = strtok(NULL, " \"");
+
+			str2 = strtok(NULL, " \"");
+
+			id = atoi(str2);
+
+			if (mgg_game[id].type != NONE)
+			{
+				LogApp("MGG slot %d already in use", id);
+				continue;
+			}
+
+			if (!LoadMGG(&mgg_game[id], str))
+			{
+				LogApp("Error loading mgg %s", str);
+				continue;
+			}
+
+			st.num_mgg++;
+		}
+		else
+		{
+			LogApp("Error parsing mgg list: unvalid command %s", str);
+			continue;
+		}
+	}
+	return 1;
+}
+
 void LockCamera()
 {
 	if(st.Current_Map.cam_area.horiz_lim)
 	{
-		if((float) st.Camera.position.x+(16384/st.Camera.dimension.x)>st.Current_Map.cam_area.limit[1].x)
-			st.Camera.position.x=(float) st.Current_Map.cam_area.limit[1].x-(16384/st.Camera.dimension.x);
+		if((float) st.Camera.position.x+(GAME_WIDTH/st.Camera.dimension.x)>st.Current_Map.cam_area.limit[1].x)
+			st.Camera.position.x=(float) st.Current_Map.cam_area.limit[1].x-(GAME_WIDTH/st.Camera.dimension.x);
 
 		if(st.Camera.position.x<st.Current_Map.cam_area.limit[0].x)
 			st.Camera.position.x=st.Current_Map.cam_area.limit[0].x;
@@ -7810,8 +8035,8 @@ void LockCamera()
 
 	if(st.Current_Map.cam_area.vert_lim)
 	{
-		if((float) st.Camera.position.y+(8192/st.Camera.dimension.y)>st.Current_Map.cam_area.limit[1].y)
-			st.Camera.position.y=(float) st.Current_Map.cam_area.limit[1].y-(8192/st.Camera.dimension.y);
+		if((float) st.Camera.position.y+(9216/st.Camera.dimension.y)>st.Current_Map.cam_area.limit[1].y)
+			st.Camera.position.y=(float) st.Current_Map.cam_area.limit[1].y-(9216/st.Camera.dimension.y);
 
 		if(st.Camera.position.y<st.Current_Map.cam_area.limit[0].y)
 			st.Camera.position.y=st.Current_Map.cam_area.limit[0].y;
@@ -8025,7 +8250,7 @@ void DrawMap()
 	Pos tmp;
 	
 	if(st.Current_Map.bcktex_id>-1)
-		DrawGraphic(8192,4096,16384,8192,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,st.Current_Map.bck3_pan.x,st.Current_Map.bck3_pan.y,
+		DrawGraphic(8192,4608,GAME_WIDTH,9216,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,st.Current_Map.bck3_pan.x,st.Current_Map.bck3_pan.y,
 		st.Current_Map.bck3_size.x,st.Current_Map.bck3_size.y,55,0);
 
 			for(i=0;i<st.Current_Map.num_obj;i++)
@@ -8412,10 +8637,10 @@ void Renderer(uint8 type)
 
 						if(vbdt[m].normal)
 						{
-							if(tex_bound[1]!=vbdt[m].texture)
+							if(tex_bound[1]!=vbdt[m].Ntexture)
 							{
 								glBindTexture(GL_TEXTURE_2D,vbdt[m].Ntexture);
-								tex_bound[1]=vbdt[m].texture;
+								tex_bound[1]=vbdt[m].Ntexture;
 							}
 							glUniform1f(st.renderer.unifs[4],1);
 						}
@@ -8479,10 +8704,10 @@ void Renderer(uint8 type)
 						{
 							glUniform1f(st.renderer.unifs[4],1);
 
-							if(tex_bound[1]!=ent[z_buffer[i][j]].data.data)
+							if(tex_bound[1]!=ent[z_buffer[i][j]].data.Ndata)
 							{
 								glBindTexture(GL_TEXTURE_2D,ent[z_buffer[i][j]].data.Ndata);
-								tex_bound[1]=ent[z_buffer[i][j]].data.data;
+								tex_bound[1]=ent[z_buffer[i][j]].data.Ndata;
 							}
 						}
 						else

@@ -684,6 +684,11 @@ void GameEvent()
 	}
 }
 
+void SparkPart(PARTICLES part)
+{
+	
+}
+
 int main(int argc, char *argv[])
 {
 	int loops;
@@ -724,6 +729,8 @@ int main(int argc, char *argv[])
 
 	LoadSpriteList("sprite.list");
 
+	LoadMGGList("mgg.list");
+
 	LoadSoundList("sound.list");
 
 	st.gt=MAIN_MENU;
@@ -737,9 +744,11 @@ int main(int argc, char *argv[])
 
 	InitPhysics(1, DEFAULT_GRAVITY, 900, 0);
 
-	DefineProjectileProperties(0, PROJ_REGULAR | PROJ_SPAWNS_SPRITE, 15, 0, 0, 0, 0, GLACIUS);
-	DefineProjectilePhysics(0, 0, 0, 0, 0, 50, 2048, 2048,64);
-	DefineProjectileVisual(0, 0, 0, 0, 0, 0);
+	DefineProjectileProperties(0, PROJ_REGULAR | PROJ_SPAWNS_SPRITE | PROJ_TRAIL, 15, 0, 0, 1, 1, GLACIUS);
+	DefineProjectilePhysics(0, 0, 0, 0, 0, 50, 2048, 1024,64);
+	DefineProjectileVisual(0, 2, 5, 0, 0, 0);
+
+	DefineParticle(0, 0, 5, 0, 0, 0, 64, SparkPart);
 
 
 	while(!st.quit)
@@ -780,6 +789,7 @@ int main(int argc, char *argv[])
 		{
 			BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);
 			DrawMap();
+			DrawMisc();
 		}
 
 		UIMain_DrawSystem();
