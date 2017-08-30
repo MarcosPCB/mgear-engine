@@ -3335,16 +3335,26 @@ int8 LoadLightmapFromFile(const char *file)
 
 	fread(buffer,size,1,f);
 
-	st.game_lightmaps[i].data=SOIL_load_image_from_memory(buffer,size,&w,&h,&channel,0);
+	st.game_lightmaps[i].data = stbi_load_from_memory(buffer, size, &w, &h, &channel, 0);
 
 	if(st.game_lightmaps[i].data)
-		st.game_lightmaps[i].tex=SOIL_create_OGL_texture(st.game_lightmaps[i].data,w,h,channel,NULL,SOIL_FLAG_MIPMAPS);
+	{
+		glGenTextures(1, &st.game_lightmaps[i].tex);
+		glBindTexture(GL_TEXTURE_2D, st.game_lightmaps[i].tex);
+		
+		if(channel == 3)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, st.game_lightmaps[i].data);
+
+		if(channel == 4)
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, st.game_lightmaps[i].data);
+
+	}
 
 	if(st.game_lightmaps[i].tex)
 	{
 		st.game_lightmaps[i].T_w=w;
 		st.game_lightmaps[i].T_h=h;
-		st.game_lightmaps[i].type[0]=TGA_FILE;
+		//st.game_lightmaps[i].type[0]=TGA_FILE;
 		st.num_lights++;
 		st.game_lightmaps[i].num_lights=1;
 		if(channel==4)
@@ -7309,7 +7319,7 @@ uint32 PlayMovie(const char *name)
 
 		fread(framedata, mgv->framesize[i], 1, mgv->file);
 
-		texdata = SOIL_load_image_from_memory(framedata, mgv->framesize[i], &w, &h, &channel, NULL);
+		texdata = stbi_load_from_memory(framedata, mgv->framesize[i], &w, &h, &channel, NULL);
 
 		glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, texdata);
 
