@@ -161,8 +161,8 @@ uint8 ShootProjectile(int8 id, int16 ang, int16 owner, Pos pos)
 			{
 				physics.proj[i].stat = 1;
 				physics.proj[i].ang = ang;
-				physics.proj[i].vel.x = physics.game_proj[i].speed * mCos(ang);
-				physics.proj[i].vel.y = physics.game_proj[i].speed * mSin(ang);
+				physics.proj[i].vel.x = (float) physics.game_proj[id].speed * mCos(ang);
+				physics.proj[i].vel.y = (float) physics.game_proj[id].speed * mSin(ang);
 				physics.proj[i].animated = physics.game_proj[id].animated;
 				physics.proj[i].anim_id = physics.game_proj[id].anim_id;
 				physics.proj[i].bounce = physics.game_proj[id].bounce;
@@ -183,6 +183,7 @@ uint8 ShootProjectile(int8 id, int16 ang, int16 owner, Pos pos)
 				physics.proj[i].spawns = physics.game_proj[id].spawns;
 				physics.proj[i].trail = physics.game_proj[id].trail;
 				physics.proj[i].num_trail = physics.game_proj[id].num_trail;
+				physics.proj[i].trail_time = 0;
 
 				return 1;
 			}
@@ -782,6 +783,7 @@ int8 MainPhysics()
 	Pos pos, pos2, size, size2;
 	int8 collided = 0;
 	int32 sety;
+	static int32 time;
 
 	memset(&physics.sectorarea, 0, st.Current_Map.num_sector * sizeof(uint16));
 	memset(&physics.sectorarea_ids, -1, st.Current_Map.num_sector * physics.num_sprites * sizeof(int16));
@@ -904,6 +906,21 @@ int8 MainPhysics()
 		else
 		if (physics.proj[j].type & PROJ_REGULAR)
 		{
+			if (physics.proj[j].type & PROJ_TRAIL)
+			{
+				if (physics.proj[j].trail > -1 && physics.proj[j].num_trail > 0)
+				{
+					if (physics.proj[j].trail_time >= TICSPERSECOND / physics.proj[j].num_trail)
+					{
+						//SpawnParticle(physics.proj[j].trail, physics.proj[j].pos, 0);
+
+						physics.proj[j].trail_time = 0;
+					}
+					else
+						physics.proj[j].trail_time++;
+				}
+			}
+
 			if (CheckCollisionSectorWall(physics.proj[j].pos.x, physics.proj[j].pos.y, physics.proj[j].size.x, physics.proj[j].size.y, physics.proj[j].ang)!=-1 || 
 				CheckCollisionSector(physics.proj[j].pos.x, physics.proj[j].pos.y, physics.proj[j].size.x, physics.proj[j].size.y, physics.proj[j].ang, NULL, sector_id))
 			{
@@ -920,18 +937,19 @@ int8 MainPhysics()
 				l = physics.sprite_list[physics.active_sprites[k]];
 
 				if (l != physics.proj[j].owner)
-
-				if (st.Current_Map.sprites[l].flags & 8 && CheckCollision(physics.proj[j].pos, physics.proj[j].size, physics.proj[j].ang,
-					st.Current_Map.sprites[l].position, st.Current_Map.sprites[l].body.size, st.Current_Map.sprites[l].angle))
 				{
-					if (physics.proj[j].type & PROJ_SPAWNS_SPRITE)
-						SpawnSprite(physics.proj[j].spawns, physics.proj[j].pos, st.Game_Sprites[physics.proj[j].spawns].body.size, 0);
+					if (st.Current_Map.sprites[l].flags & 8 && CheckCollision(physics.proj[j].pos, physics.proj[j].size, physics.proj[j].ang,
+						st.Current_Map.sprites[l].position, st.Current_Map.sprites[l].body.size, st.Current_Map.sprites[l].angle))
+					{
+						if (physics.proj[j].type & PROJ_SPAWNS_SPRITE)
+							SpawnSprite(physics.proj[j].spawns, physics.proj[j].pos, st.Game_Sprites[physics.proj[j].spawns].body.size, 0);
 
-					st.Current_Map.sprites[l].body.damage_owner = physics.proj[j].owner;
+						st.Current_Map.sprites[l].body.damage_owner = physics.proj[j].owner;
 
-					physics.proj[j].stat = -1; //Kill the projectile
+						physics.proj[j].stat = -1; //Kill the projectile
 
-					break;
+						break;
+					}
 				}
 			}
 
@@ -1074,4 +1092,20 @@ int8 MainPhysics()
 
 	//}
 	
+}
+
+void DrawMisc()
+{
+	register uint32 i, j;
+
+	for (i = 0; i < physics.num_proj; i++)
+	{
+		j = physics.proj_list[i];
+
+		if (physics.proj[j].type & PROJ_REGULAR)
+		{
+			DrawSprite(physics.proj[j].pos.x, physics.proj[j].pos.y, physics.proj[j].size.x, physics.proj[j].size.y, physics.proj[j].ang,
+				255, 255, 255, mgg_game[physics.proj[j].mgg_id].frames[physics.proj[j].frame_id], 255, physics.proj[j].pos.z, 0, 0, 0, 0, 0);
+		}
+	}
 }

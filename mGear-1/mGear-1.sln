@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mgvcreator", "mgvcreator\mg
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mEngineer", "mEngineer\mEngineer.vcxproj", "{29FD5AF9-8F9B-49A2-96EC-7F91D32250CB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SOIL", "APIs\SOIL\VC2013\SOIL\SOIL.vcxproj", "{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mAudio", "mAudio\mAudio.vcxproj", "{46EB78F3-6428-4A68-8587-A519481F0288}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,13 +53,12 @@ Global
 		{29FD5AF9-8F9B-49A2-96EC-7F91D32250CB}.Release|Win32.Build.0 = Release|Win32
 		{29FD5AF9-8F9B-49A2-96EC-7F91D32250CB}.Release|x64.ActiveCfg = Release|x64
 		{29FD5AF9-8F9B-49A2-96EC-7F91D32250CB}.Release|x64.Build.0 = Release|x64
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Debug|Win32.ActiveCfg = Debug|Win32
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Debug|Win32.Build.0 = Debug|Win32
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Debug|x64.ActiveCfg = Debug|Win32
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Release|Win32.ActiveCfg = Release|Win32
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Release|Win32.Build.0 = Release|Win32
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Release|x64.ActiveCfg = Release|x64
-		{940A4119-597E-4A95-BDDE-1B82CF0AC6EE}.Release|x64.Build.0 = Release|x64
+		{46EB78F3-6428-4A68-8587-A519481F0288}.Debug|Win32.ActiveCfg = Debug|Win32
+		{46EB78F3-6428-4A68-8587-A519481F0288}.Debug|Win32.Build.0 = Debug|Win32
+		{46EB78F3-6428-4A68-8587-A519481F0288}.Debug|x64.ActiveCfg = Debug|Win32
+		{46EB78F3-6428-4A68-8587-A519481F0288}.Release|Win32.ActiveCfg = Release|Win32
+		{46EB78F3-6428-4A68-8587-A519481F0288}.Release|Win32.Build.0 = Release|Win32
+		{46EB78F3-6428-4A68-8587-A519481F0288}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

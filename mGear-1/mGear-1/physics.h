@@ -112,7 +112,7 @@ struct _PROJECTILE
 
 	uint32 radius;
 
-	uint32 time;
+	int32 time;
 
 	int8 stat;
 
@@ -126,6 +126,8 @@ struct _PROJECTILE
 	uint8 id;
 
 	int16 health;
+
+	int32 trail_time;
 };
 
 typedef struct _PROJECTILE PROJECTILE;
@@ -219,7 +221,7 @@ uint8 DefineProjectilePhysics(int8 id, uint8 bounce, uint8 num_bounces, uint8 rn
 uint8 DefineProjectileVisual(int8 id, int16 frame, uint8 mgg, uint8 anim_id, uint8 animated, float speed_mul);
 uint8 ShootProjectile(int8 id, int16 ang, int16 owner, Pos pos);
 
-uint8 DefineParticle(int8 id, int16 frame, uint8 mgg, uint8 anim_id, uint8 animated, float speed_mul, int16 speed, void(*func)(void*));
+uint8 DefineParticle(int8 id, int16 frame, uint8 mgg, uint8 anim_id, uint8 animated, float speed_mul, int16 speed, void(*func)(PARTICLES));
 uint8 SpawnParticle(int8 id, Pos pos, int16 ang);
 
 int8 OnTheGround(int16 id, int32 *y);
@@ -230,3 +232,5 @@ int8 HitProj(int16 id, uint8 *proj_id);
 int8 HitProjID(int16 id, uint8 proj_id);
 
 int8 MainPhysics();
+
+void DrawMisc();

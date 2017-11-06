@@ -16,19 +16,9 @@
 	#include <conio.h>
 #endif
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
-#define STBI_NO_PSD
-#define STBI_NO_GIF
-#define STBI_NO_PNM
-#define STBI_NO_HDR
-#define STBI_NO_PIC
-
 #ifdef WIN32
 	#include <Windows.h>
 #endif
-
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +33,6 @@
 	#error Use _VAO_RENDER or _VBO_RENDER or _VA_RENDER or all together
 #endif
 
-
 #ifndef _ENGINE_H
 #define _ENGINE_H
 
@@ -53,8 +42,8 @@
 #define TICSPERSECOND 125
 #define MAX_CHANNELS 128
 #define MUSIC_CHANNEL MAX_CHANNELS-1
-#define MAX_SOUNDS 512
-#define MAX_MUSICS 32
+#define MAX_SOUNDS 2048
+#define MAX_MUSICS 2048
 #define MUSIC_SLOT MAX_SOUNDS-1
 #define MAX_KEYS 128
 #define MAX_OBJS 1024

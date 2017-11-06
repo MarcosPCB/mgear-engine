@@ -23,7 +23,7 @@
 #define UI_COL_GREEN 0x00FF00
 #define UI_COL_BLUE 0x0000FF
 
-#define MAX_UIWINDOWS 4
+#define MAX_UIWINDOWS 8
 
 #define UI_BASICPANNELFRAME 4 //equivalent to mgg_sys[0].frames[4], used in the Window type 2
 
@@ -34,6 +34,25 @@ enum _UI_POS
 };
 
 typedef enum _UI_POS UI_POS;
+
+enum _UI_WIDGETS
+{
+	UI_BUTTON_ICON,
+	UI_BUTTON_STRING,
+	UI_STRING_BUTTON,
+	UI_ICON_BUTTON,
+	UI_CHECK,
+	UI_LABEL,
+	UI_TEXT_INPUT,
+	UI_SLIDERI,
+	UI_SLIDERF,
+	UI_RANGE,
+	UI_OPTION,
+	UI_DROPLIST,
+	UI_SPACE
+};
+
+typedef enum _UI_WIDGETS UI_WIDGETS;
 
 struct _UI_WINDOW
 {
@@ -47,9 +66,34 @@ struct _UI_WINDOW
 	int8 current;
 
 	int8 window_frame;
+
+	uint8 rows, *wg_per_row, num_wg;
+
+	int8 **layout;
+	
+	Pos *row_size;
 };
 
 typedef struct _UI_WINDOW UI_WINDOW;
+
+struct _UI_MENUBAR
+{
+	uint8 stat;
+	Pos pos;
+	Pos size;
+	int8 layer;
+	int8 font;
+	int16 font_size;
+	int8 current;
+
+	int8 window_frame;
+
+	uint8 num_wg;
+
+	int8 *layout;
+};
+
+typedef struct _UI_MENUBAR UI_MENUBAR;
 
 struct _UI_SYSTEM
 {

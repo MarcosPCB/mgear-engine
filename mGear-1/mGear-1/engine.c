@@ -11,6 +11,16 @@
 #include "input.h"
 #include <math.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+
+#define STBI_NO_PSD
+#define STBI_NO_GIF
+#define STBI_NO_PNM
+#define STBI_NO_HDR
+#define STBI_NO_PIC
+
+#include <stb_image.h>
+
 //#ifndef ENGINEER
 	
 //#endif
@@ -34,6 +44,8 @@ int16 z_slot[(7*8)+1];
 int8 z_used;
 
 GLuint lm;
+
+extern void UINKRender();
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 	VB_DATAT vbd;

@@ -1,6 +1,7 @@
 #include "UI.h"
 #include "input.h"
 #include "dirent.h"
+#include <assert.h>
 
 UI_WINDOW UI_Win[MAX_UIWINDOWS];
 UI_SYSTEM UI_Sys;
@@ -38,7 +39,11 @@ void UILoadSystem(char *filename)
 	int8 basic=1;
 	char buf[256], *tok, *val;
 
+	GLint pos, texc, col, texl, texr;
+
 	int16 value=0;
+
+	register uint8 i;
 
 	if(filename==NULL)
 		basic=0;
@@ -2453,4 +2458,131 @@ int16 UIMakeList(char list[128][128], int16 sizel)
 	}
 
 	return -1;
+}
+
+
+int8 UIBeginWidgetWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos, int8 layer)
+{
+	int8 ID, i;
+
+	if (bpos == CENTER)
+	{
+		x = 8192;
+		y = GAME_HEIGHT / 2;
+	}
+
+	if (st.num_uiwindow<MAX_UIWINDOWS)
+	{
+		for (i = 0; i<MAX_UIWINDOWS; i++)
+		{
+			if (!UI_Win[i].stat)
+			{
+				UI_Win[i].stat = 1;
+				UI_Win[i].pos.x = x;
+				UI_Win[i].pos.y = y;
+				UI_Win[i].size.x = xsize;
+				UI_Win[i].size.y = ysize;
+				UI_Win[i].layer = layer;
+				UI_Win[i].num_options = 0;
+				UI_Win[i].current = -1;
+
+				UI_Win[i].rows = 0;
+				UI_Win[i].num_wg = 0
+
+				ID = st.num_uiwindow;
+				st.num_uiwindow++;
+				break;
+			}
+		}
+	}
+	else
+		return -1;
+
+	return ID;
+}
+
+int8 UIWindowLayoutRow(int8 win_id, int32 w, int32 h, uint8 num_wg)
+{
+	if (UI_Win[win_id].stat)
+	{
+		UI_Win[win_id].rows++;
+		
+		if(UI_Win[win_id].rows == 1)
+		{
+			UI_Win[win_id].wg_per_row = malloc(1);
+			assert(UI_Win[win_id].wg_per_row);
+
+			UI_Win[win_id].wg_per_row[UI_Win[win_id].rows-1] = num_wg;
+
+			UI_Win[win_id].num_wg = num_wg;
+
+			UI_Win[win_id].layout = malloc(UI_Win[win_id].num_wg);
+			assert(UI_Win[win_id].layout);
+			
+			memset(UI_Win[win_id].layout[0], 0, UI_Win[win_id].wg_per_row[UI_Win[win_id].rows-1])
+
+			UI_Win[win_id].row_size = malloc(sizeof(Pos));
+			assert(UI_Win[win_id].row_size);
+			UI_Win[win_id].row_size[0].x = w;
+			UI_Win[win_id].row_size[0].y = h;
+
+		}
+		else
+		{	
+			UI_Win[win_id].wg_per_row = realloc(UI_Win[win_id].wg_per_row, UI_Win[win_id].rows);
+			assert(UI_Win[win_id].wg_per_row);
+
+			UI_Win[win_id].wg_per_row[UI_Win[win_id].rows-1] = num_wg;
+	
+			UI_Win[win_id].num_wg += num_wg;
+
+			UI_Win[win_id].layout = realloc(UI_Win[win_id].layout, UI_Win[win_id].rows * UI_Win[win_id].num_wg);
+			assert(UI_Win[win_id].layout);
+
+			memset(UI_Win[win_id].layout[UI_Win[win_id].rows-1], 0, UI_Win[win_id].wg_per_row[UI_Win[win_id].rows-1]);
+		}
+
+		return 1
+	}
+	else
+		return NULL;
+}
+
+int8 WGStringButton(int8 win_id, char *text, int8 font, int16 font_size, int8 layer)
+{
+	int32 x, y;
+	int32 text_size;
+	int16 gsize, gsizew;
+
+	uint8 rn, gn, bn, rs, gs, bs;
+
+	rn = colorN >> 16;
+	gn = (colorN >> 8) & 0xFF;
+	bn = colorN & 0xFF;
+
+	rs = colorS >> 16;
+	gs = (colorS >> 8) & 0xFF;
+	bs = colorS & 0xFF;
+
+	gsize = (st.fonts[font].size_h_gm*font_size) / FONT_SIZE;
+	gsizew = (st.fonts[font].size_w_gm*font_size) / FONT_SIZE;
+
+	text_size = gsizew*strlen(text);
+
+	
+
+	if (CheckCollisionMouse(x, y, text_size, gsize, 0))
+	{
+		StringUIData(text, x, y, text_size, gsize, 0, rs, gs, bs, 255, font, font_size, font_size, layer);
+
+		if (st.mouse1)
+		{
+			st.mouse1 = 0;
+			return UI_SEL;
+		}
+	}
+	else
+		StringUIData(text, x, y, text_size, gsize, 0, rn, gn, bn, 255, font, font_size, font_size, layer);
+
+	return UI_NULLOP;
 }

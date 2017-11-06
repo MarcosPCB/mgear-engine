@@ -1,0 +1,14 @@
+//List of sounds in game
+//SOUND id path LOOP/NOLOOP AMBIENT/FX/PLAYER/NPC/TALK PRIORITY (0 - 50) (most important to least important)
+
+
+SOUND 0 "M:\projetos\platform\mGear-1\mAudio\glacius_a.wav" NOLOOP PLAYER 50
+
+SOUND 1 "M:\projetos\platform\mGear-1\mAudio\Glacius.wav" NOLOOP NPC 25
+
+//List of musics
+//MUSIC id path LOOP/NOLOOP
+
+
+MUSIC 0 "M:\projetos\platform\mGear-1\mAudio\mk3roof.mp3" LOOP
+MUSIC 1 "M:\projetos\platform\mGear-1\mAudio\glacius.mp3" LOOP

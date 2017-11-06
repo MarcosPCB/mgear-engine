@@ -51,6 +51,52 @@ struct _MGL_SYS
 
 typedef struct _MGL_SYS MGL_SYS;
 
+//State definitions
+
+#define HEADER 1
+#define FUNCTION 2
+
+//first byte of compiled code defines the event that the code will be executed and if it will override the event's internal code
+
+#define MAINMENU_EVENT 1
+#define INGAMEMENU_EVENT 2
+#define INGAME_EVENT 4
+#define OVERRIDE_EVENT 8
+
+//Reference values
+
+#define LOCAL_DATA 0
+#define DECL_VAR 1
+#define DEF_CONST 2
+#define FUNC_EXEC 3
+#define VAR_OP 4
+#define IF_COND 5
+#define DECL_CONST 6
+#define DECL_FUNC 7
+#define WHILE_LOOP 8
+#define FAST_UI_COND 9
+
+//Fast condition options
+
+#define FUC_SELECTED 0
+
+//function type
+
+#define VOID_FUNC 0
+#define INT_FUNC 1
+#define FLOAT_FUNC 2
+#define STRING_FUNC 3
+
+#define MAX_FUNCTIONS 256
+#define MAX_INTS 256
+#define MAX_FLOATS 256
+
+struct MGL_FUNCTIONS
+{
+	char func_name[32];
+	uint8 num_param;
+};
+
 int32 MGL_StackAddress(int8 type, int32 value); //returns an address for the variable or constant
 
 int32 *MGL_Compiler(const char *filename); //compiles the MGHUL file into MGMUL language
