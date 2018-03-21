@@ -2487,7 +2487,7 @@ int8 UIBeginWidgetWindow(int32 x, int32 y, int32 xsize, int32 ysize, UI_POS bpos
 				UI_Win[i].current = -1;
 
 				UI_Win[i].rows = 0;
-				UI_Win[i].num_wg = 0
+				UI_Win[i].num_wg = 0;
 
 				ID = st.num_uiwindow;
 				st.num_uiwindow++;
@@ -2519,7 +2519,7 @@ int8 UIWindowLayoutRow(int8 win_id, int32 w, int32 h, uint8 num_wg)
 			UI_Win[win_id].layout = malloc(UI_Win[win_id].num_wg);
 			assert(UI_Win[win_id].layout);
 			
-			memset(UI_Win[win_id].layout[0], 0, UI_Win[win_id].wg_per_row[UI_Win[win_id].rows-1])
+			memset(UI_Win[win_id].layout[0], 0, UI_Win[win_id].wg_per_row[UI_Win[win_id].rows - 1]);
 
 			UI_Win[win_id].row_size = malloc(sizeof(Pos));
 			assert(UI_Win[win_id].row_size);
@@ -2542,12 +2542,12 @@ int8 UIWindowLayoutRow(int8 win_id, int32 w, int32 h, uint8 num_wg)
 			memset(UI_Win[win_id].layout[UI_Win[win_id].rows-1], 0, UI_Win[win_id].wg_per_row[UI_Win[win_id].rows-1]);
 		}
 
-		return 1
+		return 1;
 	}
 	else
 		return NULL;
 }
-
+/*
 int8 WGStringButton(int8 win_id, char *text, int8 font, int16 font_size, int8 layer)
 {
 	int32 x, y;
@@ -2586,3 +2586,4 @@ int8 WGStringButton(int8 win_id, char *text, int8 font, int16 font_size, int8 la
 
 	return UI_NULLOP;
 }
+*/

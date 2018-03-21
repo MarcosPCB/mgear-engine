@@ -1,4 +1,4 @@
-#include "input.h"
+﻿#include "input.h"
 #include "main.h"
 #include <stdio.h> 
 #include <stdlib.h>
@@ -7,15 +7,33 @@
 #include "UI.h"
 #include "mggeditor.h"
 
+#define NK_INCLUDE_FIXED_TYPES
+#define NK_INCLUDE_STANDARD_IO
+#define NK_INCLUDE_STANDARD_VARARGS
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_INCLUDE_FONT_BAKING
+#define NK_INCLUDE_DEFAULT_FONT
+#define NK_IMPLEMENTATION
+#define NK_SDL_GL3_IMPLEMENTATION
+#include "nuklear.h"
+#include "nuklear_sdl_gl3.h"
+
 #ifdef _DEBUG
 	#include <crtdbg.h>
 #endif
 
 //extern _MGG mgg_sys[3];
 
-mEng meng;
+mEng meng, nmeng;
+
+int nkrendered = 0;
+
+struct nk_context *ctx;
 
 int prev_tic, curr_tic, delta;
+
+char *Layers[] = { "Background 3", "Background 2", "Background 1", "Midground", "Foreground" };
 
 uint16 WriteCFG()
 {
@@ -48,7 +66,7 @@ uint16 WriteCFG()
 uint16 LoadCFG()
 {
 	FILE *file;
-	char buf[128], str[128];
+	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
 	int value=0;
 	if((file=fopen("settings.cfg","r"))==NULL)
 		if(WriteCFG()==0)
@@ -65,6 +83,14 @@ uint16 LoadCFG()
 		if(strcmp(str,"AudioFrequency")==NULL) st.audiof=value;
 		if(strcmp(str,"AudioChannels")==NULL) st.audioc=value;
 		if(strcmp(str,"VSync")==NULL) st.vsync=value;
+		if (strcmp(str, "CurrentPath") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			strcpy(st.CurrPath, buf2);
+			continue;
+		}
 	}
 
 	if(!st.screenx || !st.screeny || !st.bpp || !st.audioc || !st.audioc || st.vsync>1)
@@ -286,7 +312,6 @@ void SpriteList()
 		}
 }
 
-
 static int16 MGGLoad()
 {
 	uint16 j=0, i, u, check;
@@ -474,6 +499,8 @@ static void PannelLeft()
 	Pos p;
 	PosF p2;
 	static int8 winid[4];
+
+	//UIPannelLeft();
 
 	UIData(8192,128,16384,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
 	UIData(455,4608,455*2,9216,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
@@ -4287,7 +4314,7 @@ static void ViewPortCommands()
 		meng.current_command=0;
 	}	
 
-	if(!CheckCollisionMouse(455,4608,910,9216,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
+	if(!CheckCollisionMouse(2458/2,4885,2458,8939,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
 	{
 		if(meng.command==CAM_LIM_X)
 		{
@@ -4981,7 +5008,7 @@ static void ViewPortCommands()
 			}
 		}
 		else
-		if(meng.command==ADD_OBJ)
+		if(meng.command==ADD_OBJ && st.Current_Map.num_mgg > 0)
 		{
 			if(st.mouse1)
 			{
@@ -7813,16 +7840,17 @@ static void ViewPortCommands()
 			st.Camera.position.x-=64*delta;
 		}
 
-		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2  && meng.command!=MOVE_LIGHTMAP && meng.command!=MGG_LOAD && meng.sub_com<100)
+		if(meng.command!=ADD_LIGHT_TO_LIGHTMAP && meng.command!=EDIT_LIGHTMAP2  && meng.command!=MOVE_LIGHTMAP && meng.command!=MGG_LOAD && meng.sub_com<100
+			&& meng.command != SPRITE_SELECTION && meng.command != TEX_SEL)
 		{
-			if(st.mouse_wheel>0)
+			if(st.mouse_wheel>0 && st.keys[LALT_KEY].state)
 			{
 				if(st.Camera.dimension.x<6) st.Camera.dimension.x+=0.1;
 				if(st.Camera.dimension.y<6) st.Camera.dimension.y+=0.1;
 				st.mouse_wheel=0;
 			}
 
-			if(st.mouse_wheel<0)
+			if (st.mouse_wheel<0 && st.keys[LALT_KEY].state)
 			{
 				if(st.Camera.dimension.x>0.2) st.Camera.dimension.x-=0.1;
 				if(st.Camera.dimension.y>0.2) st.Camera.dimension.y-=0.1;
@@ -8113,9 +8141,1538 @@ static void ENGDrawLight()
 	
 }
 
+struct nk_color ColorPicker(struct nk_color color)
+{
+	if (nk_combo_begin_color(ctx, color, nk_vec2(200, 250)))
+	{
+		nk_layout_row_dynamic(ctx, 120, 1);
+		color = nk_color_picker(ctx, color, NK_RGB);
+		nk_layout_row_dynamic(ctx, 25, 1);
+		color.r = (nk_byte)nk_propertyi(ctx, "R:", 0, color.r, 255, 1, 1);
+		color.g = (nk_byte)nk_propertyi(ctx, "G:", 0, color.g, 255, 1, 1);
+		color.b = (nk_byte)nk_propertyi(ctx, "B:", 0, color.b, 255, 1, 1);
+
+		nk_combo_end(ctx);
+	}
+
+	return color;
+}
+
+int MapProperties()
+{
+	static int bk3_tex = 0, state = 0;
+	static struct nk_color amb_color;
+
+	amb_color.r = st.Current_Map.amb_color.r;
+	amb_color.g = st.Current_Map.amb_color.g;
+	amb_color.b = st.Current_Map.amb_color.b;
+	amb_color.a = 255;
+
+	if (nk_begin(ctx, "Map properties", nk_rect((st.screenx / 2) - 200, (st.screeny / 2) - (370/2), 400, 370), NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE | NK_WINDOW_NO_SCROLLBAR))
+	{
+		nk_layout_row_dynamic(ctx, 30, 1);
+		nk_checkbox_label(ctx, "Textured Background 3", &bk3_tex);
+
+		nk_layout_row_dynamic(ctx, 30, 3);
+		nk_spacing(ctx, 1);
+		if (bk3_tex)
+		{
+			st.Current_Map.bcktex_id = meng.tex_ID;
+			st.Current_Map.bcktex_mgg = meng.tex_MGGID;
+
+			if (nk_button_label(ctx, "BK3 texture"))
+				state = 1;
+		}
+		else
+		{
+			st.Current_Map.bcktex_id = -1;
+			st.Current_Map.bcktex_mgg = 0;
+			nk_spacing(ctx, 1);
+		}
+
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 30, 2);
+		st.Current_Map.bck2_v=nk_propertyf(ctx, "Background 2 vel:", 0.0, st.Current_Map.bck2_v, 512, 0.1, 0.1);
+		st.Current_Map.bck1_v = nk_propertyf(ctx, "Background 1 vel:", 0.0, st.Current_Map.bck1_v, 512, 0.1, 0.1);
+		st.Current_Map.fr_v = nk_propertyf(ctx, "Foreground vel:", 0.0, st.Current_Map.fr_v, 512, 0.1, 0.1);
+
+		amb_color = ColorPicker(amb_color);
+
+		st.Current_Map.amb_color.r = amb_color.r;
+		st.Current_Map.amb_color.g = amb_color.g;
+		st.Current_Map.amb_color.b = amb_color.b;
+
+		nk_layout_row_dynamic(ctx, 30, 1);
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 30, 2);
+		st.Current_Map.bck3_pan.x = nk_propertyi(ctx, "BCK3 pan x:", 0, st.Current_Map.bck3_pan.x, TEX_PAN_RANGE, 512, 100);
+		st.Current_Map.bck3_pan.y = nk_propertyi(ctx, "BCK3 pan Y:", 0, st.Current_Map.bck3_pan.y, TEX_PAN_RANGE, 512, 100);
+		st.Current_Map.bck3_size.x = nk_propertyi(ctx, "BCK3 size x:", 0, st.Current_Map.bck3_size.x, 65536, 512, 100);
+		st.Current_Map.bck3_size.y = nk_propertyi(ctx, "BCK3 size y:", 0, st.Current_Map.bck3_size.y, 65536, 512, 100);
+
+		nk_layout_row_dynamic(ctx, 30, 1);
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 30, 2);
+		nk_spacing(ctx, 1);
+		if (nk_button_label(ctx, "OK"))
+		{
+			nk_end(ctx);
+			return 1;
+		}
+	}
+
+	nk_end(ctx);
+
+	if (state)
+		TextureListSelection();
+
+	if (meng.command == ADD_OBJ)
+	{
+		meng.command = meng.pannel_choice = SELECT_EDIT;
+		state = 0;
+	}
+
+	st.mouse1 = 0;
+
+	return 0;
+}
+
+int CameraProperties()
+{
+	char text[16], len;
+	static int lxm, lym;
+	if (nk_begin(ctx, "Camera properties", nk_rect((st.screenx / 2) - (650 / 2), (st.screeny / 2) - (512 / 2), 650, 330), NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE))
+	{
+		nk_layout_row_dynamic(ctx, 25, 3);
+
+		st.Current_Map.cam_area.area_pos.x = nk_propertyi(ctx, "Area POS X:", GAME_UNIT_MIN, st.Current_Map.cam_area.area_pos.x, GAME_UNIT_MAX, 1024, 128);
+		st.Current_Map.cam_area.area_pos.y = nk_propertyi(ctx, "Area POS Y:", GAME_UNIT_MIN, st.Current_Map.cam_area.area_pos.y, GAME_UNIT_MAX, 1024, 128);
+		st.Current_Map.cam_area.area_size.x = nk_propertyf(ctx, "Area scale:",0, st.Current_Map.cam_area.area_size.x, 64, 0.1, 0.01);
+		st.Current_Map.cam_area.area_size.y = st.Current_Map.cam_area.area_size.x;
+
+		nk_layout_space_begin(ctx, NK_DYNAMIC, 200, INT_MAX);
+
+		nk_layout_space_push(ctx, nk_rect(0.01, 0.05, 0.32, 0.12));
+		st.Current_Map.cam_area.max_dim.x = st.Current_Map.cam_area.max_dim.y = nk_propertyf(ctx, "Area MAX scale:", 0.1, st.Current_Map.cam_area.max_dim.x, 64.0, 0.1, 0.01);
+
+		nk_layout_space_push(ctx, nk_rect(0.4, 0.05, 0.59, 0.45));
+		if (nk_group_begin(ctx, "X mov. limit", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_layout_row_dynamic(ctx, 25, 2);
+			nk_checkbox_label(ctx, "Limit X movement", &st.Current_Map.cam_area.horiz_lim);
+			nk_button_label(ctx, "Edit X limit");
+			st.Current_Map.cam_area.limit[0].x = nk_propertyi(ctx, "Area MIN X:", GAME_UNIT_MIN, st.Current_Map.cam_area.limit[0].x, GAME_UNIT_MAX, 1024, 128);
+			st.Current_Map.cam_area.limit[1].x = nk_propertyi(ctx, "Area MAX X:", GAME_UNIT_MIN, st.Current_Map.cam_area.limit[1].x, GAME_UNIT_MAX, 1024, 128);
+			nk_group_end(ctx);
+		}
+
+		nk_layout_space_push(ctx, nk_rect(0.01, 0.50, 0.35, 0.12));
+		nk_button_label(ctx, "Edit area scale");
+
+		nk_layout_space_push(ctx, nk_rect(0.4, 0.55, 0.59, 0.45));
+		if (nk_group_begin(ctx, "Y mov. limit", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_layout_row_dynamic(ctx, 25, 2);
+			nk_checkbox_label(ctx, "Limit Y movement", &st.Current_Map.cam_area.vert_lim);
+			nk_button_label(ctx, "Edit Y limit");
+			st.Current_Map.cam_area.limit[0].y = nk_propertyi(ctx, "Area MIN Y:", GAME_UNIT_MIN, st.Current_Map.cam_area.limit[0].y, GAME_UNIT_MAX, 1024, 128);
+			st.Current_Map.cam_area.limit[1].y = nk_propertyi(ctx, "Area MAX Y:", GAME_UNIT_MIN, st.Current_Map.cam_area.limit[1].y, GAME_UNIT_MAX, 1024, 128);
+			nk_group_end(ctx);
+		}
+
+		nk_layout_space_end(ctx);
+
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 6);
+		nk_spacing(ctx, 5);
+		if (nk_button_label(ctx, "ok"))
+		{
+			nk_end(ctx);
+			return 1;
+		}
+
+	}
+
+	nk_end(ctx);
+	return 0;
+
+}
+
+void TransformBox(Pos *pos, Pos *size, int16 *ang)
+{
+	static int chained = 1;
+	float aspect;
+
+	if (nk_begin(ctx, "Transform Box", nk_rect((st.screenx / 2) - (300 / 2), (st.screeny / 2) - (300 / 2), 300, 300), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
+	{
+		nk_layout_row_dynamic(ctx, 100, 1);
+		if (nk_group_begin(ctx, "Position", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_layout_row_dynamic(ctx, 25, 2);
+
+			pos->x = nk_propertyi(ctx, "X:", GAME_UNIT_MIN, pos->x, GAME_UNIT_MAX, 1024, 128);
+			pos->y = nk_propertyi(ctx, "Y:", GAME_UNIT_MIN, pos->y, GAME_UNIT_MAX, 1024, 128);
+			pos->z = nk_propertyi(ctx, "Z:", 0, pos->z, 7 * 8, 2, 1);
+			*ang = nk_propertyi(ctx, "Ang:", -3600, *ang, 3600*2, 150, 30);
+
+			nk_group_end(ctx);
+		}
+
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 75, 1);
+		if (nk_group_begin(ctx, "Size", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_layout_row_begin(ctx,NK_DYNAMIC,25,3);
+
+			aspect = (float) size->x / size->y;
+
+			nk_layout_row_push(ctx, 0.45f);
+			size->x = nk_propertyi(ctx, "W:", GAME_UNIT_MIN, size->x, GAME_UNIT_MAX, 1024, 128);
+
+			if (chained)
+				size->y = (float) size->x / aspect;
+
+			nk_layout_row_push(ctx, 0.1f);
+			if (chained)
+			{
+				ctx->style.button.normal = ctx->style.button.active;
+				ctx->style.button.hover = ctx->style.button.active;
+				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+					chained = 0;
+
+				nk_style_default(ctx);
+			}
+			else
+				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+					chained = 1;
+
+
+			nk_layout_row_push(ctx, 0.45f);
+			size->y = nk_propertyi(ctx, "H:", GAME_UNIT_MIN, size->y, GAME_UNIT_MAX, 1024, 128);
+
+			if (chained)
+				size->x = (float) size->y * aspect;
+
+			nk_group_end(ctx);
+		}
+
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, " ", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		if (nk_button_label(ctx, "OK"))
+			meng.command = meng.pannel_choice;
+	}
+
+	nk_end(ctx);
+}
+
+int FileBrowser(char *filename)
+{
+	char path[1024];
+
+	register int i, j;
+
+	static int select = -1, time = 0, len, doubleclick = -1, doubleclick2 = -1, backpath_available = 0, fowardpath_available = 0, lenpath;
+
+	static char backpath[2048], fowardpath[2048], temp[2048];
+
+	size_t lenght;
+
+	FILE *f;
+	DIR *d;
+
+	if (nk_begin(ctx, "File Browser", nk_rect(0, 0, 800, 450), NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE))
+	{
+		nk_layout_space_begin(ctx, NK_DYNAMIC, 390, INT_MAX);
+
+		nk_layout_space_push(ctx, nk_rect(0.01, 0.01, 0.08, 0.08));
+		if (nk_button_label(ctx, "<"))
+		{
+			if (backpath_available)
+			{
+				strcpy(temp, UI_Sys.current_path);
+
+				if ((d = opendir(backpath)) != NULL)
+				{
+					strcpy(fowardpath, UI_Sys.current_path);
+					strcpy(UI_Sys.current_path, backpath);
+					backpath_available = 0;
+					fowardpath_available = 1;
+					strcpy(backpath, temp);
+					closedir(d);
+					SetDirContent(UI_Sys.extension);
+					doubleclick = -1;
+					doubleclick2 = -1;
+					select = -1;
+					time = 0;
+				}
+			}
+		}
+
+		nk_layout_space_push(ctx, nk_rect(0.09, 0.01, 0.08, 0.08));
+		if(nk_button_label(ctx, ">"))
+		{
+			if (fowardpath_available)
+			{
+				strcpy(temp, UI_Sys.current_path);
+
+				if ((d = opendir(fowardpath)) != NULL)
+				{
+					strcpy(backpath, UI_Sys.current_path);
+					strcpy(UI_Sys.current_path, fowardpath);
+					backpath_available = 1;
+					fowardpath_available = 0;
+					strcpy(fowardpath, temp);
+					closedir(d);
+					SetDirContent(UI_Sys.extension);
+					doubleclick = -1;
+					doubleclick2 = -1;
+					select = -1;
+					time = 0;
+				}
+			}
+		}
+
+		nk_layout_space_push(ctx, nk_rect(0.18, 0.01, 0.08, 0.08));
+		if (nk_button_label(ctx, "^"))
+		{
+			strcpy(temp, UI_Sys.current_path);
+
+			lenght = strlen(temp);
+
+			for (i = lenght; i > 0; i--)
+			{
+				if (temp[i] != 92 && temp[i] != 47)
+					temp[i] = 0;
+				
+				if (temp[i] == 92 || temp[i] == 47)
+				{
+					temp[i] = 0;
+					break;
+				}
+			}
+
+			if ((d = opendir(temp)) != NULL)
+			{
+				strcpy(backpath, UI_Sys.current_path);
+				strcpy(UI_Sys.current_path, temp);
+				backpath_available = 1;
+				fowardpath_available = 0;
+				closedir(d);
+				SetDirContent(UI_Sys.extension);
+				doubleclick = -1;
+				doubleclick2 = -1;
+				select = -1;
+				time = 0;
+			}
+		}
+
+		nk_layout_space_push(ctx, nk_rect(0.27, 0.01, 0.20, 0.08));
+		nk_button_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), "New Folder", NK_TEXT_CENTERED);
+
+		nk_layout_space_push(ctx, nk_rect(0.01, 0.10, 0.99, 0.08));
+
+		lenpath = strlen(UI_Sys.current_path);
+
+		nk_edit_string(ctx, NK_EDIT_FIELD, UI_Sys.current_path, &lenpath, 2048, nk_filter_default);
+
+		nk_layout_space_push(ctx, nk_rect(0.01, 0.20, 0.99, 0.70));
+
+		if (nk_group_begin(ctx, "content", NK_WINDOW_BORDER))
+		{
+			nk_layout_row_dynamic(ctx, 25, 1);
+
+			if (UI_Sys.num_files > 2)
+			{
+				for (i = 2, j = 0; i < UI_Sys.num_files; i++)
+				{
+					if (select == i)
+					{
+						if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
+							nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 1);
+						/*
+						{
+						if (doubleclick2 == i && (GetTimerM() - time) > 50)
+						{
+						strcpy(temp, UI_Sys.current_path);
+						strcat(temp, "\\");
+						strcat(temp, UI_Sys.files[UI_Sys.foldersp[i]]);
+
+						if ((d = opendir(temp)) != NULL)
+						{
+						strcpy(backpath, UI_Sys.current_path);
+						strcpy(UI_Sys.current_path, temp);
+						backpath_available = 1;
+						closedir(d);
+						SetDirContent(UI_Sys.extension);
+						doubleclick = -1;
+						doubleclick2 = -1;
+						select = -1;
+						time = 0;
+						break;
+						}
+						}
+						else
+						{
+						doubleclick2 = i;
+						time = GetTimerM();
+						}
+						}
+						*/
+						else
+							nk_select_label(ctx, UI_Sys.files[UI_Sys.filesp[i]], NK_TEXT_RIGHT, 1);
+						/*
+						{
+							if (doubleclick2 == i && (GetTimerM() - time) > 50)
+							{
+								strcpy(temp, UI_Sys.current_path);
+								strcat(temp, "\\");
+								strcat(temp, UI_Sys.files[UI_Sys.filesp[i]]);
+
+								if ((f = fopen(temp, "rb")) == NULL)
+								{
+									fclose(f);
+									return temp;
+								}
+							}
+							else
+								doubleclick2 = i;
+						}
+						*/
+					}
+					else
+					{
+						if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
+						{
+							if (nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 0))
+							{
+								select = i;
+								doubleclick = i;
+								time = GetTimerM();
+							}
+						}
+						else
+						{
+							if (nk_select_label(ctx, UI_Sys.files[UI_Sys.filesp[i]], NK_TEXT_RIGHT, 0))
+								select = i;
+						}
+					}
+				}
+
+				nk_group_end(ctx);
+			}
+			else
+				nk_spacing(ctx, 1);
+		}
+
+		nk_layout_space_push(ctx, nk_rect(0.80, 0.92, 0.10, 0.08));
+		if (nk_button_label(ctx, "Open"))
+		{
+			if (UI_Sys.filesp[select] == UI_Sys.foldersp[select])
+			{
+				strcpy(temp, UI_Sys.current_path);
+				strcat(temp, "\\");
+				strcat(temp, UI_Sys.files[UI_Sys.foldersp[select]]);
+
+				if ((d = opendir(temp)) != NULL)
+				{
+					strcpy(backpath, UI_Sys.current_path);
+					strcpy(UI_Sys.current_path, temp);
+					backpath_available = 1;
+					closedir(d);
+					SetDirContent(UI_Sys.extension);
+					doubleclick = -1;
+					doubleclick2 = -1;
+					select = -1;
+					time = 0;
+				}
+			}
+			else
+			{
+				strcpy(temp, UI_Sys.current_path);
+				strcat(temp, "\\");
+				strcat(temp, UI_Sys.files[UI_Sys.filesp[select]]);
+
+				if ((f = fopen(temp, "rb")) != NULL)
+				{
+					fclose(f);
+					nk_end(ctx);
+					strcpy(filename, temp);
+					return 1;
+				}
+			}
+		}
+
+		nk_layout_space_push(ctx, nk_rect(0.90, 0.92, 0.10, 0.08));
+		if (nk_button_label(ctx, "Cancel"))
+		{
+			nk_end(ctx);
+			return -1;
+		}
+
+	}
+
+	nk_end(ctx);
+
+	return 0;
+}
+
+void MenuBar()
+{
+	register int i, a, m;
+	char mapname[2048], str[128], filename[2048];
+	int id = 0, id2 = 0, check;
+	static int state = 0, mggid;
+
+	if (nkrendered==0)
+	{
+		if (nk_begin(ctx, "Menu", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_menubar_begin(ctx);
+			nk_layout_row_begin(ctx, NK_STATIC, 25, 5);
+
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(120, 210)))
+			{
+				nk_layout_row_dynamic(ctx, 30, 1);
+				if (nk_menu_item_label(ctx, "New map", NK_TEXT_LEFT))
+				{
+					meng.scroll = 0;
+					meng.tex_selection.data = -1;
+					meng.command2 = 0;
+					meng.scroll2 = 0;
+					meng.mgg_sel = 0;
+
+					if (st.Current_Map.obj)
+						free(st.Current_Map.obj);
+
+					if (st.Current_Map.sprites)
+						free(st.Current_Map.sprites);
+
+					if (st.Current_Map.sector)
+						free(st.Current_Map.sector);
+
+					if (st.num_lights>0)
+					{
+						for (i = 1; i <= st.num_lights; i++)
+						{
+							free(st.game_lightmaps[i].data);
+							st.game_lightmaps[i].obj_id = -1;
+							st.game_lightmaps[i].stat = 0;
+							glDeleteTextures(1, &st.game_lightmaps[i].tex);
+						}
+					}
+
+					st.Current_Map.obj = (_MGMOBJ*)malloc(MAX_OBJS*sizeof(_MGMOBJ));
+					st.Current_Map.sector = (_SECTOR*)malloc(MAX_SECTORS*sizeof(_SECTOR));
+					st.Current_Map.sprites = (_MGMSPRITE*)malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
+
+					st.Current_Map.num_sector = 0;
+					st.Current_Map.num_obj = 0;
+					st.Current_Map.num_sprites = 0;
+					st.Current_Map.num_lights = 0;
+
+					st.num_lights = 0;
+
+					for (i = 0; i<MAX_SECTORS; i++)
+					{
+						st.Current_Map.sector[i].id = -1;
+						///st.Current_Map.sector[i].layers=1;
+						st.Current_Map.sector[i].material = CONCRETE;
+						st.Current_Map.sector[i].tag = 0;
+					}
+
+					for (i = 0; i<MAX_OBJS; i++)
+					{
+						st.Current_Map.obj[i].type = BLANK;
+						st.Current_Map.obj[i].lightmapid = -1;
+					}
+
+					for (i = 0; i<MAX_SPRITES; i++)
+						st.Current_Map.sprites[i].stat = 0;
+
+					if (st.Current_Map.num_mgg>0)
+					{
+						for (i = 0; i<st.Current_Map.num_mgg; i++)
+							FreeMGG(&mgg_map[i]);
+					}
+
+					memset(st.Current_Map.MGG_FILES, 0, 32 * 256);
+					meng.num_mgg -= st.Current_Map.num_mgg;
+					st.Current_Map.num_mgg = 0;
+
+					memset(meng.mgg_list, 0, 64 * 256);
+
+					st.gt = INGAME;
+
+					st.Camera.position.x = 0;
+					st.Camera.position.y = 0;
+
+					meng.pannel_choice = 2;
+					meng.command = 2;
+
+					memset(&meng.spr, 0, sizeof(meng.spr));
+
+					meng.obj.amblight = 1;
+					meng.obj.color.r = meng.spr.color.r = 255;
+					meng.obj.color.g = meng.spr.color.g = 255;
+					meng.obj.color.b = meng.spr.color.b = 255;
+					meng.obj.color.a = meng.spr.color.a = 255;
+					meng.obj.texsize.x = 32768;
+					meng.obj.texsize.y = 32768;
+					meng.obj.texpan.x = 0;
+					meng.obj.texpan.y = 0;
+					meng.obj.type = meng.spr.type = MIDGROUND;
+					meng.obj_lightmap_sel = -1;
+
+					meng.lightmapsize.x = 0;
+					meng.lightmapsize.y = 0;
+
+					meng.spr.gid = -1;
+					meng.spr2.gid = -1;
+					meng.sprite_selection = 0;
+					meng.sprite_frame_selection = 0;
+					meng.spr.size.x = 2048;
+					meng.spr.size.y = 2048;
+
+					meng.playing_sound = 0;
+
+					meng.lightmap_res.x = meng.lightmap_res.y = 256;
+
+					st.Current_Map.bck1_v = BCK1_DEFAULT_VEL;
+					st.Current_Map.bck2_v = BCK2_DEFAULT_VEL;
+					st.Current_Map.fr_v = FR_DEFAULT_VEL;
+					st.Current_Map.bcktex_id = -1;
+					st.Current_Map.bcktex_mgg = 0;
+					memset(&st.Current_Map.amb_color, 255, sizeof(Color));
+
+					meng.viewmode = 7;
+
+					memset(meng.z_buffer, 0, 2048 * 57 * sizeof(int16));
+					memset(meng.z_slot, 0, 57 * sizeof(int16));
+					meng.z_used = 0;
+
+					st.Current_Map.cam_area.area_pos.x = st.Current_Map.cam_area.area_pos.y = 0;
+					st.Current_Map.cam_area.area_size.x = 1.0;
+					st.Current_Map.cam_area.area_size.y = 1.0;
+					st.Current_Map.cam_area.horiz_lim = 0;
+					st.Current_Map.cam_area.vert_lim = 0;
+					st.Current_Map.cam_area.max_dim.x = 6.0;
+					st.Current_Map.cam_area.max_dim.y = 6.0;
+					st.Current_Map.cam_area.limit[0].x = 0;
+					st.Current_Map.cam_area.limit[1].x = 16384;
+					st.Current_Map.cam_area.limit[0].y = 0;
+					st.Current_Map.cam_area.limit[1].y = 8192;
+
+					st.Current_Map.bck3_size.x = st.Current_Map.bck3_size.y = TEX_PAN_RANGE;
+				}
+
+				if (nk_menu_item_label(ctx, "Open map", NK_TEXT_LEFT))
+				{
+					SetDirContent("mgm");
+					state = 1;
+				}
+
+				nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Compile map", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) st.quit = 1;
+				nk_menu_end(ctx);
+			}
+
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "Edit", NK_TEXT_LEFT, nk_vec2(120, 200)))
+			{
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_menu_item_label(ctx, "Cut", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Copy", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Paste", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Preferences", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Test map", NK_TEXT_LEFT);
+				nk_menu_end(ctx);
+			}
+
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "View", NK_TEXT_LEFT, nk_vec2(120, 300)))
+			{
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_menu_item_label(ctx, "Background 3", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Background 2", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Background 1", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Midground", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "Foreground", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "InGame View", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "No light view", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "All", NK_TEXT_LEFT);
+				nk_menu_end(ctx);
+			}
+
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "Map", NK_TEXT_LEFT, nk_vec2(150, 200)))
+			{
+				meng.command = meng.pannel_choice = NONE_MODE;
+				nk_layout_row_dynamic(ctx, 30, 1);
+				if (nk_menu_item_label(ctx, "Load MGG", NK_TEXT_LEFT))
+				{
+					for (i = 0; i<MAX_MAP_MGG; i++)
+					{
+						if (i == MAX_MAP_MGG - 1 && mgg_map[i].type != NONE)
+						{
+							LogApp("Cannot load MGG, reached max number of map MGGs loaded");
+							break;
+						}
+
+						if (mgg_map[i].type == NONE)
+						{
+							mggid = i;
+							meng.command == MGG_SEL;
+							SetDirContent("mgg");
+							state = 8;
+							break;
+						}
+					}
+				}
+
+				if (nk_menu_item_label(ctx, "Camera properties", NK_TEXT_LEFT))
+					state = 9;
+
+				if (nk_menu_item_label(ctx, "Map properties", NK_TEXT_LEFT))
+					state = 10;
+
+				nk_menu_end(ctx);
+			}
+
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "Help", NK_TEXT_LEFT, nk_vec2(120, 200)))
+			{
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_menu_item_label(ctx, "Help", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "About", NK_TEXT_LEFT);
+				nk_menu_end(ctx);
+			}
+
+			nk_layout_row_end(ctx);
+			nk_menubar_end(ctx);
+		}
+
+		nk_end(ctx);
+	}
+
+	if (state == 8)
+	{
+		check = FileBrowser(filename);
+
+		if (check == -1)
+			state = 0;
+
+		if (check == 1)
+		{
+			if (LoadMGG(&mgg_map[mggid], filename))
+			{
+				strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg], filename);
+				strcpy(meng.mgg_list[st.Current_Map.num_mgg], mgg_map[mggid].name);
+				meng.num_mgg++;
+				st.Current_Map.num_mgg++;
+				st.num_mgg++;
+
+				meng.tex_MGGID = mggid;
+				meng.tex_ID = 0;
+				meng.tex_selection = mgg_map[mggid].frames[0];
+
+				state = 0;
+				meng.command = meng.pannel_choice =  NONE_MODE;
+			}
+		}
+	}
+
+	if (state == 9)
+	{
+		meng.command = meng.pannel_choice = NONE_MODE;
+		if (CameraProperties())
+			state = 0;
+	}
+	
+	if (state == 10)
+	{
+		meng.command = meng.pannel_choice = NONE_MODE;
+		if (MapProperties())
+			state = 0;
+	}
+
+	if (state == 1)
+	{
+		check = FileBrowser(mapname);
+
+		if (check == -1)
+			state = 0;
+
+		if (check == 1)
+		{
+			if (LoadMap(mapname))
+			{
+				memset(meng.mgg_list, 0, 32 * 256);
+				meng.num_mgg = 0;
+				LogApp("Map %s loaded", mapname);
+
+				for (a = 0; a<st.Current_Map.num_mgg; a++)
+				{
+					DrawUI(8192, 4608, 16384, 8192, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[0].frames[4], 255, 0);
+					sprintf(str, "Loading %d%", (a / st.Current_Map.num_mgg) * 100);
+					DrawString2UI(str, 8192, 4608, 1, 1, 0, 255, 255, 255, 255, ARIAL, FONT_SIZE * 2, FONT_SIZE * 2, 0);
+					if (CheckMGGFile(st.Current_Map.MGG_FILES[a]))
+					{
+						LoadMGG(&mgg_map[id], st.Current_Map.MGG_FILES[a]);
+						strcpy(meng.mgg_list[a], mgg_map[id].name);
+						meng.num_mgg++;
+						id++;
+					}
+					else
+					{
+						FreeMap();
+
+						LogApp("Error while loading map's MGG: %s", st.Current_Map.MGG_FILES[a]);
+						state = 0;
+						break;
+					}
+
+				}
+
+				st.Camera.position.x = 0;
+				st.Camera.position.y = 0;
+				meng.scroll = 0;
+				meng.tex_selection.data = -1;
+				meng.command2 = 0;
+				meng.scroll2 = 0;
+				meng.mgg_sel = 0;
+				meng.pannel_choice = 2;
+				meng.command = 2;
+				meng.menu_sel = 0;
+				meng.obj.amblight = 1;
+				meng.obj.color.r = meng.spr.color.r = 255;
+				meng.obj.color.g = meng.spr.color.g = 255;
+				meng.obj.color.b = meng.spr.color.b = 255;
+				meng.obj.color.a = meng.spr.color.a = 255;
+				meng.obj.texsize.x = 32768;
+				meng.obj.texsize.y = 32768;
+				meng.obj.texpan.x = 0;
+				meng.obj.texpan.y = 0;
+				meng.obj.type = meng.spr.type = MIDGROUND;
+				meng.obj_lightmap_sel = -1;
+
+				meng.lightmapsize.x = 0;
+				meng.lightmapsize.y = 0;
+
+				meng.spr.gid = -1;
+				meng.spr2.gid = -1;
+				meng.sprite_selection = 0;
+				meng.sprite_frame_selection = 0;
+				meng.spr.size.x = 2048;
+				meng.spr.size.y = 2048;
+
+				meng.playing_sound = 0;
+
+				meng.lightmap_res.x = meng.lightmap_res.y = 256;
+				st.gt = INGAME;
+				st.mouse1 = 0;
+				//free(path2);
+				free(meng.path);
+				meng.path = (char*)malloc(2);
+				strcpy(meng.path, ".");
+
+				meng.viewmode = 7;
+
+				memset(meng.z_buffer, 0, 2048 * 57 * sizeof(int16));
+				memset(meng.z_slot, 0, 57 * sizeof(int16));
+				meng.z_used = 0;
+
+				for (m = 0; m<st.Current_Map.num_obj; m++)
+				{
+					meng.z_buffer[st.Current_Map.obj[m].position.z][meng.z_slot[st.Current_Map.obj[m].position.z]] = m;
+					meng.z_slot[st.Current_Map.obj[m].position.z]++;
+					if (st.Current_Map.obj[m].position.z>meng.z_used)
+						meng.z_used = st.Current_Map.obj[m].position.z;
+				}
+
+				for (m = 0; m<st.Current_Map.num_sprites; m++)
+				{
+					meng.z_buffer[st.Current_Map.sprites[m].position.z][meng.z_slot[st.Current_Map.sprites[m].position.z]] = m + 2000;
+					meng.z_slot[st.Current_Map.sprites[m].position.z]++;
+					if (st.Current_Map.sprites[m].position.z>meng.z_used)
+						meng.z_used = st.Current_Map.sprites[m].position.z;
+				}
+
+				for (m = 0; m<st.Current_Map.num_sector; m++)
+				{
+					meng.z_buffer[24][meng.z_slot[24]] = m + 10000;
+					meng.z_slot[24]++;
+					if (24>meng.z_used)
+						meng.z_used = 24;
+				}
+
+				state = 0;
+				//break;
+			}
+		}
+	}
+}
+
+void SpriteListSelection()
+{
+	register int i, j, k, l = 0, m;
+	TEX_DATA data;
+	int temp;
+	float px, py, sx, sy;
+	struct nk_image texid;
+	char labels[6][32], label_active[6] = { 0, 0, 0, 0, 0, 0 };
+
+	if (nk_begin(ctx, "Sprite Selection", nk_rect(st.screenx / 2 - 300, st.screeny / 2 - 300, 600, 600),
+		NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_SCALABLE))
+	{
+		nk_layout_row_dynamic(ctx, 515, 1);
+
+		if (nk_group_begin(ctx, "SPRSEL", NK_WINDOW_BORDER))
+		{
+			/*
+			ctx->style.selectable.text_normal = nk_rgb(255, 128, 32);
+			ctx->style.selectable.text_hover = nk_rgb(255, 128, 8);
+			ctx->style.selectable.text_pressed = nk_rgb(255, 128, 8);
+			ctx->style.selectable.text_normal_active = nk_rgb(255, 32, 32);
+			ctx->style.selectable.text_hover_active = nk_rgb(255, 32, 32);
+			ctx->style.selectable.text_pressed_active = nk_rgb(255, 32, 32);
+			*/
+
+			ctx->style.selectable.hover = nk_style_item_color(nk_rgb(206, 206, 206));
+			ctx->style.selectable.normal_active = nk_style_item_color(nk_rgb(255, 128, 32));
+			ctx->style.selectable.hover_active = nk_style_item_color(nk_rgb(255, 128, 32));
+
+			nk_layout_row_dynamic(ctx, 100, 6);
+			//l = 0;
+			for (i = 0; i < st.num_sprites; i++)
+			{
+				j = st.sprite_id_list[i];
+				if (st.Game_Sprites[j].num_start_frames>0)
+				{
+					for (k = 0; k < st.Game_Sprites[j].num_start_frames; k++)
+					{
+						data = mgg_game[st.Game_Sprites[j].MGG_ID].frames[st.Game_Sprites[j].frame[k]];
+
+						if (meng.sprite_selection == j && meng.sprite_frame_selection == st.Game_Sprites[j].frame[k])
+							temp = 1;
+						else
+							temp = 0;
+
+						if (data.vb_id != -1)
+						{
+							px = ((float)data.posx / 32768) * data.w;
+							ceil(px);
+							px += data.x_offset;
+							py = ((float)data.posy / 32768) * data.h;
+							ceil(py);
+							py += data.y_offset;
+							sx = ((float)data.sizex / 32768) * data.w;
+							ceil(sx);
+							sy = ((float)data.sizey / 32768) * data.h;
+							ceil(sy);
+							texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
+						}
+						else
+							texid = nk_image_id(data.data);
+
+						if (nk_selectable_image_label(ctx, texid," ", NK_TEXT_ALIGN_CENTERED, &temp))
+						{
+							meng.sprite_selection = j;
+							meng.sprite_frame_selection = st.Game_Sprites[j].frame[k];
+
+							meng.spr.health = st.Game_Sprites[j].health;
+							meng.spr.body = st.Game_Sprites[j].body;
+							meng.spr.flags = st.Game_Sprites[j].flags;
+
+							meng.spr.body.size = st.Game_Sprites[j].body.size;
+						}
+
+						strcpy(labels[l], st.Game_Sprites[j].name);
+
+						//nk_label(ctx, labels[l], NK_TEXT_ALIGN_CENTERED);
+
+						label_active[l] = temp;
+
+						l++;
+
+						if (l == 6)
+						{
+							nk_layout_row_dynamic(ctx, 15, 6);
+							for (m = 0; m < l; m++)
+							{
+								if (label_active[m])
+									ctx->style.text.color = nk_rgb(255, 255, 255);
+								else
+									ctx->style.text.color = nk_rgb(128, 128, 128);
+
+								nk_label(ctx, labels[m], NK_TEXT_ALIGN_CENTERED);
+							}
+
+							memset(label_active, 6, 0);
+
+							nk_layout_row_dynamic(ctx, 100, 6);
+							l = 0;
+						}
+					}
+				}
+			}
+
+			if (l != 0)
+			{
+				nk_layout_row_dynamic(ctx, 15, 6);
+				for (m = 0; m < l; m++)
+					nk_label(ctx, labels[m], NK_TEXT_ALIGN_CENTERED);
+
+				l = 0;
+			}
+
+			nk_group_end(ctx);
+		}
+
+		nk_style_default(ctx);
+
+		nk_layout_row_dynamic(ctx, 30, 3);
+		nk_spacing(ctx, 2);
+
+		if (nk_button_label(ctx, "Select"))
+			meng.command = ADD_SPRITE;
+	}
+
+	st.mouse1 = 0;
+
+	nk_end(ctx);
+}
+
+void TextureListSelection()
+{
+	register int i, j, k, l = 0, m;
+	TEX_DATA data;
+	int temp;
+	float px, py, sx, sy;
+	struct nk_image texid;
+
+	if (st.Current_Map.num_mgg == 0)
+	{
+		if (nk_begin(ctx, "Error", nk_rect(st.screenx / 2 - 128, st.screeny / 2 - 43, 256, 86), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_NO_SCROLLBAR))
+		{
+			nk_layout_row_dynamic(ctx, 30, 1);
+			nk_label(ctx, "Error: No MGGs loaded", NK_TEXT_ALIGN_CENTERED);
+			nk_layout_row_dynamic(ctx, 30, 3);
+			nk_spacing(ctx, 1);
+			if (nk_button_label(ctx, "Ok"))
+				meng.command = ADD_OBJ;
+		}
+
+		st.mouse1 = 0;
+		nk_end(ctx);
+	}
+	else
+	{
+		if (nk_begin(ctx, "Texture Selection", nk_rect(st.screenx / 2 - 300, st.screeny / 2 - 300, 600, 600),
+			NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_SCALABLE))
+		{
+			nk_layout_row_dynamic(ctx, 515, 1);
+
+			if (nk_group_begin(ctx, "TEXSEL", NK_WINDOW_BORDER))
+			{
+				ctx->style.selectable.hover = nk_style_item_color(nk_rgb(206, 206, 206));
+				ctx->style.selectable.normal_active = nk_style_item_color(nk_rgb(255, 128, 32));
+				ctx->style.selectable.hover_active = nk_style_item_color(nk_rgb(255, 128, 32));
+
+				nk_layout_row_dynamic(ctx, 100, 6);
+				//l = 0;
+				for (i = 0; i < st.Current_Map.num_mgg; i++)
+				{
+					for (j = 0; j < mgg_map[i].num_frames; j++)
+					{
+						data = mgg_map[i].frames[j];
+
+						if (meng.tex_ID == j && meng.tex_MGGID == i)
+							temp = 1;
+						else
+							temp = 0;
+
+						if (data.vb_id != -1)
+						{
+							px = ((float)data.posx / 32768) * data.w;
+							ceil(px);
+							px += data.x_offset;
+							py = ((float)data.posy / 32768) * data.h;
+							ceil(py);
+							py += data.y_offset;
+							sx = ((float)data.sizex / 32768) * data.w;
+							ceil(sx);
+							sy = ((float)data.sizey / 32768) * data.h;
+							ceil(sy);
+							texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
+						}
+						else
+							texid = nk_image_id(data.data);
+
+						if (nk_selectable_image_label(ctx, texid, " ", NK_TEXT_ALIGN_CENTERED, &temp))
+						{
+							meng.tex_selection = mgg_map[i].frames[j];
+							meng.tex_ID = j;
+							meng.tex_MGGID = i;
+
+							if (mgg_map[i].frames[j].vb_id != -1)
+							{
+								meng.pre_size.x = mgg_map[i].frames[j].sizex;
+								meng.pre_size.y = mgg_map[i].frames[j].sizey;
+							}
+							else
+							{
+								meng.pre_size.x = (mgg_map[i].frames[j].w * 16384) / st.screenx;
+								meng.pre_size.y = (mgg_map[i].frames[j].h * 9216) / st.screeny;
+							}
+						}
+					}
+				}
+
+				nk_group_end(ctx);
+			}
+
+			nk_style_default(ctx);
+
+			nk_layout_row_dynamic(ctx, 30, 3);
+			nk_spacing(ctx, 2);
+
+			if (nk_button_label(ctx, "Select"))
+				meng.command = ADD_OBJ;
+		}
+
+		st.mouse1 = 0;
+
+		nk_end(ctx);
+	}
+}
+
+void TagBox(int16 game_sprite, int32 map_sprite)
+{
+	char str[1024];
+	register int i, j;
+	static int state = 0, len, lenstr;
+
+	if (nk_begin(ctx, "Tags", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 128, 512, 300), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
+	{
+		nk_layout_row_dynamic(ctx, 200,1);
+
+		if (nk_group_begin(ctx, "tagg", NK_WINDOW_BORDER))
+		{
+			for (i = 0; i < st.Game_Sprites[game_sprite].num_tags; i++)
+			{
+				if (strcmp(st.Game_Sprites[game_sprite].tag_names[i], "MUSFX") == NULL)
+				{
+					//nk_layout_row_dynamic(ctx, 30, 1);
+					nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+					nk_layout_row_push(ctx, 0.85f);
+
+					if (nk_combo_begin_label(ctx, meng.musiclist[st.Current_Map.sprites[map_sprite].tags[i]], nk_vec2(nk_widget_width(ctx), 20 + 20 * st.num_musics)))
+					{
+						nk_layout_row_dynamic(ctx, 20, 1);
+						for (j = 0; j < st.num_musics; j++)
+						if (nk_combo_item_label(ctx, meng.musiclist[j], NK_TEXT_ALIGN_LEFT))
+							st.Current_Map.sprites[map_sprite].tags[i] = j;
+
+						nk_combo_end(ctx);
+					}
+
+					nk_layout_row_push(ctx, 0.075f);
+					if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
+					{
+						StopMusic();
+						StopAllSounds();
+						PlayMusic(st.Current_Map.sprites[map_sprite].tags[i], 0);
+					}
+
+					nk_layout_row_push(ctx, 0.075f);
+					if (nk_button_symbol(ctx, NK_SYMBOL_RECT_SOLID))
+					{
+						StopMusic();
+						StopAllSounds();
+					}
+
+					nk_layout_row_end(ctx);
+
+					continue;
+				}
+
+				if (strcmp(st.Game_Sprites[game_sprite].tag_names[i], "SNDFX") == NULL)
+				{
+					//nk_layout_row_dynamic(ctx, 30, 1);
+					nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+					nk_layout_row_push(ctx, 0.85f);
+
+					if (nk_combo_begin_label(ctx, meng.soundlist[st.Current_Map.sprites[map_sprite].tags[i]], nk_vec2(nk_widget_width(ctx), 20 + 20 * st.num_sounds)))
+					{
+						nk_layout_row_dynamic(ctx, 20, 1);
+						for (j = 0; j < st.num_sounds; j++)
+							if (nk_combo_item_label(ctx, meng.soundlist[j], NK_TEXT_ALIGN_LEFT))
+								st.Current_Map.sprites[map_sprite].tags[i] = j;
+
+						nk_combo_end(ctx);
+					}
+
+					nk_layout_row_push(ctx, 0.075f);
+					if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
+					{
+						StopMusic();
+						StopAllSounds();
+						PlaySound(st.Current_Map.sprites[map_sprite].tags[i],0);
+					}
+
+					nk_layout_row_push(ctx, 0.075f);
+					if (nk_button_symbol(ctx, NK_SYMBOL_RECT_SOLID))
+					{
+						StopMusic();
+						StopAllSounds();
+					}
+
+					nk_layout_row_end(ctx);
+
+					continue;
+				}
+
+				len = strlen(st.Game_Sprites[game_sprite].tag_names[i]);
+
+				if (st.Game_Sprites[game_sprite].tag_names[i][len - 1] == 'S' && st.Game_Sprites[game_sprite].tag_names[i][len - 2] == '_')
+				{
+					nk_layout_row_dynamic(ctx, 30, 2);
+					nk_label(ctx, st.Game_Sprites[game_sprite].tag_names[i], NK_TEXT_ALIGN_LEFT);
+					nk_edit_string(ctx, NK_EDIT_SIMPLE, st.Current_Map.sprites[map_sprite].tags_str[i], &lenstr, 256, nk_filter_default);
+					continue;
+				}
+
+				nk_layout_row_dynamic(ctx, 30, 1);
+				st.Current_Map.sprites[map_sprite].tags[i] = nk_propertyi(ctx, st.Game_Sprites[game_sprite].tag_names[i], -32768,
+					st.Current_Map.sprites[map_sprite].tags[i], 32768, 1, 5);
+
+			}
+
+			nk_group_end(ctx);
+		}
+	}
+
+	nk_layout_row_dynamic(ctx, 30, 1);
+
+	if (nk_button_label(ctx, "Ok"))
+		meng.command = meng.pannel_choice;
+
+	nk_end(ctx);
+}
+
+void CoordBar()
+{
+	int32 x = st.mouse.x, y = st.mouse.y;
+
+	STW(&x, &y);
+
+	if (nk_begin(ctx, "Coord bar", nk_rect(st.screenx - 200, st.screeny - 130, 200, 130),NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER))
+	{
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "M X: %d M Y: %d", st.mouse.x, st.mouse.y);
+		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "MG X: %d MG Y: %d", x, y);
+		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "X: %d Y: %d", st.Camera.position.x, st.Camera.position.y);
+		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "Zoom: %f", st.Camera.dimension.x);
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_button_label(ctx, "Layers");
+	}
+
+	nk_end(ctx);
+}
+
+void PhysicsBox(int16 sprite)
+{
+	if (nk_begin(ctx, "Physics", nk_rect(st.screenx / 2 - 200, st.screeny / 2 - 256, 200, 220),NK_WINDOW_TITLE | NK_WINDOW_MOVABLE | NK_WINDOW_BORDER))
+	{
+		nk_layout_row_dynamic(ctx, 30, 1);
+
+		st.Current_Map.sprites[sprite].body.physics_on = nk_check_label(ctx, "Physics", st.Current_Map.sprites[sprite].body.physics_on);
+
+		if (st.Current_Map.sprites[sprite].body.physics_on)
+		{
+			st.Current_Map.sprites[sprite].body.flamable = nk_check_label(ctx, "Flammable", st.Current_Map.sprites[sprite].body.flamable);
+			st.Current_Map.sprites[sprite].body.explosive = nk_check_label(ctx, "Explosive", st.Current_Map.sprites[sprite].body.explosive);
+			st.Current_Map.sprites[sprite].body.mass = nk_propertyi(ctx, "Mass:", 0, st.Current_Map.sprites[sprite].body.mass, 65536, 32, 8);
+		}
+		else
+		{
+			nk_spacing(ctx, 1);
+			nk_spacing(ctx, 1);
+			nk_spacing(ctx, 1);
+		}
+
+		if (nk_button_label(ctx, "Ok"))
+			meng.command = meng.pannel_choice;
+	}
+
+	nk_end(ctx);
+}
+
+void NewLeftPannel()
+{
+	register int i, j, k;
+	static int sl, pannel_state = 0;
+	static struct nk_color editcolor = { 255, 255, 255, 255 };
+	static char strbuf[32];
+	static struct nk_rect bounds;
+	TEX_DATA data;
+	int temp, px, py, sx, sy;
+	struct nk_image texid;
+
+	if (nkrendered==0)
+	{
+		if (nk_begin(ctx, "Left Pannel", nk_rect(0, 30, st.screenx * 0.15f, st.screeny), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER))
+		{
+			nk_layout_row_dynamic(ctx, 30, 2);
+
+			if (meng.pannel_choice == SELECT_EDIT)
+				ctx->style.button.normal = ctx->style.button.hover;
+
+			if (nk_button_label(ctx, "Select"))
+			{
+				meng.command = SELECT_EDIT;
+				meng.pannel_choice = SELECT_EDIT;
+			}
+
+			nk_style_default(ctx);
+
+			if (meng.pannel_choice == DRAW_SECTOR)
+				ctx->style.button.normal = ctx->style.button.hover;
+
+			if (nk_button_label(ctx, "Add sector"))
+			{
+				meng.command = DRAW_SECTOR;
+				meng.pannel_choice = DRAW_SECTOR;
+			}
+
+			nk_style_default(ctx);
+
+			if (meng.pannel_choice == ADD_OBJ)
+				ctx->style.button.normal = ctx->style.button.hover;
+
+			if (nk_button_label(ctx, "Add scene"))
+			{
+				meng.command = ADD_OBJ;
+				meng.pannel_choice = ADD_OBJ;
+			}
+
+			nk_style_default(ctx);
+
+			if (meng.pannel_choice == ADD_SPRITE)
+				ctx->style.button.normal = ctx->style.button.hover;
+
+			if (nk_button_label(ctx, "Add Sprite"))
+				meng.command = meng.pannel_choice = ADD_SPRITE;
+
+			nk_style_default(ctx);
+
+			if (meng.pannel_choice == ADD_LIGHT)
+				ctx->style.button.normal = ctx->style.button.hover;
+
+			nk_button_label(ctx, "Lighting");
+
+			nk_style_default(ctx);
+
+			nk_spacing(ctx, 1);
+
+			if (meng.pannel_choice == SELECT_EDIT)
+			{
+				if (meng.command2 == EDIT_SPRITE)
+				{
+					editcolor.r = st.Current_Map.sprites[meng.sprite_edit_selection].color.r;
+					editcolor.g = st.Current_Map.sprites[meng.sprite_edit_selection].color.g;
+					editcolor.b = st.Current_Map.sprites[meng.sprite_edit_selection].color.b;
+
+					nk_layout_row_dynamic(ctx, 30, 1);
+
+					meng.spr2.type = nk_combo(ctx, Layers, 5, st.Current_Map.sprites[meng.sprite_edit_selection].type_s, 25, nk_vec2(110, 200));
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z = GetZLayer(st.Current_Map.sprites[meng.sprite_edit_selection].position.z,
+						st.Current_Map.sprites[meng.sprite_edit_selection].type_s, meng.spr2.type);
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s = meng.spr2.type;
+
+					editcolor = ColorPicker(editcolor);
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].color.r = editcolor.r;
+					st.Current_Map.sprites[meng.sprite_edit_selection].color.g = editcolor.g;
+					st.Current_Map.sprites[meng.sprite_edit_selection].color.b = editcolor.b;
+
+					meng.spr.health = nk_propertyi(ctx, "Health", -32768, meng.spr.health, 32768, 20, 2);
+
+					if (nk_button_label(ctx, "Tags"))
+						meng.command = SPRITE_TAG;
+
+					if (nk_button_label(ctx, "Physics"))
+						meng.command = SPRITE_PHY;
+
+					if (nk_button_label(ctx, "Transform"))
+						meng.command = TRANSFORM_BOX;
+
+					for (i = 0; i < st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].num_tags; i++)
+					{
+						if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "MUSFX") == NULL)
+						{
+							nk_layout_row_dynamic(ctx, 30, 2);
+
+							if (nk_button_label(ctx, "Play Music"))
+							{
+								StopMusic();
+								StopAllSounds();
+								PlayMusic(st.Current_Map.sprites[meng.sprite_edit_selection].tags[i], 0);
+							}
+
+							if (nk_button_label(ctx, "Stop All Audio"))
+							{
+								StopMusic();
+								StopAllSounds();
+							}
+						}
+
+						if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "SNDFX") == NULL)
+						{
+							nk_layout_row_dynamic(ctx, 30, 2);
+
+							if (nk_button_label(ctx, "Play Sound"))
+							{
+								StopMusic();
+								StopAllSounds();
+								PlaySound(st.Current_Map.sprites[meng.sprite_edit_selection].tags[i],0);
+							}
+
+							if (nk_button_label(ctx, "Stop All Audio"))
+							{
+								StopMusic();
+								StopAllSounds();
+							}
+						}
+					}
+
+					nk_layout_row_dynamic(ctx, 30, 1);
+				}
+			}
+
+			if (meng.pannel_choice == ADD_OBJ)
+			{
+				editcolor.r = meng.obj.color.r;
+				editcolor.g = meng.obj.color.g;
+				editcolor.b = meng.obj.color.b;
+
+				nk_layout_row_dynamic(ctx, 30, 1);
+
+				meng.obj.type = nk_combo(ctx, Layers, 5, meng.obj.type, 25, nk_vec2(110, 200));
+
+				editcolor = ColorPicker(editcolor);
+
+				meng.obj.color.r = editcolor.r;
+				meng.obj.color.g = editcolor.g;
+				meng.obj.color.b = editcolor.b;
+
+				meng.obj.amblight = nk_propertyf(ctx, "Amb. Light", 0, meng.obj.amblight, 1, 0.2f, 0.01f);
+
+				nk_layout_row_dynamic(ctx, (st.screenx * 0.15f) / 2, 2);
+
+				data = meng.tex_selection;
+
+				if (data.vb_id != -1)
+				{
+					px = ((float)data.posx / 32768) * data.w;
+					ceil(px);
+					px += data.x_offset;
+					py = ((float)data.posy / 32768) * data.h;
+					ceil(py);
+					py += data.y_offset;
+					sx = ((float)data.sizex / 32768) * data.w;
+					ceil(sx);
+					sy = ((float)data.sizey / 32768) * data.h;
+					ceil(sy);
+					texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
+				}
+				else
+					texid = nk_image_id(data.data);
+
+				nk_image(ctx, texid);
+
+				//nk_layout_row_dynamic(ctx, 30, 1);
+
+				if (nk_button_label(ctx, "Select Texture"))
+					meng.command = TEX_SEL;
+			}
+
+			if (meng.pannel_choice == ADD_SPRITE)
+			{
+				editcolor.r = meng.spr.color.r;
+				editcolor.g = meng.spr.color.g;
+				editcolor.b = meng.spr.color.b;
+
+				nk_layout_row_dynamic(ctx, 30, 1);
+
+				meng.spr.type = nk_combo(ctx, Layers, 5, meng.spr.type, 25, nk_vec2(110, 200));
+
+				editcolor = ColorPicker(editcolor);
+
+				meng.spr.color.r = editcolor.r;
+				meng.spr.color.g = editcolor.g;
+				meng.spr.color.b = editcolor.b;
+
+				meng.spr.health = nk_propertyi(ctx, "Health", -32768, meng.spr.health, 32768, 20, 2);
+
+				nk_layout_row_dynamic(ctx, (st.screenx * 0.15f)/2, 2);
+
+				data = mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[meng.sprite_frame_selection];
+
+				if (data.vb_id != -1)
+				{
+					px = ((float)data.posx / 32768) * data.w;
+					ceil(px);
+					px += data.x_offset;
+					py = ((float)data.posy / 32768) * data.h;
+					ceil(py);
+					py += data.y_offset;
+					sx = ((float)data.sizex / 32768) * data.w;
+					ceil(sx);
+					sy = ((float)data.sizey / 32768) * data.h;
+					ceil(sy);
+					texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
+				}
+				else
+					texid = nk_image_id(ctx, data.data);
+
+				nk_image(ctx, texid);
+
+				//nk_layout_row_dynamic(ctx, 30, 1);
+
+				if (nk_button_label(ctx, "Select Sprite"))
+					meng.command = SPRITE_SELECTION;
+
+				nk_label(ctx, st.Game_Sprites[meng.sprite_selection].name, NK_TEXT_ALIGN_CENTERED);
+
+			}
+		}
+
+		nk_end(ctx);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	int8 i=0, test=0, ch, ch2, ch3;
+	int16 testa = 0;
 	char options[8][16]={"Test 1", "Option 2", "vagina 3", "mGear 4"}, str[64];
 
 	uint8 t1;
@@ -8125,6 +9682,8 @@ int main(int argc, char *argv[])
 	float t2;
 
 	int loops;
+
+	struct nk_color background;
 
 	//_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 
@@ -8136,8 +9695,8 @@ int main(int argc, char *argv[])
 
 	strcpy(st.WindowTitle,"Engineer v0.01 Alpha");
 
-	OpenFont("font//arial.ttf","arial",0,128);
-	OpenFont("font//arialbd.ttf","arial bould",1,128);
+	OpenFont("font/Roboto-Regular.ttf","arial",0,128);
+	OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);
 	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
@@ -8193,6 +9752,7 @@ int main(int argc, char *argv[])
 	strcpy(meng.path,".");
 
 	//st.gt=STARTUP;
+	st.gt = INGAME;
 
 	memset(&meng.spr.body,0,sizeof(Body));
 
@@ -8204,13 +9764,32 @@ int main(int argc, char *argv[])
 	meng.editor=0;
 	meng.hide_ui=0;
 
+	ctx = nk_sdl_init(wn);
+
+	struct nk_font_atlas *atlas;
+	nk_sdl_font_stash_begin(&atlas);
+	nk_sdl_font_stash_end();
+	background = nk_rgb(28, 48, 62);
+
+	NewMap();
+
+	SETENGINEPATH;
+	SetDirContent("mgg");
+
 	while(!st.quit)
 	{
-
 		if(st.FPSYes)
 			FPSCounter();
 
-		WindowEvents();
+		nk_input_begin(ctx);
+
+		while(PollEvent(&events))
+		{
+			WindowEvents();
+			nk_sdl_handle_event(&events);
+		}
+
+		nk_input_end(ctx);
 
 		if(meng.viewmode==LIGHTVIEW_MODE || meng.viewmode==INGAMEVIEW_MODE)
 			BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);
@@ -8220,6 +9799,7 @@ int main(int argc, char *argv[])
 		loops=0;
 		while(GetTicks() > curr_tic && loops < 10)
 		{
+			//nk_clear(ctx);
 			Finish();
 
 			if(st.gt==INGAME)
@@ -8231,13 +9811,14 @@ int main(int argc, char *argv[])
 				else
 				if(meng.editor==0)
 				{
-					if(st.keys[SPACE_KEY].state)
+
+					/*if(st.keys[SPACE_KEY].state)
 					{
 						PlayMovie("TEN2.MGV");
 						st.keys[SPACE_KEY].state=0;
-					}
+					//}
 
-					if(meng.command==TEX_SEL)
+					/*if(meng.command==TEX_SEL)
 					{
 						ImageList();
 						if(st.keys[ESC_KEY].state)
@@ -8245,8 +9826,8 @@ int main(int argc, char *argv[])
 							meng.command=meng.pannel_choice;
 							st.keys[ESC_KEY].state=0;
 						}
-					}
-					else
+					}*/
+					/*else
 					if(meng.command==SPRITE_SELECTION)
 					{
 						SpriteList();
@@ -8255,8 +9836,8 @@ int main(int argc, char *argv[])
 							meng.command=meng.pannel_choice;
 							st.keys[ESC_KEY].state=0;
 						}
-					}
-					else
+					}*/
+					/*else
 					if(meng.command==MGG_SEL)
 					{
 						PannelLeft();
@@ -8266,13 +9847,13 @@ int main(int argc, char *argv[])
 							meng.command=meng.pannel_choice;
 							st.keys[ESC_KEY].state=0;
 						}
-					}
+					}*/
 					//else
 					//if(meng.command==MGG_LOAD)
 					//{
 						//if(MGGLoad()==NULL) meng.command=meng.pannel_choice;
 					//}
-					else
+					//else
 					if(meng.command==LOAD_LIGHTMAP)
 					{
 						if(UISelectFile(str))
@@ -8297,22 +9878,27 @@ int main(int argc, char *argv[])
 							st.keys[TAB_KEY].state=0;
 						}
 
-						if((meng.viewmode==INGAMEVIEW_MODE && !meng.hide_ui) || meng.viewmode!=INGAMEVIEW_MODE)
-							PannelLeft();
+						//if((meng.viewmode==INGAMEVIEW_MODE && !meng.hide_ui) || meng.viewmode!=INGAMEVIEW_MODE)
+							//PannelLeft();
 
-						ViewPortCommands();
 
-						if(st.keys[ESC_KEY].state && meng.command!=OBJ_EDIT_BOX)
+						//nkrendered = 1;
+						if (meng.command != SPRITE_TAG && meng.command != TRANSFORM_BOX && meng.command != SPRITE_SELECTION && meng.command != TEX_SEL && meng.command != MGG_SEL && meng.command != SPRITE_PHY)
+							ViewPortCommands();
+
+						/*if(st.keys[ESC_KEY].state && meng.command!=OBJ_EDIT_BOX)
 						{
 							st.gt=GAME_MENU;
 							st.keys[ESC_KEY].state=0;
-						}
+						}*/
 					}
 				}
 			}
 			else
 			if(st.gt==MAIN_MENU || st.gt==GAME_MENU)
 				Menu();
+
+			
 
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;
@@ -8333,16 +9919,98 @@ int main(int argc, char *argv[])
 
 		DrawSys();
 
-		if(st.gt==INGAME && meng.command!=MGG_LOAD && meng.command!=MGG_SEL && meng.command!=SPRITE_SELECTION && meng.command!=TEX_SEL && meng.editor==0)
+		if(st.gt==INGAME && meng.command!=MGG_LOAD && meng.command!=MGG_SEL && meng.editor==0)
 		{
 			DrawMap();
 
 			ENGDrawLight();
 		}
-			
+
+		MenuBar();
+		NewLeftPannel();
+		CoordBar();
+
+		if (meng.command == SPRITE_PHY)
+			PhysicsBox(meng.sprite_edit_selection);
+
+		if (meng.command == SPRITE_SELECTION)
+			SpriteListSelection();
+
+		if (meng.command == TEX_SEL)
+			TextureListSelection();
+
+		if (meng.command == TRANSFORM_BOX)
+		{
+			if (meng.command2 == EDIT_SPRITE)
+				TransformBox(&st.Current_Map.sprites[meng.sprite_edit_selection].position, &st.Current_Map.sprites[meng.sprite_edit_selection].body.size,
+				&st.Current_Map.sprites[meng.sprite_edit_selection].angle);
+		}
+
+		if (meng.command == SPRITE_TAG)
+			TagBox(st.Current_Map.sprites[meng.sprite_edit_selection].GameID, meng.sprite_edit_selection);
+
+		//MapProperties();
+		//CameraProperties();
+		//TransformBox(&st.Current_Map.cam_area.area_pos, &st.Current_Map.cam_area.area_pos,&testa);
+
+		//FileBrowser("mgm");
+
+		/*
+		if (nk_begin(ctx, "Demo", nk_rect(50, 50, 200, 200),
+			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
+			NK_WINDOW_CLOSABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
+		{
+			nk_menubar_begin(ctx);
+			nk_layout_row_begin(ctx, NK_STATIC, 25, 2);
+
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "FILE", NK_TEXT_LEFT, nk_vec2(120, 200))) {
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_menu_item_label(ctx, "OPEN", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "CLOSE", NK_TEXT_LEFT);
+				nk_menu_end(ctx);
+			}
+			nk_layout_row_push(ctx, 45);
+			if (nk_menu_begin_label(ctx, "EDIT", NK_TEXT_LEFT, nk_vec2(120, 200))) {
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_menu_item_label(ctx, "COPY", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "CUT", NK_TEXT_LEFT);
+				nk_menu_item_label(ctx, "PASTE", NK_TEXT_LEFT);
+				nk_menu_end(ctx);
+			}
+			nk_layout_row_end(ctx);
+			nk_menubar_end(ctx);
+
+			enum { EASY, HARD };
+			static int op = EASY;
+			static int property = 20;
+			nk_layout_row_static(ctx, 30, 80, 1);
+			if (nk_button_label(ctx, "button"))
+				fprintf(stdout, "button pressed\n");
+			nk_layout_row_dynamic(ctx, 30, 2);
+			if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
+			if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+		}
+		nk_end(ctx);
+		*/
+
 		UIMain_DrawSystem();
 		MainSound();
 		Renderer(0);
+
+		float bg[4];
+		nk_color_fv(bg, background);
+
+		//if (nkrendered == 0)
+			//printf("porra\n");
+
+		nk_sdl_render(NK_ANTI_ALIASING_OFF, 512 * 1024, 128 * 1024);
+
+		SwapBuffer(wn);
+
+		nkrendered = 0;
 	}
 
 	StopAllSounds();

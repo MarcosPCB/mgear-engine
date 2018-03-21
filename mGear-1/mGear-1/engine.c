@@ -10,6 +10,7 @@
 #include "quicklz.h"
 #include "input.h"
 #include <math.h>
+#include <assert.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -109,6 +110,7 @@ void CreateLog()
 
 	fclose(file);
 }
+
 /*
 void StartTimer()
 {
@@ -344,6 +346,121 @@ void CalTan32u(int16 ang, uint32 *val)
 
 	*val*=(uint32)(st.TanTable[ang]*100);
 	*val/=100;
+}
+
+int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)
+{
+	if (curr_layer == BACKGROUND3)
+	{
+		switch (layer)
+		{
+			case BACKGROUND2:
+				curr_z -= 8;
+				break;
+
+			case BACKGROUND1:
+				curr_z -= 16;
+				break;
+
+			case MIDGROUND:
+				curr_z -= 32;
+				break;
+
+			case FOREGROUND:
+				curr_z -= 40;
+				break;
+		}
+	}
+
+	if (curr_layer == BACKGROUND2)
+	{
+		switch (layer)
+		{
+		case BACKGROUND3:
+			curr_z += 8;
+			break;
+
+		case BACKGROUND1:
+			curr_z -= 8;
+			break;
+
+		case MIDGROUND:
+			curr_z -= 16;
+			break;
+
+		case FOREGROUND:
+			curr_z -= 32;
+			break;
+		}
+	}
+
+	if (curr_layer == BACKGROUND1)
+	{
+		switch (layer)
+		{
+		case BACKGROUND2:
+			curr_z += 8;
+			break;
+
+		case BACKGROUND3:
+			curr_z += 16;
+			break;
+
+		case MIDGROUND:
+			curr_z -= 8;
+			break;
+
+		case FOREGROUND:
+			curr_z -= 16;
+			break;
+		}
+	}
+
+	if (curr_layer == MIDGROUND)
+	{
+		switch (layer)
+		{
+		case BACKGROUND3:
+			curr_z += 32;
+			break;
+
+		case BACKGROUND2:
+			curr_z += 16;
+			break;
+
+		case BACKGROUND1:
+			curr_z += 8;
+			break;
+
+		case FOREGROUND:
+			curr_z -= 8;
+			break;
+		}
+	}
+
+	if (curr_layer == FOREGROUND)
+	{
+		switch (layer)
+		{
+		case BACKGROUND3:
+			curr_z += 40;
+			break;
+
+		case BACKGROUND2:
+			curr_z += 32;
+			break;
+
+		case BACKGROUND1:
+			curr_z += 16;
+			break;
+
+		case MIDGROUND:
+			curr_z += 8;
+			break;
+		}
+	}
+
+	return curr_z;
 }
 
 int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
@@ -1401,6 +1518,8 @@ void Init()
 	}
 
 	LogApp("SDL TTF initialized");
+
+#ifndef MGEAR_MFC
 	
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL,1);
@@ -1433,6 +1552,8 @@ void Init()
 	}
 
 	LogApp("Opengl context created");
+
+#endif
 
 #ifdef _VAO_RENDER
 	st.renderer.VAO_ON=0;
@@ -1530,7 +1651,10 @@ void Init()
 	glClearDepth(1.0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+#ifndef MGEAR_MFC
 	SDL_GL_SetSwapInterval(st.vsync);
+#endif
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -2128,21 +2252,18 @@ void RestartVideo()
 
 void WindowEvents()
 {
-	while (SDL_PollEvent(&events))
+	if (events.type == SDL_QUIT) st.quit = 1;
+
+	InputProcess();
+
+	if (events.type == SDL_WINDOWEVENT)
 	{
-		if (events.type == SDL_QUIT) st.quit = 1;
-
-		InputProcess();
-
-		if (events.type == SDL_WINDOWEVENT)
+		if (events.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 		{
-			if (events.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-			{
-				LogApp("Window resized to %d x %d", events.window.data1, events.window.data2);
-				st.screenx = events.window.data1;
-				st.screeny = events.window.data2;
-				RestartVideo();
-			}
+			LogApp("Window resized to %d x %d", events.window.data1, events.window.data2);
+			st.screenx = events.window.data1;
+			st.screeny = events.window.data2;
+			RestartVideo();
 		}
 	}
 }
@@ -2899,6 +3020,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				mgg->frames[i].vb_id=l;
 
+				mgg->frames[i].w = 2048;
+				mgg->frames[i].h = 2048;
+
 				//free(data);
 				free(imgdata);
 
@@ -2954,6 +3078,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					mgg->frames[i].data=vbdt[l].texture;
 
 					mgg->frames[i].vb_id=l;
+
+					mgg->frames[i].w = 2048;
+					mgg->frames[i].h = 2048;
 
 					//free(data);
 
@@ -3068,6 +3195,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 						mgg->frames[i].vb_id=vbdt_num-1;
 
+						mgg->frames[i].w = 2048;
+						mgg->frames[i].h = 2048;
+
 						//free(data);
 
 						free(imgdata);
@@ -3126,6 +3256,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 								mgg->frames[i].data=vbdt[n].texture;
 
 								mgg->frames[i].vb_id=n;
+
+								mgg->frames[i].w = 2048;
+								mgg->frames[i].h = 2048;
 
 							//	free(data);
 
@@ -3212,6 +3345,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 								mgg->frames[i].data=vbdt[vbdt_num-1].texture;
 
 								mgg->frames[i].vb_id=vbdt_num-1;
+
+								mgg->frames[i].w = 2048;
+								mgg->frames[i].h = 2048;
 
 							//	free(data);
 
@@ -7476,7 +7612,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 {
 	FILE *file;
 	int value, value2, value3;
-	uint16 i, id2, skip, num_frames, gameid;
+	uint16 i, id2, skip, num_frames, gameid, sizedefined = 0;
 	char buf[1024], str[16], str2[16], str3[16], str4[8][16], *tok;
 
 	for(i=0;i<MAX_GAME_MGG;i++)
@@ -7499,6 +7635,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 		LogApp("error reading sprite cfg file: %s",filename);
 		return 0;
 	}
+
+	memset(&st.Game_Sprites[id], 0, sizeof(st.Game_Sprites[id]));
 
 	while(!feof(file))
 	{
@@ -7665,6 +7803,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 			st.Game_Sprites[id].body.material=MATERIAL_END;
 			st.Game_Sprites[id].body.size.x=st.Game_Sprites[id].body.size.y=512;
 
+			sizedefined = 1;
+
 			continue;
 		}
 		else
@@ -7768,6 +7908,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 			st.Game_Sprites[id].body.size.x=value;
 			st.Game_Sprites[id].body.size.y=value2;
 
+			sizedefined = 1;
+
 			continue;
 		}
 		else
@@ -7838,6 +7980,38 @@ int32 LoadSpriteCFG(char *filename, int id)
 			{
 				st.Game_Sprites[gameid].body.size.x=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
 				st.Game_Sprites[gameid].body.size.y=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*9216)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+			}
+		}
+	}
+	
+	if (!sizedefined)
+	{
+		if (mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].vb_id != -1)
+		{
+			if (st.Game_Sprites[gameid].size_m.x != NULL && st.Game_Sprites[gameid].size_m.y != NULL)
+			{
+				st.Game_Sprites[gameid].body.size.x = (mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizex*st.Game_Sprites[gameid].size_m.x) + st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y = (mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey*st.Game_Sprites[gameid].size_m.y) + st.Game_Sprites[gameid].size_a.y;
+			}
+			else
+			{
+				st.Game_Sprites[gameid].body.size.x = mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizex + st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y = mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey + st.Game_Sprites[gameid].size_a.y;
+			}
+		}
+		else
+		{
+			if (st.Game_Sprites[gameid].size_m.x != NULL && st.Game_Sprites[gameid].size_m.y != NULL)
+			{
+				st.Game_Sprites[gameid].body.size.x = (((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH) / st.screenx)*
+					st.Game_Sprites[gameid].size_m.x) + st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y = (((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h * 9216) / st.screeny)*
+					st.Game_Sprites[gameid].size_m.y) + st.Game_Sprites[gameid].size_a.y;
+			}
+			else
+			{
+				st.Game_Sprites[gameid].body.size.x = ((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH) / st.screenx) + st.Game_Sprites[gameid].size_a.x;
+				st.Game_Sprites[gameid].body.size.y = ((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h * 9216) / st.screeny) + st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 	}
@@ -9245,7 +9419,7 @@ void Renderer(uint8 type)
 	memset(&ent,0,MAX_GRAPHICS);
 	memset(&lmp,0,MAX_LIGHTMAPS);
 
-	SDL_GL_SwapWindow(wn);
+	//SDL_GL_SwapWindow(wn);
 
 	
 }

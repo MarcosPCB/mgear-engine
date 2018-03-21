@@ -99,6 +99,9 @@ typedef FMOD_CHANNEL Channel;
 
 #define GAME_ASPECT 1.777777777778
 
+#define GAME_UNIT_MAX 2000000000
+#define GAME_UNIT_MIN -2000000000
+
 double _inline sqrt14(double n);
 
 #define LogApp SDL_Log
@@ -106,6 +109,8 @@ double _inline sqrt14(double n);
 #define LogWn SDL_LogWarn
 #define CloseFont TTF_CloseFont
 #define GetTicks SDL_GetTicks
+#define PollEvent SDL_PollEvent
+#define SwapBuffer SDL_GL_SwapWindow
 
 //#define MAX_MGVFRAMES 65536
 
@@ -420,12 +425,12 @@ typedef struct _BODY Body;
 
 enum _OBJTYPE_
 {
-	BACKGROUND1,
-	BACKGROUND2,
-	BACKGROUND3,
-	MIDGROUND,
-	FOREGROUND,
-	BLANK
+	BACKGROUND1 = 0,
+	BACKGROUND2 = 1,
+	BACKGROUND3 = 2,
+	MIDGROUND = 3,
+	FOREGROUND = 4,
+	BLANK = 5
 };
 
 typedef enum _OBJTYPE_ _OBJTYPE;
@@ -565,7 +570,7 @@ struct _MGMSPRITE_
 
 	int32 stat;
 
-	//If it's an entity, you MUST insert here the game sprite name that has a code
+	//If it's an entity, insert here the game sprite name that has a code
 	//or else, just leave it blank
 	char game_name[64]; 
 
@@ -995,11 +1000,18 @@ struct _SETTINGS_
 	uint8 cursor_type;
 
 	int8 viewmode;
+
+	char CurrPath[2048];
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
 
 #endif
+
+//#ifdef MFC_MGEAR
+//extern "C"
+//{
+//#endif
 
 extern _SETTINGS st;
 extern _ENTITIES ent[MAX_GRAPHICS];
@@ -1010,6 +1022,7 @@ extern _ENTITIES lpm[MAX_LIGHTMAPS];
 extern _MGG mgg_sys[3];
 extern _MGG mgg_map[MAX_MAP_MGG];
 extern _MGG mgg_game[MAX_GAME_MGG];
+extern SDL_Window *wn;
 
 extern const char WindowTitle[32];
 
@@ -1126,6 +1139,9 @@ void CalCos32u(int16 ang, uint32 *val);
 void CalSin32u(int16 ang, uint32 *val);
 void CalTan32u(int16 ang, uint32 *val);
 
+//Returns the Z position for your current layer
+int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer);
+
 //Checks if the object/sprite/graphic is inside the screen bounds
 int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z);
 
@@ -1190,3 +1206,7 @@ void DrawSys();
 int8 LoadLightmapFromFile(const char *file);
 
 void LockCamera();
+
+//#ifdef MFC_MGEAR
+//}
+//#endif

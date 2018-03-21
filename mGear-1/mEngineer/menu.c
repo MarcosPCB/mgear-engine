@@ -5,6 +5,8 @@
 #include "UI.h"
 #include "mggeditor.h"
 
+
+
 int16 scroll=0;
 
 void Menu()

@@ -23,6 +23,8 @@
 #define UI_COL_GREEN 0x00FF00
 #define UI_COL_BLUE 0x0000FF
 
+#define SETENGINEPATH strcpy(UI_Sys.current_path, st.CurrPath)
+
 #define MAX_UIWINDOWS 8
 
 #define UI_BASICPANNELFRAME 4 //equivalent to mgg_sys[0].frames[4], used in the Window type 2

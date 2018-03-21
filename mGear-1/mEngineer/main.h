@@ -6,6 +6,7 @@
 #define ARIAL_BOULD 1
 #define GEOMET 2
 
+#define NONE_MODE -1
 #define DRAW_SECTOR 0
 #define ADD_OBJ 3
 #define ADD_SPRITE 4
@@ -68,6 +69,10 @@
 #define CAM_LIM_X 51
 #define CAM_LIM_Y 52
 
+#define TRANSFORM_BOX 60
+#define CAMERA_BOX 61
+#define MAPPR_BOX 62
+
 #define FOREGROUND_MODE 0
 #define MIDGROUND_MODE 1
 #define BACKGROUND1_MODE 2
@@ -85,13 +90,13 @@ struct _mEng
 
 	char mgg_list[32][256];
 	uint16 num_mgg;
-	uint8 pannel_choice;
-	uint8 command;
+	int8 pannel_choice;
+	int8 command;
 	int16 scroll;
 	int16 scroll2;
-	uint16 command2;
-	uint16 sub_com;
-	uint16 com_id;
+	int16 command2;
+	int16 sub_com;
+	int16 com_id;
 	TEX_DATA tex_selection;
 	TEX_DATA tex2_sel;
 	uint32 tex2_ID;
@@ -174,7 +179,7 @@ struct _mEng
 	int16 temp;
 
 	char soundlist[128][128];
-	char musiclist[32][128];
+	char musiclist[128][128];
 };
 
 typedef struct _mEng mEng;
@@ -185,3 +190,6 @@ int16 DirFiles(const char *path, char content[512][512]);
 
 void Menu();
 void ImageList();
+void NewMap();
+
+void TextureListSelection();
