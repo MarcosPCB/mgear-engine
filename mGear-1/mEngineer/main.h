@@ -72,6 +72,7 @@
 #define TRANSFORM_BOX 60
 #define CAMERA_BOX 61
 #define MAPPR_BOX 62
+#define LAYERS_BOX 63
 
 #define FOREGROUND_MODE 0
 #define MIDGROUND_MODE 1
@@ -113,6 +114,12 @@ struct _mEng
 	int16 sprite_frame_selection;
 
 	int16 sprite_edit_selection;
+
+	int16 obj_edit_selection;
+
+	int16 sector_edit_selection;
+
+	int16 editview;
 
 	Pos p;
 	int32 got_it;

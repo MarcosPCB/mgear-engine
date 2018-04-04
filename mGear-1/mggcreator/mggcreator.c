@@ -3,6 +3,11 @@
 #include "mgg.h"
 //#include "quicklz.h"
 #include <conio.h>
+//#include "rle.c"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_MSC_SECURE_CRT
+#include "stb_image_write.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -18,20 +23,23 @@ int main(int argc, char *argv[])
 	FILE *file, *file2, *file3, *file4;
 	_MGGFORMAT mgg;
 	_MGGANIM *mga;
-	unsigned char FileName[256], filename[256], animfile[256], tmp[MAX_FILES * 24], str[2][24], framename[256], framename2[256], fileframe[32], files[MAX_FILES][24], *token;
-	int16 t=0, value, p=0, a=-1, val[16], *offx, *offy;
-	unsigned char header[21] = { "MGG File Version 1" }, *MGIbuf, *MGIimagedata, *imagebuf, *error_str;
+	unsigned char FileName[256], filename[256], animfile[256], tmp[MAX_FILES * 24], str[2][32], framename[256], framename2[256], fileframe[32], files[MAX_FILES][32], *token;
+	int16 t = 0, value, p = 0, a = -1, val[16], *offx, *offy, start_frame = 0;
+	unsigned char header[21] = { "MGG File Version 1" }, *MGIbuf, *MGIimagedata, *imagebuf, *error_str, loading_str[256], loading_pct, RLE = 0;
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas = 0, *dimx, *dimy, numfiles = 0;
-	uint8 *imgatlas, sequence=2;
+	uint8 *imgatlas, sequence = 0, *c_tmp, *c_atlas[32],  framenames[512][32], *atlas_frames[256];
 	uint32 frameoffset[MAX_FRAMES];
 	uint32 framesize[MAX_FRAMES];
 	uint8 normals[MAX_FRAMES];
 	uint32 normalsize[MAX_FRAMES];
 	size_t totalsize;
-	uint16 i = 0, j = 0, k = 0, width, height, MGIcolor, RLE;
+	uint16 i = 0, j = 0, k = 0, l = 0, m = 0, width, height, MGIcolor, RLE, c_tmp_frames = 0, c_a_f0[32], c_a_ff[32], c_a_w[32], c_a_h[32],
+		c_f_w[256], c_f_h[256], c_t_x, c_t_y, c_t_w, c_atlas_frames[32], num_c_atlas = 0;
 	uint32 framealone[MAX_FRAMES];
 	size_t size;
 	void *buf;
+
+	int size_rle, size_rle2;
 
 	memset(&framealone,0,MAX_FRAMES*sizeof(uint32));
 	memset(&mgg,0,sizeof(_MGGFORMAT));
@@ -157,13 +165,16 @@ int main(int argc, char *argv[])
 		{
 			if (strcmp(str[0], "MGGNAME") == NULL)
 				strcpy(mgg.name, str[1]);
-			else
+
+			if (strcmp(str[0], "RLE") == NULL)
+				RLE = 1;
+			
 			if (strcmp(str[0], "SEQUENCE") == NULL)
 				sequence = 1;
-			else
+			
 			if (strcmp(str[0], "NOTSEQUENCE") == NULL)
 				sequence = 0;
-			else
+			
 				if (strcmp(str[0], "NUMFILES") == NULL)
 				{
 					if (sequence != 0)
@@ -209,9 +220,12 @@ int main(int argc, char *argv[])
 						}
 					}
 			else
-			if(strcmp(str[0],"FRAMENAMES")==NULL)
-				strcpy(fileframe,str[1]);
-			else
+			if (strcmp(str[0], "FRAMENAMES") == NULL)
+			{
+				strcpy(fileframe, str[1]);
+				sequence = 1;
+			}
+			
 			if(strcmp(str[0],"FRAMES")==NULL)
 			{
 				value=atoi(str[1]);
@@ -220,32 +234,258 @@ int main(int argc, char *argv[])
 				offx=calloc(value,sizeof(int16));
 				offy=calloc(value,sizeof(int16));
 			}
-			else
+
+			if (strcmp(str[0], "CONSTRUCT_ATLAS") == NULL)
+			{
+				if (!mgg.num_frames)
+				{
+					printf("Error: number of frames not defined in %s before CONSTRUCT_ATLAS code\n", &animfile);
+					fflush(stdin);
+					getch();
+					exit(1);
+				}
+				else
+				{
+					sscanf(tmp, "%s %d %d %d", str[1], &val[0], &val[1], &val[2]);
+
+					c_atlas_frames[val[0]] = val[2] - val[1] + 1;
+					c_a_f0[val[0]] = val[1];
+					c_a_ff[val[0]] = val[2];
+				}
+			}
+
+			if (strcmp(str[0], "FRAMENAMES_CUSTOM_ATLAS") == NULL)
+			{
+				if (!mgg.num_frames)
+				{
+					printf("Error: number of frames not defined in %s before FRAMENAMES_CUSTOM code\n", &animfile);
+					fflush(stdin);
+					getch();
+					exit(1);
+				}
+				else
+				{
+					mgg.num_atlas = 1;
+
+					strtok(tmp, " ,\"");
+					token = strtok(NULL, " ,\"");
+					l = atoi(token);
+
+					c_tmp_frames = c_atlas_frames[l];
+
+					posx = (uint16*)realloc(posx, c_tmp_frames * sizeof(uint16));
+					posy = (uint16*)realloc(posy, c_tmp_frames * sizeof(uint16));
+					sizex = (uint16*)realloc(sizex, c_tmp_frames * sizeof(uint16));
+					sizey = (uint16*)realloc(sizey, c_tmp_frames * sizeof(uint16));
+					imgatlas = (uint8*)realloc(imgatlas, c_tmp_frames * sizeof(uint8));
+					dimx = (uint16*)realloc(dimx, c_tmp_frames * sizeof(uint16));
+					dimy = (uint16*)realloc(dimy, c_tmp_frames * sizeof(uint16));
+
+					num_img_in_atlas += c_tmp_frames;
+
+					if (c_tmp_frames > 0)
+					{
+						//Time to build our atlas
+						//maximum dimension 2048x4096
+
+						c_tmp = calloc(1, 2048 * 4096 * 4);
+						c_t_x = c_t_y = c_a_w[l] = c_a_h[l] = c_t_w = 0;
+
+						for (i = 0; i < c_tmp_frames; i++)
+						{
+							loading_pct = (i*100)/c_atlas_frames[l];
+
+							m = (i * 70) / c_atlas_frames[l];
+
+							memset(loading_str, 0, sizeof(loading_str));
+
+							for (k = 0; k < m; k++)
+								strcat(loading_str, ".");
+
+							printf("\rBuilding custom atlas %d [%d%%]%s", l, loading_pct, loading_str);
+
+							if (!sequence)
+								token = strtok(NULL, " ,\"");
+
+							strcpy(framename2, framename);
+							strcat(framename2, "//");
+
+							if (!sequence)
+								strcat(framename2, token);
+							else
+							{
+								if (i + c_a_f0[l] < 10) sprintf(filename, "//%s000%d.tga", fileframe, i + c_a_f0[l]); else
+								if (i + c_a_f0[l] < 100) sprintf(filename, "//%s00%d.tga", fileframe, i + c_a_f0[l]); else
+								if (i + c_a_f0[l] < 1000) sprintf(filename, "//%s0%d.tga", fileframe, i + c_a_f0[l]); else
+								if (i + c_a_f0[l] < 10000) sprintf(filename, "//%s0%d.tga", fileframe, i + c_a_f0[l]); else
+								if (i + c_a_f0[l] < 100000) sprintf(filename, "//%s%d.tga", fileframe, i + c_a_f0[l]);
+
+								strcat(framename2, filename);
+							}
+
+							if ((file = fopen(framename2, "rb")) == NULL)
+							{
+								printf("Error: Frame %s could not be opened\n", i);
+								free(c_tmp);
+								fflush(stdin);
+								getch();
+								exit(1);
+							}
+							
+							fseek(file, 0, SEEK_END);
+							size = ftell(file);
+							rewind(file);
+
+							imagebuf = malloc(size);
+
+							fread(imagebuf, size, 1, file);
+
+							atlas_frames[i] = stbi_load_from_memory(imagebuf, size, &c_f_w[i], &c_f_h[i], 0, 4);
+
+							if (c_f_w[i] > 1024 || c_f_h[i] > 1024)
+							{
+								printf("Error: Frame %d is to big for an atlas. Frame dimensions: %d x %d\n", i, c_f_w[i], c_f_h[i]);
+								free(c_tmp);
+								free(atlas_frames);
+								free(imagebuf);
+								fflush(stdin);
+								getch();
+								exit(1);
+							}
+
+							if (c_t_w + c_f_w[i] < 2048)
+								c_t_w += c_f_w[i];
+							else
+							{
+								c_t_w = c_f_w[i];
+								c_t_x = 0;
+								c_t_y = c_a_h[l];
+							}
+
+							if (c_t_y + c_f_h[i] > 4096)
+							{
+								printf("Error: Atlas is full, please, move frame %d to other atlas\n", i);
+								if (stbi_write_jpg("Test_error.jpg", 2048, 4096, 4, c_tmp, 100) == NULL)
+								{
+									printf("error");
+								}
+								free(c_tmp);
+								free(atlas_frames[i]);
+								free(imagebuf);
+								fflush(stdin);
+								getch();
+								exit(1);
+							}
+
+							if (c_t_y + c_f_h[i] > c_a_h[l] && c_t_y + c_f_h[i] < 4096)
+								c_a_h[l] += c_f_h[i];
+
+							/*
+							for (j = 0; j < c_f_h[i]; j++)
+								memcpy(c_tmp + ((c_t_y + j) * 2048 + c_t_x) * 4, atlas_frames[i] + j, c_f_w[i] * 4);
+								*/
+
+							for (j = 0; j < c_f_h[i]; j++)
+							{
+								for (k = 0; k < c_f_w[i]; k++)
+								{
+									c_tmp[((j + c_t_y) * 2048 * 4) + ((k + c_t_x) * 4)] = atlas_frames[i][(j * c_f_w[i] * 4) + (k * 4)];
+									c_tmp[((j + c_t_y) * 2048 * 4) + ((k + c_t_x) * 4) + 1] = atlas_frames[i][(j * c_f_w[i] * 4) + (k * 4) + 1];
+									c_tmp[((j + c_t_y) * 2048 * 4) + ((k + c_t_x) * 4) + 2] = atlas_frames[i][(j * c_f_w[i] * 4) + (k * 4) + 2];
+									c_tmp[((j + c_t_y) * 2048 * 4) + ((k + c_t_x) * 4) + 3] = atlas_frames[i][(j * c_f_w[i] * 4) + (k * 4) + 3];
+								}
+							}
+
+
+							posx[i] = c_t_x;
+							posy[i] = c_t_y;
+							sizex[i] = c_f_w[i];
+							sizey[i] = c_f_h[i];
+
+							c_t_x = c_t_w;
+
+							if (c_a_w[l] < c_t_x)
+								c_a_w[l] = c_t_x;
+
+							free(imagebuf);
+							free(atlas_frames[i]);
+
+							fclose(file);
+						}
+
+						for (i = 0; i < c_tmp_frames; i++)
+						{
+							posx[i] = (posx[i] * 32768) / c_a_w[l];
+							posy[i] = (posy[i] * 32768) / c_a_h[l];
+							sizex[i] = (sizex[i] * 32768) / c_a_w[l];
+							sizey[i] = (sizey[i] * 32768) / c_a_h[l];
+							imgatlas[i] = 0;
+						}
+
+						c_atlas[l] = malloc(c_a_w[l] * c_a_h[l] * 4);
+						memset(c_atlas[l], 0, c_a_w[l] * c_a_h[l] * 4);
+
+						
+						for (j = 0; j < c_a_h[l]; j++)
+						{
+							for (k = 0; k < c_a_w[l]; k++)
+							{
+								c_atlas[l][(j * c_a_w[l] * 4) + (k * 4)] = c_tmp[(j * 2048 * 4) + (k * 4)];
+								c_atlas[l][(j * c_a_w[l] * 4) + (k * 4) + 1] = c_tmp[(j * 2048 * 4) + (k * 4) + 1];
+								c_atlas[l][(j * c_a_w[l] * 4) + (k * 4) + 2] = c_tmp[(j * 2048 * 4) + (k * 4) + 2];
+								c_atlas[l][(j * c_a_w[l] * 4) + (k * 4) + 4] = c_tmp[(j * 2048 * 4) + (k * 4) + 3];
+							}
+						}
+						
+						free(c_tmp);
+
+						loading_pct = 100;
+
+						m = 70;
+
+						memset(loading_str, 0, sizeof(loading_str));
+
+						for (k = 0; k < m; k++)
+							strcat(loading_str, ".");
+
+						printf("\rBuilding custom atlas %d [%d%%]%sDone\n", l, loading_pct, loading_str);
+
+						num_c_atlas++;
+					}
+				}
+			}
+
+			
 			if(strcmp(str[0],"FRAMESALONE")==NULL)
 			{
 				value=atoi(str[1]);
 				framealone[value]=1;
 			}
-			else
+			//else
 			if(strcmp(str[0],"ANIMS")==NULL)
 			{
 				value=atoi(str[1]);
 				mgg.num_animations=value;
 				mga=(_MGGANIM*) malloc(value*sizeof(_MGGANIM));
 			}
-			else
+			//else
 			if(strcmp(str[0],"ATLAS")==NULL)
 			{
 				value=atoi(str[1]);
 				mgg.num_atlas=value;
 			}
-			else
+			//else
 			if(strcmp(str[0],"MIPMAP")==NULL)
 			{
 				value=atoi(str[1]);
 				mgg.mipmap=value;
+
+				if (mgg.mipmap)
+					printf("Texture filter: Nearest\n");
+				else
+					printf("Texture filter: Linear\n");
 			}
-			else
+			//else
 			if(strcmp(str[0],"TYPE")==NULL)
 			{
 				if(strcmp(str[1],"MULT")==NULL)
@@ -254,7 +494,7 @@ int main(int argc, char *argv[])
 				if(strcmp(str[1],"TEX")==NULL)
 					mgg.type=TEXTUREM;
 			}
-			else
+			//else
 			if(strcmp(str[0],"BEGIN")==NULL)
 			{
 				if(mgg.num_animations==0)
@@ -266,7 +506,7 @@ int main(int argc, char *argv[])
 				}
 				else p++;
 			}
-			else
+			//else
 			if(strcmp(str[0],"SET")==NULL)
 			{
 				if(!mgg.num_atlas || !num_img_in_atlas)
@@ -312,7 +552,7 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-			else
+			//else
 			if(strcmp(str[0],"ONEIMG")==NULL)
 			{
 				if(!mgg.num_atlas || !num_img_in_atlas)
@@ -344,7 +584,7 @@ int main(int argc, char *argv[])
 					sizey[val[5]]=(sizey[val[5]]*32768)/dimy[val[0]];
 				}
 			}
-			else
+			//else
 			if(strcmp(str[0],"FRAMESALONERANGE")==NULL)
 			{
 				sscanf(tmp,"%s %d %d", str[0], &val[0], &val[1]);
@@ -352,15 +592,17 @@ int main(int argc, char *argv[])
 				for(i=val[0];i<=val[1];i++)
 					framealone[i]=1;
 			}
-			else
+			//else
 			if(strcmp(str[0],"FRAMEOFFSET")==NULL)
 			{
 				sscanf(tmp,"%s %d %d %d", str[0], &val[0], &val[1], &val[2]);
 
 				offx[val[0]]=val[1];
 				offy[val[0]]=val[2];
+
+				printf("Frame: %d Offset x: %d y: %d\n", val[0], val[1], val[2]);
 			}
-			else
+			//else
 			if(strcmp(str[0],"ATLASDIM")==NULL)
 			{
 				if(!mgg.num_atlas || !num_img_in_atlas)
@@ -383,7 +625,7 @@ int main(int argc, char *argv[])
 					dimy[val[0]]=val[2];
 				}
 			}
-			else
+			//else
 			if(strcmp(str[0],"ATLASIMGNUM")==NULL)
 			{
 				if(!mgg.num_atlas)
@@ -410,7 +652,7 @@ int main(int argc, char *argv[])
 					num_img_in_atlas+=val[1];
 				}
 			}
-			else
+			//else
 			if(strcmp(str[0],"NORMALMAPRANGE")==NULL)
 			{
 				sscanf(tmp,"%s %d %d", str[0], &val[0], &val[1]);
@@ -418,7 +660,7 @@ int main(int argc, char *argv[])
 				for(i=val[0];i<=val[1];i++)
 					normals[i]=1;
 			}
-			else
+			//else
 			if(strcmp(str[0],"NORMALMAP")==NULL)
 			{
 				sscanf(tmp,"%s %d", str[0], &val[0]);
@@ -461,8 +703,56 @@ int main(int argc, char *argv[])
 	
 	//totalsize=((sizeof(_MGGFORMAT)+512)+(MAX_FRAMES*sizeof(uint32)+512)+(512+(MAX_ANIMATIONS*sizeof(_MGGANIM))))+21;
 
+	if (num_c_atlas > 0)
+	{
+		printf("Writing builded atlasses...");
+
+		for (l = 0; l < num_c_atlas; l++)
+		{
+			printf("Writing frame numbers from %d to %d...\n", c_a_f0[l], c_a_ff[l]);
+
+			MGIbuf = malloc((c_a_w[l] * c_a_h[l] * 4) + 9);
+
+			MGIbuf[0] = 'M';
+			MGIbuf[1] = 'G';
+			MGIbuf[2] = 'I';
+			MGIbuf[3] = 4;
+			if(RLE) MGIbuf[4] = 1;
+			else MGIbuf[4] = 0;
+			MGIbuf[5] = c_a_w[l] >> 8;
+			MGIbuf[6] = c_a_w[l] & 0xFF;
+			MGIbuf[7] = c_a_h[l] >> 8;
+			MGIbuf[8] = c_a_h[l] & 0xFF;
+
+			memcpy(MGIbuf + 9, c_atlas[l], c_a_w[l] * c_a_h[l] * 4);
+
+			size = c_a_w[l] * c_a_h[l] * 4;
+
+			framesize[l] = size;
+
+			//buf=(void*) malloc(size);
+			//fread(buf,size,1,file2);
+			//rewind(file);
+
+			fseek(file, mgg.textures_offset + 1, SEEK_SET);
+
+			fwrite(MGIbuf, size, 1, file);
+			free(MGIbuf);
+			//free(MGIimagedata);
+
+			frameoffset[l] = ftell(file);
+
+			printf("Wrote builded atlas\n");
+
+			start_frame = c_a_ff[l] + 1;
+
+			//mgg.num_singletex = 0;
+			//mgg.num_atlas = 0;
+		}
+	}
+	
 	j=0;
-	for(i=0;i<mgg.num_singletex+mgg.num_atlas;i++)
+	for(i=start_frame;i<mgg.num_singletex+mgg.num_atlas;i++)
 	{
 		//if(i==33) j=42;
 
@@ -529,7 +819,8 @@ int main(int argc, char *argv[])
 			MGIbuf[1] = 'G';
 			MGIbuf[2] = 'I';
 			MGIbuf[3] = MGIcolor;
-			MGIbuf[4] = 0;
+			if (RLE) MGIbuf[4] = 1;
+			else MGIbuf[4] = 0;
 			MGIbuf[5] = width >> 8;
 			MGIbuf[6] = width & 0xFF;
 			MGIbuf[7] = height >> 8;
@@ -627,7 +918,8 @@ int main(int argc, char *argv[])
 					MGIbuf[1] = 'G';
 					MGIbuf[2] = 'I';
 					MGIbuf[3] = MGIcolor;
-					MGIbuf[4] = 0;
+					if (RLE) MGIbuf[4] = 1;
+					else MGIbuf[4] = 0;
 					MGIbuf[5] = width >> 8;
 					MGIbuf[6] = width & 0xFF;
 					MGIbuf[7] = height >> 8;
@@ -655,6 +947,7 @@ int main(int argc, char *argv[])
 		}
 		j++;
 	}
+	
 
 	mgg.possize_offset=ftell(file);
 

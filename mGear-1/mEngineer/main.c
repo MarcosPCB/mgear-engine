@@ -4814,14 +4814,14 @@ static void ViewPortCommands()
 						if(i<2000 || i>9999) continue;
 
 						i-=2000;
-
+						/*
 						if(st.Current_Map.sprites[i].flags & 1)
 						{
 							if(Sys_ResizeController(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,&st.Current_Map.sprites[i].body.size.x,&st.Current_Map.sprites[i].body.size.y,
 								0,0,st.Current_Map.sprites[i].position.z))
 								break;
 						}
-
+						*/
 						if(got_it) break;
 
 						if(CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
@@ -4921,11 +4921,12 @@ static void ViewPortCommands()
 						i=meng.z_buffer[l][k];
 
 						if(i>1099) continue;
-
+						/*
 						if(meng.command2==EDIT_OBJ && meng.got_it==i)
 							if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle,
 								st.Current_Map.obj[i].position.z))
 								break;
+								*/
 
 						if(got_it) break;
 
@@ -4939,6 +4940,8 @@ static void ViewPortCommands()
 									meng.command2=EDIT_OBJ;
 									meng.p=st.mouse;
 									meng.got_it=i;
+
+									meng.obj_edit_selection = i;
 
 									STW(&meng.p.x, &meng.p.y);
 
@@ -4973,7 +4976,7 @@ static void ViewPortCommands()
 
 									sprintf(str,"%d",st.Current_Map.obj[i].angle);
 									String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.obj[i].position.z);
-
+									/*
 									if(st.mouse_wheel>0 && !st.mouse2)
 									{
 										if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle+=1;
@@ -4995,7 +4998,7 @@ static void ViewPortCommands()
 
 										st.mouse_wheel=0;
 									}
-
+									*/
 									got_it=1;
 									break;
 								}
@@ -8392,7 +8395,7 @@ int FileBrowser(char *filename)
 	FILE *f;
 	DIR *d;
 
-	if (nk_begin(ctx, "File Browser", nk_rect(0, 0, 800, 450), NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "File Browser", nk_rect(st.screenx/2 - 400, st.screeny/2 - 225, 800, 450), NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_space_begin(ctx, NK_DYNAMIC, 390, INT_MAX);
 
@@ -8807,14 +8810,54 @@ void MenuBar()
 			if (nk_menu_begin_label(ctx, "View", NK_TEXT_LEFT, nk_vec2(120, 300)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
-				nk_menu_item_label(ctx, "Background 3", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Background 2", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Background 1", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Midground", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Foreground", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "InGame View", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "No light view", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "All", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Background 3", NK_TEXT_LEFT))
+				{
+					meng.viewmode = BACKGROUND3_MODE;
+					st.viewmode = 16;
+				}
+
+				if (nk_menu_item_label(ctx, "Background 2", NK_TEXT_LEFT))
+				{
+					meng.viewmode = BACKGROUND2_MODE;
+					st.viewmode = 8;
+				}
+
+				if (nk_menu_item_label(ctx, "Background 1", NK_TEXT_LEFT))
+				{
+					meng.viewmode = BACKGROUND1_MODE;
+					st.viewmode = 4;
+				}
+
+				if (nk_menu_item_label(ctx, "Midground", NK_TEXT_LEFT))
+				{
+					meng.viewmode = MIDGROUND_MODE;
+					st.viewmode = 2;
+				}
+
+				if (nk_menu_item_label(ctx, "Foreground", NK_TEXT_LEFT))
+				{
+					meng.viewmode = FOREGROUND_MODE;
+					st.viewmode = 1;
+				}
+
+				if (nk_menu_item_label(ctx, "InGame View", NK_TEXT_LEFT))
+				{
+					meng.viewmode = INGAMEVIEW_MODE;
+					st.viewmode = 31 + 32;
+				}
+				
+				if (nk_menu_item_label(ctx, "No light view", NK_TEXT_LEFT))
+				{
+					meng.viewmode = LIGHTVIEW_MODE;
+					st.viewmode = 31;
+				}
+
+				if (nk_menu_item_label(ctx, "All", NK_TEXT_LEFT))
+				{
+					meng.viewmode = ALLVIEW_MODE;
+					st.viewmode = 31 + 64;
+				}
+
 				nk_menu_end(ctx);
 			}
 
@@ -8871,6 +8914,8 @@ void MenuBar()
 
 	if (state == 8)
 	{
+		meng.command = meng.pannel_choice =  MGG_SEL;
+
 		check = FileBrowser(filename);
 
 		if (check == -1)
@@ -9565,6 +9610,65 @@ void NewLeftPannel()
 
 					nk_layout_row_dynamic(ctx, 30, 1);
 				}
+
+				if (meng.command2 == EDIT_OBJ)
+				{
+					editcolor.r = st.Current_Map.obj[meng.obj_edit_selection].color.r;
+					editcolor.g = st.Current_Map.obj[meng.obj_edit_selection].color.g;
+					editcolor.b = st.Current_Map.obj[meng.obj_edit_selection].color.b;
+
+					nk_layout_row_dynamic(ctx, 30, 1);
+
+					meng.obj2.type = nk_combo(ctx, Layers, 5, st.Current_Map.obj[meng.obj_edit_selection].type, 25, nk_vec2(110, 200));
+
+					st.Current_Map.obj[meng.obj_edit_selection].position.z = GetZLayer(st.Current_Map.obj[meng.obj_edit_selection].position.z,
+						st.Current_Map.obj[meng.obj_edit_selection].type, meng.obj2.type);
+
+					st.Current_Map.obj[meng.obj_edit_selection].type = meng.obj2.type;
+
+					editcolor = ColorPicker(editcolor);
+
+					st.Current_Map.obj[meng.obj_edit_selection].color.r = editcolor.r;
+					st.Current_Map.obj[meng.obj_edit_selection].color.g = editcolor.g;
+					st.Current_Map.obj[meng.obj_edit_selection].color.b = editcolor.b;
+
+					st.Current_Map.obj[meng.obj_edit_selection].amblight = nk_propertyf(ctx, "Amb. Light", 0, st.Current_Map.obj[meng.obj_edit_selection].amblight, 1, 0.2f, 0.01f);
+
+					if (st.Current_Map.obj[meng.obj_edit_selection].type == BACKGROUND3 || st.Current_Map.obj[meng.obj_edit_selection].type == BACKGROUND2
+						|| st.Current_Map.obj[meng.obj_edit_selection].type == FOREGROUND)
+					{
+						if (st.Current_Map.obj[meng.obj_edit_selection].flag & 1)
+							temp = 1;
+						else
+							temp = 0;
+
+						if (nk_checkbox_label(ctx, "Texture Mov.", &temp))
+						{
+							if (temp)
+								st.Current_Map.obj[meng.obj_edit_selection].flag |= 1;
+							else
+								st.Current_Map.obj[meng.obj_edit_selection].flag -= 1;
+						}
+					}
+					/*
+					if (st.Current_Map.obj[meng.obj_edit_selection].type == MIDGROUND)
+					{
+						if (st.Current_Map.obj[meng.obj_edit_selection].flag & OBJF_ANIMATED_TEXTURE_MOV_CAM)
+						{
+							if (nk_check_label(ctx, "Anim. Tex. Mov. with Camera", 1))
+								st.Current_Map.obj[meng.obj_edit_selection].flag -= 2;
+						}
+						else
+						{
+							if (nk_check_label(ctx, "Anim. Tex. Mov. with Camera", 0))
+								st.Current_Map.obj[meng.obj_edit_selection].flag |= 2;
+						}
+					}
+					*/
+
+					if (nk_button_label(ctx, "Transform"))
+						meng.command = TRANSFORM_BOX;
+				}
 			}
 
 			if (meng.pannel_choice == ADD_OBJ)
@@ -9612,6 +9716,25 @@ void NewLeftPannel()
 
 				if (nk_button_label(ctx, "Select Texture"))
 					meng.command = TEX_SEL;
+
+				nk_layout_row_dynamic(ctx, 30, 1);
+
+				if (meng.obj.type == BACKGROUND3 || meng.obj.type == BACKGROUND2
+					|| meng.obj.type == FOREGROUND)
+				{
+					if (meng.obj.flag & 1)
+						temp = 1;
+					else
+						temp = 0;
+
+					if (nk_checkbox_label(ctx, "Texture Mov.", &temp))
+					{
+						if (temp)
+							meng.obj.flag |= 1;
+						else
+							meng.obj.flag -= 1;
+					}
+				}
 			}
 
 			if (meng.pannel_choice == ADD_SPRITE)
@@ -9719,6 +9842,7 @@ int main(int argc, char *argv[])
 	meng.sprite_frame_selection=-1;
 	meng.spr.size.x=2048;
 	meng.spr.size.y=2048;
+	meng.editview = MIDGROUND_MODE;
 
 	//SpriteListLoad();
 
@@ -9944,6 +10068,10 @@ int main(int argc, char *argv[])
 			if (meng.command2 == EDIT_SPRITE)
 				TransformBox(&st.Current_Map.sprites[meng.sprite_edit_selection].position, &st.Current_Map.sprites[meng.sprite_edit_selection].body.size,
 				&st.Current_Map.sprites[meng.sprite_edit_selection].angle);
+
+			if(meng.command2 == EDIT_OBJ)
+				TransformBox(&st.Current_Map.obj[meng.obj_edit_selection].position, &st.Current_Map.obj[meng.obj_edit_selection].size,
+				&st.Current_Map.obj[meng.obj_edit_selection].angle);
 		}
 
 		if (meng.command == SPRITE_TAG)

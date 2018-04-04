@@ -59,3 +59,6 @@ struct _MGGFORMAT_
 };
 
 typedef struct _MGGFORMAT_ _MGGFORMAT;
+
+unsigned char *rle_encode(unsigned char *data, int size, int color, int *rle_size);
+unsigned char *rle_decode(unsigned char *data, int rle_size, int color, int *size);
