@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mGear-1", "mGear-1\mGear-1.vcxproj", "{1AF6406A-CDBE-49E6-9E8C-82F23656A750}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mEngineer", "mEngineer\mEngineer.vcxproj", "{29FD5AF9-8F9B-49A2-96EC-7F91D32250CB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mAudio", "mAudio\mAudio.vcxproj", "{46EB78F3-6428-4A68-8587-A519481F0288}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mTex", "mTex\mTex.vcxproj", "{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,6 +61,12 @@ Global
 		{46EB78F3-6428-4A68-8587-A519481F0288}.Release|Win32.ActiveCfg = Release|Win32
 		{46EB78F3-6428-4A68-8587-A519481F0288}.Release|Win32.Build.0 = Release|Win32
 		{46EB78F3-6428-4A68-8587-A519481F0288}.Release|x64.ActiveCfg = Release|Win32
+		{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}.Debug|Win32.Build.0 = Debug|Win32
+		{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}.Debug|x64.ActiveCfg = Debug|Win32
+		{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}.Release|Win32.ActiveCfg = Release|Win32
+		{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}.Release|Win32.Build.0 = Release|Win32
+		{2C9E053F-AD4D-4A6F-A369-F7F246AC8B60}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

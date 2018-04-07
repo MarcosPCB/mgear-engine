@@ -4,8 +4,10 @@
 	#include <SDL_opengl.h>
 	#include <SDL_thread.h>
 	#include <SDL_mutex.h>
+#ifndef MGEAR_CLEAN_VERSION
 	#include <fmod.h>
 	#include <fmod_errors.h>
+#endif
 	#include <SDL_ttf.h>
 	//#include <SOIL.h>
 
@@ -62,8 +64,10 @@
 #define QLZ_STREAMING_BUFFER 0
 #define QLZ_MEMORY_SAFE 0
 
+#ifndef MGEAR_CLEAN_VERSION
 typedef FMOD_SOUND Sound;
 typedef FMOD_CHANNEL Channel;
+#endif
 
 #define FONT_SIZE 1024 //Used for overriding the size draw functions
 #define TEX_PAN_RANGE 32768 //tex panning ranges from 0 to 32768
@@ -263,6 +267,7 @@ struct _Key
 
 typedef struct _Key Key;
 
+#ifndef MGEAR_CLEAN_VERSION
 //FMOD sound system
 struct _SOUNDSYS_
 {
@@ -271,6 +276,8 @@ struct _SOUNDSYS_
 };
 
 typedef struct _SOUNDSYS_ _SOUNDSYS;
+
+#endif
 
 enum _MGGTYPE_
 {
@@ -357,7 +364,9 @@ struct _MGV_
 	_MGVTEX *frames;
 	size_t totalsize;
 	uint8 fps;
+#ifndef MGEAR_CLEAN_VERSION
 	FMOD_SOUND *sound;
+#endif
 	FILE *file;
 	uint32 *framesize;
 	uint32 *seeker;
@@ -761,6 +770,7 @@ struct PROGRAM_SHADER
 };
 */
 
+#ifndef MGEAR_CLEAN_VERSION
 typedef struct
 {
 	Sound *sound;
@@ -770,6 +780,7 @@ typedef struct
 	uint8 priority;
 
 } SOUND_LIST;
+#endif
 
 typedef struct
 {
@@ -926,11 +937,13 @@ struct _SETTINGS_
 
 	_GAME_LIGHTMAPS game_lightmaps[MAX_LIGHTMAPS];
 
+#ifndef MGEAR_CLEAN_VERSION
 	uint16 num_sounds;
 	uint16 num_musics;
 
 	SOUND_LIST sounds[MAX_SOUNDS];
 	SOUND_LIST musics[MAX_MUSICS];
+#endif
 
 	struct
 	{
@@ -939,8 +952,9 @@ struct _SETTINGS_
 	} Lightmaps;
 
 	long long unsigned int time;
-
+#ifndef MGEAR_CLEAN_VERSION
 	_SOUNDSYS sound_sys;
+#endif
 	TFont fonts[MAX_FONTS];
 
 	Pos mouse;
@@ -1033,8 +1047,8 @@ uint8 OpenFont(const char *file,const char *name, uint8 index, size_t font_size)
 void Quit();
 
 //For tests only
-void createmgg();
-void createmgv();
+//void createmgg();
+//void createmgv();
 
 int32 CheckMGGInSystem(const char *name); //Check if the MGG is already loaded into the system
 uint32 CheckMGGFile(const char *name); //Check if its a MGG file
@@ -1043,6 +1057,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name); //Loads a MGG file into a MGG type 
 void FreeMGG(_MGG *file); //Free a MGG struct
 void InitMGG(); //Inits all MGG structs
 
+#ifndef MGEAR_CLEAN_VERSION
 #ifdef ENGINEER
 	uint32 SaveMap(const char *name);
 #endif
@@ -1056,6 +1071,8 @@ uint32 LoadMap(const char *name);
 void FreeMap();
 
 void DrawMap();
+
+#endif
 
 void _fastcall SetTimerM(unsigned long long int x);
 unsigned long long _fastcall GetTimerM();
@@ -1087,10 +1104,13 @@ void _inline WTSf(float *x, float *y);
 
 void _inline WTScf(float *x, float *y); ////No camera position in calculation
 
+#ifndef MGEAR_CLEAN_VERSION
 uint32 PlayMovie(const char *name);
+#endif
 
 void ResetVB();
 
+#ifndef MGEAR_CLEAN_VERSION
 //Lightmap functions
 unsigned char *GenerateAlphaLight(uint16 w, uint16 h);
 uint8 FillAlphaLight(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
@@ -1105,6 +1125,7 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h);
 uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
+#endif
 
 //Faster square root
 
@@ -1172,22 +1193,29 @@ void GetSpriteBodySize(int16 id, int16 gameid);
 
 void Renderer(uint8 type);
 
+#if !defined (MGEAR_CLEAN_VERSION) || defined (ENABLE_SOUND_SYS)
 int8 LoadSoundList(char *name);
 void PlaySound(int16 id, uint8 loop);
 void PlayMusic(int16 id, uint8 loop);
 void MainSound();
 void StopAllSounds();
 void StopMusic();
+#endif
 
+#ifndef MGEAR_CLEAN_VERSION
 void SpawnSprite(int16 game_id, Pos pos, Pos size, int16 ang);
 
 uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 ang2);
+#endif
 uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang);
 uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang, int8 z);
+
+#ifndef MGEAR_CLEAN_VERSION
 int16 CheckCollisionSector(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int32 *sety, int16 sectorid);
 int16 CheckCollisionSectorWall(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang);
 int16 CheckCollisionSectorWallID(int32 x, int32 y, int32 xsize, int32 ysize, int16 ang, int16 id);
 uint8 CheckCollisionPossibility(uint16 id, uint16 id2, int32 *dist); //Checks if the two sprites are in the possibility of a collision and returns the distance they are of each other
+#endif
 
 void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);

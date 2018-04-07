@@ -348,6 +348,8 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
+#ifndef MGEAR_CLEAN_VERSION
+
 int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)
 {
 	if (curr_layer == BACKGROUND3)
@@ -529,17 +531,23 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
 		return 1;
 }
 
+#endif
+
 void Quit()
 {
 	//ResetVB();
 	InputClose();
 	SDL_DestroyWindow(wn);
 	SDL_Quit();
+#ifndef MGEAR_CLEAN_VERSION
 	FMOD_System_Close(st.sound_sys.Sound_System);
 	FMOD_System_Release(st.sound_sys.Sound_System);
+#endif
 	TTF_Quit();
 	exit(1);
 }
+
+#ifndef MGEAR_CLEAN_VERSION
 
 unsigned char *GenerateAlphaLight(uint16 w, uint16 h)
 {
@@ -980,6 +988,8 @@ uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h)
 	return 1;
 }
 
+#endif
+
 #ifdef _VAO_RENDER
 static void CreateVAO(VB_DATAT *data, uint8 type, uint8 pr)
 {
@@ -1404,7 +1414,9 @@ void Init()
 	 float k=0;
 
 	int check;
+#ifndef MGEAR_CLEAN_VERSION
 	FMOD_RESULT result;
+#endif
 
 	GLenum checkfb;
 
@@ -1415,8 +1427,8 @@ void Init()
 	GLchar logs[32][1024];
 
 #ifdef _DEBUG
-	printf("Waiting...\n");
-	system("pause");
+	//printf("Waiting...\n");
+	//system("pause");
 #endif
 
 	CreateLog();
@@ -1490,6 +1502,8 @@ void Init()
 
 	LogApp("SDL 2.0 initialzed");
 		
+#if !defined (MGEAR_CLEAN_VERSION) || defined (ENABLE_SOUND_SYS) 
+
 	if((result=FMOD_System_Create(&st.sound_sys.Sound_System))!=FMOD_OK)
 	{
 		LogApp("Error while initializing FMOD, Creating System : %s",FMOD_ErrorString(result));
@@ -1511,6 +1525,8 @@ void Init()
 	for(i=0;i<MAX_CHANNELS;i++)
 		st.sound_sys.slotch_ID[i]=-1;
 		*/
+#endif
+
 	if(TTF_Init()==-1)
 	{
 		LogApp("Error while initializing SDL TTF : %s",TTF_GetError());
@@ -1519,7 +1535,7 @@ void Init()
 
 	LogApp("SDL TTF initialized");
 
-#ifndef MGEAR_MFC
+//#ifndef MGEAR_MFC
 	
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL,1);
@@ -1553,7 +1569,7 @@ void Init()
 
 	LogApp("Opengl context created");
 
-#endif
+//#endif
 
 #ifdef _VAO_RENDER
 	st.renderer.VAO_ON=0;
@@ -2088,8 +2104,11 @@ SHADER_CREATION:
 	st.cursor_type=0;
 
 	memset(&ent,0,MAX_GRAPHICS*sizeof(_ENTITIES));
+
+#ifndef MGEAR_CLEAN_VERSION
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
 	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
+#endif
 
 	memset(&st.strings,0,MAX_STRINGS*sizeof(StringsE));
 
@@ -2102,6 +2121,7 @@ SHADER_CREATION:
 		st.TanTable[i]=tan((k*pi)/180);
 	}
 
+#ifndef MGEAR_CLEAN_VERSION
 	memset(&st.game_lightmaps,0,MAX_LIGHTMAPS*sizeof(_GAME_LIGHTMAPS));
 
 	st.game_lightmaps[0].stat=1;
@@ -2135,6 +2155,8 @@ SHADER_CREATION:
 	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
 
 	st.game_lightmaps[0].tex=GenerateLightmapTexture(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h);
+
+#endif
 
 	DataN=(unsigned char*) calloc(64*64*3,sizeof(unsigned char));
 
@@ -3458,6 +3480,8 @@ void InitMGG()
 	}
 }
 
+#ifndef MGEAR_CLEAN_VERSION
+
 int8 LoadLightmapFromFile(const char *file)
 {
 	FILE *f;
@@ -3841,6 +3865,8 @@ uint16 CheckCollision(Pos pos, Pos size, int16 ang, Pos pos2, Pos size2, int16 a
 	return collision;
 }
 
+#endif
+
 uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang)
 {
 	register uint8 i;
@@ -4143,6 +4169,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 	return 0;
 }
 
+#ifndef MGEAR_CLEAN_VERSION
 
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z, int16 flags, int32 sizeax, int32 sizeay, int32 sizemx, int32 sizemy)
 {
@@ -4584,6 +4611,8 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	return 0;
 }
 
+#endif
+
 void BASICBKD(uint8 r, uint8 g, uint8 b)
 {
 	float tmp, ax, ay, az;
@@ -4854,6 +4883,7 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	return 0;
 }
 
+#ifndef MGEAR_CLEAN_VERSION
 
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, uint16 flag)
 {
@@ -5305,6 +5335,8 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 	return 0;
 }
 
+#endif
+
 int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, sy, py;
@@ -5630,6 +5662,8 @@ void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	st.num_calls++;
 }
 
+#ifndef MGEAR_CLEAN_VERSION
+
 void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
 {
 	uint16 i=st.num_calls;
@@ -5654,6 +5688,8 @@ void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 
 	st.num_calls++;
 }
+
+#endif
 
 void String2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {
@@ -5780,6 +5816,8 @@ void StringUI2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	st.num_calls++;
 }
 
+#ifndef MGEAR_CLEAN_VERSION
+
 void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer)
 {
 	uint16 i=st.num_calls;
@@ -5804,6 +5842,8 @@ void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 
 	st.num_calls++;
 }
+
+#endif
 
 void LineData(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z)
 {
@@ -6004,6 +6044,8 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	return 0;
 }
+
+#ifndef MGEAR_CLEAN_VERSION
 
 void SetAnim(int16 id, int16 sprite_id)
 {
@@ -6415,6 +6457,8 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	return 0;
 
 }
+
+#endif
 
 int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z)
 {	
@@ -7274,6 +7318,8 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	return 0;
 
 }
+
+#ifndef MGEAR_CLEAN_VERSION
 
 uint32 PlayMovie(const char *name)
 {
@@ -8563,6 +8609,8 @@ void DrawMap()
 	
 }
 
+#endif
+
 void DrawSys()
 {
 	register uint16 i=0;
@@ -8571,6 +8619,7 @@ void DrawSys()
 	{
 		switch(st.renderer.ppline[i].type)
 		{	
+#ifndef MGEAR_CLEAN_VERSION
 			case GRAPHICS_CALL: DrawGraphic(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
 									st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,
 									st.renderer.ppline[i].tex_sizex,st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].pos.z,0); break;
@@ -8578,15 +8627,15 @@ void DrawSys()
 			case HUD_CALL: DrawHud(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
 							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
 							  st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].pos.z); break;
-
+#endif
 			case UI_CALL: DrawUI(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
 							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,
 							  st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].pos.z); break;
-
+#ifndef MGEAR_CLEAN_VERSION
 			case STRING_CALL: DrawString(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
 								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
 								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
-
+#endif
 			case STRING2_CALL: DrawString2(st.renderer.ppline[i].text,st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,
 								  st.renderer.ppline[i].color.r,st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].color.a,st.renderer.ppline[i].font,st.renderer.ppline[i].size2.x,
 								  st.renderer.ppline[i].size2.y,st.renderer.ppline[i].pos.z); break;
@@ -9437,6 +9486,8 @@ void Finish()
 	memset(st.renderer.ppline,MAX_DRAWCALLS,sizeof(PIPELINE));
 }
 
+#if !defined (MGEAR_CLEAN_VERSION) || defined (ENABLE_SOUND_SYS)
+
 int8 LoadSoundList(char *name)
 {
 	FILE *file, *f;
@@ -9608,3 +9659,5 @@ void StopMusic()
 {
 	FMOD_Channel_Stop(st.sound_sys.music);
 }
+
+#endif

@@ -1356,7 +1356,7 @@ void UIMain_DrawSystem()
 		UI_Sys.mouse_flag=0;
 }
 
-
+#ifndef MGEAR_CLEAN_VERSION
 int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 keepaspect, int16 ang, int8 z)
 {
 	int32 sx=*sizex/2, sy=*sizey/2;
@@ -1589,6 +1589,7 @@ int8 Sys_ResizeController(int32 x, int32 y, int32 *sizex, int32 *sizey, uint8 ke
 	else
 		return 0;
 }
+#endif
 
 void Sys_ColorPicker(uint8 *r, uint8 *g, uint8 *b)
 {

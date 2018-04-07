@@ -43,13 +43,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>M:\projetos\platform\mGear-1\APIs\FMOD\inc;$(IncludePath)</IncludePath>
-    <LibraryPath>M:\projetos\platform\mGear-1\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\FMOD\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>M:\projetos\platform\mGear-1\APIs\FMOD\inc;$(IncludePath)</IncludePath>
-    <LibraryPath>M:\projetos\platform\mGear-1\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\FMOD\inc;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
