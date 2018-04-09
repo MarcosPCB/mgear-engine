@@ -34,8 +34,9 @@ int main(int argc, char *argv[])
 	uint8 normals[MAX_FRAMES], c_a_normals[32];
 	uint32 normalsize[MAX_FRAMES];
 	size_t totalsize;
-	uint16 i = 0, j = 0, k = 0, l = 0, m = 0, width, height, MGIcolor, c_tmp_frames = 0, c_a_f0[32], c_a_ff[32], c_a_w[32], c_a_h[32], c_an_w[32], c_an_h[32],
+	uint16 i = 0, j = 0, k = 0, l = 0, m = 0, MGIcolor, c_tmp_frames = 0, c_a_f0[32], c_a_ff[32], c_a_w[32], c_a_h[32], c_an_w[32], c_an_h[32],
 		c_f_w[256], c_f_h[256], c_t_x, c_t_y, c_t_w, c_atlas_frames[32], num_c_atlas = 0, num_c_atlas_normals = 0, mggframes = 0;
+	int width, height;
 	uint8 framealone[MAX_FRAMES];
 	size_t size;
 	void *buf;
@@ -46,6 +47,8 @@ int main(int argc, char *argv[])
 	memset(&mgg,0,sizeof(_MGGFORMAT));
 	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 	memset(&c_a_normals, 0, 32 * sizeof(uint8));
+	memset(files, 0, MAX_FILES * 64);
+	memset(files_n, 0, MAX_FILES * 64);
 
 	posx=(uint16*) malloc(sizeof(uint16));
 	posy=(uint16*) malloc(sizeof(uint16));
@@ -1026,8 +1029,6 @@ int main(int argc, char *argv[])
 			frameoffset[l] = ftell(file);
 
 			printf("Wrote builded atlas\n");
-
-			start_frame = c_a_ff[l] + 1;
 		}
 	}
 
@@ -1083,9 +1084,11 @@ int main(int argc, char *argv[])
 	}
 	
 	j=0;
-	for(i=start_frame;i<mgg.num_singletex+mgg.num_atlas;i++)
+	for(i=0;i<mgg.num_singletex+mgg.num_atlas;i++)
 	{
 		//if(i==33) j=42;
+
+		//if (imgatlas[i])
 
 		strcpy(framename2, framename);
 
@@ -1101,6 +1104,9 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
+			if (files[i] == NULL)
+				continue;
+
 			strcat(framename2, "/");
 			strcat(framename2, files[i]);
 		}

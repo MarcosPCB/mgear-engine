@@ -348,6 +348,45 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
+int16 LoadTexture(char *file, uint8 mipmap)
+{
+	GLuint tex;
+	int x, y, color;
+	uint8 *data;
+
+	data = stbi_load(file, &x, &y, &color, NULL);
+
+	if (!data)
+	{
+		LogApp("Error: could not load image file %s", file);
+		return -1;
+	}
+
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+
+	if (color == 3)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	
+	if (color == 4)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	if (mipmap)
+	{
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	else
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	stbi_image_free(data);
+
+	return tex;
+}
+
 #ifndef MGEAR_CLEAN_VERSION
 
 int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)

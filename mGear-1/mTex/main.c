@@ -28,8 +28,6 @@ struct nk_context *ctx;
 
 int prev_tic, curr_tic, delta;
 
-_MGGFORMAT tmgg;
-
 mTex mtex;
 
 uint16 WriteCFG()
@@ -130,6 +128,252 @@ int16 DirFiles(const char *path, char content[512][512])
 	return filenum;
 }
 
+char *CheckForNormal(char *filename)
+{
+	register int i, j;
+	int len;
+	char normal[MAX_PATH], str[8];
+	FILE *f;
+
+	len = strlen(filename);
+
+	for (i = len; i > 0; i--)
+	{
+		if (filename[i] == '.')
+			break;
+	}
+
+	strcpy(str, filename + i);
+
+	strcpy(normal, filename);
+	strcpy(normal + i, "_n");
+	strcpy(normal + i + 2, str);
+
+	if ((f = fopen(normal, "rb")) == NULL)
+		return NULL;
+	
+	fclose(f);
+
+	return normal;
+}
+
+char *CopyThisFile(char *filepath, char *newpath)
+{
+	FILE *f, *f2;
+	size_t size;
+	int len, i;
+	char newfile[MAX_PATH], *data;
+
+	if ((f = fopen(filepath, "rb")) == NULL)
+		return 0;
+
+	len = strlen(filepath);
+
+	for (i = len; i > 0; i--)
+	{
+		if (filepath[i] == '\\' || filepath[i] == '/')
+		{
+			i++;
+			break;
+		}
+	}
+
+	strcpy(newfile, newpath);
+
+	strcat(newfile, "\\");
+
+	strcat(newfile, filepath + i);
+
+	if ((f2 = fopen(newfile, "wb")) == NULL)
+	{
+		fclose(f);
+		return -1;
+	}
+
+	fseek(f, 0, SEEK_END);
+	size = ftell(f);
+	rewind(f);
+
+	data = malloc(size);
+
+	fread(data, size, 1, f);
+
+	fwrite(data, size, 1, f2);
+
+	fclose(f);
+	fclose(f2);
+
+	free(data);
+
+	return newfile;
+}
+
+char *StrTokNull(char *string)
+{
+	register int j;
+	static int i, len;
+	int state = 0;
+	char str[2048];
+	static char *buf = NULL;
+
+	if (string != NULL)
+	{
+		buf = string;
+		i = 0;
+
+		len = 0;
+		while (buf[len] != '\0' || buf[len + 1] != '\0') len++;
+	}
+
+	if (!buf)
+		return NULL;
+
+	if (i == len - 1 || i >= len)
+		return NULL;
+
+	j = 0;
+	while (buf[i] != '\0')
+	{
+		str[j] = buf[i];
+		i++;
+		j++;
+	}
+
+	str[j] = '\0';
+	i++;
+
+	return str;
+}
+
+int8 SavePrjFile(char *filepath)
+{
+	FILE *f;
+	register int i, j;
+
+	if ((f = fopen(filepath, "w")) == NULL)
+	{
+		LogApp("Error: Could not create file %s", filepath);
+		return NULL;
+	}
+
+	fprintf(f, "MGGNAME %s\n", mtex.mgg.name);
+	fprintf(f, "FRAMES %d\n", mtex.mgg.num_frames);
+	fprintf(f, "ANIMS %d\n", mtex.mgg.num_anims);
+	
+	if (mtex.mgg.RLE)
+		fprintf(f, "RLE\n");
+
+	if (mtex.mgg.mipmap)
+		fprintf(f, "MIPMAP\n");
+
+	if (mtex.mgg.num_c_atlas > 0)
+	{
+		for (i = 0; i < mtex.mgg.num_c_atlas; i++)
+		{
+			fprintf(f, "FRAMENAMES_CUSTOM_ATLAS %d ", i);
+			for (j = 0; j < mtex.mgg.num_frames; j++)
+			{
+				if (mtex.mgg.frames_atlas[j] != -1)
+				{
+					fprintf(f, "\"%s\"", mtex.mgg.texnames[j]);
+				}
+
+				if (j == mtex.mgg.num_frames - 1)
+					fprintf(f, "\n");
+				else
+					fprintf(f, ", ");
+			}
+		}
+	}
+
+	if (mtex.mgg.num_c_n_atlas > 0)
+	{
+		for (i = 0; i < mtex.mgg.num_c_n_atlas; i++)
+		{
+			fprintf(f, "FRAMENAMES_CUSTOM_ATLAS_NORMALS %d ", i);
+			for (j = 0; j < mtex.mgg.num_f_n; j++)
+			{
+				if (mtex.mgg.frames_atlas[j] != -1)
+				{
+					fprintf(f, "\"%s\"", mtex.mgg.texnames_n[j]);
+				}
+
+				if (j == mtex.mgg.num_f_n - 1)
+					fprintf(f, "\n");
+				else
+					fprintf(f, ", ");
+			}
+		}
+	}
+
+	if (mtex.mgg.num_c_atlas == 0)
+	{
+		fprintf(f, "FRAMESFILES 0 %d ", mtex.mgg.num_frames);
+
+		for (i = 0; i < mtex.mgg.num_frames; i++)
+		{
+			fprintf(f, "\"%s\"", mtex.mgg.texnames[i]);
+
+			if (i == mtex.mgg.num_frames - 1)
+				fprintf(f, "\n");
+			else
+				fprintf(f, ", ");
+		}
+	}
+	else
+	{
+		for (i = 0; i < mtex.mgg.num_frames; i++)
+		{
+			if (mtex.mgg.frames_atlas[i] == -1)
+				fprintf(f, "FRAMEFILE %d %s\n", i, mtex.mgg.texnames[i]);
+		}
+	}
+
+	if (mtex.mgg.num_c_n_atlas == 0)
+	{
+		fprintf(f, "FRAMESFILES_NORMALS 0 %d ", mtex.mgg.num_f_n);
+
+		for (i = 0; i < mtex.mgg.num_f_n; i++)
+		{
+			fprintf(f, "\"%s\"", mtex.mgg.texnames_n[i]);
+
+			if (i == mtex.mgg.num_f_n - 1)
+				fprintf(f, "\n");
+			else
+				fprintf(f, ", ");
+		}
+	}
+	else
+	{
+		for (i = 0; i < mtex.mgg.num_f_n; i++)
+		{
+			if (mtex.mgg.frames_atlas[i] == -1)
+				fprintf(f, "FRAMEFILE_NORMAL %d %s\n", i, mtex.mgg.texnames_n[i]);
+		}
+	}
+
+	if (mtex.mgg.num_f_n > 0)
+	{
+		for (i = 0; i < mtex.mgg.num_frames; i++)
+		{
+			if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+				fprintf(f, "NORMALMAP %d\n", i);
+		}
+	}
+
+	for (i = 0; i < mtex.mgg.num_frames; i++)
+	{
+		if (mtex.mgg.frameoffset_x[i] != 0 || mtex.mgg.frameoffset_y[i] != 0)
+			fprintf(f, "FRAMEOFFSET %d %d %d\n", i, mtex.mgg.frameoffset_x[i], mtex.mgg.frameoffset_y[i]);
+	}
+
+	fprintf(f, "\0\0");
+
+	fclose(f);
+
+	return 1;
+}
+
 struct nk_color ColorPicker(struct nk_color color)
 {
 	if (nk_combo_begin_color(ctx, color, nk_vec2(200, 250)))
@@ -147,264 +391,14 @@ struct nk_color ColorPicker(struct nk_color color)
 	return color;
 }
 
-int FileBrowser(char *filename)
-{
-	char path[1024];
-
-	register int i, j;
-
-	static int select = -1, time = 0, len, doubleclick = -1, doubleclick2 = -1, backpath_available = 0, fowardpath_available = 0, lenpath;
-
-	static char backpath[2048], fowardpath[2048], temp[2048];
-
-	size_t lenght;
-
-	FILE *f;
-	DIR *d;
-
-	if (nk_begin(ctx, "File Browser", nk_rect(st.screenx/2 - 400, st.screeny/2 - 225, 800, 450), NK_WINDOW_BORDER | NK_WINDOW_CLOSABLE | NK_WINDOW_MOVABLE))
-	{
-		nk_layout_space_begin(ctx, NK_DYNAMIC, 390, INT_MAX);
-
-		nk_layout_space_push(ctx, nk_rect(0.01, 0.01, 0.08, 0.08));
-		if (nk_button_label(ctx, "<"))
-		{
-			if (backpath_available)
-			{
-				strcpy(temp, UI_Sys.current_path);
-
-				if ((d = opendir(backpath)) != NULL)
-				{
-					strcpy(fowardpath, UI_Sys.current_path);
-					strcpy(UI_Sys.current_path, backpath);
-					backpath_available = 0;
-					fowardpath_available = 1;
-					strcpy(backpath, temp);
-					closedir(d);
-					SetDirContent(UI_Sys.extension);
-					doubleclick = -1;
-					doubleclick2 = -1;
-					select = -1;
-					time = 0;
-				}
-			}
-		}
-
-		nk_layout_space_push(ctx, nk_rect(0.09, 0.01, 0.08, 0.08));
-		if(nk_button_label(ctx, ">"))
-		{
-			if (fowardpath_available)
-			{
-				strcpy(temp, UI_Sys.current_path);
-
-				if ((d = opendir(fowardpath)) != NULL)
-				{
-					strcpy(backpath, UI_Sys.current_path);
-					strcpy(UI_Sys.current_path, fowardpath);
-					backpath_available = 1;
-					fowardpath_available = 0;
-					strcpy(fowardpath, temp);
-					closedir(d);
-					SetDirContent(UI_Sys.extension);
-					doubleclick = -1;
-					doubleclick2 = -1;
-					select = -1;
-					time = 0;
-				}
-			}
-		}
-
-		nk_layout_space_push(ctx, nk_rect(0.18, 0.01, 0.08, 0.08));
-		if (nk_button_label(ctx, "^"))
-		{
-			strcpy(temp, UI_Sys.current_path);
-
-			lenght = strlen(temp);
-
-			for (i = lenght; i > 0; i--)
-			{
-				if (temp[i] != 92 && temp[i] != 47)
-					temp[i] = 0;
-				
-				if (temp[i] == 92 || temp[i] == 47)
-				{
-					temp[i] = 0;
-					break;
-				}
-			}
-
-			if ((d = opendir(temp)) != NULL)
-			{
-				strcpy(backpath, UI_Sys.current_path);
-				strcpy(UI_Sys.current_path, temp);
-				backpath_available = 1;
-				fowardpath_available = 0;
-				closedir(d);
-				SetDirContent(UI_Sys.extension);
-				doubleclick = -1;
-				doubleclick2 = -1;
-				select = -1;
-				time = 0;
-			}
-		}
-
-		nk_layout_space_push(ctx, nk_rect(0.27, 0.01, 0.20, 0.08));
-		nk_button_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), "New Folder", NK_TEXT_CENTERED);
-
-		nk_layout_space_push(ctx, nk_rect(0.01, 0.10, 0.99, 0.08));
-
-		lenpath = strlen(UI_Sys.current_path);
-
-		nk_edit_string(ctx, NK_EDIT_FIELD, UI_Sys.current_path, &lenpath, 2048, nk_filter_default);
-
-		nk_layout_space_push(ctx, nk_rect(0.01, 0.20, 0.99, 0.70));
-
-		if (nk_group_begin(ctx, "content", NK_WINDOW_BORDER))
-		{
-			nk_layout_row_dynamic(ctx, 25, 1);
-
-			if (UI_Sys.num_files > 2)
-			{
-				for (i = 2, j = 0; i < UI_Sys.num_files; i++)
-				{
-					if (select == i)
-					{
-						if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
-							nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 1);
-						/*
-						{
-						if (doubleclick2 == i && (GetTimerM() - time) > 50)
-						{
-						strcpy(temp, UI_Sys.current_path);
-						strcat(temp, "\\");
-						strcat(temp, UI_Sys.files[UI_Sys.foldersp[i]]);
-
-						if ((d = opendir(temp)) != NULL)
-						{
-						strcpy(backpath, UI_Sys.current_path);
-						strcpy(UI_Sys.current_path, temp);
-						backpath_available = 1;
-						closedir(d);
-						SetDirContent(UI_Sys.extension);
-						doubleclick = -1;
-						doubleclick2 = -1;
-						select = -1;
-						time = 0;
-						break;
-						}
-						}
-						else
-						{
-						doubleclick2 = i;
-						time = GetTimerM();
-						}
-						}
-						*/
-						else
-							nk_select_label(ctx, UI_Sys.files[UI_Sys.filesp[i]], NK_TEXT_RIGHT, 1);
-						/*
-						{
-							if (doubleclick2 == i && (GetTimerM() - time) > 50)
-							{
-								strcpy(temp, UI_Sys.current_path);
-								strcat(temp, "\\");
-								strcat(temp, UI_Sys.files[UI_Sys.filesp[i]]);
-
-								if ((f = fopen(temp, "rb")) == NULL)
-								{
-									fclose(f);
-									return temp;
-								}
-							}
-							else
-								doubleclick2 = i;
-						}
-						*/
-					}
-					else
-					{
-						if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
-						{
-							if (nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 0))
-							{
-								select = i;
-								doubleclick = i;
-								time = GetTimerM();
-							}
-						}
-						else
-						{
-							if (nk_select_label(ctx, UI_Sys.files[UI_Sys.filesp[i]], NK_TEXT_RIGHT, 0))
-								select = i;
-						}
-					}
-				}
-
-				nk_group_end(ctx);
-			}
-			else
-				nk_spacing(ctx, 1);
-		}
-
-		nk_layout_space_push(ctx, nk_rect(0.80, 0.92, 0.10, 0.08));
-		if (nk_button_label(ctx, "Open"))
-		{
-			if (UI_Sys.filesp[select] == UI_Sys.foldersp[select])
-			{
-				strcpy(temp, UI_Sys.current_path);
-				strcat(temp, "\\");
-				strcat(temp, UI_Sys.files[UI_Sys.foldersp[select]]);
-
-				if ((d = opendir(temp)) != NULL)
-				{
-					strcpy(backpath, UI_Sys.current_path);
-					strcpy(UI_Sys.current_path, temp);
-					backpath_available = 1;
-					closedir(d);
-					SetDirContent(UI_Sys.extension);
-					doubleclick = -1;
-					doubleclick2 = -1;
-					select = -1;
-					time = 0;
-				}
-			}
-			else
-			{
-				strcpy(temp, UI_Sys.current_path);
-				strcat(temp, "\\");
-				strcat(temp, UI_Sys.files[UI_Sys.filesp[select]]);
-
-				if ((f = fopen(temp, "rb")) != NULL)
-				{
-					fclose(f);
-					nk_end(ctx);
-					strcpy(filename, temp);
-					return 1;
-				}
-			}
-		}
-
-		nk_layout_space_push(ctx, nk_rect(0.90, 0.92, 0.10, 0.08));
-		if (nk_button_label(ctx, "Cancel"))
-		{
-			nk_end(ctx);
-			return -1;
-		}
-
-	}
-
-	nk_end(ctx);
-
-	return 0;
-}
-
-void NewMGGBox(const char path[MAX_PATH])
+int NewMGGBox(const char path[MAX_PATH])
 {
 	register int i, j, k;
-	static char path2[MAX_PATH], files[MAX_PATH * 64] = { 0 }, tex[512][MAX_PATH], tex_n[512][MAX_PATH], path3[MAX_PATH], str[32], tex_names[512][32], tex_n_names[512][32];
-	static int len, state = 0, num_files_t = 0, num_files_n = 0;
+	static char path2[MAX_PATH], files[MAX_PATH + (32 * 512)], tex[512][MAX_PATH], tex_n[512][MAX_PATH], path3[MAX_PATH], str[32], tex_names[512][32], tex_n_names[512][32],
+		prj_name[32] = { 0 }, mgg_name[32] = { 0 }, command[MAX_PATH + 32];
+	static int len, state = 0, num_files_t = 0, num_files_n = 0, len_prj_n = 0, len_in_n = 0, fls[512], flsn[512];
 	int len2;
-	char *tok = NULL;
+	char *tok = NULL, strerror[1024];
 
 	OPENFILENAME ofn;
 	ZeroMemory(&files, sizeof(files));
@@ -412,10 +406,10 @@ void NewMGGBox(const char path[MAX_PATH])
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
 	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.tga;*.bmp\0Any File\0*.*\0";
+	ofn.nMaxFile = MAX_PATH + (32 * 512);
 	ofn.lpstrFile = files;
-	ofn.nMaxFile = MAX_PATH*2;
 	ofn.lpstrTitle = "Select textures to import";
-	//strcpy(ofn.lpstrInitialDir, path);
+	//ofn.hInstance = OFN_EXPLORER;
 	ofn.lpstrInitialDir = path;
 
 	BROWSEINFO bi;
@@ -424,19 +418,22 @@ void NewMGGBox(const char path[MAX_PATH])
 
 	static LPITEMIDLIST pidl;
 
-	ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT;
+	ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT | OFN_EXPLORER;
 
 	if (!state)
 	{
+		memset(&fls, -1, 512 * sizeof(int));
+		memset(&flsn, -1, 512 * sizeof(int));
+
 		strcpy(path2, path);
 		len = strlen(path2);
 		
 		state = 1;
 	}
 
-	if (nk_begin(ctx, "Create new MGG project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+	if (nk_begin(ctx, "Create new MGG project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - (564/2), 512, 564), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 20, 2);
 
 		nk_layout_row_push(ctx, 0.85f);
 		nk_edit_string(ctx, NK_EDIT_SIMPLE, path2, &len, MAX_PATH, nk_filter_default);
@@ -444,7 +441,7 @@ void NewMGGBox(const char path[MAX_PATH])
 		nk_layout_row_push(ctx, 0.15f);
 		if (nk_button_label(ctx, "Browse"))
 		{
-			bi.lpszTitle = ("Select your project folder");
+			bi.lpszTitle = ("Select a folder to create the project");
 
 			pidl = SHBrowseForFolder(&bi);
 
@@ -460,7 +457,19 @@ void NewMGGBox(const char path[MAX_PATH])
 		nk_layout_row_end(ctx);
 
 		nk_layout_row_dynamic(ctx, 10, 1);
-		nk_spacing(ctx, 1);
+		nk_label(ctx, "Project name", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_edit_string(ctx, NK_EDIT_SIMPLE, prj_name, &len_prj_n, 32, nk_filter_default);
+
+		nk_layout_row_dynamic(ctx, 10, 1);
+		nk_label(ctx, "MGG internal name", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_edit_string(ctx, NK_EDIT_SIMPLE, mgg_name, &len_in_n, 32, nk_filter_default);
+
+		//nk_layout_row_dynamic(ctx, 10, 1);
+		//nk_spacing(ctx, 1);
 
 		nk_layout_row_dynamic(ctx, 30, 2);
 		if (nk_button_label(ctx, "Import textures"))
@@ -469,16 +478,16 @@ void NewMGGBox(const char path[MAX_PATH])
 			{
 				state = 1;
 				i = 0;
-				while (state)
+				while (state == 1)
 				{
 					if (i == 0)
 					{
-						tok = strtok(files, " ");
+						tok = StrTokNull(files);
 						strcpy(path3, tok);
 					}
 					else
 					{
-						tok = strtok(NULL, " ");
+						tok = StrTokNull(NULL);
 
 						if (!tok)
 						{
@@ -498,18 +507,71 @@ void NewMGGBox(const char path[MAX_PATH])
 
 								strcpy(tex_names[num_files_t], path3 + j);
 
+								tok = CheckForNormal(tex[num_files_t]);
+
+								if (tok)
+								{
+									strcpy(tex_n[num_files_n], tok);
+
+									len2 = strlen(tok);
+
+									for (j = len2; j > 0; j--)
+									{
+										if (tok[j] == '\\' || tok[j] == '/')
+										{
+											j++;
+											break;
+										}
+									}
+
+									strcpy(tex_n_names[num_files_n], tok + j);
+
+									flsn[num_files_n] = num_files_n;
+
+									num_files_n++;
+								}
+
+								fls[num_files_t] = num_files_t;
+
 								num_files_t++;
 							}
-							state = 0;
+							state = 2;
 							i = 0;
 							break;
 						}
 						else
 						{
 							strcpy(tex[num_files_t], path3);
-							//strcat(tex[num_files_t], "\\");
+							strcat(tex[num_files_t], "\\");
 							strcat(tex[num_files_t], tok);
 							strcpy(tex_names[num_files_t], tok);
+
+							tok = CheckForNormal(tex[num_files_t]);
+
+							if (tok)
+							{
+								strcpy(tex_n[num_files_n], tok);
+
+								len2 = strlen(tok);
+
+								for (j = len2; j > 0; j--)
+								{
+									if (tok[j] == '\\' || tok[j] == '/')
+									{
+										j++;
+										break;
+									}
+								}
+
+								strcpy(tex_n_names[num_files_n], tok + j);
+
+								flsn[num_files_n] = num_files_n;
+
+								num_files_n++;
+							}
+
+							fls[num_files_t] = num_files_t;
+
 							num_files_t++;
 						}
 					}
@@ -533,12 +595,12 @@ void NewMGGBox(const char path[MAX_PATH])
 				{
 					if (i == 0)
 					{
-						tok = strtok(files, " ");
+						tok = StrTokNull(files);
 						strcpy(path3, tok);
 					}
 					else
 					{
-						tok = strtok(NULL, " ");
+						tok = StrTokNull(NULL);
 
 						if (!tok)
 						{
@@ -558,17 +620,23 @@ void NewMGGBox(const char path[MAX_PATH])
 
 								strcpy(tex_n_names[num_files_n], path3 + j);
 
+								flsn[num_files_n] = num_files_n;
+
 								num_files_n++;
 							}
-							state = 0;
+							state = 2;
 							i = 0;
 							break;
 						}
 						else
 						{
 							strcpy(tex_n[num_files_n], path3);
+							strcat(tex[num_files_t], "\\");
 							strcat(tex_n[num_files_n], tok);
 							strcpy(tex_n_names[num_files_n], tok);
+
+							flsn[num_files_n] = num_files_n;
+
 							num_files_n++;
 						}
 					}
@@ -590,14 +658,51 @@ void NewMGGBox(const char path[MAX_PATH])
 				sprintf(str, "%d", i);
 				nk_label(ctx, str, NK_TEXT_ALIGN_LEFT);
 
-				nk_layout_row_push(ctx, 0.70f);
-				nk_label(ctx, tex_names[i], NK_TEXT_ALIGN_LEFT);
+				nk_layout_row_push(ctx, 0.60f);
+
+				nk_label(ctx, tex_names[fls[i]], NK_TEXT_ALIGN_LEFT);
+
+				nk_style_default(ctx);
 
 				nk_layout_row_push(ctx, 0.1f);
-				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_UP);
+
+				if (fls[i] < 1024)
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_MINUS))
+						fls[i] += 1024;
+				}
+				else
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_PLUS))
+						fls[i] -= 1024;
+				}
 
 				nk_layout_row_push(ctx, 0.1f);
-				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_DOWN);
+				if (i > 0)
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_UP))
+					{
+						j = fls[i];
+						fls[i] = fls[i - 1];
+						fls[i - 1] = j;
+					}
+				}
+				else
+					nk_spacing(ctx, 1);
+
+				nk_layout_row_push(ctx, 0.1f);
+				if (i < num_files_t - 1)
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_DOWN))
+					{
+						j = fls[i];
+						fls[i] = fls[i + 1];
+						fls[i + 1] = j;
+					}
+				}
+				else
+					nk_spacing(ctx, 1);
+
 				nk_layout_row_end(ctx);
 			}
 
@@ -606,21 +711,58 @@ void NewMGGBox(const char path[MAX_PATH])
 
 		if (nk_group_begin(ctx, "Selected normal maps", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 		{
-			for (i = 0; i < num_files_n; i++)
+			for (i = 0; i < num_files_t; i++)
 			{
 				nk_layout_row_begin(ctx, NK_DYNAMIC, 15, 4);
 				nk_layout_row_push(ctx, 0.1f);
 				sprintf(str, "%d", i);
 				nk_label(ctx, str, NK_TEXT_ALIGN_LEFT);
 
-				nk_layout_row_push(ctx, 0.70f);
-				nk_label(ctx, tex_n_names[i], NK_TEXT_ALIGN_LEFT);
+				nk_layout_row_push(ctx, 0.60f);
+
+				nk_label(ctx, tex_n_names[flsn[i]], NK_TEXT_ALIGN_LEFT);
+
+				nk_style_default(ctx);
 
 				nk_layout_row_push(ctx, 0.1f);
-				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_UP);
+
+				if (flsn[i] < 1024 && flsn[i] != -1)
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_MINUS))
+						flsn[i] += 1024;
+				}
+				else
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_PLUS))
+						flsn[i] -= 1024;
+				}
 
 				nk_layout_row_push(ctx, 0.1f);
-				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_DOWN);
+				if (i > 0)
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_UP))
+					{
+						j = flsn[i];
+						flsn[i] = flsn[i - 1];
+						flsn[i - 1] = j;
+					}
+				}
+				else
+					nk_spacing(ctx, 1);
+
+				nk_layout_row_push(ctx, 0.1f);
+				if (i < num_files_t - 1)
+				{
+					if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_DOWN) && i)
+					{
+						j = flsn[i];
+						flsn[i] = flsn[i + 1];
+						flsn[i + 1] = j;
+					}
+				}
+				else
+					nk_spacing(ctx, 1);
+
 				nk_layout_row_end(ctx);
 			}
 
@@ -632,27 +774,195 @@ void NewMGGBox(const char path[MAX_PATH])
 
 		nk_layout_row_dynamic(ctx, 15, 2);
 
-		mtex.RLE = nk_option_label(ctx, "None", mtex.RLE == 0) ? 0 : mtex.RLE;
-		mtex.RLE = nk_option_label(ctx, "RLE (faster)", mtex.RLE == 1) ? 1 : mtex.RLE;
+		mtex.mgg.RLE = nk_option_label(ctx, "None", mtex.mgg.RLE == 0) ? 0 : mtex.mgg.RLE;
+		mtex.mgg.RLE = nk_option_label(ctx, "RLE (faster)", mtex.mgg.RLE == 1) ? 1 : mtex.mgg.RLE;
 
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "Texture mipmap (filter)", NK_TEXT_ALIGN_LEFT);
 
 		nk_layout_row_dynamic(ctx, 15, 2);
 
-		tmgg.mipmap = nk_option_label(ctx, "Nearest", tmgg.mipmap == 1) ? 1 : tmgg.mipmap;
-		tmgg.mipmap = nk_option_label(ctx, "Linear", tmgg.mipmap == 0) ? 0 : tmgg.mipmap;
+		mtex.mgg.mipmap = nk_option_label(ctx, "Nearest", mtex.mgg.mipmap == 1) ? 1 : mtex.mgg.mipmap;
+		mtex.mgg.mipmap = nk_option_label(ctx, "Linear", mtex.mgg.mipmap == 0) ? 0 : mtex.mgg.mipmap;
 
 		nk_layout_row_dynamic(ctx, 25, 6);
 		nk_spacing(ctx, 4);
 
-		nk_button_label(ctx, "Create");
-		nk_button_label(ctx, "Cancel");
+		if (nk_button_label(ctx, "Create"))
+		{
+			state = 3;
 
+			if (!len_prj_n)
+			{
+				MessageBox(NULL, "Error: Project name is empty", "Error", MB_OK);
+				state = 2;
+			}
+			
+			if (!len_in_n)
+			{
+				MessageBox(NULL, "Error: MGG internal name is empty", "Error", MB_OK);
+				state = 2;
+			}
 
+			for (i = 0, j = 0; i < num_files_t; i++)
+			{
+				if (fls[i] < 1024)
+					j++;
+			}
+
+			if (!num_files_t || j == 0)
+			{
+				MessageBox(NULL, "Error: No textures selected", "Error", MB_OK);
+				state = 2;
+			}
+
+			if (state == 3)
+			{
+				strcat(path2, "\\");
+				strcat(path2, prj_name);
+				sprintf(command, "mkdir \"%s\"", path2);
+				system(command);
+
+				strcpy(mtex.mgg.name, mgg_name);
+
+				strcpy(mtex.mgg.path, path2);
+
+				for (i = 0; i < num_files_t; i++)
+				{
+					if (fls[i] < 1024)
+						mtex.mgg.num_frames++;
+				}
+
+				for (i = 0; i < num_files_n; i++)
+				{
+					if (flsn[i] < 1024)
+						mtex.mgg.num_f_n++;
+				}
+
+				mtex.mgg.fn = malloc(mtex.mgg.num_frames * sizeof(int16));
+				memset(mtex.mgg.fn, -1, mtex.mgg.num_frames * sizeof(int16));
+				mtex.mgg.fnn = malloc(mtex.mgg.num_frames * sizeof(int16));
+				memset(mtex.mgg.fnn, -1, mtex.mgg.num_frames * sizeof(int16));
+				mtex.mgg.frames_atlas = malloc(mtex.mgg.num_frames * sizeof(int8));
+				memset(mtex.mgg.frames_atlas, -1, mtex.mgg.num_frames * sizeof(int8));
+				mtex.textures = malloc(mtex.mgg.num_frames * sizeof(int16));
+				mtex.textures_n = malloc(mtex.mgg.num_f_n * sizeof(int16));
+
+				for (i = 0, j = 0; i < num_files_t; i++)
+				{
+					if (fls[i] < 1024)
+					{
+						tok = CopyThisFile(tex[fls[i]], path2);
+						if (tok == NULL)
+						{
+							sprintf(strerror, "Error: Texture %s could not be opened", tex[fls[i]]);
+							MessageBox(NULL, strerror, "Error", MB_OK);
+						}
+
+						if (tok == -1)
+						{
+							sprintf(strerror, "Error: Texture %s could not be copied", tex[fls[i]]);
+							MessageBox(NULL, strerror, "Error", MB_OK);
+						}
+
+						if (tok)
+						{
+							mtex.mgg.fn[j] = j;
+							strcpy(mtex.mgg.files[j], tok);
+							strcpy(mtex.mgg.texnames[j], tex_names[fls[i]]);
+
+							if ((mtex.textures[j] = LoadTexture(mtex.mgg.files[j], mtex.mgg.mipmap)) == -1)
+							{
+								sprintf(strerror, "Error: Texture %s could not be loaded", mtex.mgg.files[j]);
+								MessageBox(NULL, strerror, "Error", MB_OK);
+							}
+
+							j++;
+						}
+					}
+				}
+
+				for (i = 0, j = 0; i < num_files_t; i++)
+				{
+					if (flsn[i] < 1024 && flsn[i] != -1)
+					{
+						tok = CopyThisFile(tex_n[flsn[i]], path2);
+						if (tok == NULL)
+						{
+							sprintf(strerror, "Error: Texture %s could not be opened", tex_n[flsn[i]]);
+							MessageBox(NULL, strerror, "Error", MB_OK);
+						}
+
+						if (tok == -1)
+						{
+							sprintf(strerror, "Error: Texture %s could not be copied", tex_n[flsn[i]]);
+							MessageBox(NULL, strerror, "Error", MB_OK);
+						}
+
+						if (tok)
+						{
+							mtex.mgg.fnn[j] = j;
+							strcpy(mtex.mgg.files_n[j], tok);
+							strcpy(mtex.mgg.texnames_n[j], tex_n_names[flsn[i]]);
+
+							if ((mtex.textures_n[j] = LoadTexture(mtex.mgg.files_n[j], mtex.mgg.mipmap)) == -1)
+							{
+								sprintf(strerror, "Error: Texture %s could not be loaded", mtex.mgg.files_n[j]);
+								MessageBox(NULL, strerror, "Error", MB_OK);
+							}
+
+							j++;
+						}
+					}
+				}
+
+				strcpy(path3, path2);
+				strcat(path3, "\\");
+				strcat(path3, prj_name);
+				strcat(path3, ".texprj");
+				SavePrjFile(path3);
+
+				state = 4;
+			}
+		}
+
+		if (nk_button_label(ctx, "Cancel"))
+			state = 5;
 	}
 
 	nk_end(ctx);
+
+	if (state == 4)
+	{
+		num_files_n = 0;
+		num_files_t = 0;
+		memset(tex_names, 0, sizeof(tex_names));
+		memset(tex_n_names, 0, sizeof(tex_n_names));
+		memset(tex, 0, sizeof(tex));
+		memset(tex_n, 0, sizeof(tex_n));
+		memset(fls, 0, sizeof(512));
+		memset(flsn, 0, sizeof(512));
+		memset(path3, 0, sizeof(512));
+		state = 0;
+		return 1;
+	}
+
+	if (state == 5)
+	{
+		num_files_n = 0;
+		num_files_t = 0;
+		memset(tex_names, 0, sizeof(tex_names));
+		memset(tex_n_names, 0, sizeof(tex_n_names));
+		memset(tex, 0, sizeof(tex));
+		memset(tex_n, 0, sizeof(tex_n));
+		memset(fls, 0, sizeof(512));
+		memset(flsn, 0, sizeof(512));
+		memset(path3, 0, sizeof(512));
+		state = 0;
+		return -1;
+	}
+
+	return NULL;
 }
 
 void MenuBar()
@@ -682,15 +992,10 @@ void MenuBar()
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 				if (nk_menu_item_label(ctx, "New MGG", NK_TEXT_LEFT))
-				{
 					state = 1;
-				}
 
 				if (nk_menu_item_label(ctx, "Open MGG txt file", NK_TEXT_LEFT))
-				{
-					//SetDirContent("mgm");
 					state = 2;
-				}
 
 				nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT);
 				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
@@ -727,7 +1032,8 @@ void MenuBar()
 
 		if (state == 1)
 		{
-			bi.lpszTitle = ("Select your project folder");
+			bi.lpszTitle = ("Select a folder to create the project");
+			bi.ulFlags = BIF_USENEWUI;
 
 			pidl = SHBrowseForFolder(&bi);
 
@@ -746,10 +1052,11 @@ void MenuBar()
 			{
 				SHGetPathFromIDList(pidl, path);
 				
-				NewMGGBox(path);
-			}
+				a = NewMGGBox(path);
 
-			//state = 0;
+				if (a != 0)
+					state = 0;
+			}
 		}
 	}
 }
@@ -913,11 +1220,89 @@ void LeftPannel()
 
 void Canvas()
 {
+	register int i, j, k;
+	char str[128];
+	static int option = 0;
 	ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
 
-	if (nk_begin(ctx, "Canvas", nk_rect(0.10f * st.screenx, 30, 0.70f * st.screenx, st.screeny), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+	if (nk_begin(ctx, mtex.mgg.name, nk_rect(0.10f * st.screenx, 30, 0.70f * st.screenx, st.screeny), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
+		nk_layout_row_dynamic(ctx, 25, 1);
 
+		if (option == mtex.mgg.num_c_atlas)
+			sprintf(str, "Single textures");
+		else
+			sprintf(str, "Atlas %d", option + 1);
+
+		if (nk_combo_begin_label(ctx, str, nk_vec2(nk_widget_width(ctx), 30 * mtex.mgg.num_c_atlas + 1)))
+		{
+			for (i = 0; i < mtex.mgg.num_c_atlas + 1; i++)
+			{
+				nk_layout_row_dynamic(ctx, 25, 1);
+				if (i == mtex.mgg.num_c_atlas)
+				{
+					if (nk_combo_item_label(ctx, "Single textures", NK_TEXT_ALIGN_LEFT))
+						option = i;
+				}
+				else
+				{
+					sprintf(str, "Atlas %d", i + 1);
+					if (nk_combo_item_label(ctx, str, NK_TEXT_ALIGN_LEFT))
+						option = i;
+				}
+			}
+		}
+
+		nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
+
+		if (option == mtex.mgg.num_c_atlas)
+		{
+			for (i = 0, j = 0; i < mtex.mgg.num_frames; i++)
+			{
+				if (mtex.mgg.fn[i] < 1024)
+				{
+					if (j == 8)
+					{
+						nk_layout_row_dynamic(ctx, 20, 8);
+
+						for (k = 0; k < 8; k++)
+						{
+							if (mtex.mgg.fn[i - (8 - k)] < 1024)
+							{
+								sprintf(str, "%d - %s", i - (8 - k), mtex.mgg.texnames[i - (8 - k)]);
+								nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
+							}
+						}
+
+						j = 0;
+
+						nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
+					}
+
+					mtex.selection[i] = nk_select_image_label(ctx, nk_image_id(mtex.textures[i]), " ", NK_TEXT_ALIGN_MIDDLE, mtex.selection[i] == 1);
+
+					if (j < 8)
+						j++;
+				}
+			}
+
+			if (j > 0)
+			{
+				nk_layout_row_dynamic(ctx, 20, 8);
+
+				for (k = 0; k < j; k++)
+				{
+					if (mtex.mgg.fn[i - (j - k)] < 1024)
+					{
+						sprintf(str, "%d - %s", i - (j - k), mtex.mgg.texnames[i - (j - k)]);
+						nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
+					}
+				}
+
+				j = 0;
+
+			}
+		}
 	}
 
 	nk_end(ctx);
@@ -938,7 +1323,7 @@ void AnimBox()
 int main(int argc, char *argv[])
 {
 	char str[64];
-	int loops;
+	int loops, i;
 
 	struct nk_color background;
 
@@ -1012,9 +1397,12 @@ int main(int argc, char *argv[])
 		DrawSys();
 
 		MenuBar();
-		LeftPannel();
-		Canvas();
-		AnimBox();
+		if (mtex.mgg.num_frames > 0)
+		{
+			LeftPannel();
+			Canvas();
+			AnimBox();
+		}
 
 		UIMain_DrawSystem();
 		//MainSound();
@@ -1028,6 +1416,33 @@ int main(int argc, char *argv[])
 		SwapBuffer(wn);
 
 		nkrendered = 0;
+	}
+
+	if (mtex.mgg.fn)
+		free(mtex.mgg.fn);
+
+	if (mtex.mgg.fnn)
+		free(mtex.mgg.fnn);
+
+	if (mtex.mgg.frames_atlas)
+		free(mtex.mgg.frames_atlas);
+
+	if (mtex.mgg.mga)
+		free(mtex.mgg.mga);
+
+	if (mtex.mgg.num_f_a)
+		free(mtex.mgg.num_f_a);
+
+	if (mtex.textures)
+	{
+		glDeleteTextures(mtex.mgg.num_frames, mtex.textures);
+		free(mtex.textures);
+	}
+
+	if (mtex.textures_n)
+	{
+		glDeleteTextures(mtex.mgg.num_f_n, mtex.textures_n);
+		free(mtex.textures_n);
 	}
 
 	Quit();

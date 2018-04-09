@@ -23,7 +23,21 @@ struct _mTex
 	int16 pannel;
 	int16 command2;
 	int16 state;
-	uint8 RLE;
+
+	GLuint *textures;
+	GLuint *textures_n;
+	uint8 selection[512];
+
+	struct MGGformat
+	{
+		char name[32], path[MAX_PATH], files[512][MAX_PATH], files_n[512][MAX_PATH], texnames[512][64], texnames_n[512][64];
+		int16 num_frames, num_f_n, num_c_atlas, num_c_n_atlas, num_anims, num_atlas, *num_f_a, *fn, *fnn;
+		_MGGANIM *mga;
+		int8 *frames_atlas;
+		uint8 RLE, mipmap;
+		int16 frameoffset_x[512];
+		int16 frameoffset_y[512];
+	} mgg;
 };
 
 typedef struct _mTex mTex;

@@ -27,12 +27,18 @@
     <ClInclude Include="mgg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="mggcreator.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rle.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

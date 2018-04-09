@@ -1235,6 +1235,8 @@ int8 LoadLightmapFromFile(const char *file);
 
 void LockCamera();
 
+int16 LoadTexture(char *file, uint8 mipmap);
+
 //#ifdef MFC_MGEAR
 //}
 //#endif
