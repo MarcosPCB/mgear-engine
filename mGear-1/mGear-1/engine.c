@@ -80,7 +80,12 @@ void LogIn(void *userdata, int category, SDL_LogPriority log, const char *messag
 {
 	FILE *file;
 	size_t size;
-	if((file=fopen("mgear.log","a+"))==NULL)
+	char filepath[MAX_PATH];
+
+	strcpy(filepath, st.CurrPath);
+	strcat(filepath, "\\mgear.log");
+
+	if((file=fopen(filepath,"a+"))==NULL)
 	{
 		if(MessageBox(NULL,L"Opening log file failed",NULL,MB_OK | MB_ICONERROR)==IDOK)
 			Quit();
@@ -96,9 +101,14 @@ void CreateLog()
 {
 	FILE *file;
 	float version=_ENGINE_VERSION;
-	if((file=fopen("mgear.log","w"))==NULL)
+	char filepath[MAX_PATH];
+
+	strcpy(filepath, st.CurrPath);
+	strcat(filepath, "\\mgear.log");
+
+	if((file=fopen(filepath,"w"))==NULL)
 	{
-		if(MessageBox(NULL,L"Create log failed",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+		if(MessageBox(NULL,"Create log failed",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			exit(1);
 	}
 
@@ -348,7 +358,7 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
-int16 LoadTexture(char *file, uint8 mipmap)
+int16 LoadTexture(char *file, uint8 mipmap, Pos *size)
 {
 	GLuint tex;
 	int x, y, color;
@@ -383,6 +393,9 @@ int16 LoadTexture(char *file, uint8 mipmap)
 	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	stbi_image_free(data);
+
+	size->x = x;
+	size->y = y;
 
 	return tex;
 }
@@ -1469,6 +1482,8 @@ void Init()
 	//printf("Waiting...\n");
 	//system("pause");
 #endif
+
+	GetCurrentDirectory(MAX_PATH, st.CurrPath);
 
 	CreateLog();
 
