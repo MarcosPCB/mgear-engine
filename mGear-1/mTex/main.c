@@ -301,6 +301,7 @@ int8 SavePrjFile(char *filepath)
 {
 	FILE *f;
 	register int i, j;
+	int anims = 0;
 
 	if ((f = fopen(filepath, "w")) == NULL)
 	{
@@ -308,9 +309,15 @@ int8 SavePrjFile(char *filepath)
 		return NULL;
 	}
 
+	for (i = 0; i < mtex.mgg.num_anims; i++)
+	{
+		if (mtex.mgg.an[i] < 1024)
+			anims++;
+	}
+
 	fprintf(f, "MGGNAME %s\n", mtex.mgg.name);
 	fprintf(f, "FRAMES %d\n", mtex.mgg.num_frames);
-	fprintf(f, "ANIMS %d\n", mtex.mgg.num_anims);
+	fprintf(f, "ANIMS %d\n", anims);
 	
 	if (mtex.mgg.RLE)
 		fprintf(f, "RLE\n");
@@ -427,11 +434,17 @@ int8 SavePrjFile(char *filepath)
 			fprintf(f, "FRAMEOFFSET %d %d %d\n", i, mtex.mgg.frameoffset_x[i], mtex.mgg.frameoffset_y[i]);
 	}
 
-	if (mtex.mgg.num_anims > 0)
+	if (anims > 0)
 	{
-		for (i = 0; i < mtex.mgg.num_anims; i++)
-			fprintf(f, "BEGIN\nANIM %d\nNAME %s\nFRAMESA %d\nSTARTF %d\nENDF %d\nSPEED %d\nENDA\n", i,mtex.mgg.mga[i].name, mtex.mgg.mga[i].num_frames, mtex.mgg.mga[i].startID,
-				mtex.mgg.mga[i].endID,mtex.mgg.mga[i].speed);
+		for (i = 0, j = 0; i < mtex.mgg.num_anims; i++)
+		{
+			if (mtex.mgg.an[i] < 1024)
+			{
+				fprintf(f, "BEGIN\nANIM %d\nNAME %s\nFRAMESA %d\nSTARTF %d\nENDF %d\nSPEED %d\nENDA\n", j, mtex.mgg.mga[mtex.mgg.an[i]].name,
+					mtex.mgg.mga[mtex.mgg.an[i]].num_frames, mtex.mgg.mga[mtex.mgg.an[i]].startID, mtex.mgg.mga[mtex.mgg.an[i]].endID, mtex.mgg.mga[mtex.mgg.an[i]].speed);
+				j++;
+			}
+		}
 	}
 
 	fprintf(f, "\0\0");
