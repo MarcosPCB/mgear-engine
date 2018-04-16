@@ -912,7 +912,7 @@ struct _SETTINGS_
 	uint32 backtrack;
 	char typetext[128];
 	char WINDOW_NAME[64];
-	char WindowTitle[32];
+	char WindowTitle[48];
 
 	uint16 screenx;
 	uint16 screeny;
@@ -1235,7 +1235,7 @@ int8 LoadLightmapFromFile(const char *file);
 
 void LockCamera();
 
-int16 LoadTexture(char *file, uint8 mipmap);
+int16 LoadTexture(const char *file, uint8 mipmap, Pos *size);
 
 //#ifdef MFC_MGEAR
 //}

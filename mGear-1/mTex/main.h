@@ -17,6 +17,7 @@
 #define CREATE_ATLAS 8
 #define MULT_SELECT 9
 #define MOV_ANIM 10
+#define MOV_TEX 11
 
 #define RE_NOTOK 2
 #define RE_UNTOK_W 4
@@ -33,17 +34,20 @@ struct _mTex
 	int16 pannel;
 	int16 command2;
 	int16 state;
+	int canvas;
 
 	GLuint *textures;
 	Pos *size;
 	GLuint *textures_n;
 	int selection[512];
-	int first_sel, last_sel;
+	int first_sel, last_sel, first_sel_slot, last_sel_slot;
 	int anim_selected;
 	int anim_slot;
 	int selected;
+	int sel_slot;
+	int sel_slots[512];
 	uint8 mult_selection;
-	char prj_path[MAX_PATH];
+	char prj_path[MAX_PATH], filename[32];
 	int8 dn_mode;
 
 	uint8 play, stop, pause, next, back;
@@ -57,7 +61,9 @@ struct _mTex
 		uint8 RLE, mipmap;
 		int16 frameoffset_x[512];
 		int16 frameoffset_y[512];
-	} mgg;
+	} mgg, mgg2;
+
+	int8 changes_detected;
 };
 
 typedef struct _mTex mTex;

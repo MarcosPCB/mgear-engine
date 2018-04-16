@@ -358,7 +358,7 @@ void CalTan32u(int16 ang, uint32 *val)
 	*val/=100;
 }
 
-int16 LoadTexture(char *file, uint8 mipmap, Pos *size)
+int16 LoadTexture(const char *file, uint8 mipmap, Pos *size)
 {
 	GLuint tex;
 	int x, y, color;
@@ -368,7 +368,7 @@ int16 LoadTexture(char *file, uint8 mipmap, Pos *size)
 
 	if (!data)
 	{
-		LogApp("Error: could not load image file %s", file);
+		LogApp("Error: could not load image file %s %s", file, stbi_failure_reason());
 		return -1;
 	}
 
