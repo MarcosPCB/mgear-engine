@@ -14,7 +14,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 
-#define STBI_NO_PSD
+//#define STBI_NO_PSD
 #define STBI_NO_GIF
 #define STBI_NO_PNM
 #define STBI_NO_HDR
@@ -393,9 +393,11 @@ int16 LoadTexture(const char *file, uint8 mipmap, Pos *size)
 	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	stbi_image_free(data);
-
-	size->x = x;
-	size->y = y;
+	if (size)
+	{
+		size->x = x;
+		size->y = y;
+	}
 
 	return tex;
 }
@@ -2405,7 +2407,7 @@ int32 CheckMGGInSystem(const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1")!=NULL)
+	if(strcmp(header,"MGG File Version 2")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",header);
 		fclose(file);
@@ -2472,7 +2474,7 @@ uint32 CheckMGGFile(const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1")!=NULL)
+	if(strcmp(header,"MGG File Version 2")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",name);
 		fclose(file);
@@ -2483,7 +2485,7 @@ uint32 CheckMGGFile(const char *name)
 
 	fread(&mggf,sizeof(_MGGFORMAT),1,file);
 
-	if((mggf.type!=SPRITEM && mggf.type!=TEXTUREM && mggf.type!=NONE) || (mggf.num_animations<0 || mggf.num_animations>MAX_ANIMATIONS) || (mggf.num_frames<0 || mggf.num_frames>MAX_FRAMES))
+	if((mggf.num_animations<0 || mggf.num_animations>MAX_ANIMATIONS) || (mggf.num_frames<0 || mggf.num_frames>MAX_FRAMES))
 	{
 		fclose(file);
 		LogApp("Invalid MGG file %s",name);
@@ -2503,7 +2505,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	 uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
 	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES], *framealone;
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
-	uint8 *imgatlas;
+	int8 *imgatlas;
 	uint16 *w, *h, *currh, *offx, *offy;
 	int width, height, channel;
 	unsigned char *imgdata;
@@ -2552,7 +2554,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fread(header,21,1,file);
 
-	if(strcmp(header,"MGG File Version 1")!=NULL)
+	if(strcmp(header,"MGG File Version 2")!=NULL)
 	{
 		LogApp("Invalid MGG file header %s",header);
 		fclose(file);
@@ -2561,7 +2563,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fread(&mggf,sizeof(_MGGFORMAT),1,file);
 
-	if((mggf.type!=SPRITEM && mggf.type!=TEXTUREM && mggf.type!=NONE) || (mggf.num_animations<0 || mggf.num_animations>MAX_ANIMATIONS) || (mggf.num_frames<0 || mggf.num_frames>MAX_FRAMES))
+	if((mggf.num_animations<0 || mggf.num_animations>MAX_ANIMATIONS) || (mggf.num_frames<0 || mggf.num_frames>MAX_FRAMES))
 	{
 		fclose(file);
 		LogApp("Invalid MGG file info %s",name);
@@ -2572,16 +2574,19 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	mgg->num_frames=mggf.num_frames;
 
-	mgg->type=mggf.type;
+	//mgg->type=mggf.type;
 	
 	mgg->num_anims=mggf.num_animations;
 
-	mgg->frames=(TEX_DATA*) calloc(mgg->num_frames,sizeof(TEX_DATA));
+	mgg->frames=(TEX_DATA*) calloc(mgg->num_frames + mggf.num_atlas,sizeof(TEX_DATA));
 
 	framealone=(uint32*)calloc(mgg->num_frames,sizeof(uint32));
 
 	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
+
+	imgatlas = malloc(mgg->frames);
+	memset(imgatlas, -1, mgg->frames);
 
 	fread(mga,sizeof(_MGGANIM),mgg->num_anims,file);
 
@@ -2601,7 +2606,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
 	mgg->atlas=(GLint*) malloc(mggf.num_atlas*sizeof(GLint));
 
-	for(i=0, j=0;i<mggf.num_singletex+mggf.num_atlas;i++)
+	for (i = 0, j = 0, k = 0; i < mggf.num_singletex + mggf.num_atlas; i++)
 	{
 		
 		if(i==0) fseek(file,mggf.textures_offset+1,SEEK_SET);
@@ -2618,7 +2623,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 		fread(data,framesize[i],1,file);
 
-		if(j<mggf.num_atlas)
+		if (j < mggf.num_atlas)
 		{
 			//imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 
@@ -2634,11 +2639,14 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				imgh = data[7] << 8;
 				imgh |= data[8];
 				
+				k = data[9] << 8;
+				k |= data[10];
+
 				mgisize = imgw * imgh * MGIcolor;
 
 				imgdata = malloc(mgisize);
 
-				memcpy(imgdata, data + 9, mgisize);
+				memcpy(imgdata, data + 12, mgisize);
 
 				glGenTextures(1, &mgg->atlas[i]);
 				glBindTexture(GL_TEXTURE_2D,mgg->atlas[i]);
@@ -2662,9 +2670,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			else
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-			mgg->frames[i].channel=MGIcolor;
-			mgg->frames[i].w=imgw;
-			mgg->frames[i].h=imgh;
+			mgg->frames[i + mggf.num_frames].channel=MGIcolor;
+			mgg->frames[i + mggf.num_frames].w = imgw;
+			mgg->frames[i + mggf.num_frames].h = imgh;
 
 			if(mgg->atlas[i]==NULL)
 				LogApp("Error loading texture from memory");
@@ -2674,19 +2682,19 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			if (imgdata)
 				free(imgdata);
 
-			if(normals[i])
+			if (normals[i + mggf.num_frames])
 			{
-				fseek(file,frameoffset[i]-normalsize[i],SEEK_SET);
-		
-				data=malloc(normalsize[i]);
+				fseek(file, frameoffset[i] - normalsize[i], SEEK_SET);
 
-				if(data==NULL)
+				data = malloc(normalsize[i]);
+
+				if (data == NULL)
 				{
-					LogApp("Error allocating memory for normal mapping texture %d, size %d, file %s",i,normalsize[i],name);
+					LogApp("Error allocating memory for normal mapping texture %d, size %d, file %s", i, normalsize[i], name);
 					continue;
 				}
 
-				fread(data,normalsize[i],1,file);
+				fread(data, normalsize[i], 1, file);
 
 				//imgdata=SOIL_load_image_from_memory((unsigned char*)data,normalsize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 				//mgg->frames[i].Ndata=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);
@@ -2701,14 +2709,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					imgh = data[7] << 8;
 					imgh |= data[8];
 
+					k = data[9] << 8;
+					k |= data[10];
+
 					mgisize = imgw * imgh * MGIcolor;
 
 					imgdata = malloc(mgisize);
 
-					memcpy(imgdata, data + 9, mgisize);
+					memcpy(imgdata, data + 12, mgisize);
 
-					glGenTextures(1, &mgg->frames[i].Ndata);
-					glBindTexture(GL_TEXTURE_2D, mgg->frames[i].Ndata);
+					glGenTextures(1, &mgg->frames[i + mggf.num_frames].Ndata);
+					glBindTexture(GL_TEXTURE_2D, mgg->frames[i + mggf.num_frames].Ndata);
 
 					if (MGIcolor == 3)
 						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
@@ -2721,32 +2732,32 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 				}
 
-				if(mggf.mipmap)
+				if (mggf.mipmap)
 				{
-					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				}
 				else
 					glGenerateMipmap(GL_TEXTURE_2D);
 
-				mgg->frames[i].normal=1;
+				mgg->frames[i + mggf.num_frames].normal = 1;
 
-				if(mgg->frames[i].Ndata==NULL)
+				if (mgg->frames[i].Ndata == NULL)
 					LogApp("Error loading normal mapping texture from memory");
 
-					if (data)						
-						free(data);
-					if (imgdata)
-						free(imgdata);
+				if (data)
+					free(data);
+				if (imgdata)
+					free(imgdata);
 			}
 			else
-				mgg->frames[i].normal=0;
+				mgg->frames[i + mggf.num_frames].normal = 0;
 
 			j++;
 		}
 		else
 		{
-			i-=mggf.num_atlas;
+			//i-=mggf.num_atlas;
 			//imgdata=SOIL_load_image_from_memory((unsigned char*)data,framesize[i],&width,&height,&channel,SOIL_LOAD_AUTO);
 			//mgg->frames[i+(mggf.num_frames-mggf.num_singletex)].data=SOIL_create_OGL_texture(imgdata,width,height,channel,0,SOIL_FLAG_TEXTURE_REPEATS);//SOIL_load_OGL_texture_from_memory((unsigned char*)data,framesize[i],SOIL_LOAD_AUTO,0,SOIL_FLAG_TEXTURE_REPEATS);
 
@@ -2760,14 +2771,17 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				imgh = data[7] << 8;
 				imgh |= data[8];
 
+				k = data[9] << 8;
+				k |= data[10];
+
 				mgisize = imgw * imgh * MGIcolor;
 
 				imgdata = malloc(mgisize);
 
-				memcpy(imgdata, data + 9, mgisize);
+				memcpy(imgdata, data + 12, mgisize);
 
-				glGenTextures(1, &mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].data);
-				glBindTexture(GL_TEXTURE_2D, mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].data);
+				glGenTextures(1, &mgg->frames[k].data);
+				glBindTexture(GL_TEXTURE_2D, mgg->frames[k].data);
 
 				if (MGIcolor == 3)
 					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
@@ -2792,15 +2806,15 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			else
 				glGenerateMipmap(GL_TEXTURE_2D);
 
-			mgg->frames[i+(mggf.num_texinatlas)].w=imgw;
-			mgg->frames[i+(mggf.num_texinatlas)].h=imgh;
-			mgg->frames[i+(mggf.num_texinatlas)].channel=MGIcolor;
+			mgg->frames[k].w=imgw;
+			mgg->frames[k].h=imgh;
+			mgg->frames[k].channel=MGIcolor;
 
-			mgg->frames[i+(mggf.num_texinatlas)].posx=0;
-			mgg->frames[i+(mggf.num_texinatlas)].posy=0;
-			mgg->frames[i+mggf.num_texinatlas].vb_id=-1;
+			mgg->frames[k].posx=0;
+			mgg->frames[k].posy=0;
+			mgg->frames[k].vb_id=-1;
 
-			if(mgg->frames[i+(mggf.num_texinatlas)].data==NULL)
+			if(mgg->frames[k].data==NULL)
 				LogApp("Error loading texture from memory");
 
 			if (data)						
@@ -2839,13 +2853,13 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 					imgdata = malloc(mgisize);
 
-					memcpy(imgdata, data + 9, mgisize);
+					memcpy(imgdata, data + 12, mgisize);
 
 					//glGenTextures(1, &mgg->frames[i + (mggf.num_texinatlas)].Ndata);
 					//glBindTexture(GL_TEXTURE_2D, mgg->frames[i + (mggf.num_texinatlas)].Ndata);
 
-					glGenTextures(1, &mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].Ndata);
-					glBindTexture(GL_TEXTURE_2D, mgg->frames[i + (mggf.num_frames - mggf.num_singletex)].Ndata);
+					glGenTextures(1, &mgg->frames[k].Ndata);
+					glBindTexture(GL_TEXTURE_2D, mgg->frames[k].Ndata);
 					
 					if (MGIcolor == 3)
 						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, imgw, imgh, 0, GL_RGB, GL_UNSIGNED_BYTE, imgdata);
@@ -2866,9 +2880,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				else
 					glGenerateMipmap(GL_TEXTURE_2D);
 
-				mgg->frames[i+(mggf.num_texinatlas)].normal=1;
+				mgg->frames[k].normal=1;
 
-				if(mgg->frames[i+(mggf.num_texinatlas)].Ndata==NULL)
+				if(mgg->frames[k].Ndata==NULL)
 					LogApp("Error loading normal mapping texture from memory");
 
 				if(data)						
@@ -2878,9 +2892,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 			}
 			else
-				mgg->frames[i+(mggf.num_texinatlas)].normal=0;
+				mgg->frames[k].normal=0;
 
-			i+=mggf.num_atlas;
+			//i+=mggf.num_atlas;
 		}
 	}
 		
@@ -2905,13 +2919,13 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 			vbdt[vbdt_num-1].num_elements=0;
 			vbdt[vbdt_num-1].texture=mgg->atlas[i];
 
-			vbdt[vbdt_num-1].normal=mgg->frames[i].normal;
+			vbdt[vbdt_num - 1].normal = mgg->frames[i + mggf.num_frames].normal;
 
 			
-			if(mgg->frames[i].normal)
-				vbdt[vbdt_num-1].Ntexture=mgg->frames[i].Ndata;
+			if(mgg->frames[i + mggf.num_frames].normal)
+				vbdt[vbdt_num - 1].Ntexture = mgg->frames[i + mggf.num_frames].Ndata;
 
-			mgg->frames[i].vb_id=vbdt_num-1;
+			mgg->frames[i + mggf.num_frames].vb_id = vbdt_num - 1;
 
 			vbdt[vbdt_num-1].buffer_elements=8;
 			
@@ -2928,30 +2942,32 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	fseek(file,mggf.possize_offset,SEEK_SET);
 
-	posx=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
-	posy=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
-	sizex=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
-	sizey=(uint16*) malloc((mggf.num_texinatlas)*sizeof(uint16));
-	imgatlas=(uint8*) malloc((mggf.num_texinatlas)*sizeof(uint8));
+	posx = (uint16*)malloc((mggf.num_frames)*sizeof(uint16));
+	posy = (uint16*)malloc((mggf.num_frames)*sizeof(uint16));
+	sizex = (uint16*)malloc((mggf.num_frames)*sizeof(uint16));
+	sizey = (uint16*)malloc((mggf.num_frames)*sizeof(uint16));
+	//imgatlas=(uint8*) malloc((mggf.num_texinatlas)*sizeof(uint8));
 	offx=malloc(mggf.num_frames*sizeof(int16));
 	offy=malloc(mggf.num_frames*sizeof(int16));
 
-	fread(posx,sizeof(uint16),(mggf.num_texinatlas),file);
-	fread(posy,sizeof(uint16),(mggf.num_texinatlas),file);
-	fread(sizex,sizeof(uint16),(mggf.num_texinatlas),file);
-	fread(sizey,sizeof(uint16),(mggf.num_texinatlas),file);
-	fread(imgatlas,sizeof(uint8),(mggf.num_texinatlas),file);
+	fread(posx, sizeof(uint16), (mggf.num_frames), file);
+	fread(posy, sizeof(uint16), (mggf.num_frames), file);
+	fread(sizex, sizeof(uint16), (mggf.num_frames), file);
+	fread(sizey, sizeof(uint16), (mggf.num_frames), file);
+	fread(imgatlas,sizeof(uint8),(mggf.num_frames),file);
 
-	for(i=mggf.num_atlas-1;i<mggf.num_texinatlas;i++)
+	for(i=0;i<mggf.num_frames;i++)
 	{
+		if (imgatlas[i] == -1) continue;
+
 		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
 		mgg->frames[i].posx=posx[i];
 		mgg->frames[i].posy=posy[i];
 		mgg->frames[i].sizex=sizex[i];
 		mgg->frames[i].sizey=sizey[i];
-		mgg->frames[i].vb_id=mgg->frames[imgatlas[i]].vb_id;
-		mgg->frames[i].w=mgg->frames[imgatlas[i]].w;
-		mgg->frames[i].h=mgg->frames[imgatlas[i]].h;
+		mgg->frames[i].vb_id = mgg->frames[imgatlas[i] + mggf.num_frames].vb_id;
+		mgg->frames[i].w = mgg->frames[imgatlas[i] + mggf.num_frames].w;
+		mgg->frames[i].h = mgg->frames[imgatlas[i] + mggf.num_frames].h;
 	}
 	
 	fseek(file,mggf.framealone_offset,SEEK_SET);
@@ -2974,7 +2990,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	k=vbdt_num;
 	
-	if(mggf.num_frames>1)
+	if(mggf.num_frames == -666)
 	{
 		for(i=(mggf.num_texinatlas), j=mggf.num_atlas;i<mggf.num_frames;i++, j++)
 		{	

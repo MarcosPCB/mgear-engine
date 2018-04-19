@@ -1,6 +1,7 @@
 ﻿#include <Windows.h>
 #include <commdlg.h>
 #include <ShlObj.h>
+#include <Shlwapi.h>
 #include "input.h"
 #include "main.h"
 #include <stdio.h> 
@@ -21,6 +22,8 @@
 #define NK_SDL_GL3_IMPLEMENTATION
 #include "nuklear.h"
 #include "nuklear_sdl_gl3.h"
+#define _NKUI_SKINS
+#include "skins.h"
 
 int nkrendered = 0;
 
@@ -34,16 +37,17 @@ uint16 WriteCFG()
 {
 	FILE *file;
 
-	if((file=fopen("settings.cfg","w"))==NULL)
+	if((file=fopen("mtex_settings.cfg","w"))==NULL)
 		return 0;
 
-	st.screenx=1024;
-	st.screeny=576;
+	st.screenx=1280;
+	st.screeny=720;
 	st.fullscreen=0;
 	st.bpp=32;
 	st.audiof=44100;
 	st.audioc=2;
 	st.vsync=0;
+	mtex.theme = 0;
 
 	fprintf(file,"ScreenX = %d\n",st.screenx);
 	fprintf(file,"ScreenY = %d\n",st.screeny);
@@ -52,6 +56,28 @@ uint16 WriteCFG()
 	fprintf(file,"AudioFrequency = %d\n",st.audiof);
 	fprintf(file,"AudioChannels = %d\n",st.audioc);
 	fprintf(file,"VSync = %d\n",st.vsync);
+	fprintf(file, "Theme = %d\n", mtex.theme);
+
+	fclose(file);
+
+	return 1;
+}
+
+uint16 SaveCFG()
+{
+	FILE *file;
+
+	if ((file = fopen("mtex_settings.cfg", "w")) == NULL)
+		return 0;
+
+	fprintf(file, "ScreenX = %d\n", st.screenx);
+	fprintf(file, "ScreenY = %d\n", st.screeny);
+	fprintf(file, "FullScreen = %d\n", st.fullscreen);
+	fprintf(file, "ScreenBPP = %d\n", st.bpp);
+	fprintf(file, "AudioFrequency = %d\n", st.audiof);
+	fprintf(file, "AudioChannels = %d\n", st.audioc);
+	fprintf(file, "VSync = %d\n", st.vsync);
+	fprintf(file, "Theme = %d\n", mtex.theme);
 
 	fclose(file);
 
@@ -63,7 +89,7 @@ uint16 LoadCFG()
 	FILE *file;
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
 	int value=0;
-	if((file=fopen("settings.cfg","r"))==NULL)
+	if((file=fopen("mtex_settings.cfg","r"))==NULL)
 		if(WriteCFG()==0)
 			return 0;
 
@@ -78,6 +104,7 @@ uint16 LoadCFG()
 		if(strcmp(str,"AudioFrequency")==NULL) st.audiof=value;
 		if(strcmp(str,"AudioChannels")==NULL) st.audioc=value;
 		if(strcmp(str,"VSync")==NULL) st.vsync=value;
+		if (strcmp(str, "Theme") == NULL) mtex.theme = value;
 		if (strcmp(str, "CurrentPath") == NULL)
 		{
 			memcpy(buf3, buf, 2048);
@@ -101,47 +128,86 @@ uint16 LoadCFG()
 
 }
 
+void SetThemeBack()
+{
+	switch (mtex.theme)
+	{
+		case THEME_BLACK:
+			SetSkin(ctx, THEME_BLACK);
+			break;
+
+		case THEME_RED:
+			SetSkin(ctx, THEME_RED);
+			break;
+
+		case THEME_WHITE:
+			SetSkin(ctx, THEME_WHITE);
+			break;
+
+		case THEME_BLUE:
+			SetSkin(ctx, THEME_BLUE);
+			break;
+
+		case THEME_DARK:
+			SetSkin(ctx, THEME_DARK);
+	}
+}
+
 void UnloadmTexMGG()
 {
+	register int i;
 	if (mtex.mgg.num_frames > 0)
 	{
+
+		for (i = 0; i < mtex.mgg.num_frames;i++)
+		{
+			if (mtex.mgg.fn[i] != -1)
+				glDeleteTextures(1, &mtex.textures[i]);
+		}
+
+		if (mtex.textures)
+			free(mtex.textures);
+
+		for (i = 0; i < mtex.mgg.num_frames; i++)
+		{
+			if (mtex.mgg.fnn[i] != -1)
+				glDeleteTextures(1, &mtex.textures_n[i]);
+		}
+
+		if (mtex.textures_n)
+			free(mtex.textures_n);
+
+		if (mtex.size)
+			free(mtex.size);
+
 		if (mtex.mgg.fn)
 			free(mtex.mgg.fn);
 
 		if (mtex.mgg.fnn)
 			free(mtex.mgg.fnn);
 
-		if (mtex.mgg.an)
-			free(mtex.mgg.an);
-
 		if (mtex.mgg.frames_atlas)
 			free(mtex.mgg.frames_atlas);
 
-		if (mtex.mgg.mga)
-			free(mtex.mgg.mga);
-
-		if (mtex.mgg.num_f_a)
-			free(mtex.mgg.num_f_a);
-
-		if (mtex.mgg.num_f0)
-			free(mtex.mgg.num_f0);
-
-		if (mtex.mgg.num_ff)
-			free(mtex.mgg.num_ff);
-
-		if (mtex.size)
-			free(mtex.size);
-
-		if (mtex.textures)
+		if (mtex.mgg.num_anims > 0)
 		{
-			glDeleteTextures(mtex.mgg.num_frames, mtex.textures);
-			free(mtex.textures);
+			if (mtex.mgg.mga)
+				free(mtex.mgg.mga);
+
+			if (mtex.mgg.an)
+				free(mtex.mgg.an);
 		}
 
-		if (mtex.textures_n)
+		if (mtex.mgg.num_c_atlas > 0)
 		{
-			glDeleteTextures(mtex.mgg.num_f_n, mtex.textures_n);
-			free(mtex.textures_n);
+			if (mtex.mgg.num_f_a)
+				free(mtex.mgg.num_f_a);
+
+			if (mtex.mgg.num_f0)
+				free(mtex.mgg.num_f0);
+
+			if (mtex.mgg.num_ff)
+				free(mtex.mgg.num_ff);
 		}
 
 		memset(&mtex.mgg, 0, sizeof(mtex.mgg));
@@ -150,12 +216,15 @@ void UnloadmTexMGG()
 
 		mtex.selected = -1;
 		mtex.anim_selected = -1;
+		mtex.mult_selection = 0;
+		mtex.dn_mode = 0;
+		mtex.canvas = 0;
 	}
 }
 
 void UpdateTexList()
 {
-	int16 new_fn[512], frames = 0;
+	int16 new_fn[512], new_fnn[512], frames = 0, framesn = 0;
 	int8 fa[512];
 	register int i, j, k;
 
@@ -167,6 +236,10 @@ void UpdateTexList()
 		if (mtex.mgg.fn[i] < 1024)
 		{
 			new_fn[i] = mtex.mgg.fn[k];
+			new_fnn[i] = mtex.mgg.fnn[k];
+
+			if (new_fnn[i] != -1 && new_fnn[i] < 1024) framesn++;
+
 			fa[i] = mtex.mgg.frames_atlas[k];
 			frames++;
 		}
@@ -177,6 +250,10 @@ void UpdateTexList()
 				if (mtex.mgg.fn[j] < 1024)
 				{
 					new_fn[i] = mtex.mgg.fn[j];
+					new_fnn[i] = mtex.mgg.fnn[j];
+
+					if (new_fnn[i] != -1 && new_fnn[i] < 1024) framesn++;
+
 					fa[i] = mtex.mgg.frames_atlas[j];
 					//i = j - 1;
 					k = j;
@@ -187,6 +264,7 @@ void UpdateTexList()
 		}
 	}
 
+	memcpy(mtex.mgg.fnn, new_fnn, mtex.mgg.num_frames * sizeof(int16));
 	memcpy(mtex.mgg.fn, new_fn, mtex.mgg.num_frames * sizeof(int16));
 	memcpy(mtex.mgg.frames_atlas, fa, mtex.mgg.num_frames * sizeof(int8));
 
@@ -265,32 +343,107 @@ void UpdateTexList()
 	}
 
 	/*
-	for (i = 0; i < mtex.mgg.num_frames; i++)
+	for (i = 0, k = 0, j = 0; k < mtex.mgg.num_frames; i++, k++, j++)
 	{
 		if (mtex.mgg.fnn[i] < 1024)
-			new_fn[i] = mtex.mgg.fnn[i];
+		{
+			new_fn[i] = mtex.mgg.fnn[k];
+			framesn++;
+		}
 		else
 		{
-			for (j = i + 1; j < mtex.mgg.num_frames; j++)
+			for (; j < mtex.mgg.num_frames; j++)
 			{
 				if (mtex.mgg.fnn[j] < 1024)
 				{
 					new_fn[i] = mtex.mgg.fnn[j];
-					i = j - 1;
+					//i = j - 1;
+					k = j;
+					framesn++;
 					break;
 				}
 			}
 		}
 	}
-
-	memcpy(mtex.mgg.fnn, new_fn, mtex.mgg.num_frames * sizeof(int16));
 	*/
 
-
-
 	mtex.mgg.num_frames = frames;
+	mtex.mgg.num_f_n = framesn;
 
 	LogApp("Updated texture list");
+}
+
+void UpdateAtlasses()
+{
+	register int i, j, k;
+
+	for (i = 0; i < mtex.mgg.num_c_atlas; i++)
+	{
+		for (j = 0, k = 0; j < mtex.mgg.num_frames; j++)
+		{
+			if (mtex.mgg.frames_atlas[j] == i && mtex.mgg.frames_atlas[j - 1] != i)
+			{
+				mtex.mgg.num_f0[i] = j;
+				k++;
+			}
+
+			if (mtex.mgg.frames_atlas[j] == i && mtex.mgg.frames_atlas[j + 1] != i)
+			{
+				mtex.mgg.num_ff[i] = j;
+				if (mtex.mgg.num_ff[i] != mtex.mgg.num_f0[i]) k++;
+				else mtex.mgg.frames_atlas[j] = -1;
+				break;
+			}
+		}
+
+		if (k == 1 || !k)
+		{
+			//This is an invalid atlas
+			//Pull all the other atlas one slot down
+			//But before doing this, check if there are any atlasses left
+
+			if (i == mtex.mgg.num_c_atlas - 1 && mtex.mgg.num_c_atlas == 1)
+			{
+				free(mtex.mgg.num_f_a);
+				free(mtex.mgg.num_f0);
+				free(mtex.mgg.num_ff);
+
+				mtex.mgg.num_c_atlas--;
+			}
+
+			if (i == mtex.mgg.num_c_atlas - 1 && mtex.mgg.num_c_atlas > 1)
+			{
+				mtex.mgg.num_f_a = realloc(mtex.mgg.num_f_a, (mtex.mgg.num_c_atlas - 1) * sizeof(int16));
+				mtex.mgg.num_f0 = realloc(mtex.mgg.num_f0, (mtex.mgg.num_c_atlas - 1) * sizeof(int16));
+				mtex.mgg.num_ff = realloc(mtex.mgg.num_ff, (mtex.mgg.num_c_atlas - 1) * sizeof(int16));
+
+				mtex.mgg.num_c_atlas--;
+			}
+
+			if (i < mtex.mgg.num_c_atlas)
+			{
+				for (j = i + 1; j < mtex.mgg.num_c_atlas; j++)
+				{
+					mtex.mgg.num_f_a[j - 1] = mtex.mgg.num_f_a[j];
+					mtex.mgg.num_f0[j - 1] = mtex.mgg.num_f0[j];
+					mtex.mgg.num_ff[j - 1] = mtex.mgg.num_ff[j];
+
+					for (k = 0; k < mtex.mgg.num_frames; k++)
+					{
+						if (mtex.mgg.frames_atlas[k] == i + 1)
+							mtex.mgg.frames_atlas[k] = i;
+					}
+				}
+
+				mtex.mgg.num_f_a = realloc(mtex.mgg.num_f_a, (mtex.mgg.num_c_atlas - 1) * sizeof(int16));
+				mtex.mgg.num_f0 = realloc(mtex.mgg.num_f0, (mtex.mgg.num_c_atlas - 1) * sizeof(int16));
+				mtex.mgg.num_ff = realloc(mtex.mgg.num_ff, (mtex.mgg.num_c_atlas - 1) * sizeof(int16));
+
+				mtex.mgg.num_c_atlas--;
+			}
+
+		}
+	}
 }
 
 void UpdateAnims()
@@ -328,6 +481,9 @@ void UpdateAnims()
 				if (mtex.mgg.fn[j] < 1024) counter++;
 			}
 		//}
+
+		if (mtex.mgg.mga[i].startID == mtex.mgg.mga[i].endID)
+			mtex.mgg.an[i] += 1024;
 	}
 }
 
@@ -371,7 +527,8 @@ char *CheckForNormal(char *filename)
 {
 	register int i, j;
 	int len;
-	char normal[MAX_PATH], str[8];
+	static char normal[MAX_PATH];
+	char str[8];
 	FILE *f;
 
 	len = strlen(filename);
@@ -547,13 +704,16 @@ int8 SavePrjFile(char *filepath)
 	{
 		for (i = 0; i < mtex.mgg.num_c_n_atlas; i++)
 		{
-			fprintf(f, "CONSTRUCT_ATLAS_NORMAL %d %d %d\n", i, mtex.mgg.num_f0[i], mtex.mgg.num_ff[i]);
+			//fprintf(f, "CONSTRUCT_ATLAS_NORMAL %d %d %d\n", i, mtex.mgg.num_f0[i], mtex.mgg.num_ff[i]);
 			fprintf(f, "FRAMENAMES_CUSTOM_ATLAS_NORMALS %d ", i);
 			for (j = mtex.mgg.num_f0[i]; j < mtex.mgg.num_ff[i] + 1; j++)
 			{
 				if (mtex.mgg.frames_atlas[j] != -1)
 				{
-					fprintf(f, "\"%s\"", mtex.mgg.texnames_n[mtex.mgg.fn[j]]);
+					if (mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
+						fprintf(f, "\"%s\"", mtex.mgg.texnames_n[mtex.mgg.fn[j]]);
+					else
+						fprintf(f, "\"null\"");
 				}
 
 				if (j == mtex.mgg.num_ff[i])
@@ -591,13 +751,16 @@ int8 SavePrjFile(char *filepath)
 	{
 		if (mtex.mgg.num_f_n > 0)
 		{
-			fprintf(f, "FRAMESFILES_NORMALS 0 %d ", mtex.mgg.num_f_n);
+			fprintf(f, "FRAMESFILES_NORMALS 0 %d ", mtex.mgg.num_frames);
 
-			for (i = 0; i < mtex.mgg.num_f_n; i++)
+			for (i = 0; i < mtex.mgg.num_frames; i++)
 			{
-				fprintf(f, "\"%s\"", mtex.mgg.texnames_n[mtex.mgg.fnn[i]]);
+				if (mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
+					fprintf(f, "\"%s\"", mtex.mgg.texnames_n[mtex.mgg.fnn[i]]);
+				else
+					fprintf(f, "\"null\"");
 
-				if (i == mtex.mgg.num_f_n - 1)
+				if (i == mtex.mgg.num_frames - 1)
 					fprintf(f, "\n");
 				else
 					fprintf(f, ", ");
@@ -608,9 +771,9 @@ int8 SavePrjFile(char *filepath)
 	{
 		if (mtex.mgg.num_f_n > 0)
 		{
-			for (i = 0; i < mtex.mgg.num_f_n; i++)
+			for (i = 0; i < mtex.mgg.num_frames; i++)
 			{
-				if (mtex.mgg.frames_atlas[i] == -1)
+				if (mtex.mgg.frames_atlas[i] == -1 && mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
 					fprintf(f, "FRAMEFILE_NORMAL %d \"%s\"\n", i, mtex.mgg.texnames_n[mtex.mgg.fnn[i]]);
 			}
 		}
@@ -654,7 +817,7 @@ int8 SavePrjFile(char *filepath)
 char *LoadPrjFile(const char *filepath)
 {
 	FILE *f;
-	char buf[512 * 64], str[MAX_PATH + 128], str2[64], buf2[2048], *tok, prj_path[MAX_PATH], error_string[2048];
+	char buf[512 * 64], str[MAX_PATH + 128], str2[64], buf2[2048], *tok, prj_path[MAX_PATH], error_string[2048], *tok2;
 	register int i, j, k, l;
 	int v1, v2, v3, v4, v5, readerror = 0, re[128], error_line[128], line = -1, anim = 0, anims = 0;
 
@@ -695,16 +858,16 @@ char *LoadPrjFile(const char *filepath)
 		if (!buf)
 			continue;
 
-		tok = strtok(buf, " \n");
+		tok2 = strtok(buf, " \n");
 
-		if (!tok)
+		if (!tok2)
 			continue;
 
 		if (anim)
 		{
 			if (anim == 1)
 			{
-				if (strcmp(tok, "ANIM") == NULL)
+				if (strcmp(tok2, "ANIM") == NULL)
 				{
 					tok = strtok(NULL, " ");
 
@@ -733,7 +896,7 @@ char *LoadPrjFile(const char *filepath)
 
 			if (anim == 2)
 			{
-				if (strcmp(tok, "NAME") == NULL)
+				if (strcmp(tok2, "NAME") == NULL)
 				{
 					tok = strtok(NULL, " ");
 
@@ -752,7 +915,7 @@ char *LoadPrjFile(const char *filepath)
 					}
 				}
 
-				if (strcmp(tok, "FRAMESA") == NULL)
+				if (strcmp(tok2, "FRAMESA") == NULL)
 				{
 					tok = strtok(NULL, " ");
 
@@ -766,7 +929,7 @@ char *LoadPrjFile(const char *filepath)
 					}
 				}
 
-				if (strcmp(tok, "STARTF") == NULL)
+				if (strcmp(tok2, "STARTF") == NULL)
 				{
 					tok = strtok(NULL, " ");
 
@@ -780,7 +943,7 @@ char *LoadPrjFile(const char *filepath)
 					}
 				}
 
-				if (strcmp(tok, "ENDF") == NULL)
+				if (strcmp(tok2, "ENDF") == NULL)
 				{
 					tok = strtok(NULL, " ");
 
@@ -794,7 +957,7 @@ char *LoadPrjFile(const char *filepath)
 					}
 				}
 
-				if (strcmp(tok, "SPEED") == NULL)
+				if (strcmp(tok2, "SPEED") == NULL)
 				{
 					tok = strtok(NULL, " ");
 
@@ -808,7 +971,7 @@ char *LoadPrjFile(const char *filepath)
 					}
 				}
 
-				if (strcmp(tok, "ENDA") == NULL)
+				if (strcmp(tok2, "ENDA") == NULL)
 				{
 					if (!mtex.mgg.mga[v1].name || mtex.mgg.mga[v1].startID < -1 || !mtex.mgg.mga[v1].endID || !mtex.mgg.mga[v1].num_frames
 						|| (mtex.mgg.mga[v1].endID - mtex.mgg.mga[v1].startID != mtex.mgg.mga[v1].num_frames - 1) || mtex.mgg.mga[v1].endID < mtex.mgg.mga[v1].startID)
@@ -828,7 +991,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "MGGNAME") == NULL)
+		if (strcmp(tok2, "MGGNAME") == NULL)
 		{
 			tok = strtok(NULL, " ");
 			
@@ -846,7 +1009,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "FRAMEOFFSET") == NULL)
+		if (strcmp(tok2, "FRAMEOFFSET") == NULL)
 		{
 			tok = strtok(NULL, " ");
 
@@ -895,7 +1058,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "FRAMES") == NULL)
+		if (strcmp(tok2, "FRAMES") == NULL)
 		{
 			tok = strtok(NULL, " ");
 
@@ -913,7 +1076,7 @@ char *LoadPrjFile(const char *filepath)
 					memset(mtex.mgg.frames_atlas, -1, mtex.mgg.num_frames * sizeof(int8));
 					mtex.textures = malloc(mtex.mgg.num_frames * sizeof(GLuint));
 					mtex.size = malloc(mtex.mgg.num_frames * sizeof(Pos));
-					//mtex.textures_n = malloc(mtex.mgg.num_f_n * sizeof(GLuint));
+					mtex.textures_n = malloc(mtex.mgg.num_frames * sizeof(GLuint));
 				}
 				else
 				{
@@ -931,7 +1094,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "ANIMS") == NULL)
+		if (strcmp(tok2, "ANIMS") == NULL)
 		{
 			tok = strtok(NULL, " ");
 
@@ -955,7 +1118,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "BEGIN") == NULL)
+		if (strcmp(tok2, "BEGIN") == NULL)
 		{
 			if (!mtex.mgg.num_anims)
 			{
@@ -972,19 +1135,19 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "MIPMAP") == NULL)
+		if (strcmp(tok2, "MIPMAP") == NULL)
 		{
 			mtex.mgg.mipmap = 1;
 			continue;
 		}
 
-		if (strcmp(tok, "RLE") == NULL)
+		if (strcmp(tok2, "RLE") == NULL)
 		{
 			mtex.mgg.RLE = 1;
 			continue;
 		}
 
-		if (strcmp(tok, "CONSTRUCT_ATLAS") == NULL)
+		if (strcmp(tok2, "CONSTRUCT_ATLAS") == NULL)
 		{
 			if (!mtex.mgg.num_frames)
 			{
@@ -1095,7 +1258,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "FRAMENAMES_CUSTOM_ATLAS") == NULL)
+		if (strcmp(tok2, "FRAMENAMES_CUSTOM_ATLAS") == NULL)
 		{
 			if (!mtex.mgg.num_frames)
 			{
@@ -1161,7 +1324,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "FRAMENAMES_CUSTOM_ATLAS_NORMAL") == NULL)
+		if (strcmp(tok2, "FRAMENAMES_CUSTOM_ATLAS_NORMAL") == NULL)
 		{
 			if (!mtex.mgg.num_frames)
 			{
@@ -1202,11 +1365,17 @@ char *LoadPrjFile(const char *filepath)
 
 					if (tok)
 					{
-						strcpy(mtex.mgg.texnames_n[k], tok);
-						strcpy(mtex.mgg.files_n[k], prj_path);
-						strcat(mtex.mgg.files_n[k], tok);
-						mtex.mgg.fnn[k] = k;
-						mtex.mgg.frames_atlas[k] = j;
+						if (strcmp(tok, "null") == NULL)
+							mtex.mgg.fnn[k] = -1;
+						else
+						{
+							strcpy(mtex.mgg.texnames_n[k], tok);
+							strcpy(mtex.mgg.files_n[k], prj_path);
+							strcat(mtex.mgg.files_n[k], tok);
+							mtex.mgg.fnn[k] = k;
+							mtex.mgg.num_f_n++;
+							//mtex.mgg.frames_atlas[k] = j;
+						}
 					}
 					else
 					{
@@ -1227,7 +1396,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "FRAMESFILES") == NULL)
+		if (strcmp(tok2, "FRAMESFILES") == NULL)
 		{
 			if (!mtex.mgg.num_frames)
 			{
@@ -1297,7 +1466,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok, "FRAMEFILE") == NULL)
+		if (strcmp(tok2, "FRAMEFILE") == NULL)
 		{
 			if (!mtex.mgg.num_frames)
 			{
@@ -1340,6 +1509,128 @@ char *LoadPrjFile(const char *filepath)
 				readerror++;
 			}
 		}
+
+		if (strcmp(tok2, "FRAMESFILES_NORMALS") == NULL)
+		{
+			if (!mtex.mgg.num_frames)
+			{
+				LogApp("Line %d: FRAMES not defined before FRAMESFILES_NORMAL", line);
+				re[readerror] = RE_MISCOM;
+				error_line[readerror] = line;
+				readerror++;
+				continue;
+			}
+
+			tok = strtok(NULL, " ");
+
+			if (tok)
+			{
+				i = atoi(tok);
+
+				tok = strtok(NULL, " ");
+
+				if (tok)
+				{
+					j = atoi(tok);
+
+					if (!j || j < i)
+					{
+						LogApp("Line %d: final frame is zero or less than initial frame", line, j);
+						re[readerror] = RE_WRVAL;
+						error_line[readerror] = line;
+						readerror++;
+					}
+					else
+					{
+						for (k = i; k < j; k++)
+						{
+							tok = strtok(NULL, " ,\"");
+
+							if (tok)
+							{
+								if (strcmp(tok, "null") == NULL)
+									mtex.mgg.fnn[k] = -1;
+								else
+								{
+									strcpy(mtex.mgg.texnames_n[k], tok);
+									strcpy(mtex.mgg.files_n[k], prj_path);
+									strcat(mtex.mgg.files_n[k], tok);
+									mtex.mgg.fnn[k] = k;
+									mtex.mgg.num_f_n++;
+								}
+							}
+							else
+							{
+								LogApp("Line %d: missing frame file name %d", line, k);
+								re[readerror] = RE_NOTOK;
+								error_line[readerror] = line;
+								readerror++;
+
+								continue;
+							}
+						}
+					}
+				}
+				else
+				{
+					re[readerror] = RE_NOTOK;
+					error_line[readerror] = line;
+					readerror++;
+				}
+			}
+			else
+			{
+				re[readerror] = RE_NOTOK;
+				error_line[readerror] = line;
+				readerror++;
+			}
+		}
+
+		if (strcmp(tok2, "FRAMEFILE_NORMAL") == NULL)
+		{
+			if (!mtex.mgg.num_frames)
+			{
+				LogApp("Line %d: FRAMES not defined before FRAMEFILE_NORMAL", line);
+				re[readerror] = RE_MISCOM;
+				error_line[readerror] = line;
+				readerror++;
+				continue;
+			}
+
+			tok = strtok(NULL, " ");
+
+			if (tok)
+			{
+				i = atoi(tok);
+
+				tok = strtok(NULL, " \"\n");
+
+				if (tok)
+				{
+					strcpy(mtex.mgg.texnames_n[i], tok);
+					strcpy(mtex.mgg.files_n[i], prj_path);
+					strcat(mtex.mgg.files_n[i], tok);
+					mtex.mgg.fnn[i] = i;
+					mtex.mgg.num_f_n++;
+				}
+				else
+				{
+					LogApp("Line %d: missing frame file name %d", line, k);
+					re[readerror] = RE_NOTOK;
+					error_line[readerror] = line;
+					readerror++;
+
+					continue;
+				}
+			}
+			else
+			{
+				re[readerror] = RE_NOTOK;
+				error_line[readerror] = line;
+				readerror++;
+			}
+		}
+
 		/*
 		if (strcmp(tok, "NORMALMAP") == NULL)
 		{
@@ -1449,6 +1740,15 @@ char *LoadPrjFile(const char *filepath)
 				sprintf(buf2, "Error: Texture %s could not be loaded", mtex.mgg.files[i]);
 				MessageBox(NULL, buf2, "Error", MB_OK);
 			}
+
+			if (mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
+			{
+				if ((mtex.textures_n[i] = LoadTexture(mtex.mgg.files_n[i], mtex.mgg.mipmap, NULL)) == -1)
+				{
+					sprintf(buf2, "Error: Texture %s could not be loaded", mtex.mgg.files_n[i]);
+					MessageBox(NULL, buf2, "Error", MB_OK);
+				}
+			}
 		}
 	}
 
@@ -1482,6 +1782,7 @@ int NewMGGBox(const char path[MAX_PATH])
 	static int len, state = 0, num_files_t = 0, num_files_n = 0, len_prj_n = 0, len_in_n = 0, fls[512], flsn[512];
 	int len2;
 	char *tok = NULL, strerror[1024];
+	Pos size;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&files, sizeof(files));
@@ -1714,7 +2015,7 @@ int NewMGGBox(const char path[MAX_PATH])
 						else
 						{
 							strcpy(tex_n[num_files_n], path3);
-							strcat(tex[num_files_t], "\\");
+							strcat(tex[num_files_n], "\\");
 							strcat(tex_n[num_files_n], tok);
 							strcpy(tex_n_names[num_files_n], tok);
 
@@ -1745,7 +2046,7 @@ int NewMGGBox(const char path[MAX_PATH])
 
 				nk_label(ctx, tex_names[fls[i]], NK_TEXT_ALIGN_LEFT);
 
-				nk_style_default(ctx);
+				SetThemeBack();
 
 				nk_layout_row_push(ctx, 0.1f);
 
@@ -1805,7 +2106,7 @@ int NewMGGBox(const char path[MAX_PATH])
 
 				nk_label(ctx, tex_n_names[flsn[i]], NK_TEXT_ALIGN_LEFT);
 
-				nk_style_default(ctx);
+				SetThemeBack();
 
 				nk_layout_row_push(ctx, 0.1f);
 
@@ -1996,9 +2297,16 @@ int NewMGGBox(const char path[MAX_PATH])
 							strcpy(mtex.mgg.files_n[j], tok);
 							strcpy(mtex.mgg.texnames_n[j], tex_n_names[flsn[i]]);
 
-							if ((mtex.textures_n[j] = LoadTexture(mtex.mgg.files_n[j], mtex.mgg.mipmap, &mtex.size[j])) == -1)
+							if ((mtex.textures_n[j] = LoadTexture(mtex.mgg.files_n[j], mtex.mgg.mipmap, &size)) == -1)
 							{
 								sprintf(strerror, "Error: Texture %s could not be loaded", mtex.mgg.files_n[j]);
+								MessageBox(NULL, strerror, "Error", MB_OK);
+								continue;
+							}
+
+							if (size.x != mtex.size[j].x || size.y != mtex.size[j].y)
+							{
+								sprintf(strerror, "Error: Normal texture %s width and height are different from the diffuse", mtex.mgg.files_n[j]);
 								MessageBox(NULL, strerror, "Error", MB_OK);
 								continue;
 							}
@@ -2074,14 +2382,213 @@ int NewMGGBox(const char path[MAX_PATH])
 	return NULL;
 }
 
+int MGGProperties()
+{
+	if (nk_begin(ctx, "MGG Properties", nk_rect(st.screenx / 2 - 140, st.screeny / 2 - 115, 280, 230), NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+	{
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, "MGG Name",NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, mtex.mgg.name, 32, nk_filter_ascii);
+
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, "Texture filter (requires reloading)", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 2);
+		mtex.mgg.mipmap = nk_option_label(ctx, "Linear", mtex.mgg.mipmap == 0) ? 0 : mtex.mgg.mipmap;
+		mtex.mgg.mipmap = nk_option_label(ctx, "Nearest", mtex.mgg.mipmap == 1) ? 1 : mtex.mgg.mipmap;
+
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, "Compression", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 2);
+		mtex.mgg.RLE = nk_option_label(ctx, "None", mtex.mgg.RLE == 0) ? 0 : mtex.mgg.RLE;
+		mtex.mgg.RLE = nk_option_label(ctx, "RLE", mtex.mgg.RLE == 1) ? 1 : mtex.mgg.RLE;
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		if (nk_button_label(ctx, "Ok"))
+		{
+			nk_end(ctx);
+			return 1;
+		}
+	}
+
+	nk_end(ctx);
+
+	return NULL;
+}
+
+int Preferences()
+{
+	static char str[32];
+	register int i;
+
+	if (mtex.theme == THEME_WHITE) strcpy(str, "White skin");
+	if (mtex.theme == THEME_RED) strcpy(str, "Red skin");
+	if (mtex.theme == THEME_BLUE) strcpy(str, "Blue skin");
+	if (mtex.theme == THEME_DARK) strcpy(str, "Dark skin");
+	if (mtex.theme == THEME_GWEN) strcpy(str, "GWEN skin");
+	if (mtex.theme == THEME_BLACK) strcpy(str, "Default");
+
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 100, st.screeny / 2 - 100, 200, 128), NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+	{
+		nk_layout_row_dynamic(ctx, 15, 1);
+		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		if (nk_combo_begin_label(ctx, str, nk_vec2(nk_widget_width(ctx), 225)))
+		{
+			nk_layout_row_dynamic(ctx, 25, 1);
+
+			if (nk_combo_item_label(ctx, "White skin", NK_TEXT_ALIGN_LEFT))
+			{
+				mtex.theme = THEME_WHITE;
+				SetSkin(ctx, THEME_WHITE);
+				strcpy(str, "White skin");
+			}
+
+			if (nk_combo_item_label(ctx, "Red skin", NK_TEXT_ALIGN_LEFT))
+			{
+				mtex.theme = THEME_RED;
+				SetSkin(ctx, THEME_RED);
+				strcpy(str, "Red skin");
+			}
+
+			if (nk_combo_item_label(ctx, "Blue skin", NK_TEXT_ALIGN_LEFT))
+			{
+				mtex.theme = THEME_BLUE;
+				SetSkin(ctx, THEME_BLUE);
+				strcpy(str, "Blud skin");
+			}
+
+			if (nk_combo_item_label(ctx, "Dark skin", NK_TEXT_ALIGN_LEFT))
+			{
+				mtex.theme = THEME_DARK;
+				SetSkin(ctx, THEME_DARK);
+				strcpy(str, "Dark skin");
+			}
+
+			if (nk_combo_item_label(ctx, "GWEN skin", NK_TEXT_ALIGN_LEFT))
+			{
+				mtex.theme = THEME_GWEN;
+				SetSkin(ctx, THEME_GWEN);
+				strcpy(str, "GWEN skin");
+			}
+
+			if (nk_combo_item_label(ctx, "Default", NK_TEXT_ALIGN_LEFT))
+			{
+				mtex.theme = THEME_BLACK;
+				SetSkin(ctx, THEME_BLACK);
+				strcpy(str, "Default skin");
+			}
+
+			nk_combo_end(ctx);
+		}
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		if (nk_button_label(ctx, "Ok"))
+		{
+			SaveCFG();
+			nk_end(ctx);
+			return 1;
+		}
+	}
+
+	nk_end(ctx);
+
+	return NULL;
+}
+
+int Compiler(const char *path)
+{
+	char directory[MAX_PATH];
+	char exepath[MAX_PATH];
+	char args[MAX_PATH * 3];
+	char str[512];
+	MSG msg;
+
+	DWORD error;
+
+	static int state = 0;
+	DWORD exitcode;
+
+	static SHELLEXECUTEINFO info;
+
+	if (state == 0)
+	{
+		strcpy(exepath, st.CurrPath);
+		strcat(exepath,"\\Tools\\");
+		strcat(exepath, "mggcreator.exe");
+		strcpy(directory, exepath);
+		PathRemoveFileSpec(directory);
+
+		sprintf(args, "-o \"%s\" -p \"%s\" -i \"%s\"", path, mtex.mgg.path, mtex.filename);
+
+		ZeroMemory(&info, sizeof(info));
+		info.cbSize = sizeof(info);
+		info.lpVerb = ("open");
+		info.fMask = SEE_MASK_NOCLOSEPROCESS; //| SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+		info.lpFile = exepath;
+		info.lpParameters = args;
+		//info.lpDirectory = directory;
+		info.nShow = SW_SHOW;
+		if (!ShellExecuteEx(&info))
+		{
+			error = GetLastError();
+			MessageBox(NULL, "Could not execute compiler file", "Error", MB_OK);
+			state = 0;
+			return -1;
+		}
+
+		state = 1;
+	}
+	
+	if (state == 1)
+	{
+		if (nk_begin(ctx, "Compiler", nk_rect(st.screenx / 2 - 128, st.screeny / 2 - 32, 256, 64), NK_WINDOW_BORDER))
+		{
+			nk_layout_row_dynamic(ctx, 15, 1);
+
+			nk_label(ctx, "Compiling project...", NK_TEXT_ALIGN_LEFT);
+
+			// Wait for process to finish.
+			error = WaitForSingleObject(info.hProcess, 0);
+
+
+			if (error == WAIT_OBJECT_0)
+			{
+				// Return exit code from process
+				GetExitCodeProcess(info.hProcess, &exitcode);
+
+				CloseHandle(info.hProcess);
+
+				if (exitcode)
+					MessageBox(NULL, "MGGcreator failed to compile your MGG file", "Error", MB_OK);
+				else
+					MessageBox(NULL, "Success compiling file", "Success", MB_OK);
+
+				state = 0;
+
+				nk_end(ctx);
+				return 1;
+			}
+		}
+
+		nk_end(ctx);
+	}
+
+	return NULL;
+}
+
 void MenuBar()
 {
-	register int i, a, m;
+	register int i, a, m, j;
 	static char str[128], path[MAX_PATH];
 	int id = 0, id2 = 0, check;
 	static int state = 0, mggid;
 	FILE *f;
-	char *buf;
+	char *buf, path2[MAX_PATH], str2[512], path3[MAX_PATH];
 
 	OPENFILENAME ofn;
 	ZeroMemory(&path, sizeof(path));
@@ -2101,15 +2608,15 @@ void MenuBar()
 
 	static LPITEMIDLIST pidl;
 
-	if (nkrendered==0)
-	{
-		if (nk_begin(ctx, "Menu", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
+	//if (nkrendered==0)
+	//{
+		if (nk_begin(ctx, "MenuBar", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BACKGROUND))
 		{
 			nk_menubar_begin(ctx);
-			nk_layout_row_begin(ctx, NK_STATIC, 25, 5);
+			nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
 
 			nk_layout_row_push(ctx, 45);
-			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(210, 210)))
+			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(210, 235)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 				if (nk_menu_item_label(ctx, "New project", NK_TEXT_LEFT))
@@ -2158,8 +2665,144 @@ void MenuBar()
 					memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 				}
 
-				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Compile MGG", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT))
+				{
+					ZeroMemory(&path, sizeof(path));
+					
+					ofn.lpstrFilter = "mTex project File\0*.texprj\0";
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrFile = path;
+					ofn.lpstrTitle = "Save project file";
+					//ofn.hInstance = OFN_EXPLORER;
+					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+					GetSaveFileName(&ofn);
+
+					if (path)
+					{
+						strcpy(path2, path);
+
+						for (j = strlen(path2); j > 0; j--)
+						{
+							if (path2[j] == '.') break;
+							if (path2[j] == '\\' || path2[j] == '/')
+							{
+								j = -1;
+								break;
+							}
+						}
+
+						if (j != -1)
+							strcpy(path2 + j, ".texprj");
+						else
+							strcat(path2, ".texprj");
+
+						SavePrjFile(path2);
+
+						for (j = strlen(path2); j > 0; j--)
+						{
+							if (path2[j] == '\\' || path2[j] == '/') break;
+						}
+
+						//j--;
+						
+						strcpy(path3, mtex.mgg.path);
+
+						for (i = 0; i < j; i++)
+							mtex.mgg.path[i] = path2[i];
+
+						strcpy(mtex.filename, path2 + j + 1);
+
+						strcpy(mtex.prj_path, path2);
+
+						sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+
+						memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
+
+						if (MessageBox(NULL, "Would you like to copy the texture files to this folder?", NULL, MB_YESNO) == IDYES)
+						{
+							for (i = 0; i < mtex.mgg.num_frames; i++)
+							{
+								if (mtex.mgg.fn[i] < 1024)
+								{
+									//strcpy(path2, path3);
+									//strcat(path2, "\\");
+									strcpy(path2, mtex.mgg.files[i]);
+									buf = CopyThisFile(path2, mtex.mgg.path);
+
+									if (buf == NULL || buf == -1)
+									{
+										sprintf(str2, "Error: Texture %d could not be copied", path2);
+										MessageBox(NULL, str2, "Error", MB_OK);
+									}
+
+									if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+									{
+										//strcpy(path2, path3);
+										//strcat(path2, "\\");
+										strcpy(path2, mtex.mgg.files_n[i]);
+										buf = CopyThisFile(path2, mtex.mgg.path);
+
+										if (buf == NULL || buf == -1)
+										{
+											sprintf(str2, "Error: Texture %d could not be copied", path2);
+											MessageBox(NULL, str2, "Error", MB_OK);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				if (nk_menu_item_label(ctx, "Close project", NK_TEXT_LEFT))
+				{
+					switch (MessageBox(NULL, "Would you like to save your project first?", NULL, MB_YESNOCANCEL))
+					{
+						case IDYES:
+							SavePrjFile(mtex.prj_path);
+							UnloadmTexMGG();
+							break;
+
+						case IDNO:
+							UnloadmTexMGG();
+							break;
+					}
+				}
+
+				if (nk_menu_item_label(ctx, "Compile MGG", NK_TEXT_LEFT))
+				{
+					ofn.lpstrFilter = "MGG File\0*.mgg\0";
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrFile = path;
+					ofn.lpstrTitle = "Save MGG file";
+					//ofn.hInstance = OFN_EXPLORER;
+					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+					GetSaveFileName(&ofn);
+
+					if (path)
+					{
+						strcpy(path2, path);
+
+						for (j = strlen(path2); j > 0; j--)
+						{
+							if (path2[j] == '.') break;
+							if (path2[j] == '\\' || path2[j] == '/')
+							{
+								j = -1;
+								break;
+							}
+						}
+
+						if (j != -1)
+							strcpy(path2 + j, ".mgg");
+						else
+							strcat(path2, ".mgg");
+
+						state = 6;
+					}
+				}
 
 				if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) st.quit = 1;
 				nk_menu_end(ctx);
@@ -2169,8 +2812,12 @@ void MenuBar()
 			if (nk_menu_begin_label(ctx, "Edit", NK_TEXT_LEFT, nk_vec2(120, 200)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
-				nk_menu_item_label(ctx, "Preferences", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "MGG properties", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Preferences", NK_TEXT_LEFT))
+					state = 5;
+
+				if (nk_menu_item_label(ctx, "MGG properties", NK_TEXT_LEFT))
+					state = 4;
+
 				nk_menu_end(ctx);
 			}
 
@@ -2220,7 +2867,24 @@ void MenuBar()
 					state = 0;
 			}
 		}
-	}
+
+		if (state == 4)
+		{
+			if (MGGProperties())
+				state = 0;
+		}
+
+		if (state == 5)
+		{
+			if (Preferences())
+				state = 0;
+		}
+
+		if (state == 6)
+		{
+			if (Compiler(path2)) state = 0;
+		}
+	//}
 }
 
 void SpriteListSelection()
@@ -2339,7 +3003,7 @@ void SpriteListSelection()
 			nk_group_end(ctx);
 		}
 
-		nk_style_default(ctx);
+		SetThemeBack();
 
 		nk_layout_row_dynamic(ctx, 30, 3);
 		nk_spacing(ctx, 2);
@@ -2364,9 +3028,9 @@ void LeftPannel()
 	Pos size;
 	int temp, px, py, sx, sy, state;
 	GLuint tex;
-	static int8 anim_speed = 1;
+	static int8 anim_speed = 1, atlas;
 	struct nk_image texid;
-	char str[128], files[(512 + 32) * MAX_PATH], *tok, path3[MAX_PATH], *path2, path[MAX_PATH], strerror[128];
+	char str[128], files[(512 + 32) * MAX_PATH], *tok, path3[MAX_PATH], *path2, path[MAX_PATH], strerror[512];
 	int16 tmp;
 
 	OPENFILENAME ofn;
@@ -2374,7 +3038,7 @@ void LeftPannel()
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
-	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.tga;*.bmp\0Any File\0*.*\0";
+	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.psd\0Any File\0*.*\0";
 	ofn.nMaxFile = MAX_PATH + (32 * 512);
 	ofn.lpstrFile = files;
 	ofn.lpstrTitle = "Select textures to import";
@@ -2388,285 +3052,486 @@ void LeftPannel()
 			mtex.dn_mode = nk_option_label(ctx, "Diffuse texture", mtex.dn_mode == 0) ? 0 : mtex.dn_mode;
 			mtex.dn_mode = nk_option_label(ctx, "Normal map", mtex.dn_mode == 1) ? 1 : mtex.dn_mode;
 
-			nk_layout_row_dynamic(ctx, 30, 1);
-			if (nk_button_label(ctx, "Import textures"))
+			temp = 1;
+
+			if (mtex.mult_selection > 0)
 			{
-				if (GetOpenFileName(&ofn))
+				for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
 				{
-					state = 1;
-					i = 0;
-					while (state == 1)
+					if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
 					{
-						if (i == 0)
-						{
-							tok = StrTokNull(files);
-							strcpy(path3, tok);
-						}
-						else
-						{
-							tok = StrTokNull(NULL);
+						temp = 0;
+						break;
+					}
+				}
+			}
 
-							if (!tok)
+			nk_layout_row_dynamic(ctx, 30, 1);
+
+			if (mtex.dn_mode && (mtex.selected == -1 || (mtex.mgg.fnn[mtex.selected] != -1 && mtex.mgg.fnn[mtex.selected] < 1024) || temp == 0))
+			{
+				ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+				nk_button_label(ctx, "Import textures");
+				SetThemeBack();
+			}
+			else
+			{
+				if (nk_button_label(ctx, "Import textures"))
+				{
+					if (GetOpenFileName(&ofn))
+					{
+						state = 1;
+						i = 0;
+						if (!mtex.dn_mode)
+						{
+							while (state == 1)
 							{
-								if (i == 1)
+								if (i == 0)
 								{
-									path2 = CopyThisFile(files, mtex.mgg.path);
+									tok = StrTokNull(files);
+									strcpy(path3, tok);
+								}
+								else
+								{
+									tok = StrTokNull(NULL);
 
-									if (path2 == NULL)
+									if (!tok)
 									{
-										sprintf(strerror, "Error: Texture %s could not be opened", files);
-										MessageBox(NULL, strerror, "Error", MB_OK);
-									}
+										if (i == 1)
+										{
+											path2 = CopyThisFile(files, mtex.mgg.path);
 
-									if (path2 == -1)
-									{
-										sprintf(strerror, "Error: Texture %s could not be copied", files);
-										MessageBox(NULL, strerror, "Error", MB_OK);
-									}
+											if (path2 == NULL)
+											{
+												sprintf(strerror, "Error: Texture %s could not be opened", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+											}
 
-									if (path2 == -2)
-										path2 = files;
+											if (path2 == -1)
+											{
+												sprintf(strerror, "Error: Texture %s could not be copied", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+											}
 
-									if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
-									{
-										sprintf(strerror, "Error: Texture %s could not be loaded", files);
-										MessageBox(NULL, strerror, "Error", MB_OK);
+											if (path2 == -2)
+												path2 = files;
+
+											if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
+											{
+												sprintf(strerror, "Error: Texture %s could not be loaded", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												break;
+											}
+
+											mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
+											mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
+
+											mtex.textures[mtex.mgg.num_frames] = tex;
+
+											mtex.size = realloc(mtex.size, (mtex.mgg.num_frames + 1) * sizeof(Pos));
+											memcpy(&mtex.size[mtex.mgg.num_frames], &size, sizeof(Pos));
+
+											len = strlen(path2);
+
+											for (j = len; j > 0; j--)
+											{
+												if (path2[j] == '\\' || path2[j] == '/')
+												{
+													j++;
+													break;
+												}
+											}
+
+											strcpy(mtex.mgg.texnames[mtex.mgg.num_frames], path2 + j);
+											strcpy(mtex.mgg.files[mtex.mgg.num_frames], path2 + j);
+
+											mtex.mgg.fn = realloc(mtex.mgg.fn, (mtex.mgg.num_frames + 1) * sizeof(int16));
+											mtex.mgg.fnn = realloc(mtex.mgg.fnn, (mtex.mgg.num_frames + 1) * sizeof(int16));
+											mtex.mgg.frames_atlas = realloc(mtex.mgg.frames_atlas, (mtex.mgg.num_frames + 1) * sizeof(int8));
+
+											mtex.mgg.frames_atlas[mtex.mgg.num_frames] = -1;
+
+											mtex.mgg.fn[mtex.mgg.num_frames] = mtex.mgg.num_frames;
+											mtex.mgg.fnn[mtex.mgg.num_frames] = -1;
+
+											mtex.mgg.num_frames++;
+
+											tok = CheckForNormal(files);
+
+											if (tok)
+											{
+												path2 = CopyThisFile(tok, mtex.mgg.path);
+
+												if (path2 == NULL)
+												{
+													sprintf(strerror, "Error: Texture %s could not be opened", tok);
+													MessageBox(NULL, strerror, "Error", MB_OK);
+													goto FINALIZE_LOOP;
+												}
+
+												if (path2 == -1)
+												{
+													sprintf(strerror, "Error: Texture %s could not be copied", tok);
+													MessageBox(NULL, strerror, "Error", MB_OK);
+													goto FINALIZE_LOOP;
+												}
+
+												if (path2 == -2)
+													path2 = tok;
+
+												if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
+												{
+													sprintf(strerror, "Error: Texture %s could not be loaded", tok);
+													MessageBox(NULL, strerror, "Error", MB_OK);
+													goto FINALIZE_LOOP;
+												}
+
+												if (size.x != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].y)
+												{
+													sprintf(strerror, "Error: Normal texture %s has a different width and height from the diffuse texture", files);
+													MessageBox(NULL, strerror, "Error", MB_OK);
+													glDeleteTextures(1, &tex);
+													goto FINALIZE_LOOP;
+												}
+
+												//mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames) * sizeof(GLuint));
+
+												mtex.textures_n[mtex.mgg.num_frames - 1] = tex;
+
+												len = strlen(tok);
+
+												for (j = len; j > 0; j--)
+												{
+													if (tok[j] == '\\' || tok[j] == '/')
+													{
+														j++;
+														break;
+													}
+												}
+
+												strcpy(mtex.mgg.texnames_n[mtex.mgg.num_frames - 1], tok + j);
+												strcpy(mtex.mgg.files_n[mtex.mgg.num_frames - 1], tok + j);
+
+												mtex.mgg.fnn[mtex.mgg.num_frames - 1] = mtex.mgg.num_frames - 1;
+
+												mtex.mgg.num_f_n++;
+											}
+										}
+									FINALIZE_LOOP:
+										state = 2;
+										i = 0;
 										break;
 									}
-
-									mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
-
-									mtex.textures[mtex.mgg.num_frames] = tex;
-
-									mtex.size = realloc(mtex.size, (mtex.mgg.num_frames + 1) * sizeof(Pos));
-									memcpy(&mtex.size[mtex.mgg.num_frames], &size, sizeof(Pos));
-
-									len = strlen(path2);
-
-									for (j = len; j > 0; j--)
+									else
 									{
-										if (path2[j] == '\\' || path2[j] == '/')
-										{
-											j++;
-											break;
-										}
-									}
+										strcpy(path, path3);
+										strcat(path, "\\");
+										strcat(path, tok);
 
-									strcpy(mtex.mgg.texnames[mtex.mgg.num_frames], path2 + j);
-									strcpy(mtex.mgg.files[mtex.mgg.num_frames], path2 + j);
-
-									mtex.mgg.fn = realloc(mtex.mgg.fn, (mtex.mgg.num_frames + 1) * sizeof(int16));
-									mtex.mgg.fnn = realloc(mtex.mgg.fnn, (mtex.mgg.num_frames + 1) * sizeof(int16));
-									mtex.mgg.frames_atlas = realloc(mtex.mgg.frames_atlas, (mtex.mgg.num_frames + 1) * sizeof(int8));
-
-									mtex.mgg.frames_atlas[mtex.mgg.num_frames] = -1;
-
-									mtex.mgg.fn[mtex.mgg.num_frames] = mtex.mgg.num_frames;
-
-									mtex.mgg.num_frames++;
-
-									tok = CheckForNormal(mtex.mgg.files[mtex.mgg.num_frames - 1]);
-
-									if (tok)
-									{
-										path2 = CopyThisFile(tok, mtex.mgg.path);
+										path2 = CopyThisFile(path, mtex.mgg.path);
 
 										if (path2 == NULL)
 										{
 											sprintf(strerror, "Error: Texture %s could not be opened", tok);
 											MessageBox(NULL, strerror, "Error", MB_OK);
-											goto FINALIZE_LOOP;
+											break;
 										}
 
 										if (path2 == -1)
 										{
 											sprintf(strerror, "Error: Texture %s could not be copied", tok);
 											MessageBox(NULL, strerror, "Error", MB_OK);
-											goto FINALIZE_LOOP;
+											break;
 										}
 
 										if (path2 == -2)
-											path2 = tok;
+											path2 = path;
 
 										if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
 										{
 											sprintf(strerror, "Error: Texture %s could not be loaded", tok);
 											MessageBox(NULL, strerror, "Error", MB_OK);
-											goto FINALIZE_LOOP;
+											break;
 										}
 
-										mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames) * sizeof(GLuint));
+										mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
+										mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 
-										mtex.textures_n[mtex.mgg.num_frames - 1] = tex;
+										mtex.textures[mtex.mgg.num_frames] = tex;
 
-										len = strlen(tok);
+										mtex.size = realloc(mtex.size, (mtex.mgg.num_frames + 1) * sizeof(Pos));
+										memcpy(&mtex.size[mtex.mgg.num_frames], &size, sizeof(Pos));
+
+										mtex.mgg.fn = realloc(mtex.mgg.fn, (mtex.mgg.num_frames + 1) * sizeof(int16));
+										mtex.mgg.fnn = realloc(mtex.mgg.fnn, (mtex.mgg.num_frames + 1) * sizeof(int16));
+										mtex.mgg.frames_atlas = realloc(mtex.mgg.frames_atlas, (mtex.mgg.num_frames + 1) * sizeof(int8));
+										mtex.mgg.frames_atlas[mtex.mgg.num_frames] = -1;
+
+										strcpy(mtex.mgg.files[mtex.mgg.num_frames], tok);
+										strcpy(mtex.mgg.texnames[mtex.mgg.num_frames], tok);
+
+										mtex.mgg.fn[mtex.mgg.num_frames] = mtex.mgg.num_frames;
+										mtex.mgg.fnn[mtex.mgg.num_frames] = -1;
+
+										mtex.mgg.num_frames++;
+
+										tok = CheckForNormal(path);
+
+										if (tok)
+										{
+											path2 = CopyThisFile(tok, mtex.mgg.path);
+
+											if (path2 == NULL)
+											{
+												sprintf(strerror, "Error: Texture %s could not be opened", tok);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												goto CONTINUE_LOOP;
+											}
+
+											if (path2 == -1)
+											{
+												sprintf(strerror, "Error: Texture %s could not be copied", tok);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												goto CONTINUE_LOOP;
+											}
+
+											if (path2 == -2)
+												path2 = tok;
+
+											if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
+											{
+												sprintf(strerror, "Error: Texture %s could not be loaded", tok);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												goto CONTINUE_LOOP;
+											}
+
+											if (size.x != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].y)
+											{
+												sprintf(strerror, "Error: Normal texture %s has a different width and height from the diffuse texture", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												glDeleteTextures(1, &tex);
+												goto CONTINUE_LOOP;
+											}
+
+											//mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames) * sizeof(GLuint));
+
+											mtex.textures_n[mtex.mgg.num_frames - 1] = tex;
+
+											len = strlen(tok);
+
+											for (j = len; j > 0; j--)
+											{
+												if (tok[j] == '\\' || tok[j] == '/')
+												{
+													j++;
+													break;
+												}
+											}
+
+											strcpy(mtex.mgg.texnames_n[mtex.mgg.num_frames - 1], tok + j);
+											strcpy(mtex.mgg.files_n[mtex.mgg.num_frames - 1], tok + j);
+
+											mtex.mgg.fnn[mtex.mgg.num_frames - 1] = mtex.mgg.num_frames - 1;
+
+											mtex.mgg.num_f_n++;
+										}
+									}
+								}
+							CONTINUE_LOOP:
+								i++;
+							}
+						}
+						else
+						if (mtex.dn_mode && mtex.selected != -1 && temp == 1)
+						{
+							while (state == 1)
+							{
+								if (i == 0)
+								{
+									tok = StrTokNull(files);
+									strcpy(path3, tok);
+								}
+								else
+								{
+									tok = StrTokNull(NULL);
+
+									if (!tok)
+									{
+										if (i == 1)
+										{
+											path2 = CopyThisFile(files, mtex.mgg.path);
+
+											if (path2 == NULL)
+											{
+												sprintf(strerror, "Error: Texture %s could not be opened", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+											}
+
+											if (path2 == -1)
+											{
+												sprintf(strerror, "Error: Texture %s could not be copied", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+											}
+
+											if (path2 == -2)
+												path2 = files;
+
+											if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
+											{
+												sprintf(strerror, "Error: Texture %s could not be loaded", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												break;
+											}
+
+											if (size.x != mtex.size[mtex.mgg.fn[mtex.selected]].x || size.y != mtex.size[mtex.mgg.fn[mtex.selected]].y)
+											{
+												sprintf(strerror, "Error: Normal texture %s has a different width and height from the diffuse texture", files);
+												MessageBox(NULL, strerror, "Error", MB_OK);
+												glDeleteTextures(1, &tex);
+												break;
+											}
+
+											mtex.textures_n[mtex.selected] = tex;
+
+											len = strlen(path2);
+
+											for (j = len; j > 0; j--)
+											{
+												if (path2[j] == '\\' || path2[j] == '/')
+												{
+													j++;
+													break;
+												}
+											}
+
+											strcpy(mtex.mgg.texnames_n[mtex.selected], path2 + j);
+											strcpy(mtex.mgg.files_n[mtex.selected], path2 + j);
+
+											mtex.mgg.fnn[mtex.selected] = mtex.mgg.fn[mtex.selected];
+
+											mtex.mgg.num_f_n++;
+
+										}
+										//FINALIZE_LOOP:
+										state = 2;
+										i = 0;
+										break;
+									}
+									else
+									{
+										strcpy(path, path3);
+										strcat(path, "\\");
+										strcat(path, tok);
+
+										path2 = CopyThisFile(path, mtex.mgg.path);
+
+										if (path2 == NULL)
+										{
+											sprintf(strerror, "Error: Texture %s could not be opened", tok);
+											MessageBox(NULL, strerror, "Error", MB_OK);
+											break;
+										}
+
+										if (path2 == -1)
+										{
+											sprintf(strerror, "Error: Texture %s could not be copied", tok);
+											MessageBox(NULL, strerror, "Error", MB_OK);
+											break;
+										}
+
+										if (path2 == -2)
+											path2 = path;
+
+										if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
+										{
+											sprintf(strerror, "Error: Texture %s could not be loaded", tok);
+											MessageBox(NULL, strerror, "Error", MB_OK);
+											break;
+										}
+
+										if (size.x != mtex.size[mtex.mgg.fn[mtex.selected + i - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.selected + i - 1]].y)
+										{
+											sprintf(strerror, "Error: Normal texture %s has a different width and height from the diffuse texture", files);
+											MessageBox(NULL, strerror, "Error", MB_OK);
+											glDeleteTextures(1, &tex);
+											break;
+										}
+
+										mtex.textures_n[mtex.selected + i - 1] = tex;
+
+										len = strlen(path2);
 
 										for (j = len; j > 0; j--)
 										{
-											if (tok[j] == '\\' || tok[j] == '/')
+											if (path2[j] == '\\' || path2[j] == '/')
 											{
 												j++;
 												break;
 											}
 										}
 
-										strcpy(mtex.mgg.texnames_n[mtex.mgg.num_frames - 1], tok + j);
-										strcpy(mtex.mgg.files_n[mtex.mgg.num_frames - 1], tok + j);
+										strcpy(mtex.mgg.texnames_n[mtex.selected + i - 1], path2 + j);
+										strcpy(mtex.mgg.files_n[mtex.selected + i - 1], path2 + j);
 
-										mtex.mgg.fnn[mtex.mgg.num_frames - 1] = mtex.mgg.num_frames - 1;
+										mtex.mgg.fnn[mtex.selected + i - 1] = mtex.mgg.fn[mtex.selected + i - 1];
 
 										mtex.mgg.num_f_n++;
 									}
 								}
-FINALIZE_LOOP:
-								state = 2;
-								i = 0;
-								break;
-							}
-							else
-							{
-								strcpy(path, path3);
-								strcat(path, "\\");
-								strcat(path, tok);
-
-								path2 = CopyThisFile(path, mtex.mgg.path);
-
-								if (path2 == NULL)
-								{
-									sprintf(strerror, "Error: Texture %s could not be opened", tok);
-									MessageBox(NULL, strerror, "Error", MB_OK);
-									break;
-								}
-
-								if (path2 == -1)
-								{
-									sprintf(strerror, "Error: Texture %s could not be copied", tok);
-									MessageBox(NULL, strerror, "Error", MB_OK);
-									break;
-								}
-
-								if (path2 == -2)
-									path2 = path;
-
-								if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
-								{
-									sprintf(strerror, "Error: Texture %s could not be loaded", tok);
-									MessageBox(NULL, strerror, "Error", MB_OK);
-									break;
-								}
-
-								mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
-
-								mtex.textures[mtex.mgg.num_frames] = tex;
-
-								mtex.size = realloc(mtex.size, (mtex.mgg.num_frames + 1) * sizeof(Pos));
-								memcpy(&mtex.size[mtex.mgg.num_frames], &size, sizeof(Pos));
-
-								mtex.mgg.fn = realloc(mtex.mgg.fn, (mtex.mgg.num_frames + 1) * sizeof(int16));
-								mtex.mgg.fnn = realloc(mtex.mgg.fnn, (mtex.mgg.num_frames + 1) * sizeof(int16));
-								mtex.mgg.frames_atlas = realloc(mtex.mgg.frames_atlas, (mtex.mgg.num_frames + 1) * sizeof(int8));
-								mtex.mgg.frames_atlas[mtex.mgg.num_frames] = -1;
-
-								strcpy(mtex.mgg.files[mtex.mgg.num_frames], tok);
-								strcpy(mtex.mgg.texnames[mtex.mgg.num_frames], tok);
-
-								mtex.mgg.fn[mtex.mgg.num_frames] = mtex.mgg.num_frames;
-
-								mtex.mgg.num_frames++;
-
-								tok = CheckForNormal(path2);
-
-								if (tok)
-								{
-									path2 = CopyThisFile(tok, mtex.mgg.path);
-
-									if (path2 == NULL)
-									{
-										sprintf(strerror, "Error: Texture %s could not be opened", tok);
-										MessageBox(NULL, strerror, "Error", MB_OK);
-										goto CONTINUE_LOOP;
-									}
-
-									if (path2 == -1)
-									{
-										sprintf(strerror, "Error: Texture %s could not be copied", tok);
-										MessageBox(NULL, strerror, "Error", MB_OK);
-										goto CONTINUE_LOOP;
-									}
-
-									if (path2 == -2)
-										path2 = tok;
-
-									if ((tex = LoadTexture(path2, mtex.mgg.mipmap, &size)) == -1)
-									{
-										sprintf(strerror, "Error: Texture %s could not be loaded", tok);
-										MessageBox(NULL, strerror, "Error", MB_OK);
-										goto CONTINUE_LOOP;
-									}
-
-									mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames) * sizeof(GLuint));
-
-									mtex.textures_n[mtex.mgg.num_frames - 1] = tex;
-
-									len = strlen(tok);
-
-									for (j = len; j > 0; j--)
-									{
-										if (tok[j] == '\\' || tok[j] == '/')
-										{
-											j++;
-											break;
-										}
-									}
-
-									strcpy(mtex.mgg.texnames_n[mtex.mgg.num_frames - 1], tok + j);
-									strcpy(mtex.mgg.files_n[mtex.mgg.num_frames - 1], tok + j);
-
-									mtex.mgg.fnn[mtex.mgg.num_frames - 1] = mtex.mgg.num_frames - 1;
-
-									mtex.mgg.num_f_n++;
-								}
+								//CONTINUE_LOOP_2:
+								i++;
 							}
 						}
-CONTINUE_LOOP:
-						i++;
+
 					}
 
+					state = 0;
 				}
-
-				state = 0;
 			}
 
 			if (mtex.mult_selection == 0 || mtex.mult_selection == 1)
 			{
-				nk_layout_row_dynamic(ctx, 30, 2);
+				//if (!mtex.dn_mode)
+				//{
+					nk_layout_row_dynamic(ctx, 30, 2);
 
-				ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active = nk_style_item_color(nk_rgb(64, 64, 64));
-				nk_button_label(ctx, "Create atlas");
-				nk_button_label(ctx, "Create animation");
-				nk_style_default(ctx);
-
-				nk_layout_row_dynamic(ctx, 30, 1);
+					ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active = nk_style_item_color(nk_rgb(64, 64, 64));
+					nk_button_label(ctx, "Create atlas");
+					nk_button_label(ctx, "Create animation");
+					SetThemeBack();
+				//}
 
 				if (mtex.selected != -1)
 				{
-					if (nk_button_label(ctx, "Move texture"))
+					nk_layout_row_dynamic(ctx, 30, 1);
+
+					if (!mtex.dn_mode || (mtex.dn_mode && mtex.mgg.fnn[mtex.selected] != -1))
 					{
-						mtex.command = MOV_TEX;
+						if (nk_button_label(ctx, "Move texture"))
+						{
+							mtex.command = MOV_TEX;
+							atlas = mtex.mgg.frames_atlas[mtex.selected];
+						}
 					}
 
-					if (nk_button_label(ctx, "Remove texture"))
+					if (!mtex.dn_mode || (mtex.dn_mode && mtex.mgg.fnn[mtex.selected] != -1))
 					{
-						sprintf(str, "Are you sure you want to remove this texture \"%s\"?", mtex.mgg.texnames[mtex.mgg.fn[mtex.selected]]);
-						if (MessageBox(NULL, str, "Warning", MB_YESNO) == IDYES)
+						if (nk_button_label(ctx, "Remove texture"))
 						{
-							mtex.mgg.fn[mtex.selected] += 1024;
-							mtex.mgg.fnn[mtex.selected] += 1024;
-							mtex.selected = -1;
-							mtex.sel_slot = -1;
-							memset(mtex.selection, 0, 512 * sizeof(int));
-							UpdateAnims();
-							UpdateTexList();
+							if(!mtex.dn_mode) sprintf(str, "Are you sure you want to remove this texture \"%s\"?", mtex.mgg.texnames[mtex.mgg.fn[mtex.selected]]);
+							else sprintf(str, "Are you sure you want to remove this normal texture \"%s\"?", mtex.mgg.texnames_n[mtex.mgg.fn[mtex.selected]]);
+							if (MessageBox(NULL, str, "Warning", MB_YESNO) == IDYES)
+							{
+								if (!mtex.dn_mode) mtex.mgg.fn[mtex.selected] += 1024;
+								mtex.mgg.fnn[mtex.selected] += 1024;
+								if (!mtex.dn_mode) glDeleteTextures(1, &mtex.textures[mtex.mgg.fn[mtex.selected]]);
+								glDeleteTextures(1, &mtex.textures[mtex.mgg.fnn[mtex.selected]]);
+								mtex.selected = -1;
+								mtex.sel_slot = -1;
+								memset(mtex.selection, 0, 512 * sizeof(int));
+								if (!mtex.dn_mode) UpdateAnims();
+								if (!mtex.dn_mode) UpdateTexList();
+							}
 						}
 					}
 				}
@@ -2674,90 +3539,121 @@ CONTINUE_LOOP:
 			
 			if (mtex.mult_selection > 1)
 			{
-				nk_layout_row_dynamic(ctx, 30, 2);
-
-				if (nk_button_label(ctx, "Create atlas"))
+				if (mtex.dn_mode)
 				{
-					pannel_state = 3;
-					if (mtex.mgg.num_c_atlas < 32)
+					nk_layout_row_dynamic(ctx, 30, 2);
+
+					ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active = nk_style_item_color(nk_rgb(64, 64, 64));
+					nk_button_label(ctx, "Create atlas");
+					nk_button_label(ctx, "Create animation");
+					SetThemeBack();
+				}
+				else
+				{
+					nk_layout_row_dynamic(ctx, 30, 2);
+					if (nk_button_label(ctx, "Create atlas"))
 					{
-						if (mtex.mgg.num_c_atlas > 0)
+						pannel_state = 3;
+						if (mtex.mgg.num_c_atlas < 32)
 						{
-							for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
-							{
-								if (mtex.mgg.frames_atlas[i] != -1)
-								{
-									sprintf(str, "Error: frame number %d, is already in atlas %d", i, mtex.mgg.frames_atlas[i]);
-									MessageBox(NULL, str, "Atlas creation error", MB_OK);
-									pannel_state = 2;
-									break;
-								}
-							}
-						}
-
-						if (pannel_state == 3)
-						{
-							for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
-								mtex.mgg.frames_atlas[i] = mtex.mgg.num_c_atlas;
-
 							if (mtex.mgg.num_c_atlas > 0)
 							{
-								mtex.mgg.num_f_a = realloc(mtex.mgg.num_f_a, (mtex.mgg.num_c_atlas + 1) * sizeof(int16));
-								mtex.mgg.num_f0 = realloc(mtex.mgg.num_f0, (mtex.mgg.num_c_atlas + 1) * sizeof(int16));
-								mtex.mgg.num_ff = realloc(mtex.mgg.num_ff, (mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+								for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
+								{
+									if (mtex.mgg.frames_atlas[i] != -1)
+									{
+										sprintf(str, "Error: frame number %d, is already in atlas %d", i, mtex.mgg.frames_atlas[i]);
+										MessageBox(NULL, str, "Atlas creation error", MB_OK);
+										pannel_state = 2;
+										break;
+									}
+								}
 							}
-							else
+
+							if (pannel_state == 3)
 							{
-								mtex.mgg.num_f_a = malloc((mtex.mgg.num_c_atlas + 1) * sizeof(int16));
-								mtex.mgg.num_f0 = malloc((mtex.mgg.num_c_atlas + 1) * sizeof(int16));
-								mtex.mgg.num_ff = malloc((mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+								for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
+									mtex.mgg.frames_atlas[i] = mtex.mgg.num_c_atlas;
+
+								if (mtex.mgg.num_c_atlas > 0)
+								{
+									mtex.mgg.num_f_a = realloc(mtex.mgg.num_f_a, (mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+									mtex.mgg.num_f0 = realloc(mtex.mgg.num_f0, (mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+									mtex.mgg.num_ff = realloc(mtex.mgg.num_ff, (mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+								}
+								else
+								{
+									mtex.mgg.num_f_a = malloc((mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+									mtex.mgg.num_f0 = malloc((mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+									mtex.mgg.num_ff = malloc((mtex.mgg.num_c_atlas + 1) * sizeof(int16));
+								}
+
+								mtex.mgg.num_f0[mtex.mgg.num_c_atlas] = mtex.first_sel;
+								mtex.mgg.num_ff[mtex.mgg.num_c_atlas] = mtex.last_sel;
+
+								mtex.mgg.num_f_a[mtex.mgg.num_c_atlas] = mtex.last_sel - mtex.first_sel + 1;
+
+								mtex.mgg.num_c_atlas++;
+
+								pannel_state = 0;
 							}
 
-							mtex.mgg.num_f0[mtex.mgg.num_c_atlas] = mtex.first_sel;
-							mtex.mgg.num_ff[mtex.mgg.num_c_atlas] = mtex.last_sel;
-
-							mtex.mgg.num_f_a[mtex.mgg.num_c_atlas] = mtex.last_sel - mtex.first_sel + 1;
-
-							mtex.mgg.num_c_atlas++;
-
-							pannel_state = 0;
+							if (pannel_state == 2) pannel_state = 0;
 						}
+					}
 
-						if (pannel_state == 2) pannel_state = 0;
+					if (nk_button_label(ctx, "Create animation"))
+						pannel_state = 1;
+
+					nk_layout_row_dynamic(ctx, 30, 1);
+				}
+
+				for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
+				{
+					if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+					{
+						temp = 0;
+						break;
 					}
 				}
 
-				if (nk_button_label(ctx, "Create animation"))
-					pannel_state = 1;
-
-				nk_layout_row_dynamic(ctx, 30, 1);
-
-				if (nk_button_label(ctx, "Move textures"))
+				if (!mtex.dn_mode || (mtex.dn_mode && !temp))
 				{
-					mtex.command = MOV_TEX;
-					//mtex.command2 = mtex.anim_selected;
+
+					if (nk_button_label(ctx, "Move textures"))
+					{
+						mtex.command = MOV_TEX;
+						//mtex.command2 = mtex.anim_selected;
+					}
 				}
 
-				if (nk_button_label(ctx, "Remove textures"))
+				if (!mtex.dn_mode || (mtex.dn_mode && !temp))
 				{
-					sprintf(str, "Are you sure you want to remove these textures %d to %d?", mtex.first_sel, mtex.last_sel);
-					if (MessageBox(NULL, str, "Warning", MB_YESNO) == IDYES)
+					if (nk_button_label(ctx, "Remove textures"))
 					{
-						for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
+						sprintf(str, "Are you sure you want to remove these textures %d to %d?", mtex.first_sel, mtex.last_sel);
+						if (MessageBox(NULL, str, "Warning", MB_YESNO) == IDYES)
 						{
-							mtex.mgg.fn[i] += 1024;
-							mtex.mgg.fnn[i] += 1024;
-							mtex.selected = -1;
-							mtex.sel_slot = -1;
-							memset(mtex.selection, 0, 512 * sizeof(int));
+							for (i = mtex.first_sel; i < mtex.last_sel + 1; i++)
+							{
+								if (!mtex.dn_mode) mtex.mgg.fn[i] += 1024;
+								mtex.mgg.fnn[i] += 1024;
+
+								if (!mtex.dn_mode) glDeleteTextures(1, &mtex.textures[mtex.mgg.fn[i]]);
+								glDeleteTextures(1, &mtex.textures[mtex.mgg.fnn[i]]);
+
+								mtex.selected = -1;
+								mtex.sel_slot = -1;
+								memset(mtex.selection, 0, 512 * sizeof(int));
+							}
+							if (!mtex.dn_mode) UpdateAnims();
+							if (!mtex.dn_mode) UpdateTexList();
 						}
-						UpdateAnims();
-						UpdateTexList();
 					}
 				}
 			}
 
-			if (mtex.command == MOV_TEX && mtex.mgg.num_c_atlas > 0)
+			if (mtex.command == MOV_TEX && mtex.mgg.num_c_atlas > 0 && !mtex.dn_mode)
 			{
 				nk_layout_row_dynamic(ctx, 190, 1);
 				if (nk_group_begin(ctx, "Move texture(s)", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
@@ -2785,7 +3681,7 @@ CONTINUE_LOOP:
 
 					ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
 					nk_button_label(ctx, str);
-					nk_style_default(ctx);
+					SetThemeBack();
 
 					nk_layout_row_push(ctx, 0.1f);
 					if (mtex.mgg.frames_atlas[mtex.selected] < mtex.mgg.num_c_atlas - 1)
@@ -2802,54 +3698,567 @@ CONTINUE_LOOP:
 					nk_layout_row_end(ctx);
 					*/
 
-					nk_layout_row_dynamic(ctx, 25, 1);
-
-					if (nk_button_label(ctx, "Move out of the atlas") && mtex.mgg.frames_atlas[mtex.selected] != -1)
+					if (mtex.canvas < mtex.mgg.num_c_atlas)
 					{
-						if (MessageBox(NULL, "Are you sure you want to move this texture out of this atlas?\nIt will be positioned as the last texture!", "Warning", MB_YESNO) == IDYES)
+						nk_layout_row_dynamic(ctx, 25, 1);
+
+						if (nk_button_label(ctx, "Move out of the atlas") && mtex.mgg.frames_atlas[mtex.selected] != -1)
 						{
-							tmp = mtex.mgg.fn[mtex.selected];
-
-							mtex.mgg.fn[mtex.selected] += 1024;
-							UpdateAnims();
-
-							for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
-								mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
-
-							mtex.mgg.fn[mtex.mgg.num_frames - 1] = tmp;
-
-							tmp = mtex.mgg.fnn[mtex.selected];
-
-							for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
-								mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
-
-							mtex.mgg.fnn[mtex.mgg.num_frames - 1] = tmp;
-
-							mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
-							mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
-
-							for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
-								mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
-
-							mtex.mgg.frames_atlas[mtex.mgg.num_frames - 1] = -1;
-
-							for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < mtex.mgg.num_c_atlas; i++)
+							if (mtex.mult_selection == 0)
 							{
-								mtex.mgg.num_f0[i]--;
-								mtex.mgg.num_ff[i]--;
+								if (MessageBox(NULL, "Are you sure you want to move this texture out of this atlas?\nIt will be positioned as the last texture!",
+									"Warning", MB_YESNO) == IDYES)
+								{
+									tmp = mtex.mgg.fn[mtex.selected];
+
+									mtex.mgg.fn[mtex.selected] += 1024;
+									UpdateAnims();
+
+									for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
+										mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
+
+									mtex.mgg.fn[mtex.mgg.num_frames - 1] = tmp;
+
+									tmp = mtex.mgg.fnn[mtex.selected];
+
+									for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
+										mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
+
+									mtex.mgg.fnn[mtex.mgg.num_frames - 1] = tmp;
+
+									mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
+									mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
+
+									for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
+										mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
+
+									mtex.mgg.frames_atlas[mtex.mgg.num_frames - 1] = -1;
+
+									for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < mtex.mgg.num_c_atlas; i++)
+									{
+										if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+										mtex.mgg.num_ff[i]--;
+									}
+
+									UpdateAtlasses();
+
+									mtex.command = NONE;
+								}
+							}
+							else
+							{
+								if (MessageBox(NULL, "Are you sure you want to move these textures out of this atlas?\nThey will be positioned as the last textures!",
+									"Warning", MB_YESNO) == IDYES)
+								{
+									for (j = mtex.first_sel; j < mtex.last_sel + 1; j++)
+									{
+										tmp = mtex.mgg.fn[mtex.selected];
+
+										mtex.mgg.fn[mtex.selected] += 1024;
+										UpdateAnims();
+
+										for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
+											mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
+
+										mtex.mgg.fn[mtex.mgg.num_frames - 1] = tmp;
+
+										tmp = mtex.mgg.fnn[mtex.selected];
+
+										for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
+											mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
+
+										mtex.mgg.fnn[mtex.mgg.num_frames - 1] = tmp;
+
+										mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
+										mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
+
+										for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
+											mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
+
+										mtex.mgg.frames_atlas[mtex.mgg.num_frames - 1] = -1;
+
+										for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < mtex.mgg.num_c_atlas; i++)
+										{
+											if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+											mtex.mgg.num_ff[i]--;
+										}
+									}
+
+									UpdateAtlasses();
+
+									mtex.command = NONE;
+								}
+							}
+						}
+
+						if (mtex.mgg.num_c_atlas > 1)
+						{
+
+							nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 4);
+
+							nk_layout_row_push(ctx, 0.1f);
+							if (atlas > 0)
+							{
+								if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT))
+									atlas--;
+							}
+							else
+								nk_spacing(ctx, 1);
+
+							nk_layout_row_push(ctx, 0.3f);
+							ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+							sprintf(str, "Atlas %d", atlas + 1);
+							nk_button_label(ctx, str);
+							SetThemeBack();
+
+							nk_layout_row_push(ctx, 0.1f);
+							if (atlas < mtex.mgg.num_c_atlas - 1)
+							{
+								if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
+									atlas++;
+							}
+							else
+								nk_spacing(ctx, 1);
+
+							nk_layout_row_push(ctx, 0.5f);
+							if (atlas == mtex.mgg.frames_atlas[mtex.selected])
+							{
+								ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+								nk_button_label(ctx, "Move to atlas...");
+								SetThemeBack();
+							}
+							else
+							{
+								if (nk_button_label(ctx, "Move to atlas..."))
+								{
+									if (mtex.mult_selection == 0)
+									{
+										if (MessageBox(NULL, "Are you sure you want to move this texture to other atlas?\nIt will be positioned as the last texture!",
+											"Warning", MB_YESNO) == IDYES)
+										{
+											tmp = mtex.mgg.fn[mtex.selected];
+
+											mtex.mgg.fn[mtex.selected] += 1024;
+											UpdateAnims();
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.selected; i < mtex.mgg.num_ff[atlas] + 1; i++)
+													mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
+
+												mtex.mgg.fn[mtex.mgg.num_ff[atlas]] = tmp;
+
+												//mtex.mgg.num_ff[atlas]++;
+
+												mtex.mgg.num_f0[atlas]--;
+												mtex.mgg.num_f_a[atlas]++;
+											}
+											else
+											{
+												for (i = mtex.selected; i > mtex.mgg.num_ff[atlas] + 1; i--)
+													mtex.mgg.fn[i] = mtex.mgg.fn[i - 1];
+
+												mtex.mgg.fn[mtex.mgg.num_ff[atlas] + 1] = tmp;
+
+												mtex.mgg.num_ff[atlas]++;
+
+												//mtex.mgg.num_f0[atlas]--;
+												mtex.mgg.num_f_a[atlas]++;
+											}
+
+											mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
+											mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
+
+											tmp = mtex.mgg.fnn[mtex.selected];
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.selected; i < mtex.mgg.num_ff[atlas]; i++)
+													mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
+											}
+											else
+											{
+												for (i = mtex.selected; i > mtex.mgg.num_ff[atlas] + 1; i--)
+													mtex.mgg.fnn[i] = mtex.mgg.fn[i - 1];
+											}
+
+											mtex.mgg.fnn[mtex.mgg.num_ff[atlas]] = tmp;
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.selected; i < mtex.mgg.num_ff[atlas]; i++)
+													mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
+											}
+											else
+											{
+												for (i = mtex.selected; i > mtex.mgg.num_ff[atlas] + 1; i--)
+													mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i - 1];
+											}
+
+											mtex.mgg.frames_atlas[mtex.mgg.num_ff[atlas]] = atlas;
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < atlas; i++)
+												{
+													if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+													mtex.mgg.num_ff[i]--;
+												}
+											}
+											else
+											{
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i > atlas; i--)
+												{
+													if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+													mtex.mgg.num_ff[i]--;
+												}
+											}
+
+											UpdateAtlasses();
+
+											mtex.command = NONE;
+										}
+									}
+									else
+									{
+										if (MessageBox(NULL, "Are you sure you want to move these textures to other atlas?\nThey will be positioned as the last textures!",
+											"Warning", MB_YESNO) == IDYES)
+										{
+											for (j = mtex.first_sel, k = 0; k < mtex.mult_selection + 1; k++)
+											{
+												tmp = mtex.mgg.fn[j];
+
+												mtex.mgg.fn[j] += 1024;
+												UpdateAnims();
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = j; i < mtex.mgg.num_ff[atlas] + 1; i++)
+														mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
+
+													mtex.mgg.fn[mtex.mgg.num_ff[atlas]] = tmp;
+
+													//mtex.mgg.num_ff[atlas]++;
+
+													mtex.mgg.num_f0[atlas]--;
+													mtex.mgg.num_f_a[atlas]++;
+												}
+												else
+												{
+													for (i = j; i > mtex.mgg.num_ff[atlas] + 1; i--)
+														mtex.mgg.fn[i] = mtex.mgg.fn[i - 1];
+
+													mtex.mgg.fn[mtex.mgg.num_ff[atlas] + 1] = tmp;
+
+													mtex.mgg.num_ff[atlas]++;
+
+													//mtex.mgg.num_f0[atlas]--;
+													mtex.mgg.num_f_a[atlas]++;
+												}
+
+												mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
+												mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
+
+												tmp = mtex.mgg.fnn[j];
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = j; i < mtex.mgg.num_ff[atlas]; i++)
+														mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
+												}
+												else
+												{
+													for (i = j; i > mtex.mgg.num_ff[atlas] + 1; i--)
+														mtex.mgg.fnn[i] = mtex.mgg.fn[i - 1];
+												}
+
+												mtex.mgg.fnn[mtex.mgg.num_ff[atlas]] = tmp;
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = j; i < mtex.mgg.num_ff[atlas]; i++)
+														mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
+												}
+												else
+												{
+													for (i = j; i > mtex.mgg.num_ff[atlas] + 1; i--)
+														mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i - 1];
+												}
+
+												mtex.mgg.frames_atlas[mtex.mgg.num_ff[atlas]] = atlas;
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = mtex.mgg.frames_atlas[j] + 1; i < atlas; i++)
+													{
+														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+														mtex.mgg.num_ff[i]--;
+													}
+												}
+												else
+												{
+													for (i = mtex.mgg.frames_atlas[j] + 1; i > atlas; i--)
+													{
+														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+														mtex.mgg.num_ff[i]--;
+													}
+
+													j++;
+												}
+											}
+
+											UpdateAtlasses();
+
+											mtex.command = NONE;
+										}
+									}
+								}
 							}
 
-							mtex.command = NONE;
+							nk_layout_row_end(ctx);
 						}
 					}
+					//else
+					if (mtex.canvas == mtex.mgg.num_c_atlas)
+					{
+						if (mtex.mgg.num_c_atlas > 0)
+						{
 
-					nk_button_label(ctx, "Move to other atlas");
+							nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 4);
+
+							nk_layout_row_push(ctx, 0.1f);
+							if (atlas > 0)
+							{
+								if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT))
+									atlas--;
+							}
+							else
+								nk_spacing(ctx, 1);
+
+							nk_layout_row_push(ctx, 0.3f);
+							ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+							if(atlas == -1)
+								sprintf(str, "No atlas");
+							else
+								sprintf(str, "Atlas %d", atlas + 1);
+							nk_button_label(ctx, str);
+							SetThemeBack();
+
+							nk_layout_row_push(ctx, 0.1f);
+							if (atlas < mtex.mgg.num_c_atlas - 1)
+							{
+								if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
+									atlas++;
+							}
+							else
+								nk_spacing(ctx, 1);
+
+							nk_layout_row_push(ctx, 0.5f);
+							
+							if (atlas == mtex.mgg.frames_atlas[mtex.selected])
+							{
+								ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+								nk_button_label(ctx, "Move to atlas...");
+								SetThemeBack();
+							}
+							else
+							{
+							
+								if (nk_button_label(ctx, "Move to atlas..."))
+								{
+									if (mtex.mult_selection == 0)
+									{
+										if (MessageBox(NULL, "Are you sure you want to move this texture to an atlas?\nIt will be positioned as the last texture!",
+											"Warning", MB_YESNO) == IDYES)
+										{
+											tmp = mtex.mgg.fn[mtex.selected];
+
+											mtex.mgg.fn[mtex.selected] += 1024;
+											UpdateAnims();
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.selected; i < mtex.mgg.num_ff[atlas] + 1; i++)
+													mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
+
+												mtex.mgg.fn[mtex.mgg.num_ff[atlas]] = tmp;
+
+												//mtex.mgg.num_ff[atlas]++;
+
+												mtex.mgg.num_f0[atlas]--;
+												mtex.mgg.num_f_a[atlas]++;
+											}
+											else
+											{
+												for (i = mtex.selected; i > mtex.mgg.num_ff[atlas] + 1; i--)
+													mtex.mgg.fn[i] = mtex.mgg.fn[i - 1];
+
+												mtex.mgg.fn[mtex.mgg.num_ff[atlas] + 1] = tmp;
+
+												mtex.mgg.num_ff[atlas]++;
+
+												//mtex.mgg.num_f0[atlas]--;
+												mtex.mgg.num_f_a[atlas]++;
+											}
+
+											//mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
+											//mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
+
+											tmp = mtex.mgg.fnn[mtex.selected];
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.selected; i < mtex.mgg.num_ff[atlas]; i++)
+													mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
+											}
+											else
+											{
+												for (i = mtex.selected; i > mtex.mgg.num_ff[atlas] + 1; i--)
+													mtex.mgg.fnn[i] = mtex.mgg.fn[i - 1];
+											}
+
+											mtex.mgg.fnn[mtex.mgg.num_ff[atlas]] = tmp;
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.selected; i < mtex.mgg.num_ff[atlas]; i++)
+													mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
+											}
+											else
+											{
+												for(i = mtex.selected; i > mtex.mgg.num_ff[atlas] + 1; i--)
+													mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i - 1];
+											}
+
+											mtex.mgg.frames_atlas[mtex.mgg.num_ff[atlas]] = atlas;
+
+											if (mtex.mgg.num_ff[atlas] > mtex.selected)
+											{
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < atlas; i++)
+												{
+													if(mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+													mtex.mgg.num_ff[i]--;
+												}
+											}
+											else
+											{
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i > atlas; i--)
+												{
+													if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+													mtex.mgg.num_ff[i]--;
+												}
+											}
+
+											UpdateAtlasses();
+
+											mtex.command = NONE;
+										}
+									}
+									else
+									{
+										if (MessageBox(NULL, "Are you sure you want to move these textures to an atlas?\nThey will be positioned as the last textures!",
+											"Warning", MB_YESNO) == IDYES)
+										{
+											for (j = mtex.first_sel, k = 0; k < mtex.mult_selection + 1; k++)
+											{
+												tmp = mtex.mgg.fn[j];
+
+												mtex.mgg.fn[j] += 1024;
+												UpdateAnims();
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = j; i < mtex.mgg.num_ff[atlas] + 1; i++)
+														mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
+
+													mtex.mgg.fn[mtex.mgg.num_ff[atlas]] = tmp;
+
+													//mtex.mgg.num_ff[atlas]++;
+
+													mtex.mgg.num_f0[atlas]--;
+													mtex.mgg.num_f_a[atlas]++;
+												}
+												else
+												{
+													for (i = j; i > mtex.mgg.num_ff[atlas] + 1; i--)
+														mtex.mgg.fn[i] = mtex.mgg.fn[i - 1];
+
+													mtex.mgg.fn[mtex.mgg.num_ff[atlas] + 1] = tmp;
+
+													mtex.mgg.num_ff[atlas]++;
+
+													//mtex.mgg.num_f0[atlas]--;
+													mtex.mgg.num_f_a[atlas]++;
+												}
+
+												//mtex.mgg.num_ff[mtex.mgg.frames_atlas[mtex.selected]]--;
+												//mtex.mgg.num_f_a[mtex.mgg.frames_atlas[mtex.selected]]--;
+
+												tmp = mtex.mgg.fnn[j];
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = j; i < mtex.mgg.num_ff[atlas]; i++)
+														mtex.mgg.fnn[i] = mtex.mgg.fnn[i + 1];
+												}
+												else
+												{
+													for (i = j; i > mtex.mgg.num_ff[atlas] + 1; i--)
+														mtex.mgg.fnn[i] = mtex.mgg.fn[i - 1];
+												}
+
+												mtex.mgg.fnn[mtex.mgg.num_ff[atlas]] = tmp;
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = j; i < mtex.mgg.num_ff[atlas]; i++)
+														mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i + 1];
+												}
+												else
+												{
+													for (i = j; i > mtex.mgg.num_ff[atlas] + 1; i--)
+														mtex.mgg.frames_atlas[i] = mtex.mgg.frames_atlas[i - 1];
+												}
+
+												mtex.mgg.frames_atlas[mtex.mgg.num_ff[atlas]] = atlas;
+
+												if (mtex.mgg.num_ff[atlas] > j)
+												{
+													for (i = mtex.mgg.frames_atlas[j] + 1; i < atlas; i++)
+													{
+														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+														mtex.mgg.num_ff[i]--;
+													}
+												}
+												else
+												{
+													for (i = mtex.mgg.frames_atlas[j] + 1; i > atlas; i--)
+													{
+														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
+														mtex.mgg.num_ff[i]--;
+													}
+
+													j++;
+												}
+											}
+
+											UpdateAtlasses();
+
+											mtex.command = NONE;
+										}
+									}
+								}
+							}
+
+							nk_layout_row_end(ctx);
+						}
+					}
 
 					nk_group_end(ctx);
 				}
 			}
 
-			if (mtex.anim_selected != -1)
+			if (mtex.anim_selected != -1 && !mtex.dn_mode)
 			{
 				nk_layout_row_dynamic(ctx, 190, 1);
 				if (nk_group_begin(ctx, "Animation", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
@@ -2889,7 +4298,7 @@ CONTINUE_LOOP:
 				}
 			}
 
-			if (pannel_state == 1)
+			if (pannel_state == 1 && !mtex.dn_mode)
 			{
 				nk_layout_row_dynamic(ctx, 140, 1);
 				if (nk_group_begin(ctx, "New animation",NK_WINDOW_TITLE | NK_WINDOW_BORDER))
@@ -3016,7 +4425,7 @@ void ViewerBox()
 		//ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
 		if (nk_button_label(ctx, str))
 			zoom = 2.0f;
-		//nk_style_default(ctx);
+		//SetThemeBack();
 		
 		nk_layout_space_push(ctx, nk_rect(0.9f, 0.00f, 0.1f, 0.1f));
 		if (nk_button_symbol(ctx, NK_SYMBOL_PLUS))
@@ -3051,7 +4460,7 @@ void ViewerBox()
 			{
 				ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
 				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT);
-				nk_style_default(ctx);
+				SetThemeBack();
 			}
 			else
 			{
@@ -3081,7 +4490,7 @@ void ViewerBox()
 					mtex.play = 1;
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack();
 
 			nk_layout_row_push(ctx, 0.2f);
 			if (!mtex.play)
@@ -3095,7 +4504,7 @@ void ViewerBox()
 					mtex.play = 0;
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack();
 
 			nk_layout_row_push(ctx, 0.1f);
 			if (mtex.selected == mtex.mgg.mga[mtex.anim_selected].endID)
@@ -3112,7 +4521,7 @@ void ViewerBox()
 				}
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack();
 
 			nk_layout_row_push(ctx, 0.1f);
 			if(nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
@@ -3142,7 +4551,7 @@ void ViewerBox()
 			sprintf(str, "%d", mtex.selected);
 			ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
 			nk_button_label(ctx, str);
-			nk_style_default(ctx);
+			SetThemeBack();
 
 			nk_layout_row_push(ctx, 0.1f);
 			if (mtex.selected < mtex.mgg.num_frames - 1)
@@ -3169,7 +4578,7 @@ void ViewerBox()
 void Canvas()
 {
 	register int i, j, k, l, m;
-	int names[8], mult_sel_count = 0, nm[8], counter = 0;
+	int names[8], mult_sel_count = 0, nm[8], counter = 0, texu, temp;
 	char str[128];
 	static int option = 0;
 	struct nk_rect bounds;
@@ -3183,51 +4592,54 @@ void Canvas()
 	{
 		option = mtex.canvas;
 
-		if (option == mtex.mgg.num_c_atlas)
-			sprintf(str, "Single textures");
-
-		if (option == mtex.mgg.num_c_atlas + 1)
-			sprintf(str, "All textures");
-
-		if (option < mtex.mgg.num_c_atlas)
-			sprintf(str, "Atlas %d", option + 1);
-
-		nk_menubar_begin(ctx);
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-
-		if (nk_combo_begin_label(ctx, str, nk_vec2(nk_widget_width(ctx), 128 * mtex.mgg.num_c_atlas + 2)))
+		if (!mtex.dn_mode)
 		{
-			for (i = 0; i < mtex.mgg.num_c_atlas + 2; i++)
+
+			if (option == mtex.mgg.num_c_atlas)
+				sprintf(str, "Single textures");
+
+			if (option == mtex.mgg.num_c_atlas + 1)
+				sprintf(str, "All textures");
+
+			if (option < mtex.mgg.num_c_atlas)
+				sprintf(str, "Atlas %d", option + 1);
+
+			nk_menubar_begin(ctx);
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+
+			if (nk_combo_begin_label(ctx, str, nk_vec2(nk_widget_width(ctx), 128 * mtex.mgg.num_c_atlas + 2)))
 			{
-				nk_layout_row_dynamic(ctx, 25, 1);
-				if (i == mtex.mgg.num_c_atlas)
+				for (i = 0; i < mtex.mgg.num_c_atlas + 2; i++)
 				{
-					if (nk_combo_item_label(ctx, "Single textures", NK_TEXT_ALIGN_LEFT))
-						option = i;
+					nk_layout_row_dynamic(ctx, 25, 1);
+					if (i == mtex.mgg.num_c_atlas)
+					{
+						if (nk_combo_item_label(ctx, "Single textures", NK_TEXT_ALIGN_LEFT))
+							option = i;
+					}
+
+					if (i == mtex.mgg.num_c_atlas + 1)
+					{
+						if (nk_combo_item_label(ctx, "All textures", NK_TEXT_ALIGN_LEFT))
+							option = i;
+					}
+
+					if (i < mtex.mgg.num_c_atlas)
+					{
+						sprintf(str, "Atlas %d", i + 1);
+						if (nk_combo_item_label(ctx, str, NK_TEXT_ALIGN_LEFT))
+							option = i;
+					}
 				}
 
-				if (i == mtex.mgg.num_c_atlas + 1)
-				{
-					if (nk_combo_item_label(ctx, "All textures", NK_TEXT_ALIGN_LEFT))
-						option = i;
-				}
-
-				if (i < mtex.mgg.num_c_atlas)
-				{
-					sprintf(str, "Atlas %d", i + 1);
-					if (nk_combo_item_label(ctx, str, NK_TEXT_ALIGN_LEFT))
-						option = i;
-				}
+				nk_combo_end(ctx);
 			}
 
-			nk_combo_end(ctx);
-		}
+			nk_menubar_end(ctx);
 
-		nk_menubar_end(ctx);
-
-		//if (option == mtex.mgg.num_c_atlas)
-		//{
+			//if (option == mtex.mgg.num_c_atlas)
+			//{
 			nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
 			for (i = 0, j = 0; i < mtex.mgg.num_frames; i++, counter++)
 			{
@@ -3318,8 +4730,8 @@ void Canvas()
 
 										for (k = mtex.first_sel, m = 0; k < mtex.last_sel + 1; k++, m++)
 										{
-											l = mtex.mgg.fn[i+m];
-											mtex.mgg.fn[i+m] = mtex.mgg.fn[k];
+											l = mtex.mgg.fn[i + m];
+											mtex.mgg.fn[i + m] = mtex.mgg.fn[k];
 											mtex.mgg.fn[k] = l;
 										}
 
@@ -3428,77 +4840,289 @@ void Canvas()
 				j = 0;
 
 			}
-		//}
-		/*
-		else
-		{
+			//}
+			/*
+			else
+			{
 			nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
 			for (i = mtex.mgg.num_f0[option], j = 0; i < mtex.mgg.num_ff[option] + 1; i++)
 			{
-				if (mtex.mgg.frames_atlas[i] == option)
+			if (mtex.mgg.frames_atlas[i] == option)
+			{
+			if (mtex.mgg.fn[i] < 1024)
+			{
+			if (j == 8)
+			{
+			nk_layout_row_dynamic(ctx, 20, 8);
+
+			for (k = 0; k < 8; k++)
+			{
+			sprintf(str, "%d - %s", names[k], mtex.mgg.texnames[names[k]]);
+			nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
+			}
+
+			j = 0;
+
+			nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
+			}
+
+			if (nk_selectable_image_label(ctx, nk_image_id(mtex.textures[i]), " ", NK_TEXT_ALIGN_MIDDLE, &mtex.selection[i]))
+			{
+			if (st.keys[LSHIFT_KEY].state)
+			{
+			mtex.anim_selected = -1;
+			memset(mtex.selection, 0, 512 * sizeof(int));
+
+			mtex.mult_selection = abs(i - mtex.selected);
+
+			if (mtex.selected < i)
+			{
+			mtex.first_sel = mtex.selected;
+			mtex.last_sel = i;
+
+			for (k = mtex.selected; k < i + 1; k++)
+			mtex.selection[k] = 1;
+			}
+			else
+			{
+			mtex.first_sel = i;
+			mtex.last_sel = mtex.selected;
+
+			for (k = i; k < mtex.selected + 1; k++)
+			mtex.selection[k] = 1;
+			}
+			}
+			else
+			{
+			mtex.anim_selected = -1;
+			mtex.mult_selection = 0;
+			memset(mtex.selection, 0, 512 * sizeof(int));
+			mtex.selection[i] = 1;
+			mtex.selected = i;
+			}
+
+			}
+
+			names[j] = i;
+
+			if (j < 8)
+			j++;
+			}
+			}
+			else
+			continue;
+			}
+
+			if (j > 0)
+			{
+			nk_layout_row_dynamic(ctx, 20, 8);
+
+			for (k = 0; k < j; k++)
+			{
+			sprintf(str, "%d - %s", names[k], mtex.mgg.texnames[names[k]]);
+			nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
+			}
+
+			j = 0;
+
+			}
+			}
+			*/
+		}
+		else
+		{
+			nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
+			for (i = 0, j = 0; i < mtex.mgg.num_frames; i++, counter++)
+			{
+				//if (mtex.mgg.fnn[i] < 1024)
+				//{
+				//if ((option == mtex.mgg.num_c_atlas && mtex.mgg.frames_atlas[i] == -1) || (option == mtex.mgg.num_c_atlas + 1)
+				//|| (option < mtex.mgg.num_c_atlas && mtex.mgg.frames_atlas[i] == option))
+				//{
+				if (j == 8)
 				{
-					if (mtex.mgg.fn[i] < 1024)
+					nk_layout_row_dynamic(ctx, 20, 8);
+
+					for (k = 0; k < 8; k++)
 					{
-						if (j == 8)
+						sprintf(str, "%d - %s", nm[k], mtex.mgg.texnames_n[names[k]]);
+						nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
+					}
+
+					j = 0;
+
+					nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
+				}
+
+				if (mtex.command == MOV_TEX)
+				{
+					if (mtex.mult_selection == 0)
+					{
+						bounds = nk_widget_bounds(ctx);
+						bounds.h += 20;
+						if (nk_input_is_mouse_hovering_rect(&ctx->input, bounds) && (mtex.size[i].x == mtex.size[mtex.selected].x && mtex.size[i].y == mtex.size[mtex.selected].y))
 						{
-							nk_layout_row_dynamic(ctx, 20, 8);
+							nk_button_symbol(ctx, NK_SYMBOL_PLUS);
 
-							for (k = 0; k < 8; k++)
+							if (nk_input_has_mouse_click(ctx, NK_BUTTON_LEFT))
 							{
-								sprintf(str, "%d - %s", names[k], mtex.mgg.texnames[names[k]]);
-								nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
-							}
+								l = mtex.mgg.fnn[i];
+								mtex.mgg.fnn[i] = mtex.mgg.fnn[mtex.selected];
+								mtex.mgg.fnn[mtex.selected] = l;
 
-							j = 0;
-
-							nk_layout_row_dynamic(ctx, (0.70f * st.screenx) / 8.0f, 8);
-						}
-
-						if (nk_selectable_image_label(ctx, nk_image_id(mtex.textures[i]), " ", NK_TEXT_ALIGN_MIDDLE, &mtex.selection[i]))
-						{
-							if (st.keys[LSHIFT_KEY].state)
-							{
-								mtex.anim_selected = -1;
+								mtex.selected = -1;
+								mtex.sel_slot = -1;
 								memset(mtex.selection, 0, 512 * sizeof(int));
 
-								mtex.mult_selection = abs(i - mtex.selected);
+								mtex.command = NONE;
+							}
 
-								if (mtex.selected < i)
+							names[j] = mtex.mgg.fn[i];
+							nm[j] = counter;
+
+							if (j < 8)
+								j++;
+
+							continue;
+						}
+					}
+					else
+					{
+						bounds = nk_widget_bounds(ctx);
+						bounds.h += 20;
+
+						if (mult_sel_count > 0)
+						{
+							nk_button_symbol(ctx, NK_SYMBOL_PLUS);
+
+							names[j] = mtex.mgg.fnn[i];
+
+							if (j < 8)
+								j++;
+
+							mult_sel_count--;
+
+							continue;
+						}
+
+						temp = 1;
+
+						for (k = mtex.first_sel, l = 0; k < mtex.last_sel + 1; k++, l++)
+						{
+							if (mtex.size[i + l].x != mtex.size[k].x || mtex.size[i + l].y != mtex.size[k].y)
+							{
+								temp = 0;
+								break;
+							}
+						}
+
+						if (nk_input_is_mouse_hovering_rect(&ctx->input, bounds) && temp)
+						{
+							nk_button_symbol(ctx, NK_SYMBOL_PLUS);
+
+							if (nk_input_has_mouse_click(ctx, NK_BUTTON_LEFT))
+							{
+								//l = mtex.mgg.fn[i];
+								//mtex.mgg.fn[i] = mtex.mgg.fn[mtex.selected];
+								//mtex.mgg.fn[mtex.selected] = l;
+
+								for (k = mtex.first_sel, m = 0; k < mtex.last_sel + 1; k++, m++)
 								{
-									mtex.first_sel = mtex.selected;
-									mtex.last_sel = i;
-
-									for (k = mtex.selected; k < i + 1; k++)
-										mtex.selection[k] = 1;
+									l = mtex.mgg.fnn[i + m];
+									mtex.mgg.fnn[i + m] = mtex.mgg.fnn[k];
+									mtex.mgg.fnn[k] = l;
 								}
-								else
-								{
-									mtex.first_sel = i;
-									mtex.last_sel = mtex.selected;
 
-									for (k = i; k < mtex.selected + 1; k++)
-										mtex.selection[k] = 1;
-								}
+								mtex.selected = -1;
+								mtex.sel_slot = -1;
+								memset(mtex.selection, 0, 512 * sizeof(int));
+
+								mtex.command = NONE;
 							}
 							else
-							{
-								mtex.anim_selected = -1;
-								mtex.mult_selection = 0;
-								memset(mtex.selection, 0, 512 * sizeof(int));
-								mtex.selection[i] = 1;
-								mtex.selected = i;
-							}
+								mult_sel_count = mtex.last_sel - mtex.first_sel;
 
+							names[j] = mtex.mgg.fnn[i];
+							nm[j] = counter;
+
+							if (j < 8)
+								j++;
+
+							continue;
 						}
-
-						names[j] = i;
-
-						if (j < 8)
-							j++;
 					}
 				}
+
+				if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+					texu = nk_selectable_image_label(ctx, nk_image_id(mtex.textures_n[mtex.mgg.fnn[i]]), " ", NK_TEXT_ALIGN_MIDDLE, &mtex.selection[i]);
 				else
-					continue;
+					texu = nk_selectable_label(ctx, "No normal map", NK_TEXT_ALIGN_LEFT, &mtex.selection[i]);
+
+				if (texu)
+				{
+					if (st.keys[LSHIFT_KEY].state)
+					{
+						mtex.anim_selected = -1;
+						memset(mtex.selection, 0, 512 * sizeof(int));
+						//memset(mtex.sel_slots, 0, 512 * sizeof(int));
+
+						mtex.mult_selection = abs(i - mtex.selected);
+
+						if (mtex.selected < i)
+						{
+							mtex.first_sel = mtex.selected;
+							mtex.last_sel = i;
+
+							mtex.first_sel_slot = mtex.sel_slot;
+							mtex.last_sel_slot = i;
+
+							for (k = mtex.selected; k < i + 1; k++)
+							{
+								mtex.selection[k] = 1;
+								mtex.sel_slots[k] = 1;
+							}
+						}
+						else
+						{
+							mtex.first_sel = i;
+							mtex.last_sel = mtex.selected;
+
+							mtex.first_sel_slot = i;
+							mtex.last_sel_slot = mtex.sel_slot;
+
+							for (k = i; k < mtex.selected + 1; k++)
+							{
+								mtex.selection[k] = 1;
+								mtex.sel_slots[k] = 1;
+							}
+						}
+					}
+					else
+					{
+						mtex.anim_selected = -1;
+						mtex.mult_selection = 0;
+						memset(mtex.selection, 0, 512 * sizeof(int));
+						memset(mtex.sel_slots, 0, 512 * sizeof(int));
+						mtex.selection[i] = 1;
+						mtex.selected = i;
+						mtex.sel_slot = i;
+					}
+
+					texu = 0;
+
+				}
+
+				names[j] = mtex.mgg.fnn[i];
+				nm[j] = counter;
+
+				if (j < 8)
+					j++;
+				//}
+				//else
+				//continue;
+				//}
+				//else
+				//counter--;
 			}
 
 			if (j > 0)
@@ -3507,7 +5131,7 @@ void Canvas()
 
 				for (k = 0; k < j; k++)
 				{
-					sprintf(str, "%d - %s", names[k], mtex.mgg.texnames[names[k]]);
+					sprintf(str, "%d - %s", nm[k], mtex.mgg.texnames_n[names[k]]);
 					nk_label(ctx, str, NK_TEXT_ALIGN_CENTERED);
 				}
 
@@ -3515,14 +5139,13 @@ void Canvas()
 
 			}
 		}
-		*/
 	}
 
 	mtex.canvas = option;
 
 	nk_end(ctx);
 
-	nk_style_default(ctx);
+	SetThemeBack();
 }
 
 void AnimBox()
@@ -3611,7 +5234,7 @@ void AnimBox()
 					if (k < 2)
 						k++;
 
-					nk_style_default(ctx);
+					SetThemeBack();
 				}
 			}
 
@@ -3638,6 +5261,8 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
+	memset(&mtex, 0, sizeof(mTex));
+
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
@@ -3651,14 +5276,14 @@ int main(int argc, char *argv[])
 	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
-	
+	/*
 	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
-	
-	UILoadSystem("UI_Sys.cfg");
+	*/
+	//UILoadSystem("UI_Sys.cfg");
 
 	st.FPSYes=1;
 
@@ -3675,10 +5300,11 @@ int main(int argc, char *argv[])
 
 	SETENGINEPATH;
 
-	memset(&mtex, 0, sizeof(mTex));
-
 	mtex.selected = -1;
 	mtex.anim_selected = -1;
+
+	InitGWEN();
+	SetSkin(ctx, mtex.theme);
 
 	while(!st.quit)
 	{

@@ -27,6 +27,9 @@
     <ClCompile Include="..\mGear-1\UI.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="skins.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\mGear-1\UI.h">

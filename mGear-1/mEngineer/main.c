@@ -39,7 +39,7 @@ uint16 WriteCFG()
 {
 	FILE *file;
 
-	if((file=fopen("settings.cfg","w"))==NULL)
+	if((file=fopen("meng_settings.cfg","w"))==NULL)
 		return 0;
 
 	st.screenx=1024;
@@ -68,7 +68,7 @@ uint16 LoadCFG()
 	FILE *file;
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
 	int value=0;
-	if((file=fopen("settings.cfg","r"))==NULL)
+	if((file=fopen("meng_settings.cfg","r"))==NULL)
 		if(WriteCFG()==0)
 			return 0;
 
@@ -8482,7 +8482,7 @@ int FileBrowser(char *filename)
 		}
 
 		nk_layout_space_push(ctx, nk_rect(0.27, 0.01, 0.20, 0.08));
-		nk_button_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), "New Folder", NK_TEXT_CENTERED);
+//		nk_button_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), "New Folder", NK_TEXT_CENTERED);
 
 		nk_layout_space_push(ctx, nk_rect(0.01, 0.10, 0.99, 0.08));
 
@@ -8502,8 +8502,8 @@ int FileBrowser(char *filename)
 				{
 					if (select == i)
 					{
-						if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
-							nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 1);
+						//if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
+							//nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 1);
 						/*
 						{
 						if (doubleclick2 == i && (GetTimerM() - time) > 50)
@@ -8533,8 +8533,8 @@ int FileBrowser(char *filename)
 						}
 						}
 						*/
-						else
-							nk_select_label(ctx, UI_Sys.files[UI_Sys.filesp[i]], NK_TEXT_RIGHT, 1);
+						//else
+							//nk_select_label(ctx, UI_Sys.files[UI_Sys.filesp[i]], NK_TEXT_RIGHT, 1);
 						/*
 						{
 							if (doubleclick2 == i && (GetTimerM() - time) > 50)
@@ -8558,7 +8558,7 @@ int FileBrowser(char *filename)
 					{
 						if (UI_Sys.filesp[i] == UI_Sys.foldersp[i])
 						{
-							if (nk_select_image_label(ctx, nk_image_id(mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.folder_icon].data), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 0))
+							if (nk_select_image_label(ctx, nk_image_id(NULL), UI_Sys.files[UI_Sys.foldersp[i]], NK_TEXT_RIGHT, 0))
 							{
 								select = i;
 								doubleclick = i;
@@ -9253,17 +9253,17 @@ void TextureListSelection()
 
 						if (data.vb_id != -1)
 						{
-							px = ((float)data.posx / 32768) * data.w;
+							px = ((float)data.posx / 32768.0f) * data.w;
 							ceil(px);
-							px += data.x_offset;
-							py = ((float)data.posy / 32768) * data.h;
+							//px += data.x_offset;
+							py = ((float)data.posy / 32768.0f) * data.h;
 							ceil(py);
-							py += data.y_offset;
-							sx = ((float)data.sizex / 32768) * data.w;
+							//py += data.y_offset;
+							sx = ((float)data.sizex / 32768.0f) * data.w;
 							ceil(sx);
-							sy = ((float)data.sizey / 32768) * data.h;
+							sy = ((float)data.sizey / 32768.0f) * data.h;
 							ceil(sy);
-							texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
+							texid = nk_subimage_id(data.data, data.w, data.h, nk_rect(px, py, sx, sy));
 						}
 						else
 							texid = nk_image_id(data.data);
@@ -9697,15 +9697,15 @@ void NewLeftPannel()
 				{
 					px = ((float)data.posx / 32768) * data.w;
 					ceil(px);
-					px += data.x_offset;
+					//px += data.x_offset;
 					py = ((float)data.posy / 32768) * data.h;
 					ceil(py);
-					py += data.y_offset;
+					//py += data.y_offset;
 					sx = ((float)data.sizex / 32768) * data.w;
 					ceil(sx);
 					sy = ((float)data.sizey / 32768) * data.h;
 					ceil(sy);
-					texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
+					texid = nk_subimage_id(data.data, data.w, data.h, nk_rect(px, py, sx, sy));
 				}
 				else
 					texid = nk_image_id(data.data);
@@ -9763,10 +9763,10 @@ void NewLeftPannel()
 				{
 					px = ((float)data.posx / 32768) * data.w;
 					ceil(px);
-					px += data.x_offset;
+					//px += data.x_offset;
 					py = ((float)data.posy / 32768) * data.h;
 					ceil(py);
-					py += data.y_offset;
+					//py += data.y_offset;
 					sx = ((float)data.sizex / 32768) * data.w;
 					ceil(sx);
 					sy = ((float)data.sizey / 32768) * data.h;
@@ -9811,7 +9811,7 @@ int main(int argc, char *argv[])
 	//_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 
 	if(LoadCFG()==0)
-		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
 
 	Init();
@@ -9825,14 +9825,14 @@ int main(int argc, char *argv[])
 	InitMGG();
 
 	//LoadMGG(&mgg_map[0], "tex01n.mgg");
-	
+	/*
 	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
-	
-	UILoadSystem("UI_Sys.cfg");
+	*/
+	//UILoadSystem("UI_Sys.cfg");
 
 	meng.num_mgg=0;
 	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
@@ -9851,7 +9851,7 @@ int main(int argc, char *argv[])
 
 	Renderer(1);
 
-	LoadSpriteList("sprite.list");
+	//LoadSpriteList("sprite.list");
 
 	LoadSoundList("sound.list");
 

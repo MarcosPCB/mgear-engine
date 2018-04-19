@@ -1,4 +1,5 @@
 #include "engine.h"
+#include "skins.h"
 
 #pragma once
 
@@ -49,6 +50,7 @@ struct _mTex
 	uint8 mult_selection;
 	char prj_path[MAX_PATH], filename[32];
 	int8 dn_mode;
+	enum NKUITheme theme;
 
 	uint8 play, stop, pause, next, back;
 

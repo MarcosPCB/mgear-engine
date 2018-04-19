@@ -305,7 +305,6 @@ struct _MGGFORMAT_
 {
 	char name[32];
 	uint16 num_frames;
-	_MGGTYPE type;
 	uint8 num_atlas;
 	uint16 num_singletex;
 	uint16 num_texinatlas;

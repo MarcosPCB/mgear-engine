@@ -12,19 +12,13 @@ typedef long long unsigned uint64;
 #define QLZ_STREAMING_BUFFER 0
 #define QLZ_MEMORY_SAFE 1
 */
-#define MAX_FRAMES 8192
+#define MAX_FRAMES 512
 #define MAX_ANIMATIONS 64
 #define TEX_RANGE 32768 //16-bit precision
 #define MAX_FILES 512
 
 #define LINEAR 0
 #define NEAREST 1
-
-enum _MGGTYPE_
-{
-	SPRITEM,
-	TEXTUREM
-};
 
 typedef enum _MGGTYPE_ _MGGTYPE;
 
@@ -45,7 +39,6 @@ struct _MGGFORMAT_
 {
 	char name[32];
 	uint16 num_frames;
-	_MGGTYPE type;
 	uint8 num_atlas;
 	uint16 num_singletex;
 	uint16 num_texinatlas;
@@ -56,6 +49,11 @@ struct _MGGFORMAT_
 	size_t framealone_offset;
 	size_t frameoffset_offset;
 	int8 mipmap;
+};
+
+struct Sizetex
+{
+	int16 w, h;
 };
 
 typedef struct _MGGFORMAT_ _MGGFORMAT;
