@@ -83,11 +83,12 @@ void LogIn(void *userdata, int category, SDL_LogPriority log, const char *messag
 	char filepath[MAX_PATH];
 
 	strcpy(filepath, st.CurrPath);
-	strcat(filepath, "\\mgear.log");
+	strcat(filepath, "\\");
+	strcat(filepath, st.LogName);
 
 	if((file=fopen(filepath,"a+"))==NULL)
 	{
-		if(MessageBox(NULL,L"Opening log file failed",NULL,MB_OK | MB_ICONERROR)==IDOK)
+		if(MessageBox(NULL,"Opening log file failed",NULL,MB_OK | MB_ICONERROR)==IDOK)
 			Quit();
 	}
 
@@ -100,11 +101,12 @@ void LogIn(void *userdata, int category, SDL_LogPriority log, const char *messag
 void CreateLog()
 {
 	FILE *file;
-	float version=_ENGINE_VERSION;
+	float version = _ENGINE_VERSION;
 	char filepath[MAX_PATH];
 
 	strcpy(filepath, st.CurrPath);
-	strcat(filepath, "\\mgear.log");
+	strcat(filepath, "\\");
+	strcat(filepath, st.LogName);
 
 	if((file=fopen(filepath,"w"))==NULL)
 	{
@@ -2141,7 +2143,7 @@ SHADER_CREATION:
 	st.Camera.position.y=0;
 	st.Camera.dimension.x=1.0f;
 	st.Camera.dimension.y=1.0f;
-	st.Camera.angle=0.0;
+	st.Camera.angle=0;
 
 	st.Current_Map.num_lights=0;
 	st.Current_Map.num_mgg=0;
@@ -2573,6 +2575,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	strcpy(mgg->name,mggf.name);
 
 	mgg->num_frames=mggf.num_frames;
+	mgg->num_atlas = mggf.num_atlas;
 
 	//mgg->type=mggf.type;
 	
@@ -2585,8 +2588,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
 
-	imgatlas = malloc(mgg->frames);
-	memset(imgatlas, -1, mgg->frames);
+	imgatlas = malloc(mgg->num_frames);
+	memset(imgatlas, -1, mgg->num_frames);
 
 	fread(mga,sizeof(_MGGANIM),mgg->num_anims,file);
 
@@ -3497,9 +3500,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 void FreeMGG(_MGG *file)
 {
-	uint32 i;
-
-	file->type=NONE;
+	register uint16 i;
 
 	for(i=0; i<file->num_frames; i++)
 	{
@@ -3520,11 +3521,11 @@ void FreeMGG(_MGG *file)
 	
 	file->num_anims=NULL;
 
+	file->atlas = NULL;
+
 	memset(file->name,0,32);
 
 	memset(file,0,sizeof(_MGG));
-
-	file->type=NONE;
 }
 
 void InitMGG()

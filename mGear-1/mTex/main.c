@@ -700,9 +700,9 @@ int8 SavePrjFile(char *filepath)
 		}
 	}
 
-	if (mtex.mgg.num_c_n_atlas > 0)
+	if (mtex.mgg.num_c_atlas > 0)
 	{
-		for (i = 0; i < mtex.mgg.num_c_n_atlas; i++)
+		for (i = 0; i < mtex.mgg.num_c_atlas; i++)
 		{
 			//fprintf(f, "CONSTRUCT_ATLAS_NORMAL %d %d %d\n", i, mtex.mgg.num_f0[i], mtex.mgg.num_ff[i]);
 			fprintf(f, "FRAMENAMES_CUSTOM_ATLAS_NORMALS %d ", i);
@@ -747,7 +747,7 @@ int8 SavePrjFile(char *filepath)
 		}
 	}
 
-	if (mtex.mgg.num_c_n_atlas == 0)
+	if (mtex.mgg.num_c_atlas == 0)
 	{
 		if (mtex.mgg.num_f_n > 0)
 		{
@@ -1324,7 +1324,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		if (strcmp(tok2, "FRAMENAMES_CUSTOM_ATLAS_NORMAL") == NULL)
+		if (strcmp(tok2, "FRAMENAMES_CUSTOM_ATLAS_NORMALS") == NULL)
 		{
 			if (!mtex.mgg.num_frames)
 			{
@@ -1722,7 +1722,7 @@ char *LoadPrjFile(const char *filepath)
 			}
 		}
 
-		sprintf(str, "Found %d errors in %s\n Check mgear.log for more information", readerror, filepath);
+		sprintf(str, "Found %d errors in %s\n Check %s for more information", readerror, filepath, st.LogName);
 		strcat(error_string, str);
 		LogApp("%s", error_string);
 		UnloadmTexMGG();
@@ -2684,6 +2684,20 @@ void MenuBar()
 
 						for (j = strlen(path2); j > 0; j--)
 						{
+							if (path2[j] == '\\' || path2[j] == '/') break;
+						}
+
+						for (a = 0, m = 0; a < j; a++)
+						{
+							if (path2[a] != mtex.mgg.path[a])
+							{
+								m = 1;
+								break;
+							}
+						}
+
+						for (j = strlen(path2); j > 0; j--)
+						{
 							if (path2[j] == '.') break;
 							if (path2[j] == '\\' || path2[j] == '/')
 							{
@@ -2719,34 +2733,37 @@ void MenuBar()
 
 						memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
-						if (MessageBox(NULL, "Would you like to copy the texture files to this folder?", NULL, MB_YESNO) == IDYES)
+						if (m == 1)
 						{
-							for (i = 0; i < mtex.mgg.num_frames; i++)
+							if (MessageBox(NULL, "Would you like to copy the texture files to this folder?", NULL, MB_YESNO) == IDYES)
 							{
-								if (mtex.mgg.fn[i] < 1024)
+								for (i = 0; i < mtex.mgg.num_frames; i++)
 								{
-									//strcpy(path2, path3);
-									//strcat(path2, "\\");
-									strcpy(path2, mtex.mgg.files[i]);
-									buf = CopyThisFile(path2, mtex.mgg.path);
-
-									if (buf == NULL || buf == -1)
-									{
-										sprintf(str2, "Error: Texture %d could not be copied", path2);
-										MessageBox(NULL, str2, "Error", MB_OK);
-									}
-
-									if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+									if (mtex.mgg.fn[i] < 1024)
 									{
 										//strcpy(path2, path3);
 										//strcat(path2, "\\");
-										strcpy(path2, mtex.mgg.files_n[i]);
+										strcpy(path2, mtex.mgg.files[i]);
 										buf = CopyThisFile(path2, mtex.mgg.path);
 
 										if (buf == NULL || buf == -1)
 										{
 											sprintf(str2, "Error: Texture %d could not be copied", path2);
 											MessageBox(NULL, str2, "Error", MB_OK);
+										}
+
+										if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+										{
+											//strcpy(path2, path3);
+											//strcat(path2, "\\");
+											strcpy(path2, mtex.mgg.files_n[i]);
+											buf = CopyThisFile(path2, mtex.mgg.path);
+
+											if (buf == NULL || buf == -1)
+											{
+												sprintf(str2, "Error: Texture %d could not be copied", path2);
+												MessageBox(NULL, str2, "Error", MB_OK);
+											}
 										}
 									}
 								}
@@ -2778,6 +2795,12 @@ void MenuBar()
 					ofn.lpstrTitle = "Save MGG file";
 					//ofn.hInstance = OFN_EXPLORER;
 					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+					SavePrjFile(mtex.prj_path);
+
+					sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+
+					memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
 					GetSaveFileName(&ofn);
 
@@ -3653,7 +3676,7 @@ void LeftPannel()
 				}
 			}
 
-			if (mtex.command == MOV_TEX && mtex.mgg.num_c_atlas > 0 && !mtex.dn_mode)
+			if (mtex.command == MOV_TEX && !mtex.dn_mode)
 			{
 				nk_layout_row_dynamic(ctx, 190, 1);
 				if (nk_group_begin(ctx, "Move texture(s)", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
@@ -3698,7 +3721,7 @@ void LeftPannel()
 					nk_layout_row_end(ctx);
 					*/
 
-					if (mtex.canvas < mtex.mgg.num_c_atlas)
+					if (mtex.canvas < mtex.mgg.num_c_atlas && mtex.mgg.num_c_atlas > 0)
 					{
 						nk_layout_row_dynamic(ctx, 25, 1);
 
@@ -3712,7 +3735,6 @@ void LeftPannel()
 									tmp = mtex.mgg.fn[mtex.selected];
 
 									mtex.mgg.fn[mtex.selected] += 1024;
-									UpdateAnims();
 
 									for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
 										mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
@@ -3740,6 +3762,7 @@ void LeftPannel()
 										mtex.mgg.num_ff[i]--;
 									}
 
+									UpdateAnims();
 									UpdateAtlasses();
 
 									mtex.command = NONE;
@@ -3755,7 +3778,7 @@ void LeftPannel()
 										tmp = mtex.mgg.fn[mtex.selected];
 
 										mtex.mgg.fn[mtex.selected] += 1024;
-										UpdateAnims();
+										//UpdateAnims();
 
 										for (i = mtex.selected; i < mtex.mgg.num_frames; i++)
 											mtex.mgg.fn[i] = mtex.mgg.fn[i + 1];
@@ -3784,6 +3807,7 @@ void LeftPannel()
 										}
 									}
 
+									UpdateAnims();
 									UpdateAtlasses();
 
 									mtex.command = NONE;
@@ -3839,7 +3863,7 @@ void LeftPannel()
 											tmp = mtex.mgg.fn[mtex.selected];
 
 											mtex.mgg.fn[mtex.selected] += 1024;
-											UpdateAnims();
+											//UpdateAnims();
 
 											if (mtex.mgg.num_ff[atlas] > mtex.selected)
 											{
@@ -3914,6 +3938,7 @@ void LeftPannel()
 												}
 											}
 
+											UpdateAnims();
 											UpdateAtlasses();
 
 											mtex.command = NONE;
@@ -3929,7 +3954,7 @@ void LeftPannel()
 												tmp = mtex.mgg.fn[j];
 
 												mtex.mgg.fn[j] += 1024;
-												UpdateAnims();
+												//UpdateAnims();
 
 												if (mtex.mgg.num_ff[atlas] > j)
 												{
@@ -4007,6 +4032,7 @@ void LeftPannel()
 												}
 											}
 
+											UpdateAnims();
 											UpdateAtlasses();
 
 											mtex.command = NONE;
@@ -4019,7 +4045,7 @@ void LeftPannel()
 						}
 					}
 					//else
-					if (mtex.canvas == mtex.mgg.num_c_atlas)
+					if (mtex.canvas == mtex.mgg.num_c_atlas && mtex.mgg.num_c_atlas > 0)
 					{
 						if (mtex.mgg.num_c_atlas > 0)
 						{
@@ -4074,7 +4100,7 @@ void LeftPannel()
 											tmp = mtex.mgg.fn[mtex.selected];
 
 											mtex.mgg.fn[mtex.selected] += 1024;
-											UpdateAnims();
+											//UpdateAnims();
 
 											if (mtex.mgg.num_ff[atlas] > mtex.selected)
 											{
@@ -4149,6 +4175,7 @@ void LeftPannel()
 												}
 											}
 
+											UpdateAnims();
 											UpdateAtlasses();
 
 											mtex.command = NONE;
@@ -4164,7 +4191,7 @@ void LeftPannel()
 												tmp = mtex.mgg.fn[j];
 
 												mtex.mgg.fn[j] += 1024;
-												UpdateAnims();
+												//UpdateAnims();
 
 												if (mtex.mgg.num_ff[atlas] > j)
 												{
@@ -4242,6 +4269,7 @@ void LeftPannel()
 												}
 											}
 
+											UpdateAnims();
 											UpdateAtlasses();
 
 											mtex.command = NONE;
@@ -4253,6 +4281,10 @@ void LeftPannel()
 							nk_layout_row_end(ctx);
 						}
 					}
+
+					nk_layout_row_dynamic(ctx, 25, 1);
+
+					nk_checkbox_label(ctx, "Switch places", &mtex.switch_place);
 
 					nk_group_end(ctx);
 				}
@@ -4577,7 +4609,7 @@ void ViewerBox()
 
 void Canvas()
 {
-	register int i, j, k, l, m;
+	register int i, j, k, l, m, n;
 	int names[8], mult_sel_count = 0, nm[8], counter = 0, texu, temp;
 	char str[128];
 	static int option = 0;
@@ -4675,13 +4707,45 @@ void Canvas()
 
 									if (nk_input_has_mouse_click(ctx, NK_BUTTON_LEFT))
 									{
-										l = mtex.mgg.fn[i];
-										mtex.mgg.fn[i] = mtex.mgg.fn[mtex.selected];
-										mtex.mgg.fn[mtex.selected] = l;
+										if (mtex.switch_place)
+										{
+											l = mtex.mgg.fn[i];
+											mtex.mgg.fn[i] = mtex.mgg.fn[mtex.selected];
+											mtex.mgg.fn[mtex.selected] = l;
 
-										l = mtex.mgg.fnn[i];
-										mtex.mgg.fnn[i] = mtex.mgg.fnn[mtex.selected];
-										mtex.mgg.fnn[mtex.selected] = l;
+											l = mtex.mgg.fnn[i];
+											mtex.mgg.fnn[i] = mtex.mgg.fnn[mtex.selected];
+											mtex.mgg.fnn[mtex.selected] = l;
+										}
+										else
+										{
+											l = mtex.mgg.fn[mtex.selected];
+											m = mtex.mgg.fnn[mtex.selected];
+
+											if (i < mtex.selected)
+											{
+												for (k = mtex.selected - 1; k > i - 1; k--)
+													mtex.mgg.fn[k + 1] = mtex.mgg.fn[k];
+
+												for (k = mtex.selected - 1; k > i - 1; k--)
+													mtex.mgg.fnn[k + 1] = mtex.mgg.fnn[k];
+
+											}
+											else
+											{
+												for (k = mtex.selected; k < i + 1; k++)
+													mtex.mgg.fn[k] = mtex.mgg.fn[k + 1];
+
+												for (k = mtex.selected; k < i + 1; k++)
+													mtex.mgg.fnn[k] = mtex.mgg.fnn[k + 1];
+											}
+
+											mtex.mgg.fn[i] = l;
+											mtex.mgg.fnn[i] = m;
+
+											UpdateAnims();
+											UpdateAtlasses();
+										}
 
 										mtex.selected = -1;
 										mtex.sel_slot = -1;
@@ -4718,7 +4782,11 @@ void Canvas()
 									continue;
 								}
 
-								if (nk_input_is_mouse_hovering_rect(&ctx->input, bounds))
+								temp = 0;
+								if (i + mtex.last_sel - mtex.first_sel + 1 > mtex.mgg.num_frames)
+									temp = 1;
+
+								if (nk_input_is_mouse_hovering_rect(&ctx->input, bounds) && !temp)
 								{
 									nk_button_symbol(ctx, NK_SYMBOL_PLUS);
 
@@ -4727,19 +4795,61 @@ void Canvas()
 										//l = mtex.mgg.fn[i];
 										//mtex.mgg.fn[i] = mtex.mgg.fn[mtex.selected];
 										//mtex.mgg.fn[mtex.selected] = l;
-
-										for (k = mtex.first_sel, m = 0; k < mtex.last_sel + 1; k++, m++)
+										if (mtex.switch_place)
 										{
-											l = mtex.mgg.fn[i + m];
-											mtex.mgg.fn[i + m] = mtex.mgg.fn[k];
-											mtex.mgg.fn[k] = l;
+											for (k = mtex.first_sel, m = 0; k < mtex.last_sel + 1; k++, m++)
+											{
+												l = mtex.mgg.fn[i + m];
+												mtex.mgg.fn[i + m] = mtex.mgg.fn[k];
+												mtex.mgg.fn[k] = l;
+											}
+
+											for (k = mtex.first_sel, m = 0; k < mtex.last_sel + 1; k++, m++)
+											{
+												l = mtex.mgg.fnn[i + m];
+												mtex.mgg.fnn[i + m] = mtex.mgg.fnn[k];
+												mtex.mgg.fnn[k] = l;
+											}
 										}
-
-										for (k = mtex.first_sel, m = 0; k < mtex.last_sel + 1; k++, m++)
+										else
 										{
-											l = mtex.mgg.fnn[i + m];
-											mtex.mgg.fnn[i + m] = mtex.mgg.fnn[k];
-											mtex.mgg.fnn[k] = l;
+											if (i < mtex.selected)
+											{
+												for (n = 0; n < mtex.last_sel - mtex.first_sel + 1; n++)
+												{
+													l = mtex.mgg.fn[mtex.first_sel + n];
+													m = mtex.mgg.fnn[mtex.first_sel + n];
+
+													for (k = mtex.first_sel + n - 1; k > i + n - 1; k--)
+														mtex.mgg.fn[k + 1] = mtex.mgg.fn[k];
+
+													for (k = mtex.first_sel + n - 1; k > i + n - 1; k--)
+														mtex.mgg.fnn[k + 1] = mtex.mgg.fnn[k];
+
+													mtex.mgg.fn[i + n] = l;
+													mtex.mgg.fnn[i + n] = m;
+												}
+											}
+											else
+											{
+												for (n = mtex.last_sel - mtex.first_sel + 1; n > 0; n--)
+												{
+													l = mtex.mgg.fn[mtex.first_sel + n - 1];
+													m = mtex.mgg.fnn[mtex.first_sel + n - 1];
+
+													for (k = mtex.first_sel + n - 1; k < i + n -1; k++)
+														mtex.mgg.fn[k] = mtex.mgg.fn[k + 1];
+
+													for (k = mtex.first_sel + n - 1; k < i + n - 1; k++)
+														mtex.mgg.fnn[k] = mtex.mgg.fnn[k + 1];
+
+													mtex.mgg.fn[i + n - 1] = l;
+													mtex.mgg.fnn[i + n - 1] = m;
+												}
+											}
+
+											UpdateAnims();
+											UpdateAtlasses();
 										}
 
 										mtex.selected = -1;
@@ -5264,12 +5374,14 @@ int main(int argc, char *argv[])
 	memset(&mtex, 0, sizeof(mTex));
 
 	if(LoadCFG()==0)
-		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
+		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
+
+	strcpy(st.LogName, "mtex.log");
 
 	Init();
 
-	strcpy(st.WindowTitle,"Tex ALPHA");
+	strcpy(st.WindowTitle,"mTex");
 
 	OpenFont("font/Roboto-Regular.ttf","arial",0,128);
 	OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);

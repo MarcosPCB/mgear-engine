@@ -323,7 +323,7 @@ typedef struct _MGGFORMAT_ _MGGFORMAT;
 struct _MGG_
 {
 	char name[32];
-	uint16 num_frames;
+	uint16 num_frames, num_atlas;
 	_MGGTYPE type;
 	TEX_DATA *frames; //single-texture and atlas objects data
 	GLint *atlas;
@@ -1015,6 +1015,7 @@ struct _SETTINGS_
 	int8 viewmode;
 
 	char CurrPath[2048];
+	char LogName[32];
 };
 
 typedef struct _SETTINGS_ _SETTINGS;

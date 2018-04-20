@@ -36,6 +36,7 @@ struct _mTex
 	int16 command2;
 	int16 state;
 	int canvas;
+	int16 switch_place;
 
 	GLuint *textures;
 	Pos *size;
