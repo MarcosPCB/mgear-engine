@@ -2585,25 +2585,28 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 	framealone=(uint32*)calloc(mgg->num_frames,sizeof(uint32));
 
-	mga=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
-	mgg->anim=(_MGGANIM*) malloc(mgg->num_anims*sizeof(_MGGANIM));
-
 	imgatlas = malloc(mgg->num_frames);
 	memset(imgatlas, -1, mgg->num_frames);
 
-	fread(mga,sizeof(_MGGANIM),mgg->num_anims,file);
-
-	for(i=0;i<mgg->num_anims;i++)
+	if (mggf.num_animations > 0)
 	{
-		mgg->anim[i]=mga[i];
-		mgg->anim[i].current_frame*=10;
+		mga = malloc(mgg->num_anims*sizeof(_MGGANIM));
+		mgg->anim = malloc(mgg->num_anims*sizeof(_MGGANIM));
+
+		fread(mga, sizeof(_MGGANIM), mgg->num_anims, file);
+
+		for (i = 0; i < mgg->num_anims; i++)
+		{
+			mgg->anim[i] = mga[i];
+			mgg->anim[i].current_frame *= 10;
+		}
 	}
 
 	rewind(file);
 	fseek(file,mggf.framesize_offset,SEEK_CUR);
 	fread(framesize,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
 	fread(frameoffset,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
-	fread(normals,sizeof(uint8),mggf.num_singletex+mggf.num_atlas,file);
+	fread(normals,sizeof(uint8),mggf.num_frames+mggf.num_atlas,file);
 	fread(normalsize,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
 
 	mgg->size=(Pos*) malloc(mgg->num_frames*sizeof(Pos));
@@ -2964,6 +2967,8 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 		if (imgatlas[i] == -1) continue;
 
 		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
+		mgg->frames[i].Ndata = mgg->frames[imgatlas[i] + mggf.num_frames].Ndata;
+		mgg->frames[i].normal = mgg->frames[imgatlas[i] + mggf.num_frames].normal;
 		mgg->frames[i].posx=posx[i];
 		mgg->frames[i].posy=posy[i];
 		mgg->frames[i].sizex=sizex[i];
@@ -8776,7 +8781,8 @@ void Renderer(uint8 type)
 		}
 	}
 
-	k=(uint16*) calloc(vbdt_num,sizeof(uint16));
+	if (vbdt_num > 0)
+		k=(uint16*) calloc(vbdt_num,sizeof(uint16));
 
 	for(m=z_used;m>-1;m--)
 	{
@@ -8823,7 +8829,7 @@ void Renderer(uint8 type)
 		}
 	}
 
-	free(k);
+	if(vbdt_num > 0) free(k);
 
 #ifdef _VAO_RENDER
 

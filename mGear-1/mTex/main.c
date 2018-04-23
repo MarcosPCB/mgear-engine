@@ -10,6 +10,7 @@
 //#include <atlstr.h>
 #include "dirent.h"
 #include "UI.h"
+#include <crtdbg.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -700,7 +701,7 @@ int8 SavePrjFile(char *filepath)
 		}
 	}
 
-	if (mtex.mgg.num_c_atlas > 0)
+	if (mtex.mgg.num_c_atlas > 0 && mtex.mgg.num_f_n > 0)
 	{
 		for (i = 0; i < mtex.mgg.num_c_atlas; i++)
 		{
@@ -710,8 +711,8 @@ int8 SavePrjFile(char *filepath)
 			{
 				if (mtex.mgg.frames_atlas[j] != -1)
 				{
-					if (mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
-						fprintf(f, "\"%s\"", mtex.mgg.texnames_n[mtex.mgg.fn[j]]);
+					if (mtex.mgg.fnn[j] != -1 && mtex.mgg.fnn[j] < 1024)
+						fprintf(f, "\"%s\"", mtex.mgg.texnames_n[mtex.mgg.fnn[j]]);
 					else
 						fprintf(f, "\"null\"");
 				}
@@ -2506,6 +2507,7 @@ int Compiler(const char *path)
 	char exepath[MAX_PATH];
 	char args[MAX_PATH * 3];
 	char str[512];
+	static path2[MAX_PATH];
 	MSG msg;
 
 	DWORD error;
@@ -2521,6 +2523,7 @@ int Compiler(const char *path)
 		strcat(exepath,"\\Tools\\");
 		strcat(exepath, "mggcreator.exe");
 		strcpy(directory, exepath);
+		strcpy(path2, path);
 		PathRemoveFileSpec(directory);
 
 		sprintf(args, "-o \"%s\" -p \"%s\" -i \"%s\"", path, mtex.mgg.path, mtex.filename);
@@ -2566,7 +2569,26 @@ int Compiler(const char *path)
 				if (exitcode)
 					MessageBox(NULL, "MGGcreator failed to compile your MGG file", "Error", MB_OK);
 				else
-					MessageBox(NULL, "Success compiling file", "Success", MB_OK);
+				{
+					if (MessageBox(NULL, "Success compiling file\nWould you like to test it?", "Success", MB_YESNO) == IDYES)
+					{
+						ZeroMemory(&info, sizeof(info));
+						info.cbSize = sizeof(info);
+						info.lpVerb = ("open");
+						strcpy(exepath, st.CurrPath);
+						strcat(exepath, "\\mggviewer.exe");
+						info.lpFile = exepath;
+						sprintf(args, "-o \"%s\"", path2);
+						info.lpParameters = args;
+						info.lpDirectory = st.CurrPath;
+						info.nShow = SW_SHOW;
+						if (!ShellExecuteEx(&info))
+						{
+							error = GetLastError();
+							MessageBox(NULL, "Could not execute MGGViewer", "Error", MB_OK);
+						}
+					}
+				}
 
 				state = 0;
 
@@ -2624,9 +2646,7 @@ void MenuBar()
 
 				if (nk_menu_item_label(ctx, "Open project file", NK_TEXT_LEFT))
 				{
-					GetOpenFileName(&ofn);
-
-					if (path)
+					if (GetOpenFileName(&ofn) && path)
 					{
 						buf = LoadPrjFile(path);
 						if (buf)
@@ -2676,9 +2696,7 @@ void MenuBar()
 					//ofn.hInstance = OFN_EXPLORER;
 					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
 
-					GetSaveFileName(&ofn);
-
-					if (path)
+					if (GetSaveFileName(&ofn) && path)
 					{
 						strcpy(path2, path);
 
@@ -2802,9 +2820,7 @@ void MenuBar()
 
 					memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
-					GetSaveFileName(&ofn);
-
-					if (path)
+					if (GetSaveFileName(&ofn) && path)
 					{
 						strcpy(path2, path);
 
@@ -3923,7 +3939,7 @@ void LeftPannel()
 
 											if (mtex.mgg.num_ff[atlas] > mtex.selected)
 											{
-												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < atlas; i++)
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < atlas + 1; i++)
 												{
 													if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 													mtex.mgg.num_ff[i]--;
@@ -3931,7 +3947,7 @@ void LeftPannel()
 											}
 											else
 											{
-												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i > atlas; i--)
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i >= atlas; i--)
 												{
 													if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 													mtex.mgg.num_ff[i]--;
@@ -4014,7 +4030,7 @@ void LeftPannel()
 
 												if (mtex.mgg.num_ff[atlas] > j)
 												{
-													for (i = mtex.mgg.frames_atlas[j] + 1; i < atlas; i++)
+													for (i = mtex.mgg.frames_atlas[j] + 1; i < atlas + 1; i++)
 													{
 														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 														mtex.mgg.num_ff[i]--;
@@ -4022,7 +4038,7 @@ void LeftPannel()
 												}
 												else
 												{
-													for (i = mtex.mgg.frames_atlas[j] + 1; i > atlas; i--)
+													for (i = mtex.mgg.frames_atlas[j] + 1; i >= atlas; i--)
 													{
 														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 														mtex.mgg.num_ff[i]--;
@@ -4160,7 +4176,7 @@ void LeftPannel()
 
 											if (mtex.mgg.num_ff[atlas] > mtex.selected)
 											{
-												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < atlas; i++)
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i < atlas + 1; i++)
 												{
 													if(mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 													mtex.mgg.num_ff[i]--;
@@ -4168,7 +4184,7 @@ void LeftPannel()
 											}
 											else
 											{
-												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i > atlas; i--)
+												for (i = mtex.mgg.frames_atlas[mtex.selected] + 1; i >= atlas; i--)
 												{
 													if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 													mtex.mgg.num_ff[i]--;
@@ -4251,7 +4267,7 @@ void LeftPannel()
 
 												if (mtex.mgg.num_ff[atlas] > j)
 												{
-													for (i = mtex.mgg.frames_atlas[j] + 1; i < atlas; i++)
+													for (i = mtex.mgg.frames_atlas[j] + 1; i < atlas + 1; i++)
 													{
 														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 														mtex.mgg.num_ff[i]--;
@@ -4259,7 +4275,7 @@ void LeftPannel()
 												}
 												else
 												{
-													for (i = mtex.mgg.frames_atlas[j] + 1; i > atlas; i--)
+													for (i = mtex.mgg.frames_atlas[j] + 1; i >= atlas; i--)
 													{
 														if (mtex.mgg.num_f0[i] > 0) mtex.mgg.num_f0[i]--;
 														mtex.mgg.num_ff[i]--;
@@ -4398,34 +4414,8 @@ void ViewerBox()
 		nk_stroke_line(nk_window_get_canvas(ctx), vec4.x + (vec4.w / 2), vec4.y, vec4.x + (vec4.w / 2), vec4.y + vec4.h, 3.0f, nk_rgb(255, 0, 0));
 		nk_stroke_line(nk_window_get_canvas(ctx), vec4.x, vec4.y + (vec4.h / 2), vec4.x + vec4.w, vec4.y + (vec4.h / 2), 3.0f, nk_rgb(255, 0, 0));
 
-		if (mtex.anim_selected != -1 && mtex.play)
-		{
-			if (mtex.mgg.mga[mtex.anim_selected].speed > 0)
-			{
-				if (mtex.mgg.mga[mtex.anim_selected].current_frame < mtex.mgg.mga[mtex.anim_selected].startID * 100)
-					mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
-			}
-			else
-			{
-				if (mtex.mgg.mga[mtex.anim_selected].current_frame > mtex.mgg.mga[mtex.anim_selected].startID * 100)
-					mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
-			}
-
-			mtex.mgg.mga[mtex.anim_selected].current_frame += mtex.mgg.mga[mtex.anim_selected].speed;
-
-			if (mtex.mgg.mga[mtex.anim_selected].speed > 0)
-			{
-				if (mtex.mgg.mga[mtex.anim_selected].current_frame >= mtex.mgg.mga[mtex.anim_selected].endID * 100)
-					mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
-			}
-			else
-			{
-				if (mtex.mgg.mga[mtex.anim_selected].current_frame <= mtex.mgg.mga[mtex.anim_selected].endID * 100)
-					mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
-			}
-
-			mtex.selected = mtex.mgg.mga[mtex.anim_selected].current_frame / 100;
-		}
+		if (mtex.anim_selected != -1)
+			mtex.selected = mtex.anim_frame;
 		
 		x = mtex.mgg.frameoffset_x[mtex.mgg.fn[mtex.selected]];
 		y = mtex.mgg.frameoffset_y[mtex.mgg.fn[mtex.selected]];
@@ -5371,6 +5361,8 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
+	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
+
 	memset(&mtex, 0, sizeof(mTex));
 
 	if(LoadCFG()==0)
@@ -5440,6 +5432,35 @@ int main(int argc, char *argv[])
 		{
 			//nk_clear(ctx);
 			Finish();
+
+			if (mtex.anim_selected != -1 && mtex.play)
+			{
+				if (mtex.mgg.mga[mtex.anim_selected].speed > 0)
+				{
+					if (mtex.mgg.mga[mtex.anim_selected].current_frame < mtex.mgg.mga[mtex.anim_selected].startID * 100)
+						mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
+				}
+				else
+				{
+					if (mtex.mgg.mga[mtex.anim_selected].current_frame > mtex.mgg.mga[mtex.anim_selected].startID * 100)
+						mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
+				}
+
+				mtex.mgg.mga[mtex.anim_selected].current_frame += mtex.mgg.mga[mtex.anim_selected].speed;
+
+				if (mtex.mgg.mga[mtex.anim_selected].speed > 0)
+				{
+					if (mtex.mgg.mga[mtex.anim_selected].current_frame >= mtex.mgg.mga[mtex.anim_selected].endID * 100)
+						mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
+				}
+				else
+				{
+					if (mtex.mgg.mga[mtex.anim_selected].current_frame <= mtex.mgg.mga[mtex.anim_selected].endID * 100)
+						mtex.mgg.mga[mtex.anim_selected].current_frame = mtex.mgg.mga[mtex.anim_selected].startID * 100;
+				}
+
+				mtex.anim_frame = mtex.mgg.mga[mtex.anim_selected].current_frame / 100;
+			}
 
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;

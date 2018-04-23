@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	unsigned char FileName[260], filename[256], animfile[260], tmp[4096], str[2][32], framename[260], framename2[260], fileframe[64], files[MAX_FILES][64],
 		files_n[MAX_FILES][64], *token;
 	int16 t = 0, value, p = 0, a = -1, val[16], *offx = NULL, *offy = NULL, start_frame = 0;
-	unsigned char header[21] = { "MGG File Version 2" }, *MGIbuf, *MGIimagedata, *imagebuf, *error_str, loading_str[256], loading_pct, RLE = 0;
+	unsigned char header[21] = { "MGG File Version 2" }, *MGIbuf, *MGIimagedata, *imagebuf, *error_str, loading_str[256], loading_pct, RLE = 0, *DataN;
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas = 0, *dimx, *dimy, numfiles = 0;
 	uint8 sequence = 0, *c_tmp, *c_atlas[32], *c_atlas_normal[32], *atlas_frames, ca_normal[32];
 	int8 *imgatlas;
@@ -35,12 +35,12 @@ int main(int argc, char *argv[])
 	uint8 normals[MAX_FRAMES], c_a_normals[32];
 	uint32 normalsize[MAX_FRAMES];
 	size_t totalsize;
-	uint16 i = 0, j = 0, k = 0, l = 0, m = 0, c_tmp_frames = 0, c_a_f0[32], c_a_ff[32], c_a_w[32], c_a_h[32], c_an_w[32], c_an_h[32],
+	int i = 0, j = 0, k = 0, l = 0, m = 0, c_tmp_frames = 0, c_a_f0[32], c_a_ff[32], c_a_w[32], c_a_h[32], c_an_w[32], c_an_h[32],
 		c_f_w[256], c_f_h[256], c_t_x, c_t_y, c_t_w, c_atlas_frames[32], num_c_atlas = 0, num_c_atlas_normals = 0, mggframes = 0, nms = 0;
 	int width, height, MGIcolor, size;
 	uint8 framealone[MAX_FRAMES];
 	void *buf;
-	struct Sizetex *sizetex;
+	struct Sizetex *sizetex, Sizes[512];
 
 	int size_rle, size_rle2;
 
@@ -311,6 +311,19 @@ int main(int argc, char *argv[])
 
 							atlas_frames = stbi_load_from_memory(imagebuf, size, &c_f_w[i], &c_f_h[i], 0, 4);
 
+							if (!atlas_frames)
+							{
+								printf("Error: frame %s could not be loaded\n", framename2);
+								free(c_tmp);
+								free(imagebuf);
+								fflush(stdin);
+								getch();
+								exit(1);
+							}
+
+							Sizes[i + c_a_f0[l]].w = c_f_w[i];
+							Sizes[i + c_a_f0[l]].h = c_f_h[i];
+
 							if (c_f_w[i] > 1024 || c_f_h[i] > 1024)
 							{
 								printf("Error: Frame %d is to big for an atlas. Frame dimensions: %d x %d\n", i, c_f_w[i], c_f_h[i]);
@@ -466,40 +479,63 @@ int main(int argc, char *argv[])
 							if (!sequence)
 								token = strtok(NULL, " ,\"");
 
-							strcpy(framename2, framename);
-							strcat(framename2, "//");
-
-							if (!sequence)
-								strcat(framename2, token);
+							if (strcmp(token, "null") == 0)
+							{
+								atlas_frames = malloc(Sizes[i + c_a_f0[l]].w * Sizes[i + c_a_f0[l]].h * 4);
+								memset(atlas_frames, 255, Sizes[i + c_a_f0[l]].w * Sizes[i + c_a_f0[l]].h * 4);
+								size = Sizes[i + c_a_f0[l]].w * Sizes[i + c_a_f0[l]].h * 4;
+								c_f_w[i] = Sizes[i + c_a_f0[l]].w;
+								c_f_h[i] = Sizes[i + c_a_f0[l]].h;
+							}
 							else
 							{
-								if (i + c_a_f0[l] < 10) sprintf(filename, "//%s000%d_n.tga", fileframe, i + c_a_f0[l]); else
-								if (i + c_a_f0[l] < 100) sprintf(filename, "//%s00%d_n.tga", fileframe, i + c_a_f0[l]); else
-								if (i + c_a_f0[l] < 1000) sprintf(filename, "//%s0%d_n.tga", fileframe, i + c_a_f0[l]); else
-								if (i + c_a_f0[l] < 10000) sprintf(filename, "//%s0%d_n.tga", fileframe, i + c_a_f0[l]); else
-								if (i + c_a_f0[l] < 100000) sprintf(filename, "//%s%d_n.tga", fileframe, i + c_a_f0[l]);
+								strcpy(framename2, framename);
+								strcat(framename2, "//");
 
-								strcat(framename2, filename);
+								if (!sequence)
+									strcat(framename2, token);
+								else
+								{
+									if (i + c_a_f0[l] < 10) sprintf(filename, "//%s000%d_n.tga", fileframe, i + c_a_f0[l]); else
+									if (i + c_a_f0[l] < 100) sprintf(filename, "//%s00%d_n.tga", fileframe, i + c_a_f0[l]); else
+									if (i + c_a_f0[l] < 1000) sprintf(filename, "//%s0%d_n.tga", fileframe, i + c_a_f0[l]); else
+									if (i + c_a_f0[l] < 10000) sprintf(filename, "//%s0%d_n.tga", fileframe, i + c_a_f0[l]); else
+									if (i + c_a_f0[l] < 100000) sprintf(filename, "//%s%d_n.tga", fileframe, i + c_a_f0[l]);
+
+									strcat(framename2, filename);
+								}
+
+								if ((file = fopen(framename2, "rb")) == NULL)
+								{
+									printf("Error: Frame %s could not be opened\n", i);
+									free(c_tmp);
+									fflush(stdin);
+									getch();
+									exit(1);
+								}
+
+								fseek(file, 0, SEEK_END);
+								size = ftell(file);
+								rewind(file);
+
+								imagebuf = malloc(size);
+
+								fread(imagebuf, size, 1, file);
+
+								atlas_frames = stbi_load_from_memory(imagebuf, size, &c_f_w[i], &c_f_h[i], 0, 4);
+
+								if (!atlas_frames)
+								{
+									printf("Error: frame %s could not be loaded\n", framename2);
+									free(c_tmp);
+									free(imagebuf);
+									fflush(stdin);
+									getch();
+									exit(1);
+								}
+
+								free(imagebuf);
 							}
-
-							if ((file = fopen(framename2, "rb")) == NULL)
-							{
-								printf("Error: Frame %s could not be opened\n", i);
-								free(c_tmp);
-								fflush(stdin);
-								getch();
-								exit(1);
-							}
-
-							fseek(file, 0, SEEK_END);
-							size = ftell(file);
-							rewind(file);
-
-							imagebuf = malloc(size);
-
-							fread(imagebuf, size, 1, file);
-
-							atlas_frames = stbi_load_from_memory(imagebuf, size, &c_f_w[i], &c_f_h[i], 0, 4);
 
 							if (c_f_w[i] > 1024 || c_f_h[i] > 1024)
 							{
@@ -560,7 +596,6 @@ int main(int argc, char *argv[])
 							if (c_an_w[l] < c_t_x)
 								c_an_w[l] = c_t_x;
 
-							free(imagebuf);
 							free(atlas_frames);
 
 							fclose(file);
@@ -927,15 +962,21 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	fseek(file,0,SEEK_SET);
+	rewind(file);
+	//fseek(file,0,SEEK_SET);
 
 	fwrite(header,21,1,file);
 
 	//fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
 
 	fseek(file,sizeof(_MGGFORMAT),SEEK_CUR);
+	//fflush(file);
 	
-	fwrite(mga,sizeof(_MGGANIM),mgg.num_animations,file);
+	if (mgg.num_animations > 0)
+	{
+		fwrite(mga, sizeof(_MGGANIM), mgg.num_animations, file);
+		fflush(file);
+	}
 
 	mgg.textures_offset=ftell(file);
 	
@@ -1001,6 +1042,8 @@ int main(int argc, char *argv[])
 			fwrite(MGIbuf, size, 1, file);
 			free(MGIbuf);
 
+			//fflush(file);
+
 			frameoffset[i] = ftell(file);
 
 			//printf("Wrote builded atlas\n");
@@ -1047,10 +1090,12 @@ int main(int argc, char *argv[])
 
 				normalsize[i] = size;
 
-				fseek(file, frameoffset[i - 1] + 1, SEEK_SET);
+				fseek(file, frameoffset[i] + 1, SEEK_SET);
 
 				fwrite(MGIbuf, size, 1, file);
 				free(MGIbuf);
+
+				//fflush(file);
 
 				frameoffset[i] = ftell(file);
 
@@ -1180,6 +1225,8 @@ int main(int argc, char *argv[])
 			free(imagebuf);
 			free(MGIimagedata);
 
+			//fflush(file);
+
 			frameoffset[k]=ftell(file);
 
 			//printf("Wrote frame number %d\n",j);
@@ -1285,6 +1332,8 @@ int main(int argc, char *argv[])
 					free(MGIimagedata);
 					free(imagebuf);
 
+					//fflush(file);
+
 					frameoffset[k]=ftell(file);
 
 					nms++;
@@ -1321,7 +1370,7 @@ int main(int argc, char *argv[])
 
 	fwrite(frameoffset,sizeof(uint32),mgg.num_singletex+mgg.num_atlas,file);
 
-	fwrite(normals,sizeof(uint8),mgg.num_singletex+mgg.num_atlas,file);
+	fwrite(normals,sizeof(uint8),mgg.num_frames+mgg.num_atlas,file);
 
 	fwrite(normalsize,sizeof(uint32),mgg.num_singletex+mgg.num_atlas,file);
 
@@ -1334,7 +1383,13 @@ int main(int argc, char *argv[])
 	fwrite(offx,sizeof(int16),mgg.num_frames,file);
 	fwrite(offy,sizeof(int16),mgg.num_frames,file);
 
+	//fflush(file);
+
 	fseek(file,21,SEEK_SET);
+
+	//fseek(file, 0, SEEK_SET);
+
+	//fwrite(header, 21, 1, file);
 
 	fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
 	
