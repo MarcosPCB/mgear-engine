@@ -1,0 +1,4 @@
+7z e "ffmpeg-20180424-d06b01f-win64-static.zip" "-otest" ffmpeg.exe -r
+
+ffmpeg.exe -i input -r 1 framename%05d.jpg
+ffmpeg.exe -i input output.wav

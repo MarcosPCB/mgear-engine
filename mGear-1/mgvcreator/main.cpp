@@ -9,8 +9,11 @@ int main(int argc, char *argv[])
 	FILE *file, *file2, *file3;
 	_MGVFORMAT mgv;
 	memset(&mgv,0,sizeof(_MGVFORMAT));
-	char FileName[256], filename[256], framename[256], framename2[256];
+	char FileName[256], filename[256], framename[256], framename2[256], loading_str[256];
 	char header[21]={ "MGV File Version 1.0"};
+	unsigned char loading_pct;
+
+	printf("MGV Creator 1.0\nMaster Gear Video Creator 2018\n");
 
 	if(argc<3)
 	{
@@ -58,7 +61,7 @@ int main(int argc, char *argv[])
 	}
 
 	strcpy(framename2,framename);
-	strcat(framename2,"//MGV.WAV");
+	strcat(framename2,"\\MGV.WAV");
 
 	if((file3=fopen(framename2,"rb"))==NULL)
 	{
@@ -86,15 +89,28 @@ int main(int argc, char *argv[])
 	size_t totalsize;
 	totalsize=((sizeof(_MGVFORMAT)+512)+(mgv.num_frames*sizeof(uint32)+512))+21;
 
+	printf("\n");
 	uint32 j=0;
-	for(register uint32 i=0;i<mgv.num_frames+1;i++)
+	for (register uint32 i = 0, m = 0, k = 0; i < mgv.num_frames + 1; i++)
 	{
+		loading_pct = (i * 100) / mgv.num_frames + 1;
+
+		m = (i * 70) / mgv.num_frames + 1;
+
+		memset(loading_str, 0, sizeof(loading_str));
+
+		for (k = 0; k < m; k++)
+			strcat(loading_str, ".");
+
+		printf("\rEncoding frames %d/%d [%d%%]%s", i, mgv.num_frames, loading_pct, loading_str);
+
 		//if(i==33) j=42;
 		strcpy(framename2,framename);
-		if(j<10) sprintf(filename,"//frame000%d.jpg",j); else
-		if(j<100) sprintf(filename,"//frame00%d.jpg",j); else
-		if(j<1000) sprintf(filename,"//frame0%d.jpg",j); else
-		if(j<10000) sprintf(filename,"//frame%d.jpg",j);
+		if(j<10) sprintf(filename,"\\frame0000%d.jpg",j); else
+		if(j<100) sprintf(filename,"\\frame000%d.jpg",j); else
+		if(j<1000) sprintf(filename,"\\frame00%d.jpg",j); else
+		if(j<10000) sprintf(filename,"\\frame0%d.jpg",j); else
+		if (j<100000) sprintf(filename, "\\frame%d.jpg", j);
 
 		strcat(framename2,filename);
 
@@ -105,11 +121,12 @@ int main(int argc, char *argv[])
 			fflush(stdin);
 			getch();
 			j++;
-			continue;
+			fclose(file);
+			exit(1);
 		}
 		else
 		{
-			printf("Writing frame number %d ...\n",j);
+			//printf("Writing frame number %d ...\n",j);
 			fseek(file2,0,SEEK_END);
 
 			size_t size=ftell(file2);
@@ -131,10 +148,19 @@ int main(int argc, char *argv[])
 			fwrite(buf,size,1,file);
 			fclose(file2);
 			free(buf);
-			printf("Wrote frame number %d\n",j);
+			//printf("Wrote frame number %d\n",j);
 		}
 		j++;
 	}
+
+	loading_pct = 100;
+
+	memset(loading_str, 0, sizeof(loading_str));
+
+	for (j = 0; j < 70; j++)
+		strcat(loading_str, ".");
+
+	printf("\rEncoding frames %d/%d [%d%%]%sDone\n", mgv.num_frames, mgv.num_frames, loading_pct, loading_str);
 
 	rewind(file);
 	fseek(file,((sizeof(_MGVFORMAT)+512))+21,SEEK_CUR);
@@ -160,6 +186,7 @@ int main(int argc, char *argv[])
 	printf("Audio data wrote\n");
 
 	printf("MGV file created sucessfully\n");
+	printf("Press any key to continue...\n");
 
 	fflush(stdin);
 	getch();

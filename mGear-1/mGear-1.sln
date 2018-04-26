@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mTex", "mTex\mTex.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mggviewer", "mggviewer\mggviewer.vcxproj", "{1CE1FE96-0DF0-48C4-A437-DA8F8A9A80CE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mSDK", "mSDK\mSDK.vcxproj", "{59889370-8830-454D-9C21-B063C4A58F7D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -75,6 +77,12 @@ Global
 		{1CE1FE96-0DF0-48C4-A437-DA8F8A9A80CE}.Release|Win32.ActiveCfg = Release|Win32
 		{1CE1FE96-0DF0-48C4-A437-DA8F8A9A80CE}.Release|Win32.Build.0 = Release|Win32
 		{1CE1FE96-0DF0-48C4-A437-DA8F8A9A80CE}.Release|x64.ActiveCfg = Release|Win32
+		{59889370-8830-454D-9C21-B063C4A58F7D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{59889370-8830-454D-9C21-B063C4A58F7D}.Debug|Win32.Build.0 = Debug|Win32
+		{59889370-8830-454D-9C21-B063C4A58F7D}.Debug|x64.ActiveCfg = Debug|Win32
+		{59889370-8830-454D-9C21-B063C4A58F7D}.Release|Win32.ActiveCfg = Release|Win32
+		{59889370-8830-454D-9C21-B063C4A58F7D}.Release|Win32.Build.0 = Release|Win32
+		{59889370-8830-454D-9C21-B063C4A58F7D}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

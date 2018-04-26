@@ -29,6 +29,7 @@
 int nkrendered = 0;
 
 struct nk_context *ctx;
+struct nk_font *fonts[3];
 
 int prev_tic, curr_tic, delta;
 
@@ -493,7 +494,7 @@ void CheckForChanges()
 	if (memcmp(&mtex.mgg, &mtex.mgg2, sizeof(mtex.mgg2)) != NULL)
 	{
 		mtex.changes_detected = 1;
-		sprintf(st.WindowTitle, "Tex ALPHA *%s", mtex.filename);
+		sprintf(st.WindowTitle, "Tex *%s", mtex.filename);
 	}
 }
 
@@ -1296,7 +1297,10 @@ char *LoadPrjFile(const char *filepath)
 
 				for (k = mtex.mgg.num_f0[j]; k < mtex.mgg.num_ff[j] + 1; k++)
 				{
-					tok = strtok(NULL, " ,\"");
+					tok = strtok(NULL, ",\"");
+
+					if (strcmp(tok, " ")==NULL)
+						tok = strtok(NULL, ",\"");
 
 					if (tok)
 					{
@@ -1362,7 +1366,10 @@ char *LoadPrjFile(const char *filepath)
 
 				for (k = mtex.mgg.num_f0[j]; k < mtex.mgg.num_ff[j] + 1; k++)
 				{
-					tok = strtok(NULL, " ,\"");
+					tok = strtok(NULL, ",\"");
+
+					if (strcmp(tok, " ") == NULL)
+						tok = strtok(NULL, ",\"");
 
 					if (tok)
 					{
@@ -1431,7 +1438,10 @@ char *LoadPrjFile(const char *filepath)
 					{
 						for (k = i; k < j; k++)
 						{
-							tok = strtok(NULL, " ,\"");
+							tok = strtok(NULL, ",\"");
+
+							if (strcmp(tok, " ") == NULL)
+								tok = strtok(NULL, ",\"");
 
 							if (tok)
 							{
@@ -1484,7 +1494,10 @@ char *LoadPrjFile(const char *filepath)
 			{
 				i = atoi(tok);
 
-				tok = strtok(NULL, " \"\n");
+				tok = strtok(NULL, "\"\n");
+
+				if (strcmp(tok, " ") == NULL)
+					tok = strtok(NULL, ",\"");
 
 				if (tok)
 				{
@@ -1545,7 +1558,10 @@ char *LoadPrjFile(const char *filepath)
 					{
 						for (k = i; k < j; k++)
 						{
-							tok = strtok(NULL, " ,\"");
+							tok = strtok(NULL, ",\"");
+
+							if (strcmp(tok, " ") == NULL)
+								tok = strtok(NULL, ",\"");
 
 							if (tok)
 							{
@@ -1604,7 +1620,10 @@ char *LoadPrjFile(const char *filepath)
 			{
 				i = atoi(tok);
 
-				tok = strtok(NULL, " \"\n");
+				tok = strtok(NULL, "\"\n");
+
+				if (strcmp(tok, " ") == NULL)
+					tok = strtok(NULL, ",\"");
 
 				if (tok)
 				{
@@ -2334,7 +2353,7 @@ int NewMGGBox(const char path[MAX_PATH])
 
 				strcpy(mtex.filename, path3 + i);
 
-				sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+				sprintf(st.WindowTitle, "Tex %s", mtex.filename);
 
 				memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
@@ -2638,7 +2657,7 @@ void MenuBar()
 			nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
 
 			nk_layout_row_push(ctx, 45);
-			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(210, 235)))
+			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(210, 250)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 				if (nk_menu_item_label(ctx, "New project", NK_TEXT_LEFT))
@@ -2666,7 +2685,7 @@ void MenuBar()
 
 							strcpy(mtex.filename, path + i);
 
-							sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+							sprintf(st.WindowTitle, "Tex %s", mtex.filename);
 
 							memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
@@ -2680,7 +2699,7 @@ void MenuBar()
 				{
 					SavePrjFile(mtex.prj_path);
 
-					sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+					sprintf(st.WindowTitle, "Tex %s", mtex.filename);
 
 					memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 				}
@@ -2747,7 +2766,7 @@ void MenuBar()
 
 						strcpy(mtex.prj_path, path2);
 
-						sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+						sprintf(st.WindowTitle, "Tex %s", mtex.filename);
 
 						memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
@@ -2816,7 +2835,7 @@ void MenuBar()
 
 					SavePrjFile(mtex.prj_path);
 
-					sprintf(st.WindowTitle, "Tex ALPHA %s", mtex.filename);
+					sprintf(st.WindowTitle, "Tex %s", mtex.filename);
 
 					memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
 
@@ -4308,7 +4327,7 @@ void LeftPannel()
 
 			if (mtex.anim_selected != -1 && !mtex.dn_mode)
 			{
-				nk_layout_row_dynamic(ctx, 190, 1);
+				nk_layout_row_dynamic(ctx, 200, 1);
 				if (nk_group_begin(ctx, "Animation", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 				{
 					nk_layout_row_dynamic(ctx, 25, 1);
@@ -4472,6 +4491,7 @@ void ViewerBox()
 		if (mtex.anim_selected != -1)
 		{
 			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 7);
+			nk_style_set_font(ctx, &fonts[1]->handle);
 
 			nk_layout_row_push(ctx, 0.1f);
 			if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT))
@@ -4481,12 +4501,12 @@ void ViewerBox()
 			if (mtex.selected == mtex.mgg.mga[mtex.anim_selected].startID)
 			{
 				ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
-				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT);
+				nk_button_label(ctx, "E");
 				SetThemeBack();
 			}
 			else
 			{
-				if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_LEFT))
+				if (nk_button_label(ctx, "E"))
 				{
 					if (mtex.selected > mtex.mgg.mga[mtex.anim_selected].startID - 1)
 						mtex.selected--;
@@ -4494,7 +4514,7 @@ void ViewerBox()
 			}
 
 			nk_layout_row_push(ctx, 0.2f);
-			if (nk_button_label(ctx, "Stop"))
+			if (nk_button_label(ctx, "D"))
 			{
 				mtex.play = 0;
 				mtex.selected = mtex.mgg.mga[mtex.anim_selected].startID;
@@ -4504,11 +4524,11 @@ void ViewerBox()
 			if (mtex.play)
 			{
 				ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
-				nk_button_label(ctx, "Play");
+				nk_button_label(ctx, "B");
 			}
 			else
 			{
-				if (nk_button_label(ctx, "Play"))
+				if (nk_button_label(ctx, "B"))
 					mtex.play = 1;
 			}
 
@@ -4518,11 +4538,11 @@ void ViewerBox()
 			if (!mtex.play)
 			{
 				ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
-				nk_button_label(ctx, "Pause");
+				nk_button_label(ctx, "C");
 			}
 			else
 			{
-				if (nk_button_label(ctx, "Pause"))
+				if (nk_button_label(ctx, "C"))
 					mtex.play = 0;
 			}
 
@@ -4532,11 +4552,11 @@ void ViewerBox()
 			if (mtex.selected == mtex.mgg.mga[mtex.anim_selected].endID)
 			{
 				ctx->style.button.normal = ctx->style.button.active = ctx->style.button.hover;
-				nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT);
+				nk_button_label(ctx, "F");
 			}
 			else
 			{
-				if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
+				if (nk_button_label(ctx, "F"))
 				{
 					if (mtex.selected < mtex.mgg.mga[mtex.anim_selected].endID + 1)
 						mtex.selected++;
@@ -4548,6 +4568,9 @@ void ViewerBox()
 			nk_layout_row_push(ctx, 0.1f);
 			if(nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
 				mtex.selected = mtex.mgg.mga[mtex.anim_selected].endID;
+
+			nk_style_set_font(ctx, &fonts[0]->handle);
+			//nk_style_set_font(ctx, &fonts[2]->handle);
 
 			nk_layout_row_end(ctx);
 		}
@@ -5373,33 +5396,42 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	strcpy(st.WindowTitle,"mTex");
+	strcpy(st.WindowTitle,"Tex");
 
-	OpenFont("font/Roboto-Regular.ttf","arial",0,128);
-	OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);
+	//OpenFont("font/Roboto-Regular.ttf","arial",0,128);
+	//OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);
 	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
 	/*
 	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
+		MessageBox(NULL, "Could not open UI MGG", "Error", MB_OK);
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
+	
+	UILoadSystem("UI_Sys.cfg");
 	*/
-	//UILoadSystem("UI_Sys.cfg");
 
 	st.FPSYes=1;
 
-	st.Developer_Mode=1;
+	st.Developer_Mode=0;
 
 	curr_tic=GetTicks();
 
 	ctx = nk_sdl_init(wn);
 
 	struct nk_font_atlas *atlas;
+	struct nk_font_config cfg = nk_font_config(0);
+	cfg.oversample_h = 3;
+	cfg.oversample_v = 2;
+
 	nk_sdl_font_stash_begin(&atlas);
+	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 13, 0);
+	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
 	nk_sdl_font_stash_end();
+	nk_style_set_font(ctx, &fonts[0]->handle);
 	background = nk_rgb(28, 48, 62);
 
 	SETENGINEPATH;

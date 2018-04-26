@@ -52,6 +52,8 @@ int main(int argc, char *argv[])
 	memset(files_n, 0, MAX_FILES * 64);
 	memset(ca_normal, 0, 32);
 
+	printf("MGG Creator 1.0\nMaster Gear Graphics Creator 2018");
+
 	if(argc<3)
 	{
 		printf("Creates an MGG file.\n");
@@ -98,6 +100,7 @@ int main(int argc, char *argv[])
 	while(!feof(file4))
 	{
 		memset(str,0,sizeof(str));
+		memset(tmp, 0, sizeof(tmp));
 		fgets(tmp,sizeof(tmp),file4);
 		sscanf(tmp,"%s %s",str[0], str[1]);
 		if(strcmp(str[0],"\0")==NULL)
@@ -274,7 +277,12 @@ int main(int argc, char *argv[])
 							printf("\rBuilding custom atlas %d [%d%%]%s", l, loading_pct, loading_str);
 
 							if (!sequence)
-								token = strtok(NULL, " ,\"");
+							{
+								token = strtok(NULL, ",\"");
+
+								if (strcmp(token, " ") == NULL)
+									token = strtok(NULL, ",\"");
+							}
 
 							strcpy(framename2, framename);
 							strcat(framename2, "//");
@@ -477,7 +485,12 @@ int main(int argc, char *argv[])
 							printf("\rBuilding custom atlas normal %d [%d%%]%s", l, loading_pct, loading_str);
 
 							if (!sequence)
-								token = strtok(NULL, " ,\"");
+							{
+								token = strtok(NULL, ",\"");
+
+								if (strcmp(token, " ") == NULL)
+									token = strtok(NULL, ",\"");
+							}
 
 							if (strcmp(token, "null") == 0)
 							{
@@ -647,12 +660,24 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					strtok(tmp, " ,\"");
+					strtok(tmp, ",\"");
 
 					token = strtok(NULL, " ,\"");
 					i = atoi(token);
 
-					token = strtok(NULL, " ,\"");
+					token = strtok(NULL, ",\"");
+
+					if (strcmp(token, " ") == NULL)
+						token = strtok(NULL, ",\"");
+
+					if (token == NULL)
+					{
+						printf("Error: missing frame file after FRAMEFILE command\n");
+						fflush(stdin);
+						getch();
+						exit(1);
+					}
+
 					strcpy(files[i], token);
 				}
 			}
@@ -678,7 +703,19 @@ int main(int argc, char *argv[])
 
 					for (k = i; k < j; k++)
 					{
-						token = strtok(NULL, " ,\"");
+						token = strtok(NULL, ",\"");
+
+						if (strcmp(token, " ") == NULL)
+							token = strtok(NULL, ",\"");
+
+						if (token == NULL)
+						{
+							printf("Error: missing frame file after FRAMEFILE command\n");
+							fflush(stdin);
+							getch();
+							exit(1);
+						}
+
 						strcpy(files[k], token);
 					}
 				}
@@ -700,7 +737,19 @@ int main(int argc, char *argv[])
 					token = strtok(NULL, " ,\"");
 					i = atoi(token);
 
-					token = strtok(NULL, " ,\"");
+					token = strtok(NULL, ",\"");
+
+					if (strcmp(token, " ") == NULL)
+						token = strtok(NULL, ",\"");
+
+					if (token == NULL)
+					{
+						printf("Error: missing frame file after FRAMEFILE command\n");
+						fflush(stdin);
+						getch();
+						exit(1);
+					}
+
 					strcpy(files_n[i], token);
 
 					normals[i] = 1;
@@ -728,11 +777,24 @@ int main(int argc, char *argv[])
 
 					for (k = i; k < j; k++)
 					{
-						token = strtok(NULL, " ,\"");
-						if (strcmp(token, "null") != NULL)
-							strcpy(files_n[k], token);
+						token = strtok(NULL, ",\"");
 
-						normals[k] = 1;
+						if (strcmp(token, " ") == NULL)
+							token = strtok(NULL, ",\"");
+
+						if (token == NULL)
+						{
+							printf("Error: missing frame file after FRAMEFILE command\n");
+							fflush(stdin);
+							getch();
+							exit(1);
+						}
+
+						if (strcmp(token, "null") != NULL)
+						{
+							strcpy(files_n[k], token);
+							normals[k] = 1;
+						}
 					}
 				}
 			}
@@ -1394,6 +1456,7 @@ int main(int argc, char *argv[])
 	fwrite(&mgg,sizeof(_MGGFORMAT),1,file);
 	
 	printf("MGG file %s created sucessfully\n", FileName);
+	printf("Press any key to continue...\n");
 
 	fclose(file);
 	//fclose(file3);

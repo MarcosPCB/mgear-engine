@@ -45,6 +45,7 @@ struct _mTex
 	int first_sel, last_sel, first_sel_slot, last_sel_slot;
 	int anim_selected;
 	int anim_slot;
+	int anim_frame;
 	int selected;
 	int sel_slot;
 	int sel_slots[512];
