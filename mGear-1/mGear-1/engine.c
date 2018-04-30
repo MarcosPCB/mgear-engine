@@ -7395,7 +7395,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 
 }
 
-#ifndef MGEAR_CLEAN_VERSION
+#if (defined MGEAR_CLEAN_VERSION && defined MGEAR_VIDEO_PLAYER) || !defined MGEAR_CLEAN_VERSION
 
 uint32 PlayMovie(const char *name)
 {
@@ -7407,11 +7407,11 @@ uint32 PlayMovie(const char *name)
 	char header[21];
 	GLint unif;
 	GLint tex;
-	void *framedata, *texdata;
+	uint8 *framedata, *texdata;
 
 	int w, h, channel;
 
-	void *buffer;
+	uint8 *buffer;
 
 	FMOD_RESULT y;
 	FMOD_CREATESOUNDEXINFO info;
@@ -7458,18 +7458,18 @@ uint32 PlayMovie(const char *name)
 	mgv->fps=mgvt.fps;
 	mgv->num_frames=mgvt.num_frames;
 	
-	mgv->framesize=(uint32*) malloc(mgv->num_frames*sizeof(uint32));
+	mgv->framesize=malloc((mgv->num_frames + 1)*sizeof(uint32));
 
-	fseek(mgv->file,(sizeof(_MGVFORMAT)+512)+21,SEEK_SET);
+	fseek(mgv->file,sizeof(_MGVFORMAT)+21,SEEK_SET);
 
-	fread(mgv->framesize,sizeof(uint32),mgv->num_frames,mgv->file);
+	fread(mgv->framesize,sizeof(uint32),mgv->num_frames + 1,mgv->file);
 
-	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512))+21;
+	mgv->totalsize=sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32))+21;
 
-	mgv->frames=(_MGVTEX*) malloc(mgv->num_frames*sizeof(_MGVTEX)); 
-	mgv->seeker=(uint32*) malloc(mgv->num_frames*sizeof(uint32));
+	mgv->frames=(_MGVTEX*) malloc((mgv->num_frames + 1)*sizeof(_MGVTEX)); 
+	mgv->seeker=(uint32*) malloc((mgv->num_frames + 1)*sizeof(uint32));
 
-	for(o=0;o<mgv->num_frames;o++)
+	for(o=0;o<mgv->num_frames + 1;o++)
 	{
 		
 		if(o==0)
@@ -7477,16 +7477,16 @@ uint32 PlayMovie(const char *name)
 		else
 		{
 			mgv->seeker[o]=mgv->seeker[o-1];
-			mgv->seeker[o]+=mgv->framesize[o-1]+2048;
+			mgv->seeker[o]+=mgv->framesize[o-1];
 		}
 
-		mgv->totalsize+=mgv->framesize[o]+2048;
+		mgv->totalsize+=mgv->framesize[o];
 	}
 
-	rewind(mgv->file);
-	fseek(mgv->file,mgv->totalsize+512,SEEK_CUR);
+	//rewind(mgv->file);
+	fseek(mgv->file,mgv->totalsize,SEEK_SET);
 
-	buffer=(void*) malloc(mgvt.sound_buffer_lenght);
+	buffer=malloc(mgvt.sound_buffer_lenght);
 	fread(buffer,mgvt.sound_buffer_lenght,1,mgv->file);
 	
 	memset(&info,0,sizeof(info));
@@ -7503,7 +7503,7 @@ uint32 PlayMovie(const char *name)
 
 	StopAllSounds();
 	
-	mgv->totalsize=((sizeof(_MGVFORMAT)+512)+((mgv->num_frames*sizeof(uint32))+512))+21;
+	mgv->totalsize=sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32))+21;
 
 
 	y=FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,mgv->sound,0,&ch);

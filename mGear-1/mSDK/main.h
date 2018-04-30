@@ -14,6 +14,65 @@
 
 #define MCODE_MSVC 0
 
+enum FILE_TYPE
+{
+	F_MGG,
+	F_MGV,
+	F_AUDIO,
+	F_CODE,
+	F_UI,
+	F_MISC
+};
+
+struct _Files_
+{
+	char path[MAX_PATH];
+	enum FILE_TYPE type;
+	size_t size;
+	int16 rev;
+	int16 f_rev;
+};
+
+typedef struct _Files_ _Files;
+
+struct _TODOL
+{
+	char entry[512];
+	uint8 check;
+};
+
+typedef struct _TODOL ToDo;
+
+struct SDKFORMAT
+{
+	char name[32];
+	int16 revisions;
+	int16 curr_rev;
+
+	uint8 code_type;
+	uint8 code;
+	uint8 audio;
+	uint8 tex;
+	uint8 map;
+	uint8 ui;
+	uint8 sprites;
+	
+	char exp_path[MAX_PATH];
+};
+
+struct SDKEXP
+{
+	char name[32];
+	int16 rev;
+	int16 curr_rev;
+
+	uint8 num_users;
+	uint8 encrypted;
+
+	uint16 num_files;
+	_Files *files;
+};
+
 struct _SDKPRJ
 {
 	char name[32];
@@ -22,11 +81,19 @@ struct _SDKPRJ
 	char prj_raw_path[MAX_PATH];
 
 	uint8 code;
+	uint8 audio;
+	uint8 tex;
+	uint8 map;
+	uint8 ui;
+	uint8 sprites;
+
 	uint8 code_type;
 	char code_path[MAX_PATH];
 
 	char *log;
-	char todolist[16384];
+	int16 revisions;
+	ToDo *TDList;
+	int16 curr_rev;
 
 	uint8 loaded;
 };

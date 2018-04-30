@@ -15,3 +15,5 @@ struct _MGVFORMAT
 	uint8 fps;
 	uint32 sound_buffer_lenght;
 };
+
+typedef struct _MGVFORMAT MGVFORMAT;

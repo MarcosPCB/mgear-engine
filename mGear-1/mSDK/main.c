@@ -176,18 +176,47 @@ int16 DirFiles(const char *path, char content[512][MAX_PATH])
 {
 	DIR *dir;
 	dirent *ent;
-	uint16 i=0;
-	int16 filenum=0;
+	uint16 i = 0;
+	int16 filenum = 0;
 
-	if((dir=opendir(path))!=NULL)
+	if ((dir = opendir(path)) != NULL)
 	{
-		while((ent=readdir(dir))!=NULL)
+		while ((ent = readdir(dir)) != NULL)
 		{
 			if (content != NULL)
-				strcpy(content[i],ent->d_name);
+				strcpy(content[i], ent->d_name);
 
 			i++;
 			filenum++;
+		}
+
+		closedir(dir);
+	}
+	else
+	{
+		LogApp("Could not open directory");
+		return -1;
+	}
+
+	return filenum;
+}
+
+int16 DirFrames(const char *path)
+{
+	DIR *dir;
+	dirent *ent;
+	register uint16 i = 0, j = 0;
+	int16 filenum = 0, len;
+	char frame[32];
+
+	if ((dir = opendir(path)) != NULL)
+	{
+		while ((ent = readdir(dir)) != NULL)
+		{
+			len = strlen(ent->d_name);
+
+			if (ent->d_name[len - 1] == 'g' && ent->d_name[len - 2] == 'p' && ent->d_name[len - 3] == 'j' && ent->d_name[len - 4] == '.')
+				filenum++;
 		}
 
 		closedir(dir);
@@ -245,6 +274,31 @@ int8 CheckForFFmpeg()
 	}
 
 	return -1;
+}
+
+void CheckFFmpegConversionFolder()
+{
+	DIR *dir;
+	char path[MAX_PATH], str[MAX_PATH];
+
+	strcpy(path, st.CurrPath);
+	strcat(path, "\\Tools\\FFmpeg\\MGV");
+
+	if ((dir = opendir(path)) != NULL)
+	{
+		SetCurrentDirectory(st.CurrPath);
+		system("del Tools\\FFmpeg\\MGV\\*.* /q");
+		strcpy(str, st.CurrPath);
+		strcat(str, "\\Tools\\FFmpeg");
+		SetCurrentDirectory(str);
+
+		system("rd MGV /s /q");
+
+		SetCurrentDirectory(st.CurrPath);
+
+		closedir(dir);
+	}
+	
 }
 
 int Preferences()
@@ -325,7 +379,7 @@ int Preferences()
 
 		nk_label(ctx, str,NK_TEXT_ALIGN_LEFT);
 
-		if (msdk.ffmpeg_downloaded == 1 || state == 1 || msdk.ffmpeg_installed == 1)
+		if (state == 1 || msdk.ffmpeg_installed == 1)
 		{
 			ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
 			nk_button_label(ctx, "Install FFmpeg");
@@ -377,7 +431,10 @@ int Preferences()
 					temp = CheckForFFmpeg();
 
 					if (temp == 1)
+					{
 						MessageBox(NULL, "FFmpeg was installed successfully", NULL, MB_OK);
+						msdk.ffmpeg_installed = 1;
+					}
 
 					if (temp == 0)
 					{
@@ -461,22 +518,66 @@ int Preferences()
 	return NULL;
 }
 
-void NewProject()
+int NewProject()
 {
-	if (nk_begin(ctx, "New project", nk_rect((st.screenx / 2), (st.screeny / 2), 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+	if (nk_begin(ctx, "New project", nk_rect((st.screenx / 2) - 256, (st.screeny / 2) - 128, 512, 280), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "Project name", NK_TEXT_ALIGN_LEFT);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, msdk.prj.name, 32, nk_filter_ascii);
 
+		nk_layout_row_dynamic(ctx, 10, 1);
+		nk_spacing(ctx, 1);
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "Project path", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+		nk_layout_row_push(ctx, 0.7f);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.prj_path, MAX_PATH, nk_filter_ascii);
+
+		nk_layout_row_push(ctx, 0.3f);
+		nk_button_label(ctx, "Browse");
+
+		nk_layout_row_end(ctx);
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "Code type", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_dynamic(ctx, 25, 2);
+		msdk.prj.code_type = nk_option_label(ctx, "C\\C++", msdk.prj.code_type == 0) ? 0 : msdk.prj.code_type;
+		msdk.prj.code_type = nk_option_label(ctx, "MGL", msdk.prj.code_type == 1) ? 1 : msdk.prj.code_type;
+
+		nk_layout_row_dynamic(ctx, 25, 7);
+		nk_spacing(ctx, 2);
+		nk_button_label(ctx, "Create");
+		nk_spacing(ctx, 2);
+		nk_button_label(ctx, "Cancel");
 	}
 
 	nk_end(ctx);
+
+	return 0;
 }
 
 int MGVCompiler()
 {
 	static char file[MAX_PATH], file2[MAX_PATH];
-	char str[MAX_PATH];
-	static int state = 0;
+	char str[512];
+	static int state = -1, fps = 30;
 	int temp;
+
+	char directory[MAX_PATH];
+	char exepath[MAX_PATH];
+	char args[MAX_PATH * 3];
+	static path2[MAX_PATH];
+	MSG msg;
+
+	DWORD error;
+
+	static DWORD exitcode;
+
+	static SHELLEXECUTEINFO info;
 
 	OPENFILENAME ofn;
 	ZeroMemory(&ofn, sizeof(ofn));
@@ -489,8 +590,9 @@ int MGVCompiler()
 	//ofn.hInstance = OFN_EXPLORER;
 	ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
 
-	if (state == 0)
+	if (state == -1)
 	{
+		CheckFFmpegConversionFolder();
 		memset(file, 0, MAX_PATH);
 
 		switch (CheckForFFmpeg())
@@ -509,10 +611,10 @@ int MGVCompiler()
 			break;
 		}
 
-		state = 1;
+		state = 0;
 	}
 
-	if (nk_begin(ctx, "MGV Encoder", nk_rect((st.screenx / 2), (st.screeny / 2), 256, 256), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "MGV Encoder", nk_rect((st.screenx / 2), (st.screeny / 2), 356, 256), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 25, 1);
 		nk_label(ctx, "Select the video file",NK_TEXT_ALIGN_LEFT);
@@ -534,39 +636,173 @@ int MGVCompiler()
 
 		nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, file2, MAX_PATH, nk_filter_ascii);
 
-		if (nk_button_label(ctx, "Encode"))
+		fps = nk_propertyi(ctx, "FPS", 10, fps, 60, 1, 1);
+
+		if (state > 0)
 		{
-			if (file2)
+			ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+			nk_button_label(ctx, "Converting...");
+		}
+		else
+		{
+			if (nk_button_label(ctx, "Convert"))
 			{
-				SetCurrentDirectory(st.CurrPath);
-				system("md Tools\\FFmpeg\\MGV");
-				sprintf(str, "Tools\\FFmpeg\\ffmpeg.exe -i \"%s\" -r 30 Tools\\FFmpeg\\MGV\\frame%%05d.jpg",file);
-				system(str);
-				
-				sprintf(str, "Tools\\FFmpeg\\ffmpeg.exe -i \"%s\" Tools\\FFmpeg\\MGV\\MGV.wav", file);
-				system(str);
+				if (file2)
+				{
+					SetCurrentDirectory(st.CurrPath);
+					system("md Tools\\FFmpeg\\MGV");
 
-				system("copy Tools\\FFmpeg\\MGV\\frame00001.jpg Tools\\FFmpeg\\MGV\\frame00000.jpg");
+					if (state == 0)
+					{
+						strcpy(exepath, st.CurrPath);
+						strcat(exepath, "\\Tools\\FFmpeg\\");
+						strcat(exepath, "ffmpeg.exe");
+						strcpy(directory, exepath);
+						//strcpy(path2, path);
+						PathRemoveFileSpec(directory);
 
-				temp = DirFiles("Tools\\FFmpeg\\MGV", NULL);
+						sprintf(args, "-i \"%s\" -r %d \"Tools\\FFmpeg\\MGV\\frame%%05d.jpg\"", file, fps);
 
-				sprintf(str, "Tools\\mgvcreator.exe -o test.mgv -p Tools\\FFmpeg\\MGV -fps 30 -n %d", temp - 4);
+						ZeroMemory(&info, sizeof(info));
+						info.cbSize = sizeof(info);
+						info.lpVerb = ("open");
+						info.fMask = SEE_MASK_NOCLOSEPROCESS; //| SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+						info.lpFile = exepath;
+						info.lpParameters = args;
+						//info.lpDirectory = directory;
+						info.nShow = SW_SHOW;
+						if (!ShellExecuteEx(&info))
+						{
+							error = GetLastError();
+							MessageBox(NULL, "Could not execute FFmpeg", "Error", MB_OK);
+							state = 0;
+							return -1;
+						}
 
-				system(str);
+						state = 1;
+					}
+					/*
+					sprintf(str, "Tools\\FFmpeg\\ffmpeg.exe -i \"%s\" -r 30 Tools\\FFmpeg\\MGV\\frame%%05d.jpg", file);
+					system(str);
 
+					sprintf(str, "Tools\\FFmpeg\\ffmpeg.exe -i \"%s\" Tools\\FFmpeg\\MGV\\MGV.wav", file);
+					system(str);
+
+					system("copy Tools\\FFmpeg\\MGV\\frame00001.jpg Tools\\FFmpeg\\MGV\\frame00000.jpg");
+
+					temp = DirFrames("Tools\\FFmpeg\\MGV");
+
+					sprintf(str, "Tools\\mgvcreator.exe -o test.mgv -p Tools\\FFmpeg\\MGV -fps 30 -n %d", temp - 1);
+
+					system(str);
+
+					system("del Tools\\FFmpeg\\MGV\\*.* /q");
+					strcpy(str, st.CurrPath);
+					strcat(str, "\\Tools\\FFmpeg");
+					SetCurrentDirectory(str);
+
+					system("rd MGV /s /q");
+
+					SetCurrentDirectory(st.CurrPath);
+					*/
+				}
+			}
+		}
+	}
+
+	nk_end(ctx);
+
+	if (state > 0)
+	{
+		error = WaitForSingleObject(info.hProcess, 0);
+
+		if (error == WAIT_OBJECT_0)
+		{
+			// Return exit code from process
+			GetExitCodeProcess(info.hProcess, &exitcode);
+
+			CloseHandle(info.hProcess);
+
+			if (state == 3)
+			{
 				system("del Tools\\FFmpeg\\MGV\\*.* /q");
 				strcpy(str, st.CurrPath);
 				strcat(str, "\\Tools\\FFmpeg");
 				SetCurrentDirectory(str);
 
 				system("rd MGV /s /q");
-				
+
 				SetCurrentDirectory(st.CurrPath);
+
+				state = -1;
+				return 1;
+			}
+			else
+			if (state == 2)
+			{
+				system("copy Tools\\FFmpeg\\MGV\\frame00001.jpg Tools\\FFmpeg\\MGV\\frame00000.jpg");
+
+				temp = DirFrames("Tools\\FFmpeg\\MGV");
+
+				strcpy(exepath, st.CurrPath);
+				strcat(exepath, "\\Tools\\");
+				strcat(exepath, "mgvcreator.exe");
+				strcpy(directory, exepath);
+				//strcpy(path2, path);
+				PathRemoveFileSpec(directory);
+
+				sprintf(args, "-o \"%s\" -p \"Tools\\FFmpeg\\MGV\" -fps %d -n %d", file2, fps, temp - 1);
+
+				ZeroMemory(&info, sizeof(info));
+				info.cbSize = sizeof(info);
+				info.lpVerb = ("open");
+				info.fMask = SEE_MASK_NOCLOSEPROCESS; //| SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+				info.lpFile = exepath;
+				info.lpParameters = args;
+				//info.lpDirectory = directory;
+				info.nShow = SW_SHOW;
+				if (!ShellExecuteEx(&info))
+				{
+					error = GetLastError();
+					MessageBox(NULL, "Could not execute MGV Creator", "Error", MB_OK);
+					state = 0;
+					return -1;
+				}
+
+				state = 3;
+			}
+			else
+			if (state == 1)
+			{
+				strcpy(exepath, st.CurrPath);
+				strcat(exepath, "\\Tools\\FFmpeg\\");
+				strcat(exepath, "ffmpeg.exe");
+				strcpy(directory, exepath);
+				//strcpy(path2, path);
+				PathRemoveFileSpec(directory);
+
+				sprintf(args, "-i \"%s\" \"Tools\\FFmpeg\\MGV\\MGV.WAV\"", file);
+
+				ZeroMemory(&info, sizeof(info));
+				info.cbSize = sizeof(info);
+				info.lpVerb = ("open");
+				info.fMask = SEE_MASK_NOCLOSEPROCESS; //| SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+				info.lpFile = exepath;
+				info.lpParameters = args;
+				//info.lpDirectory = directory;
+				info.nShow = SW_SHOW;
+				if (!ShellExecuteEx(&info))
+				{
+					error = GetLastError();
+					MessageBox(NULL, "Could not execute FFmpeg", "Error", MB_OK);
+					state = 0;
+					return -1;
+				}
+
+				state = 2;
 			}
 		}
 	}
-
-	nk_end(ctx);
 
 	return 0;
 }
@@ -631,6 +867,14 @@ void MenuBar()
 		}
 
 		nk_end(ctx);
+
+		if (state == 1)
+		{
+			if (NewProject())
+			{
+				state = 0;
+			}
+		}
 
 		if (state == 10)
 		{
@@ -813,6 +1057,8 @@ int main(int argc, char *argv[])
 	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
+
+	CheckFFmpegConversionFolder();
 	/*
 	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
@@ -891,7 +1137,7 @@ int main(int argc, char *argv[])
 
 		DrawSys();
 
-		//if (msdk.prj.loaded == 1)
+		if (msdk.prj.loaded == 1)
 			Pannel();
 		
 		MenuBar();
