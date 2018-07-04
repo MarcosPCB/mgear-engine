@@ -10,6 +10,7 @@
 #include "dirent.h"
 #include "UI.h"
 #include <curl.h>
+#include <tomcrypt.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -170,6 +171,254 @@ void SetThemeBack()
 	case THEME_DARK:
 		SetSkin(ctx, THEME_DARK);
 	}
+}
+
+int SavePrjFile(const char *filename)
+{
+	FILE *f;
+	char header[21] = { "mGear Project V1.0" };
+
+
+	if ((f = fopen(filename, "wb")) == NULL)
+		return 0;
+
+	fwrite(header, 21, 1, f);
+	fwrite(msdk.prj.name, 32, 1, f);
+	fwrite(msdk.prj.code_path, MAX_PATH, 1, f);
+	fwrite(msdk.prj.prj_path, MAX_PATH, 1, f);
+	fwrite(msdk.prj.prj_raw_path, MAX_PATH, 1, f);
+	fwrite(&msdk.prj.audio, 1, 1, f);
+	fwrite(&msdk.prj.code, 1, 1, f);
+	fwrite(&msdk.prj.code_type, 1, 1, f);
+	fwrite(&msdk.prj.map, 1, 1, f);
+	fwrite(&msdk.prj.sprites, 1, 1, f);
+	fwrite(&msdk.prj.ui, 1, 1, f);
+	fwrite(&msdk.prj.tex, 1, 1, f);
+	fwrite(&msdk.prj.curr_rev, sizeof(int16), 1, f);
+	fwrite(&msdk.prj.revisions, sizeof(int16), 1, f);
+	fwrite(&msdk.prj.TDList_entries, sizeof(int16), 1, f);
+
+	if (msdk.prj.curr_rev > 0)
+		fwrite(msdk.prj.exp_path, MAX_PATH, 1, f);
+
+	fclose(f);
+
+	return 1;
+}
+
+int LoadPrjFile(const char *filename)
+{
+	FILE *f;
+	char header[21];
+	
+	if ((f = fopen(filename, "rb")) == NULL)
+		return 0;
+
+	fread(header, 21, 1, f);
+
+	if (strcmp(header, "mGear Project V1.0") != NULL)
+	{
+		fclose(f);
+		return -1;
+	}
+
+	fread(msdk.prj.name, 32, 1, f);
+	fread(msdk.prj.prj_path, MAX_PATH, 1, f);
+	fread(msdk.prj.prj_raw_path, MAX_PATH, 1, f);
+	fread(msdk.prj.code_path, MAX_PATH, 1, f);
+	fread(&msdk.prj.audio, 1, 1, f);
+	fread(&msdk.prj.code, 1, 1, f);
+	fread(&msdk.prj.code_type, 1, 1, f);
+	fread(&msdk.prj.map, 1, 1, f);
+	fread(&msdk.prj.sprites, 1, 1, f);
+	fread(&msdk.prj.ui, 1, 1, f);
+	fread(&msdk.prj.tex, 1, 1, f);
+	fread(&msdk.prj.curr_rev, sizeof(int16), 1, f);
+	fread(&msdk.prj.revisions, sizeof(int16), 1, f);
+	fread(&msdk.prj.TDList_entries, sizeof(int16), 1, f);
+
+	if (msdk.prj.curr_rev > 0)
+		fread(msdk.prj.exp_path, MAX_PATH, 1, f);
+	else
+		msdk.prj.log = NULL;
+
+	if (msdk.prj.TDList_entries == 0)
+		msdk.prj.TDList = NULL;
+
+	fclose(f);
+
+	return 1;
+}
+
+int CommitPrj()
+{
+	if (nk_begin(ctx, "Commit", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	{
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "Exported project path", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+		nk_layout_row_push(ctx, 0.80f);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.exp_path, MAX_PATH, nk_filter_ascii);
+
+		nk_layout_row_push(ctx, 0.20f);
+		nk_button_label(ctx, "Browse");
+		nk_layout_row_end(ctx);
+	}
+
+	nk_end(ctx);
+
+	return NULL;
+}
+
+int ExportProject()
+{
+	static uint8 encrypted = 0, num_users = 1, usernames[8][16], passwords[8][16], state = 0, selected_str[12];
+	static int storage = 0, admin = 0;
+	static enum USER_TYPE user_perm[8];
+
+	register int16 i, j;
+
+	if (state == 0)
+	{
+		encrypted = 0;
+		num_users = 1;
+		ZeroMemory(usernames, 8 * 16);
+		ZeroMemory(passwords, 8 * 16);
+		admin = 0;
+		memset(user_perm, 0, sizeof(enum USERTYPE) * 8);
+		user_perm[0] = ADMIN;
+		storage = 0;
+		state = 1;
+	}
+
+	if (nk_begin(ctx, "Export Project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	{
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "Export path", NK_TEXT_ALIGN_LEFT);
+
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+		nk_layout_row_push(ctx, 0.80f);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.exp_path, MAX_PATH, nk_filter_ascii);
+
+		nk_layout_row_push(ctx, 0.20f);
+		nk_button_label(ctx, "Browse");
+		nk_layout_row_end(ctx);
+
+		nk_layout_row_dynamic(ctx, 25, 3);
+
+		encrypted = nk_option_label(ctx, "No encryption", encrypted == 0) ? 0 : encrypted;
+		encrypted = nk_option_label(ctx, "Vital encryption", encrypted == 1) ? 1 : encrypted;
+		encrypted = nk_option_label(ctx, "Full encryption", encrypted == 2) ? 2 : encrypted;
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		num_users = nk_propertyi(ctx, "Number of users", 1, num_users, 8, 1, 1);
+
+		nk_layout_row_dynamic(ctx, 256, 1);
+		if (nk_group_begin(ctx, "Users", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+		{
+			for (i = 0; i < num_users; i++)
+			{
+				nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+				if (encrypted == 0)
+					nk_layout_row_push(ctx, 0.80f);
+				else
+					nk_layout_row_push(ctx, 0.40f);
+
+				nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, usernames[i], 16, nk_filter_ascii);
+
+				if (encrypted != 0)
+				{
+					nk_layout_row_push(ctx, 0.40f);
+					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, passwords[i], 16, nk_filter_ascii);
+				}
+
+				nk_layout_row_push(ctx, 0.20f);
+				switch (user_perm[i])
+				{
+					case ADMIN: strcpy(selected_str, "Admin");
+						break;
+
+					case ART: strcpy(selected_str, "Artist");
+						break;
+
+					case CODE: strcpy(selected_str, "Coder");
+						break;
+
+					case SOUND: strcpy(selected_str, "Sound Des.");
+						break;
+
+					case MAP: strcpy(selected_str, "Mapper");
+						break;
+				}
+
+				if (nk_combo_begin_label(ctx, selected_str, nk_vec2(nk_widget_width(ctx), 5 * 20 + 45)))
+				{
+					nk_layout_row_dynamic(ctx, 20, 1);
+					if (admin == -1 || admin == i)
+					{
+						if (nk_combo_item_label(ctx, "Admin", NK_TEXT_ALIGN_LEFT))
+						{
+							admin = i;
+							user_perm[i] = ADMIN;
+						}
+					}
+
+					if (nk_combo_item_label(ctx, "Artist", NK_TEXT_ALIGN_LEFT))
+						user_perm[i] = ART;
+
+					if (nk_combo_item_label(ctx, "Coder", NK_TEXT_ALIGN_LEFT))
+						user_perm[i] = CODE;
+
+					if (nk_combo_item_label(ctx, "Sound Des.", NK_TEXT_ALIGN_LEFT))
+						user_perm[i] = SOUND;
+
+					if (nk_combo_item_label(ctx, "Mapper", NK_TEXT_ALIGN_LEFT))
+						user_perm[i] = MAP;
+
+					if (admin == i && user_perm != ADMIN)
+						admin = -1;
+
+					nk_combo_end(ctx);
+				}
+
+				nk_layout_row_end(ctx);
+			}
+
+			nk_group_end(ctx);
+		}
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_combobox_string(ctx, "Google Drive\0OneDrive\0Other Storage", &storage, 3, 25, nk_vec2(90, 256));
+
+		if (nk_button_label(ctx, "Export"))
+			state = 2;
+
+		if (nk_button_label(ctx, "Cancel"))
+			state = 3;
+
+	}
+
+	nk_end(ctx);
+
+	if (state == 3)
+	{
+		state = 0;
+		return -1;
+	}
+
+	return NULL;
+}
+
+void UnloadPrj()
+{
+	if (msdk.prj.log)
+		free(msdk.prj.log);
+
+	if (msdk.prj.TDList_entries > 0)
+		free(msdk.prj.TDList);
+
+	memset(&msdk.prj, 0, sizeof(SDKPRJ));
 }
 
 int16 DirFiles(const char *path, char content[512][MAX_PATH])
@@ -520,7 +769,37 @@ int Preferences()
 
 int NewProject()
 {
-	if (nk_begin(ctx, "New project", nk_rect((st.screenx / 2) - 256, (st.screeny / 2) - 128, 512, 280), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	static int state = 0;
+	static char path[MAX_PATH];
+	char str[MAX_PATH * 3], filepath[MAX_PATH];
+
+	BROWSEINFO bi;
+
+	static LPITEMIDLIST pidl;
+
+	char directory[MAX_PATH];
+	char exepath[MAX_PATH];
+	char args[MAX_PATH * 3];
+	static path2[MAX_PATH];
+	MSG msg;
+
+	DWORD error;
+
+	static DWORD exitcode;
+
+	static SHELLEXECUTEINFO info;
+
+	ZeroMemory(&bi, sizeof(bi));
+
+	if (state == 0)
+	{
+		ZeroMemory(path, MAX_PATH);
+		pidl = NULL;
+
+		state = 1;
+	}
+
+	if (nk_begin(ctx, "New project", nk_rect((st.screenx / 2) - 256, (st.screeny / 2) - 260, 512, 320), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 25, 1);
 		nk_label(ctx, "Project name", NK_TEXT_ALIGN_LEFT);
@@ -534,10 +813,20 @@ int NewProject()
 
 		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
 		nk_layout_row_push(ctx, 0.7f);
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.prj_path, MAX_PATH, nk_filter_ascii);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, path, MAX_PATH, nk_filter_ascii);
 
 		nk_layout_row_push(ctx, 0.3f);
-		nk_button_label(ctx, "Browse");
+		if (nk_button_label(ctx, "Browse"))
+		{
+			bi.lpszTitle = ("Select a folder to create the project");
+			bi.ulFlags = BIF_USENEWUI;
+
+			pidl = SHBrowseForFolder(&bi);
+
+			if (pidl)
+				SHGetPathFromIDList(pidl, path);
+
+		}
 
 		nk_layout_row_end(ctx);
 
@@ -548,11 +837,133 @@ int NewProject()
 		msdk.prj.code_type = nk_option_label(ctx, "C\\C++", msdk.prj.code_type == 0) ? 0 : msdk.prj.code_type;
 		msdk.prj.code_type = nk_option_label(ctx, "MGL", msdk.prj.code_type == 1) ? 1 : msdk.prj.code_type;
 
+
 		nk_layout_row_dynamic(ctx, 25, 7);
 		nk_spacing(ctx, 2);
-		nk_button_label(ctx, "Create");
+
+		if (path[0] == NULL || msdk.prj.name[0] == NULL)
+		{
+			ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+			nk_button_label(ctx, "Create");
+			nk_style_default(ctx);
+		}
+		else
+		{
+			if (nk_button_label(ctx, "Create"))
+			{
+				SetCurrentDirectory(st.CurrPath);
+
+				strcpy(exepath, st.CurrPath);
+				strcat(exepath, "\\Tools\\");
+				strcat(exepath, "7z.exe");
+				strcpy(directory, st.CurrPath);
+				//strcpy(path2, path);
+
+				sprintf(args, "x \"data\\project.zip\"  \"-o%s\"", path);
+
+				ZeroMemory(&info, sizeof(info));
+				info.cbSize = sizeof(info);
+				info.lpVerb = ("open");
+				info.fMask = SEE_MASK_NOCLOSEPROCESS; //| SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+				info.lpFile = exepath;
+				info.lpParameters = args;
+				//info.lpDirectory = directory;
+				info.nShow = SW_SHOW;
+				if (!ShellExecuteEx(&info))
+				{
+					error = GetLastError();
+					MessageBox(NULL, "Could not execute 7zip", "Error", MB_OK);
+					UnloadPrj();
+					state = 0;
+					nk_end(ctx);
+					return -1;
+				}
+
+				error = WaitForSingleObject(info.hProcess, INFINITE);
+
+				if (error == WAIT_OBJECT_0)
+				{
+					// Return exit code from process
+					GetExitCodeProcess(info.hProcess, &exitcode);
+
+					if (exitcode != 0)
+					{
+						MessageBox(NULL, "Error while creating project folder 7ZERROR", "Error", MB_OK);
+						LogApp("Error while creating project folder 7ZERROR");
+						UnloadPrj();
+						state = 0;
+						nk_end(ctx);
+						return -1;
+					}
+
+					CloseHandle(info.hProcess);
+				}
+
+				//sprintf(str, "Tools\\7z.exe x \"data\\project.zip\"  \"-o%s\"", path);
+				//system(str);
+
+				SetCurrentDirectory(path);
+				if (rename("untitled", msdk.prj.name) != NULL)
+				{
+					MessageBox(NULL, "Error while creating project folder", "Error", MB_OK);
+					LogApp("Error while creating project folder");
+					UnloadPrj();
+					state = 0;
+					nk_end(ctx);
+					return -1;
+				}
+
+				strcpy(msdk.prj.prj_path, path);
+				strcat(msdk.prj.prj_path, "\\");
+				strcat(msdk.prj.prj_path, msdk.prj.name);
+
+				SetCurrentDirectory(msdk.prj.prj_path);
+
+				strcpy(msdk.prj.prj_raw_path, path);
+				strcat(msdk.prj.prj_raw_path, "\\");
+				strcat(msdk.prj.prj_raw_path, "_prj_raw");
+
+				strcpy(msdk.prj.code_path, msdk.prj.prj_raw_path);
+				strcat(msdk.prj.code_path, "\\");
+				strcat(msdk.prj.code_path, "CODE");
+
+				msdk.prj.audio = msdk.prj.code = msdk.prj.map = msdk.prj.sprites = msdk.prj.ui = msdk.prj.tex = 1;
+				msdk.prj.curr_rev = 0;
+				msdk.prj.revisions = 0;
+				msdk.prj.TDList_entries = 0;
+				msdk.prj.log = NULL;
+				msdk.prj.TDList = NULL;
+
+				strcpy(msdk.filepath, msdk.prj.prj_path);
+				strcat(msdk.filepath, "\\");
+				strcat(msdk.filepath, msdk.prj.name);
+				strcat(msdk.filepath, ".sdkprj");
+
+				if (!SavePrjFile(msdk.filepath))
+				{
+					MessageBox(NULL, "Error while creating project file", "Error", MB_OK);
+					LogApp("Error while creating project file");
+					UnloadPrj();
+					state = 0;
+					nk_end(ctx);
+					return -1;
+				}
+
+				msdk.prj.loaded = 1;
+
+				nk_end(ctx);
+				return 1;
+			}
+		}
+
 		nk_spacing(ctx, 2);
-		nk_button_label(ctx, "Cancel");
+		if (nk_button_label(ctx, "Cancel"))
+		{
+			nk_end(ctx);
+			UnloadPrj();
+			state = 0;
+			return -1;
+		}
 	}
 
 	nk_end(ctx);
@@ -675,7 +1086,7 @@ int MGVCompiler()
 						{
 							error = GetLastError();
 							MessageBox(NULL, "Could not execute FFmpeg", "Error", MB_OK);
-							state = 0;
+							state = -1;
 							return -1;
 						}
 
@@ -811,8 +1222,8 @@ void MenuBar()
 {
 	register int i, a, m;
 	char mapname[2048], str[128], filename[2048];
-	int id = 0, id2 = 0, check;
-	static int state = 0, mggid;
+	int id = 0, id2 = 0, check, temp;
+	static int state = 0, mggid, path[MAX_PATH];
 
 	//if (nkrendered==0)
 	//{
@@ -826,11 +1237,45 @@ void MenuBar()
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 				if (nk_menu_item_label(ctx, "New project", NK_TEXT_LEFT))
+				{
+					UnloadPrj();
 					state = 1;
+				}
 
 				if (nk_menu_item_label(ctx, "Open project", NK_TEXT_LEFT))
 				{
-					state = 2;
+					UnloadPrj();
+
+					OPENFILENAME ofn;
+					ZeroMemory(&path, sizeof(path));
+					ZeroMemory(&ofn, sizeof(ofn));
+					ofn.lStructSize = sizeof(ofn);
+					ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
+					ofn.lpstrFilter = "SDK project Files\0*.sdkprj\0";
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrFile = path;
+					ofn.lpstrTitle = "Select the project file";
+					//ofn.hInstance = OFN_EXPLORER;
+					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+					if (GetOpenFileName(&ofn))
+					{
+						temp = LoadPrjFile(path);
+
+						if (temp == 0)
+							MessageBox(NULL, "Error could not open the file", "Error", MB_OK);
+
+						if (temp == -1)
+							MessageBox(NULL, "Error invalid file", "Error", MB_OK);
+
+						if (temp == 1)
+						{
+							msdk.prj.loaded = 1;
+							strcpy(msdk.filepath, path);
+						}
+					}
+
+					state = 0;
 				}
 
 				nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT);
@@ -870,10 +1315,10 @@ void MenuBar()
 
 		if (state == 1)
 		{
-			if (NewProject())
-			{
+			temp = NewProject();
+
+			if (temp == 1 || temp == -1)
 				state = 0;
-			}
 		}
 
 		if (state == 10)
@@ -1140,6 +1585,8 @@ int main(int argc, char *argv[])
 		if (msdk.prj.loaded == 1)
 			Pannel();
 		
+		ExportProject();
+
 		MenuBar();
 
 		UIMain_DrawSystem();

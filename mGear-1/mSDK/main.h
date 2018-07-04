@@ -43,21 +43,13 @@ struct _TODOL
 
 typedef struct _TODOL ToDo;
 
-struct SDKFORMAT
+enum USER_TYPE
 {
-	char name[32];
-	int16 revisions;
-	int16 curr_rev;
-
-	uint8 code_type;
-	uint8 code;
-	uint8 audio;
-	uint8 tex;
-	uint8 map;
-	uint8 ui;
-	uint8 sprites;
-	
-	char exp_path[MAX_PATH];
+	ADMIN = 4,
+	ART = 3,
+	SOUND = 2,
+	CODE = 1,
+	MAP = 0
 };
 
 struct SDKEXP
@@ -79,6 +71,7 @@ struct _SDKPRJ
 	char prj_path[MAX_PATH];
 
 	char prj_raw_path[MAX_PATH];
+	char exp_path[MAX_PATH];
 
 	uint8 code;
 	uint8 audio;
@@ -93,7 +86,10 @@ struct _SDKPRJ
 	char *log;
 	int16 revisions;
 	ToDo *TDList;
+	int16 TDList_entries;
 	int16 curr_rev;
+
+	int32 user_id;
 
 	uint8 loaded;
 };
@@ -110,6 +106,8 @@ struct _mSdk
 	int theme;
 
 	SDKPRJ prj;
+
+	char filepath[MAX_PATH];
 
 	CURL *curl;
 	CURLM *curlm;

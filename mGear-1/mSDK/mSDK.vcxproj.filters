@@ -56,14 +56,16 @@
     <ClInclude Include="..\mGear-1\dirent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\mGear-1\a.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\mTex\skins.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\mGear-1\a.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>
