@@ -31,9 +31,12 @@ int nkrendered = 0;
 struct nk_context *ctx;
 struct nk_font *fonts[2];
 
-int prev_tic, curr_tic, delta;
+int prev_tic, curr_tic, delta, idx;
 
 mSdk msdk;
+
+prng_state prng;
+hash_state hash;
 
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
 {
@@ -273,9 +276,18 @@ int CommitPrj()
 
 int ExportProject()
 {
-	static uint8 encrypted = 0, num_users = 1, usernames[8][16], passwords[8][16], state = 0, selected_str[12];
-	static int storage = 0, admin = 0;
+	static uint8 encrypted = 0, num_users = 1, usernames[8][16], passwords[8][16], state = 0, selected_str[12], exp_state = 0;
+	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0;
 	static enum USER_TYPE user_perm[8];
+	char str[128], str2[128], dir[MAX_PATH];
+	int pct, err, salt_len, hash2_len, ck_len, master_key_len, tmp_len, tmp2_len;
+	static uint64 f_timer, cur_timer, hexcode;
+	static char dots[3] = { "." }, path[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE], master_key[MAXBLOCKSIZE],
+		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE];
+
+	static symmetric_key key;
+
+	FILE *f;
 
 	register int16 i, j;
 
@@ -290,52 +302,57 @@ int ExportProject()
 		user_perm[0] = ADMIN;
 		storage = 0;
 		state = 1;
+		strcpy(dots, ".");
+		steps = 1;
+		can_exp = 0;
 	}
 
-	if (nk_begin(ctx, "Export Project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (state == 1)
 	{
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "Export path", NK_TEXT_ALIGN_LEFT);
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
-		nk_layout_row_push(ctx, 0.80f);
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.exp_path, MAX_PATH, nk_filter_ascii);
-
-		nk_layout_row_push(ctx, 0.20f);
-		nk_button_label(ctx, "Browse");
-		nk_layout_row_end(ctx);
-
-		nk_layout_row_dynamic(ctx, 25, 3);
-
-		encrypted = nk_option_label(ctx, "No encryption", encrypted == 0) ? 0 : encrypted;
-		encrypted = nk_option_label(ctx, "Vital encryption", encrypted == 1) ? 1 : encrypted;
-		encrypted = nk_option_label(ctx, "Full encryption", encrypted == 2) ? 2 : encrypted;
-
-		nk_layout_row_dynamic(ctx, 25, 1);
-		num_users = nk_propertyi(ctx, "Number of users", 1, num_users, 8, 1, 1);
-
-		nk_layout_row_dynamic(ctx, 256, 1);
-		if (nk_group_begin(ctx, "Users", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+		if (nk_begin(ctx, "Export Project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 		{
-			for (i = 0; i < num_users; i++)
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_label(ctx, "Export path", NK_TEXT_ALIGN_LEFT);
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+			nk_layout_row_push(ctx, 0.80f);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.exp_path, MAX_PATH, nk_filter_ascii);
+
+			nk_layout_row_push(ctx, 0.20f);
+			nk_button_label(ctx, "Browse");
+			nk_layout_row_end(ctx);
+
+			nk_layout_row_dynamic(ctx, 25, 3);
+
+			encrypted = nk_option_label(ctx, "No encryption", encrypted == 0) ? 0 : encrypted;
+			encrypted = nk_option_label(ctx, "Vital encryption", encrypted == 1) ? 1 : encrypted;
+			encrypted = nk_option_label(ctx, "Full encryption", encrypted == 2) ? 2 : encrypted;
+
+			nk_layout_row_dynamic(ctx, 25, 1);
+			num_users = nk_propertyi(ctx, "Number of users", 1, num_users, 8, 1, 1);
+
+			nk_layout_row_dynamic(ctx, 256, 1);
+			if (nk_group_begin(ctx, "Users", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
-				nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
-				if (encrypted == 0)
-					nk_layout_row_push(ctx, 0.80f);
-				else
-					nk_layout_row_push(ctx, 0.40f);
-
-				nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, usernames[i], 16, nk_filter_ascii);
-
-				if (encrypted != 0)
+				for (i = 0; i < num_users; i++)
 				{
-					nk_layout_row_push(ctx, 0.40f);
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, passwords[i], 16, nk_filter_ascii);
-				}
+					nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+					if (encrypted == 0)
+						nk_layout_row_push(ctx, 0.80f);
+					else
+						nk_layout_row_push(ctx, 0.40f);
 
-				nk_layout_row_push(ctx, 0.20f);
-				switch (user_perm[i])
-				{
+					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, usernames[i], 16, nk_filter_ascii);
+
+					if (encrypted != 0)
+					{
+						nk_layout_row_push(ctx, 0.40f);
+						nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, passwords[i], 16, nk_filter_ascii);
+					}
+
+					nk_layout_row_push(ctx, 0.20f);
+					switch (user_perm[i])
+					{
 					case ADMIN: strcpy(selected_str, "Admin");
 						break;
 
@@ -350,56 +367,332 @@ int ExportProject()
 
 					case MAP: strcpy(selected_str, "Mapper");
 						break;
-				}
-
-				if (nk_combo_begin_label(ctx, selected_str, nk_vec2(nk_widget_width(ctx), 5 * 20 + 45)))
-				{
-					nk_layout_row_dynamic(ctx, 20, 1);
-					if (admin == -1 || admin == i)
-					{
-						if (nk_combo_item_label(ctx, "Admin", NK_TEXT_ALIGN_LEFT))
-						{
-							admin = i;
-							user_perm[i] = ADMIN;
-						}
 					}
 
-					if (nk_combo_item_label(ctx, "Artist", NK_TEXT_ALIGN_LEFT))
-						user_perm[i] = ART;
+					if (nk_combo_begin_label(ctx, selected_str, nk_vec2(nk_widget_width(ctx), 5 * 20 + 45)))
+					{
+						nk_layout_row_dynamic(ctx, 20, 1);
+						if (admin == -1 || admin == i)
+						{
+							if (nk_combo_item_label(ctx, "Admin", NK_TEXT_ALIGN_LEFT))
+							{
+								admin = i;
+								user_perm[i] = ADMIN;
+							}
+						}
 
-					if (nk_combo_item_label(ctx, "Coder", NK_TEXT_ALIGN_LEFT))
-						user_perm[i] = CODE;
+						if (nk_combo_item_label(ctx, "Artist", NK_TEXT_ALIGN_LEFT))
+							user_perm[i] = ART;
 
-					if (nk_combo_item_label(ctx, "Sound Des.", NK_TEXT_ALIGN_LEFT))
-						user_perm[i] = SOUND;
+						if (nk_combo_item_label(ctx, "Coder", NK_TEXT_ALIGN_LEFT))
+							user_perm[i] = CODE;
 
-					if (nk_combo_item_label(ctx, "Mapper", NK_TEXT_ALIGN_LEFT))
-						user_perm[i] = MAP;
+						if (nk_combo_item_label(ctx, "Sound Des.", NK_TEXT_ALIGN_LEFT))
+							user_perm[i] = SOUND;
 
-					if (admin == i && user_perm != ADMIN)
-						admin = -1;
+						if (nk_combo_item_label(ctx, "Mapper", NK_TEXT_ALIGN_LEFT))
+							user_perm[i] = MAP;
 
-					nk_combo_end(ctx);
+						if (admin == i && user_perm != ADMIN)
+							admin = -1;
+
+						nk_combo_end(ctx);
+					}
+
+					nk_layout_row_end(ctx);
 				}
 
-				nk_layout_row_end(ctx);
+				nk_group_end(ctx);
 			}
 
-			nk_group_end(ctx);
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_combobox_string(ctx, "Google Drive\0OneDrive\0Drop Box\0Other Storage", &storage, 3, 25, nk_vec2(90, 256));
+
+			can_exp = 0;
+			if (strlen(msdk.prj.exp_path) == 0) can_exp++;
+			
+			for (i = 0; i < num_users; i++)
+			{
+				if (strlen(usernames[i]) == 0)
+				{
+					can_exp++;
+					break;
+				}
+
+				if (encrypted > 0 && strlen(passwords[i]) == 0)
+				{
+					can_exp++;
+					break;
+				}
+			}
+
+			if (can_exp != 0)
+			{
+				ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
+				nk_button_label(ctx, "Export");
+				SetThemeBack();
+			}
+			else
+			{
+				if (nk_button_label(ctx, "Export"))
+					state = 2;
+			}
+
+			if (nk_button_label(ctx, "Cancel"))
+				state = 3;
+
 		}
 
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_combobox_string(ctx, "Google Drive\0OneDrive\0Other Storage", &storage, 3, 25, nk_vec2(90, 256));
-
-		if (nk_button_label(ctx, "Export"))
-			state = 2;
-
-		if (nk_button_label(ctx, "Cancel"))
-			state = 3;
-
+		nk_end(ctx);
 	}
 
-	nk_end(ctx);
+	if (state == 2)
+	{
+		if (nk_begin(ctx, "Exporting", nk_rect(st.screenx / 2 - 125, st.screeny / 2 - 48, 350, 96), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
+		{
+			nk_layout_row_dynamic(ctx, 25, 2);
+
+			if (timed == 0)
+			{
+				f_timer = st.time;
+				timed = 1;
+			}
+
+			if (timed == 1)
+			{
+				if (st.time - f_timer > TICSPERSECOND / 2)
+				{
+					
+					if (strcmp(dots, "...") == NULL)
+						strcpy(dots, ".");
+					else
+						strcat(dots, ".");
+						
+					timed = 0;
+					f_timer = 0;
+				}
+			}
+
+			switch (exp_state)
+			{
+				case 0:
+					sprintf(str, "Creating base system%s",dots);
+					break;
+
+				case 1:
+					sprintf(str, "Copying files%s", dots);
+					break;
+
+				case 2:
+					sprintf(str, "Encrypting%s", dots);
+					break;
+
+				case 3:
+					sprintf(str, "Pushing to storage%s", dots);
+					break;
+			}
+			
+			nk_label(ctx, str, NK_TEXT_ALIGN_LEFT);
+
+			if (exp_state == 0)
+			{
+				if (steps == 0)
+				{
+					SetCurrentDirectory(path);
+					CreateDirectory(msdk.prj.name, NULL);
+					strcpy(dir, path);
+					strcat(dir, msdk.prj.name);
+					SetCurrentDirectory(dir);
+					CreateDirectory("mgear_sys", NULL);
+					CreateDirectory("data", NULL);
+					CreateDirectory("users", NULL);
+					
+					strcat("/", dir);
+					strcat("users", dir);
+
+					SetCurrentDirectory(dir);
+					for (i = 0; i < num_users; i++)
+						CreateDirectory(usernames[i], NULL);
+					
+					strcpy(dir, path);
+					strcat(dir, msdk.prj.name);
+					strcat("/", dir);
+					strcat("data", dir);
+					SetCurrentDirectory(dir);
+
+					steps++;
+				}
+				else
+				if (steps == 1)
+				{
+					/*
+					strcpy(dir, path);
+					strcat(dir, msdk.prj.name);
+					strcat("/", dir);
+					strcat("mgear_sys", dir);
+					*/
+
+					sha256_init(&hash);
+					sha256_process(&hash, passwords[0], 16);
+					sha256_done(&hash, hashed_password);
+
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(salt, 128, &prng);
+
+					hash2_len = 128;
+
+					pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
+
+					master_key_len = 32;
+
+					aes_keysize(&master_key_len);
+
+					if((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(master_key, master_key_len, &prng);
+
+					if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
+					{
+						sprintf(str2, "RC5 Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					i = 0;
+					do
+					{
+						rc5_ecb_encrypt(master_key + i, ck + i, &key);
+						i += 8;
+					} while (i < master_key_len);
+
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(user_salt[0], 128, &prng);
+
+					tmp2_len = 4;
+
+					pkcs_5_alg2(usernames[0], strlen(usernames[0]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
+
+					for (i = 0; i < 4; i++)
+					{
+						if (i == 0) hexcode = abs(tmp2[i]);
+						else hexcode |= abs(tmp2[i]);
+						hexcode = hexcode << 8;
+					}
+
+					sprintf(str, "ID_%d.UA", hexcode);
+
+					if ((f = fopen(str, "w")) == NULL)
+					{
+						sprintf(str, "User creation error: unable to create user %s file", usernames[0]);
+						MessageBox(NULL, str, "UA Error", MB_OK);
+					}
+
+					ck_len = 32;
+					salt_len = 128;
+					fwrite(&salt_len, sizeof(int), 1, f);
+					fwrite(&ck_len, sizeof(int), 1, f);
+					fwrite(&salt, salt_len, 1, f);
+					fwrite(&ck, ck_len, 1, f);
+
+					fclose(f);
+
+					/*
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(tmp, 1, &prng);
+					*/
+
+					for (i = 0; i < 16; i++)
+					{
+						tmp[0] = 0;
+						while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
+						{
+							if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+							{
+								sprintf(str2, "PRNG Error: %s", error_to_string(err));
+								MessageBox(NULL, str2, "Error", MB_OK);
+							}
+
+							yarrow_read(tmp, 1, &prng);
+						}
+						recover_keys[0][i] = tmp[0];
+					}
+
+					steps++;
+				}
+				else
+				if (steps >= 1 && num_users - steps != 0)
+				{
+					sha256_init(&hash);
+					sha256_process(&hash, passwords[steps - 1], 16);
+					sha256_done(&hash, hashed_password);
+
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(salt, 128, &prng);
+
+					hash2_len = sizeof(hash2);
+
+					pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
+
+					if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
+					{
+						sprintf(str2, "RC5 Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					i = 0;
+					do
+					{
+						rc5_ecb_encrypt(master_key + i, ck + i, &key);
+						i += 8;
+					} while (i < master_key_len);
+
+					sprintf(str, "ID_%s.UA", usernames[steps - 1]);
+
+					if ((f = fopen(str, "w")) == NULL)
+					{
+						sprintf(str, "User creation error: unable to create user %s file", usernames[i]);
+						MessageBox(NULL, str, "UA Error", MB_OK);
+					}
+
+					salt_len = 128;
+					ck_len = 32;
+					fwrite(&salt_len, sizeof(int), 1, f);
+					fwrite(&ck_len, sizeof(int), 1, f);
+					fwrite(&salt, salt_len, 1, f);
+					fwrite(&ck, ck_len, 1, f);
+
+					fclose(f);
+
+					steps++;
+				}
+			}
+		}
+
+		nk_end(ctx);
+	}
 
 	if (state == 3)
 	{
@@ -1551,6 +1844,13 @@ int main(int argc, char *argv[])
 
 	//InitGWEN();
 	SetSkin(ctx, msdk.theme);
+
+	register_cipher(&twofish_desc);
+	register_cipher(&aes_desc);
+	register_prng(&yarrow_desc);
+
+	register_hash(&sha256_desc);
+	register_hash(&sha512_desc);
 
 	while(!st.quit)
 	{
