@@ -127,6 +127,7 @@ struct _mSdk
 struct File_sys
 {
 	char path[MAX_PATH];
+	char parent[MAX_PATH]
 	char file[32];
 	uint8 type;
 	uint8 commit;

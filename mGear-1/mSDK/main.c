@@ -1,4 +1,4 @@
-﻿#include <Windows.h>
+#include <Windows.h>
 #include <ShlObj.h>
 #include <Shlwapi.h>
 #include <commdlg.h>
@@ -95,6 +95,8 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 									strcpy(files[i].path, curr_path);
 									strcpy(files[i].file, content[j]);
+									strcpy(files[i].parent, ".");
+									strcat(files[i].parent, curr_path[strlen(path)]);
 									files[i].type = 2;
 									LogApp("%s/%s", files[i].path, files[i].file);
 									closedir(d2);
@@ -107,6 +109,8 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 								strcpy(files[i].path, curr_path);
 								strcpy(files[i].file, content[j]);
+								strcpy(files[i].parent, ".");
+								strcat(files[i].parent, curr_path[strlen(path)]);
 								files[i].type = 0;
 								LogApp("%s/%s", files[i].path, files[i].file);
 								fclose(f);
@@ -154,6 +158,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 						strcpy(files[i].path, curr_path);
 						strcpy(files[i].file, content[j]);
+						strcpy(files[i].parent, ".");
 						files[i].type = 2;
 						LogApp("%s/%s", files[i].path, files[i].file);
 						closedir(d2);
@@ -169,6 +174,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 					strcpy(files[i].path, curr_path);
 					strcpy(files[i].file, content[j]);
+					strcpy(files[i].parent, ".");
 					files[i].type = 0;
 					LogApp("%s/%s", files[i].path, files[i].file);
 					fclose(f);
@@ -981,11 +987,27 @@ int ExportProject()
 			if (exp_state == 1)
 			{
 				if (steps < num_files)
-				{
+				{	
+					if(steps == 0)
+					{
+						SetCurrentDirectory(msdk.prj.prj_path);
+						for(i = 0; i < num_files; i++)
+						{
+							if(files[i].type != 1) continue;
+							else
+							{
+								if(strcmp(files[i].parent, ".") == NULL)
+									CreateDirectory(files[i].file, NULL);
+								else
+								{
+									
+								}
+								
+	
 					strcpy(tmp, files[steps].path);
 					strcat(tmp, "/");
 					strcat(tmp, files[steps].file);
-
+					
 					if (files[steps].type == 1)
 					{
 						strcpy(tmp, msdk.prj.exp_path);
