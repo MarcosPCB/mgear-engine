@@ -32,11 +32,173 @@ struct nk_context *ctx;
 struct nk_font *fonts[2];
 
 int prev_tic, curr_tic, delta, idx;
+int64 FileSize, TransBytes;
 
 mSdk msdk;
 
 prng_state prng;
 hash_state hash;
+
+struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_files)
+{
+	struct File_sys *files;
+	FILE *f;
+	DIR *d, *d2;
+	dirent *dir;
+
+	register uint32 i, j, k, l;
+	uint8 state = 0;
+
+	int16 filenum;
+
+	char content[2048][32], curr_path[MAX_PATH], tmp[MAX_PATH], str[512];
+
+	i = 0;
+	strcpy(curr_path, path);
+	while (state == 0)
+	{
+		if (i > 1)
+		{
+			for (k = 0, l = 0; k < i; k++)
+			{
+				if (files[k].type == 2)
+				{
+					strcpy(curr_path, files[k].path);
+					strcat(curr_path, "/");
+					strcat(curr_path, files[k].file);
+
+					filenum = NumDirFile(curr_path, content);
+
+					for (j = 0; j < filenum; j++)
+					{
+						if (strcmp(content[j], ".") == NULL || strcmp(content[j], "..") == NULL || strcmp(content[j], "desktop.ini") == NULL
+							|| strcmp(content[j], "thumbs.db") == NULL || strcmp(content[j], "Thumbs.db") == NULL) continue;
+						else
+						{
+							strcpy(tmp, curr_path);
+							strcat(tmp, "/");
+							strcat(tmp, content[j]);
+
+							if ((f = fopen(tmp, "r")) == NULL)
+							{
+								//strcpy(tmp, curr_path);
+								//strcat(tmp, "/");
+								//strcat(tmp, content[j]);
+								if ((d2 = opendir(tmp)) == NULL)
+								{
+									LogApp("Invalid file or folder %s", tmp);
+								}
+								else
+								{
+									i++;
+									files = realloc(files, sizeof(struct File_sys) * (i + 1));
+
+									strcpy(files[i].path, curr_path);
+									strcpy(files[i].file, content[j]);
+									files[i].type = 2;
+									LogApp("%s/%s", files[i].path, files[i].file);
+									closedir(d2);
+								}
+							}
+							else
+							{
+								i++;
+								files = realloc(files, sizeof(struct File_sys) * (i + 1));
+
+								strcpy(files[i].path, curr_path);
+								strcpy(files[i].file, content[j]);
+								files[i].type = 0;
+								LogApp("%s/%s", files[i].path, files[i].file);
+								fclose(f);
+								l++;
+							}
+						}
+					}
+
+					files[k].type = 1;
+					files[k].filenum = l;
+				}
+			}
+
+			state = 1;
+			break;
+		}
+		
+		
+
+		filenum = NumDirFile(curr_path, content);
+
+
+		for (j = 0; j < filenum; j++)
+		{
+			if (strcmp(content[j], ".") == NULL || strcmp(content[j], "..") == NULL || strcmp(content[j], "desktop.ini") == NULL
+				|| strcmp(content[j], "thumbs.db") == NULL || strcmp(content[j], "Thumbs.db") == NULL) continue;
+			else
+			{
+				if ((f = fopen(content[j], "r")) == NULL)
+				{
+					strcpy(tmp, curr_path);
+					strcat(tmp, "/");
+					strcat(tmp, content[j]);
+					if ((d2 = opendir(tmp)) == NULL)
+					{
+						LogApp("Invalid file or folder %s", tmp);
+					}
+					else
+					{
+						i++;
+						if (i == 1)
+							files = malloc(sizeof(struct File_sys) * 2);
+						else
+							files = realloc(files, sizeof(struct File_sys) * (i + 1));
+
+						strcpy(files[i].path, curr_path);
+						strcpy(files[i].file, content[j]);
+						files[i].type = 2;
+						LogApp("%s/%s", files[i].path, files[i].file);
+						closedir(d2);
+					}
+				}
+				else
+				{
+					i++;
+					if (i == 1)
+						files = malloc(sizeof(struct File_sys) * 2);
+					else
+						files = realloc(files, sizeof(struct File_sys) * (i + 1));
+
+					strcpy(files[i].path, curr_path);
+					strcpy(files[i].file, content[j]);
+					files[i].type = 0;
+					LogApp("%s/%s", files[i].path, files[i].file);
+					fclose(f);
+				}
+			}
+		}
+	}
+
+	*num_files = i;
+
+	return files;
+}
+
+DWORD LpprogressRoutine(
+	LARGE_INTEGER TotalFileSize,
+	LARGE_INTEGER TotalBytesTransferred,
+	LARGE_INTEGER StreamSize,
+	LARGE_INTEGER StreamBytesTransferred,
+	DWORD dwStreamNumber,
+	DWORD dwCallbackReason,
+	HANDLE hSourceFile,
+	HANDLE hDestinationFile,
+	LPVOID lpData
+	)
+{
+	FileSize = TotalFileSize;
+	TransBytes = TotalBytesTransferred;
+
+	return 0;
+}
 
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
 {
@@ -280,14 +442,19 @@ int ExportProject()
 	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0;
 	static enum USER_TYPE user_perm[8];
 	char str[128], str2[128], dir[MAX_PATH];
-	int pct, err, salt_len, hash2_len, ck_len, master_key_len, tmp_len, tmp2_len;
+	int pct, pct_inc, err, salt_len, hash2_len, ck_len, master_key_len, tmp_len, tmp2_len;
+	static int16 num_files;
 	static uint64 f_timer, cur_timer, hexcode;
 	static char dots[3] = { "." }, path[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE], master_key[MAXBLOCKSIZE],
 		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE];
 
+	static struct File_sys *files;
+
 	static symmetric_key key;
 
 	FILE *f;
+	DIR *d;
+	dirent *di;
 
 	register int16 i, j;
 
@@ -476,7 +643,7 @@ int ExportProject()
 			switch (exp_state)
 			{
 				case 0:
-					sprintf(str, "Creating base system%s",dots);
+					sprintf(str, "Creating user system%s",dots);
 					break;
 
 				case 1:
@@ -498,6 +665,10 @@ int ExportProject()
 			{
 				if (steps == 0)
 				{
+					files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
+
+					pct_inc = (num_files * 2) + 1 + num_users + 1;
+
 					SetCurrentDirectory(path);
 					CreateDirectory(msdk.prj.name, NULL);
 					strcpy(dir, path);
@@ -525,114 +696,163 @@ int ExportProject()
 				else
 				if (steps == 1)
 				{
-					/*
+					
 					strcpy(dir, path);
 					strcat(dir, msdk.prj.name);
 					strcat("/", dir);
 					strcat("mgear_sys", dir);
-					*/
+					CreateDirectory(msdk.prj.name, NULL);
+					strcat("/", dir);
+					strcat(msdk.prj.name, dir);
+					SetCurrentDirectory(dir);
 
-					sha256_init(&hash);
-					sha256_process(&hash, passwords[0], 16);
-					sha256_done(&hash, hashed_password);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					if (encrypted != 0)
 					{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
+						sha256_init(&hash);
+						sha256_process(&hash, passwords[0], 16);
+						sha256_done(&hash, hashed_password);
 
-					yarrow_read(salt, 128, &prng);
-
-					hash2_len = 128;
-
-					pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
-
-					master_key_len = 32;
-
-					aes_keysize(&master_key_len);
-
-					if((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(master_key, master_key_len, &prng);
-
-					if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
-					{
-						sprintf(str2, "RC5 Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					i = 0;
-					do
-					{
-						rc5_ecb_encrypt(master_key + i, ck + i, &key);
-						i += 8;
-					} while (i < master_key_len);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(user_salt[0], 128, &prng);
-
-					tmp2_len = 4;
-
-					pkcs_5_alg2(usernames[0], strlen(usernames[0]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
-
-					for (i = 0; i < 4; i++)
-					{
-						if (i == 0) hexcode = abs(tmp2[i]);
-						else hexcode |= abs(tmp2[i]);
-						hexcode = hexcode << 8;
-					}
-
-					sprintf(str, "ID_%d.UA", hexcode);
-
-					if ((f = fopen(str, "w")) == NULL)
-					{
-						sprintf(str, "User creation error: unable to create user %s file", usernames[0]);
-						MessageBox(NULL, str, "UA Error", MB_OK);
-					}
-
-					ck_len = 32;
-					salt_len = 128;
-					fwrite(&salt_len, sizeof(int), 1, f);
-					fwrite(&ck_len, sizeof(int), 1, f);
-					fwrite(&salt, salt_len, 1, f);
-					fwrite(&ck, ck_len, 1, f);
-
-					fclose(f);
-
-					/*
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(tmp, 1, &prng);
-					*/
-
-					for (i = 0; i < 16; i++)
-					{
-						tmp[0] = 0;
-						while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
+						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
 						{
-							if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-							{
-								sprintf(str2, "PRNG Error: %s", error_to_string(err));
-								MessageBox(NULL, str2, "Error", MB_OK);
-							}
-
-							yarrow_read(tmp, 1, &prng);
+							sprintf(str2, "PRNG Error: %s", error_to_string(err));
+							MessageBox(NULL, str2, "Error", MB_OK);
 						}
-						recover_keys[0][i] = tmp[0];
+
+						yarrow_read(salt, 128, &prng);
+
+						hash2_len = 128;
+
+						pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
+
+						master_key_len = 32;
+
+						aes_keysize(&master_key_len);
+
+						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+						{
+							sprintf(str2, "PRNG Error: %s", error_to_string(err));
+							MessageBox(NULL, str2, "Error", MB_OK);
+						}
+
+						yarrow_read(master_key, master_key_len, &prng);
+
+						if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
+						{
+							sprintf(str2, "RC5 Error: %s", error_to_string(err));
+							MessageBox(NULL, str2, "Error", MB_OK);
+						}
+
+						i = 0;
+						do
+						{
+							rc5_ecb_encrypt(master_key + i, ck + i, &key);
+							i += 8;
+						} while (i < master_key_len);
+
+						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+						{
+							sprintf(str2, "PRNG Error: %s", error_to_string(err));
+							MessageBox(NULL, str2, "Error", MB_OK);
+						}
+
+						yarrow_read(user_salt[0], 128, &prng);
+
+						tmp2_len = 4;
+
+						pkcs_5_alg2(usernames[0], strlen(usernames[0]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
+
+						for (i = 0; i < 4; i++)
+						{
+							if (i == 0) hexcode = abs(tmp2[i]);
+							else hexcode |= abs(tmp2[i]);
+							hexcode = hexcode << 8;
+						}
+
+						sprintf(str, "ID_%d.UA", hexcode);
+
+						if ((f = fopen(str, "w")) == NULL)
+						{
+							sprintf(str, "User creation error: unable to create user %s file", usernames[0]);
+							MessageBox(NULL, str, "UA Error", MB_OK);
+						}
+
+						ck_len = 32;
+						salt_len = 128;
+						fwrite(&salt_len, sizeof(int), 1, f);
+						fwrite(&ck_len, sizeof(int), 1, f);
+						fwrite(&salt, salt_len, 1, f);
+						fwrite(&ck, ck_len, 1, f);
+
+						fclose(f);
+
+						/*
+						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+						{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+						}
+
+						yarrow_read(tmp, 1, &prng);
+						*/
+
+						for (i = 0; i < 16; i++)
+						{
+							tmp[0] = 0;
+							while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
+							{
+								if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+								{
+									sprintf(str2, "PRNG Error: %s", error_to_string(err));
+									MessageBox(NULL, str2, "Error", MB_OK);
+								}
+
+								yarrow_read(tmp, 1, &prng);
+							}
+							recover_keys[0][i] = tmp[0];
+						}
+
+						sprintf(str, "rs_%d.UA", hexcode);
+
+						if ((f = fopen(str, "w")) == NULL)
+						{
+							sprintf(str, "User creation error: unable to create recover system %s file", usernames[0]);
+							MessageBox(NULL, str, "UA Error", MB_OK);
+						}
+
+						if ((err = rc5_setup(recover_keys[0], 16, 24, &key)) != CRYPT_OK)
+						{
+							sprintf(str2, "RC5 Error: %s", error_to_string(err));
+							MessageBox(NULL, str2, "Error", MB_OK);
+						}
+
+						i = 0;
+						do
+						{
+							rc5_ecb_encrypt(master_key + i, ck + i, &key);
+							i += 8;
+						} while (i < master_key_len);
+
+						ck_len = 32;
+						fwrite(&ck_len, sizeof(int), 1, f);
+						fwrite(&ck, ck_len, 1, f);
+
+						fclose(f);
+					}
+					else
+					{
+						if ((f = fopen("USER_LIST.UA", "w")) == NULL)
+						{
+							sprintf(str, "User creation error: unable to create user list file");
+							MessageBox(NULL, str, "UA Error", MB_OK);
+						}
+
+						for (i = 0; i < num_users; i++)
+						{
+							sprintf(str, "%s;", usernames[i]);
+							fwrite(str, 128, 1, f);
+						}
+
+						fclose(f);
 					}
 
 					steps++;
@@ -669,7 +889,26 @@ int ExportProject()
 						i += 8;
 					} while (i < master_key_len);
 
-					sprintf(str, "ID_%s.UA", usernames[steps - 1]);
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+						sprintf(str2, "PRNG Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(user_salt[steps - 1], 128, &prng);
+
+					tmp2_len = 4;
+
+					pkcs_5_alg2(usernames[steps - 1], strlen(usernames[steps - 1]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
+
+					for (i = 0; i < 4; i++)
+					{
+						if (i == 0) hexcode = abs(tmp2[i]);
+						else hexcode |= abs(tmp2[i]);
+						hexcode = hexcode << 8;
+					}
+
+					sprintf(str, "ID_%d.UA", hexcode);
 
 					if ((f = fopen(str, "w")) == NULL)
 					{
@@ -686,7 +925,72 @@ int ExportProject()
 
 					fclose(f);
 
+					for (i = 0; i < 16; i++)
+					{
+						tmp[0] = 0;
+						while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
+						{
+							if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+							{
+								sprintf(str2, "PRNG Error: %s", error_to_string(err));
+								MessageBox(NULL, str2, "Error", MB_OK);
+							}
+
+							yarrow_read(tmp, 1, &prng);
+						}
+						recover_keys[steps - 1][i] = tmp[0];
+					}
+
+					sprintf(str, "rs_%d.UA", hexcode);
+
+					if ((f = fopen(str, "w")) == NULL)
+					{
+						sprintf(str, "User creation error: unable to create recover system %s file", usernames[0]);
+						MessageBox(NULL, str, "UA Error", MB_OK);
+					}
+
+					if ((err = rc5_setup(recover_keys[steps - 1], 16, 24, &key)) != CRYPT_OK)
+					{
+						sprintf(str2, "RC5 Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					i = 0;
+					do
+					{
+						rc5_ecb_encrypt(master_key + i, ck + i, &key);
+						i += 8;
+					} while (i < master_key_len);
+
+					ck_len = 32;
+					fwrite(&ck_len, sizeof(int), 1, f);
+					fwrite(&ck, ck_len, 1, f);
+
+					fclose(f);
+
 					steps++;
+				}
+				
+				if (steps >= 1 && num_users - steps == 0)
+				{
+					exp_state = 1;
+					steps = 0;
+				}
+			}
+			else
+			if (exp_state == 1)
+			{
+				if (steps < num_files)
+				{
+					strcpy(tmp, files[steps].path);
+					strcat(tmp, "/");
+					strcat(tmp, files[steps].file);
+
+					if (files[steps].type == 1)
+					{
+						strcpy(tmp, msdk.prj.exp_path);
+
+					}
 				}
 			}
 		}

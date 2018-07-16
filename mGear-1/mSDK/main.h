@@ -124,5 +124,14 @@ struct _mSdk
 	uint8 downloading;
 };
 
+struct File_sys
+{
+	char path[MAX_PATH];
+	char file[32];
+	uint8 type;
+	uint8 commit;
+	int16 filenum; //Folder type only
+};
+
 typedef struct _mSdk mSdk;
 
