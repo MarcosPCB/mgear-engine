@@ -95,8 +95,8 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 									strcpy(files[i].path, curr_path);
 									strcpy(files[i].file, content[j]);
-									strcpy(files[i].parent, ".");
-									strcat(files[i].parent, curr_path[strlen(path)]);
+									//strcpy(files[i].parent, ".");
+									strcat(files[i].parent, curr_path[strlen(path) + 1]);
 									files[i].type = 2;
 									LogApp("%s/%s", files[i].path, files[i].file);
 									closedir(d2);
@@ -109,8 +109,8 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 								strcpy(files[i].path, curr_path);
 								strcpy(files[i].file, content[j]);
-								strcpy(files[i].parent, ".");
-								strcat(files[i].parent, curr_path[strlen(path)]);
+								//strcpy(files[i].parent, ".");
+								strcat(files[i].parent, curr_path[strlen(path) + 1]);
 								files[i].type = 0;
 								LogApp("%s/%s", files[i].path, files[i].file);
 								fclose(f);
@@ -200,8 +200,8 @@ DWORD LpprogressRoutine(
 	LPVOID lpData
 	)
 {
-	FileSize = TotalFileSize;
-	TransBytes = TotalBytesTransferred;
+	FileSize = TotalFileSize.QuadPart;
+	TransBytes = TotalBytesTransferred.QuadPart;
 
 	return 0;
 }
@@ -579,7 +579,7 @@ int ExportProject()
 			}
 
 			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_combobox_string(ctx, "Google Drive\0OneDrive\0Drop Box\0Other Storage", &storage, 3, 25, nk_vec2(90, 256));
+			nk_combobox_string(ctx, "Google Drive\0OneDrive\0Drop Box\0Other Storage", &storage, 4, 25, nk_vec2(90, 256));
 
 			can_exp = 0;
 			if (strlen(msdk.prj.exp_path) == 0) can_exp++;
@@ -987,21 +987,24 @@ int ExportProject()
 			if (exp_state == 1)
 			{
 				if (steps < num_files)
-				{	
-					if(steps == 0)
+				{
+					if (steps == 0)
 					{
 						SetCurrentDirectory(msdk.prj.prj_path);
-						for(i = 0; i < num_files; i++)
+						for (i = 0; i < num_files; i++)
 						{
-							if(files[i].type != 1) continue;
+							if (files[i].type != 1) continue;
 							else
 							{
-								if(strcmp(files[i].parent, ".") == NULL)
+								if (strcmp(files[i].parent, ".") == NULL)
 									CreateDirectory(files[i].file, NULL);
 								else
 								{
-									
+
 								}
+							}
+						}
+					}
 								
 	
 					strcpy(tmp, files[steps].path);
