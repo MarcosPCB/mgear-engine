@@ -188,7 +188,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	return files;
 }
 
-DWORD LpprogressRoutine(
+DWORD LpProgressRoutine(
 	LARGE_INTEGER TotalFileSize,
 	LARGE_INTEGER TotalBytesTransferred,
 	LARGE_INTEGER StreamSize,
@@ -452,7 +452,7 @@ int ExportProject()
 	static int16 num_files;
 	static uint64 f_timer, cur_timer, hexcode;
 	static char dots[3] = { "." }, path[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE], master_key[MAXBLOCKSIZE],
-		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE];
+		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH], newfilepath[MAX_PATH], *extension;
 
 	static struct File_sys *files;
 
@@ -988,33 +988,21 @@ int ExportProject()
 			{
 				if (steps < num_files)
 				{
-					if (steps == 0)
-					{
-						SetCurrentDirectory(msdk.prj.prj_path);
-						for (i = 0; i < num_files; i++)
-						{
-							if (files[i].type != 1) continue;
-							else
-							{
-								if (strcmp(files[i].parent, ".") == NULL)
-									CreateDirectory(files[i].file, NULL);
-								else
-								{
-
-								}
-							}
-						}
-					}
-								
-	
-					strcpy(tmp, files[steps].path);
-					strcat(tmp, "/");
-					strcat(tmp, files[steps].file);
+					SetCurrentDirectory(msdk.prj.prj_path);
+					SetCurrentDirecory(Data);
 					
-					if (files[steps].type == 1)
+					if (files[steps].type != 0) steps++;
+					else
 					{
-						strcpy(tmp, msdk.prj.exp_path);
-
+						strcpy(filepath, files[steps].path);
+						strcat(filepath, "/");
+						strcat(filepath, files[steps].file);
+						
+						extension = strrchr(files[steps].file, '.');
+						
+						sprintf(newfilepath, "f%04dr00000.%s",steps, extension);
+						
+						
 					}
 				}
 			}
