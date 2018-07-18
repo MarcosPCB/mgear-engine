@@ -1,12 +1,13 @@
 #include "UI.h"
 #include "input.h"
 #include "dirent.h"
+#include <stdarg.h>
 #include <assert.h>
 
 UI_WINDOW UI_Win[MAX_UIWINDOWS];
 UI_SYSTEM UI_Sys;
 
-int16 NumDirFile(const char *path, char content[512][512])
+int16 NumDirFile(const char *path, char content[][32])
 {
 	DIR *dir;
 	dirent *ent;
@@ -33,6 +34,20 @@ int16 NumDirFile(const char *path, char content[512][512])
 	return filenum;
 }
 
+int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...)
+{
+	char str[512];
+	va_list args;
+
+	va_start(args, string);
+
+	vsprintf(str, string, args);
+
+	va_end(args);
+
+	return MessageBox(NULL, str, caption, type);
+}
+
 void UILoadSystem(char *filename)
 {
 	FILE *file;
@@ -57,10 +72,18 @@ void UILoadSystem(char *filename)
 
 		while(!feof(file))
 		{
+			memset(buf, 0, sizeof(buf));
+
 			fgets(buf,256,file);
 
 			tok=strtok(buf,"=\"");
+			if (!tok)
+				continue;
+
 			val=strtok(NULL," =\"");
+
+			if (!val)
+				continue;
 
 			if(strcmp(tok,"MGG ID")==NULL)
 				UI_Sys.mgg_id=atoi(val);
@@ -111,6 +134,36 @@ void UILoadSystem(char *filename)
 
 			if(strcmp(tok,"Folder Icon Frame")==NULL)
 				UI_Sys.folder_icon=atoi(val);
+
+			if (strcmp(tok, "Play Icon Frame") == NULL)
+				UI_Sys.play_icon = atoi(val);
+
+			if (strcmp(tok, "Stop Icon Frame") == NULL)
+				UI_Sys.stop_icon = atoi(val);
+
+			if (strcmp(tok, "Pause Icon Frame") == NULL)
+				UI_Sys.pause_icon = atoi(val);
+
+			if (strcmp(tok, "Forward Icon Frame") == NULL)
+				UI_Sys.forward_icon = atoi(val);
+
+			if (strcmp(tok, "Rewind Icon Frame") == NULL)
+				UI_Sys.rewind_icon = atoi(val);
+
+			if (strcmp(tok, "File Icon Frame") == NULL)
+				UI_Sys.newfile_icon = atoi(val);
+
+			if (strcmp(tok, "Up Icon Frame") == NULL)
+				UI_Sys.up_icon = atoi(val);
+
+			if (strcmp(tok, "Down Icon Frame") == NULL)
+				UI_Sys.down_icon = atoi(val);
+
+			if (strcmp(tok, "Left Icon Frame") == NULL)
+				UI_Sys.left_icon = atoi(val);
+
+			if (strcmp(tok, "Right Icon Frame") == NULL)
+				UI_Sys.right_icon = atoi(val);
 
 		}
 

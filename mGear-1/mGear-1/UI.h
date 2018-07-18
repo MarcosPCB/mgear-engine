@@ -136,10 +136,15 @@ struct _UI_SYSTEM
 	int8 play_icon;
 	int8 stop_icon;
 	int8 pause_icon;
-	int8 foward_icon;
+	int8 forward_icon;
 	int8 rewind_icon;
 	int8 next_icon;
 	int8 back_icon;
+
+	int8 up_icon;
+	int8 down_icon;
+	int8 left_icon;
+	int8 right_icon;
 
 	int8 mgg_id2; //for usermade UI frames and icons
 	int8 *frames;
@@ -231,5 +236,9 @@ int8 UISavePath(char *filename);
 int16 UIMakeList(char list[128][128], int16 sizel);
 
 int8 UIButton(int32 x, int32 y, char *text, int8 font, int16 font_size, int8 layer, uint8 select_mode);
+
+int16 NumDirFile(const char *path, char content[][32]);
+
+int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...);
 
 #endif

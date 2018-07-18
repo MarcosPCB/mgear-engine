@@ -39,6 +39,30 @@ mSdk msdk;
 prng_state prng;
 hash_state hash;
 
+char *GetRootDir(const char *path)
+{
+	char final_path[MAX_PATH];
+	int16 i = 0, j, k;
+
+	if (path[0] == '.' && (path[1] == '\\' || path[1] == '/'))
+		i = 1;
+	else if (path[0] == '.' && path[1] == "." && (path[2] == '\\' || path[2] == '/'))
+		i = 2;
+
+	j = i;
+
+	for (; i < strlen(path); i++)
+	{
+		if (path[i] == '\\' || path[i] == '/')
+			break;
+	}
+
+	for (k = 0; j < i; j++, k++)
+		final_path[k] = path[j];
+
+	return final_path;
+}
+
 struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_files)
 {
 	struct File_sys *files;
@@ -452,7 +476,7 @@ int ExportProject()
 	static int16 num_files;
 	static uint64 f_timer, cur_timer, hexcode;
 	static char dots[3] = { "." }, path[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE], master_key[MAXBLOCKSIZE],
-		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH], newfilepath[MAX_PATH], *extension;
+		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH], newfilepath[MAX_PATH], *extension, *buf;
 
 	static struct File_sys *files;
 
@@ -463,6 +487,8 @@ int ExportProject()
 	dirent *di;
 
 	register int16 i, j;
+
+	BOOL cpf;
 
 	if (state == 0)
 	{
@@ -489,7 +515,7 @@ int ExportProject()
 
 			nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
 			nk_layout_row_push(ctx, 0.80f);
-			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.exp_path, MAX_PATH, nk_filter_ascii);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, path, MAX_PATH, nk_filter_ascii);
 
 			nk_layout_row_push(ctx, 0.20f);
 			nk_button_label(ctx, "Browse");
@@ -677,40 +703,27 @@ int ExportProject()
 
 					SetCurrentDirectory(path);
 					CreateDirectory(msdk.prj.name, NULL);
-					strcpy(dir, path);
-					strcat(dir, msdk.prj.name);
-					SetCurrentDirectory(dir);
+					SetCurrentDirectory(msdk.prj.name);
+					GetCurrentDirectory(MAX_PATH, msdk.prj.exp_path);
+
 					CreateDirectory("mgear_sys", NULL);
 					CreateDirectory("data", NULL);
 					CreateDirectory("users", NULL);
 					
-					strcat("/", dir);
-					strcat("users", dir);
+					SetCurrentDirectory("data");
 
-					SetCurrentDirectory(dir);
-					for (i = 0; i < num_users; i++)
-						CreateDirectory(usernames[i], NULL);
-					
-					strcpy(dir, path);
-					strcat(dir, msdk.prj.name);
-					strcat("/", dir);
-					strcat("data", dir);
-					SetCurrentDirectory(dir);
+					CreateDirectory("v0000", NULL);
+					SetCurrentDirectory("v0000");
+					CreateDirectory("prj", NULL);
+					CreateDirectory("raw", NULL);
 
 					steps++;
 				}
 				else
 				if (steps == 1)
 				{
-					
-					strcpy(dir, path);
-					strcat(dir, msdk.prj.name);
-					strcat("/", dir);
-					strcat("mgear_sys", dir);
-					CreateDirectory(msdk.prj.name, NULL);
-					strcat("/", dir);
-					strcat(msdk.prj.name, dir);
-					SetCurrentDirectory(dir);
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("mgear_sys");
 
 					if (encrypted != 0)
 					{
@@ -790,6 +803,10 @@ int ExportProject()
 						fwrite(&ck, ck_len, 1, f);
 
 						fclose(f);
+
+						sprintf(str, "%d", hexcode);
+
+						CreateDirectory(str, NULL);
 
 						/*
 						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
@@ -931,6 +948,10 @@ int ExportProject()
 
 					fclose(f);
 
+					sprintf(str, "%d", hexcode);
+
+					CreateDirectory(str, NULL);
+
 					for (i = 0; i < 16; i++)
 					{
 						tmp[0] = 0;
@@ -989,7 +1010,8 @@ int ExportProject()
 				if (steps < num_files)
 				{
 					SetCurrentDirectory(msdk.prj.prj_path);
-					SetCurrentDirecory(Data);
+					SetCurrentDirectory("Data");
+					SetCurrentDirectory("v0000");
 					
 					if (files[steps].type != 0) steps++;
 					else
@@ -1000,9 +1022,32 @@ int ExportProject()
 						
 						extension = strrchr(files[steps].file, '.');
 						
-						sprintf(newfilepath, "f%04dr00000.%s",steps, extension);
+						sprintf(newfilepath, "f%04dr0000.%s", steps, extension);
 						
-						
+						buf = GetRootDir(files[steps].parent);
+
+						if (strcmp(buf, "_prj_raw") == NULL)
+							SetCurrentDirectory("raw");
+						else
+							SetCurrentDirectory("prj");
+
+						if (CopyFile(filepath, newfilepath, FALSE) == NULL)
+						{
+							sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
+							MessageBox(NULL, str, "Error", MB_OK);
+						}
+
+						if (strstr(files[steps].file, ".sdkprj") != NULL)
+						{
+							if ((err = aes_setup(master_key, master_key_len, NULL, &key)) != CRYPT_OK)
+							{
+								MessageBoxRes("Error", MB_OK, "Error when encrypting file %s: %s", files[steps].file, error_to_string(err));
+							}
+						}
+
+						SetCurrentDirectory("..");
+
+						steps++;
 					}
 				}
 			}
