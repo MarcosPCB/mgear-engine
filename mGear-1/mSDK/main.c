@@ -482,7 +482,7 @@ int ExportProject()
 
 	static symmetric_key key;
 
-	FILE *f;
+	FILE *f, f2;
 	DIR *d;
 	dirent *di;
 
@@ -1031,19 +1031,41 @@ int ExportProject()
 						else
 							SetCurrentDirectory("prj");
 
-						if (CopyFile(filepath, newfilepath, FALSE) == NULL)
-						{
-							sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
-							MessageBox(NULL, str, "Error", MB_OK);
-						}
-
 						if (strstr(files[steps].file, ".sdkprj") != NULL)
 						{
 							if ((err = aes_setup(master_key, master_key_len, NULL, &key)) != CRYPT_OK)
 							{
 								MessageBoxRes("Error", MB_OK, "Error when encrypting file %s: %s", files[steps].file, error_to_string(err));
 							}
+							
+							if((f=fopen(filepath, "r")) == NULL)
+							{
+								MessageBoxRes("Error", MB_OK, "Error while opening file %s for encryption", filepath);
+							}
+							
+							if((f=fopen(newfilepath, "w")) == NULL)
+							{
+								MessageBoxRes("Error", MB_OK, "Error while creating file %s", newfilepath);
+							}
+							
+							i = 0;
+							do
+							{
+								fread(tmp,16, 1, f);
+								aes_ecb_encrypt(tmp, ck , &key);
+								fwrite(ck, 16, 1, f2);
+								
+							} while (!feof(f));
+							
+							
 						}
+						
+						if (CopyFile(filepath, newfilepath, FALSE) == NULL)
+						{
+							sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
+							MessageBox(NULL, str, "Error", MB_OK);
+						}
+						
 
 						SetCurrentDirectory("..");
 
