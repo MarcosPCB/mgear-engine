@@ -27,7 +27,6 @@ enum FILE_TYPE
 struct _Files_
 {
 	char path[MAX_PATH];
-	enum FILE_TYPE type;
 	size_t size;
 	int16 rev;
 	int16 f_rev;
@@ -60,9 +59,6 @@ struct SDKEXP
 
 	uint8 num_users;
 	uint8 encrypted;
-
-	uint16 num_files;
-	_Files *files;
 };
 
 struct _SDKPRJ
@@ -132,6 +128,7 @@ struct File_sys
 	uint8 type;
 	uint8 commit;
 	int16 filenum; //Folder type only
+	size_t size;
 };
 
 typedef struct _mSdk mSdk;

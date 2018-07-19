@@ -476,19 +476,24 @@ int ExportProject()
 	static int16 num_files;
 	static uint64 f_timer, cur_timer, hexcode;
 	static char dots[3] = { "." }, path[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE], master_key[MAXBLOCKSIZE],
-		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH], newfilepath[MAX_PATH], *extension, *buf;
+		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH], newfilepath[MAX_PATH], *extension, *buf,
+		pct_str[128];
 
 	static struct File_sys *files;
 
 	static symmetric_key key;
 
-	FILE *f, f2;
+	FILE *f, *f2;
 	DIR *d;
 	dirent *di;
 
 	register int16 i, j;
 
 	BOOL cpf;
+
+	struct SDKEXP exporter;
+
+	_Files *prj_files;
 
 	if (state == 0)
 	{
@@ -675,23 +680,23 @@ int ExportProject()
 			switch (exp_state)
 			{
 				case 0:
-					sprintf(str, "Creating user system%s",dots);
+					sprintf(pct_str, "Creating user system%s",dots);
 					break;
 
 				case 1:
-					sprintf(str, "Copying files%s", dots);
+					sprintf(pct_str, "Copying files%s", dots);
 					break;
 
 				case 2:
-					sprintf(str, "Encrypting%s", dots);
+					sprintf(pct_str, "Encrypting%s", dots);
 					break;
 
 				case 3:
-					sprintf(str, "Pushing to storage%s", dots);
+					sprintf(pct_str, "Pushing to storage%s", dots);
 					break;
 			}
 			
-			nk_label(ctx, str, NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, pct_str, NK_TEXT_ALIGN_LEFT);
 
 			if (exp_state == 0)
 			{
@@ -876,6 +881,12 @@ int ExportProject()
 						}
 
 						fclose(f);
+
+						for (i = 0; i < num_users; i++)
+						{
+							sprintf(str, "%03d", i);
+							CreateDirectory(str, NULL);
+						}
 					}
 
 					steps++;
@@ -1010,10 +1021,10 @@ int ExportProject()
 				if (steps < num_files)
 				{
 					SetCurrentDirectory(msdk.prj.prj_path);
-					SetCurrentDirectory("Data");
+					SetCurrentDirectory("data");
 					SetCurrentDirectory("v0000");
 					
-					if (files[steps].type != 0) steps++;
+					if (files[steps].type != 0 || files[steps].commit == 1) steps++;
 					else
 					{
 						strcpy(filepath, files[steps].path);
@@ -1031,48 +1042,158 @@ int ExportProject()
 						else
 							SetCurrentDirectory("prj");
 
-						if (strstr(files[steps].file, ".sdkprj") != NULL)
+						if (encrypted == 1)
 						{
-							if ((err = aes_setup(master_key, master_key_len, NULL, &key)) != CRYPT_OK)
+							if (strstr(files[steps].file, ".sdkprj") != NULL || strstr(files[steps].file, ".cfg") != NULL || strstr(files[steps].file, ".list") != NULL
+								|| strstr(files[steps].file, ".texprj") != NULL || strstr(files[steps].file, ".mgm") != NULL || strstr(files[steps].file, ".MGM") != NULL)
 							{
-								MessageBoxRes("Error", MB_OK, "Error when encrypting file %s: %s", files[steps].file, error_to_string(err));
+								if ((err = aes_setup(master_key, master_key_len, NULL, &key)) != CRYPT_OK)
+								{
+									MessageBoxRes("Error", MB_OK, "Error when encrypting file %s: %s", files[steps].file, error_to_string(err));
+								}
+
+								if ((f = fopen(filepath, "r")) == NULL)
+								{
+									MessageBoxRes("Error", MB_OK, "Error while opening file %s for encryption", filepath);
+								}
+
+								if ((f = fopen(newfilepath, "w")) == NULL)
+								{
+									MessageBoxRes("Error", MB_OK, "Error while creating file %s", newfilepath);
+								}
+
+								i = 0;
+								do
+								{
+									fread(tmp, 16, 1, f);
+									aes_ecb_encrypt(tmp, ck, &key);
+									fwrite(ck, 16, 1, f2);
+
+								} while (!feof(f));
+
+								files[steps].size = ftell(f);
+
+								fclose(f);
+								fclose(f2);
 							}
-							
-							if((f=fopen(filepath, "r")) == NULL)
+							else
 							{
-								MessageBoxRes("Error", MB_OK, "Error while opening file %s for encryption", filepath);
+								if ((f = fopen(filepath, "r")) == NULL)
+								{
+									MessageBoxRes("Error", MB_OK, "Error while opening file %s for copy", filepath);
+								}
+
+								fseek(f, SEEK_END, 0);
+								files[steps].size = ftell(f);
+
+								fclose(f);
+
+								if (CopyFile(filepath, newfilepath, FALSE) == NULL)
+								{
+									sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
+									MessageBox(NULL, str, "Error", MB_OK);
+								}
 							}
-							
-							if((f=fopen(newfilepath, "w")) == NULL)
-							{
-								MessageBoxRes("Error", MB_OK, "Error while creating file %s", newfilepath);
-							}
-							
-							i = 0;
-							do
-							{
-								fread(tmp,16, 1, f);
-								aes_ecb_encrypt(tmp, ck , &key);
-								fwrite(ck, 16, 1, f2);
-								
-							} while (!feof(f));
-							
-							
 						}
-						
-						if (CopyFile(filepath, newfilepath, FALSE) == NULL)
+						else
 						{
-							sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
-							MessageBox(NULL, str, "Error", MB_OK);
+							if ((f = fopen(filepath, "r")) == NULL)
+							{
+								MessageBoxRes("Error", MB_OK, "Error while opening file %s for copy", filepath);
+							}
+
+							fseek(f, SEEK_END, 0);
+							files[steps].size = ftell(f);
+
+							fclose(f);
+
+							if (CopyFile(filepath, newfilepath, FALSE) == NULL)
+							{
+								sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
+								MessageBox(NULL, str, "Error", MB_OK);
+							}
 						}
-						
 
 						SetCurrentDirectory("..");
 
 						steps++;
 					}
 				}
+				else
+				{
+					if (encrypted != 0)
+					{
+						exp_state = 2;
+					}
+					else
+						exp_state = 3;
+
+					SetCurrentDirectory(msdk.prj.exp_path);
+
+					if ((f = fopen("importer", "wb")) == NULL)
+					{
+						MessageBoxRes("Error", MB_OK, "Error: Could not create importer file");
+					}
+
+					strcpy(exporter.name, msdk.prj.name);
+					exporter.rev = 0;
+					exporter.curr_rev = 0;
+					exporter.encrypted = encrypted;
+					exporter.num_users = num_users;
+					
+					fwrite(&exporter, sizeof(struct SDKEXP), 1, f);
+
+					fclose(f);
+
+					if ((f = fopen("index", "wb")) == NULL)
+					{
+						MessageBoxRes("Error", MB_OK, "Error: Could not create index file");
+					}
+
+					prj_files = malloc(sizeof(_Files) * num_files);
+
+					for (i = 0, j = 0; i < num_files; i++)
+					{
+						if (files[i].commit == 0 && files[i].type == 0)
+						{
+							strcpy(prj_files[j].path, files[i].parent);
+							prj_files[j].rev = prj_files[i].f_rev = 0;
+							prj_files[j].size = files[i].size;
+							j++;
+						}
+					}
+
+					fwrite(prj_files, sizeof(_Files)* num_files, 1, f);
+
+					fclose(f);
+
+					steps = 0;
+				}
 			}
+			else
+			if (exp_state == 3)
+			{
+
+			}
+
+			if (exp_state == 0)
+				pct = steps;
+			
+			if (exp_state == 1)
+			{
+				if (encrypted != 2)
+					pct = (steps * 2) + num_users + 1;
+				else
+					pct = steps + num_users + 1;
+			}
+
+			if (exp_state == 2)
+				pct = (steps * 2) + num_users + 1;
+
+			if (exp_state == 3)
+				pct = steps + (num_files * 2) + num_users + 1;
+
+			nk_label(ctx, StringFormat("%d%%",pct * pct_inc), NK_TEXT_ALIGN_RIGHT);
 		}
 
 		nk_end(ctx);

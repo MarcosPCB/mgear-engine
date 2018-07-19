@@ -1086,6 +1086,8 @@ void RestartVideo();
 
 void WindowEvent();
 
+char *StringFormat(char *string, ...);
+
 void _inline STW(int32 *x, int32 *y);
 
 void _inline STWci(int32 *x, int32 *y); //No camera position in calculation
@@ -1135,6 +1137,9 @@ uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uin
 #elif _WIN32
 	float _cdecl mSqrt32(float);
 	#define mSqrt mSqrt32
+
+	int32 _cdecl mXOR32(int32, int32);
+	#define mXOR mXOR32
 #endif
 
 //Faster than math.h functions

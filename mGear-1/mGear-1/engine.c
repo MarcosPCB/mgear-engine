@@ -11,6 +11,7 @@
 #include "input.h"
 #include <math.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -152,6 +153,23 @@ void FPSCounter()
 		st.FPSTime=SDL_GetTicks();
 		SDL_SetWindowTitle(wn,st.WINDOW_NAME);
 	}
+}
+
+char *StringFormat(char *string, ...)
+{
+	char buf[1024];
+
+	va_list args;
+
+	strcpy(buf, string);
+
+	va_start(args, string);
+
+	vsprintf(buf, string, args);
+
+	va_end(args);
+
+	return buf;
 }
 
 void _inline STW(int32 *x, int32 *y)
