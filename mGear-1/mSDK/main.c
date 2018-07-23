@@ -119,8 +119,8 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 									strcpy(files[i].path, curr_path);
 									strcpy(files[i].file, content[j]);
-									//strcpy(files[i].parent, ".");
-									strcat(files[i].parent, curr_path[strlen(path) + 1]);
+									strcpy(files[i].parent, ".");
+									strcat(files[i].parent, curr_path + strlen(path));
 									files[i].type = 2;
 									LogApp("%s/%s", files[i].path, files[i].file);
 									closedir(d2);
@@ -133,8 +133,8 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 								strcpy(files[i].path, curr_path);
 								strcpy(files[i].file, content[j]);
-								//strcpy(files[i].parent, ".");
-								strcat(files[i].parent, curr_path[strlen(path) + 1]);
+								strcpy(files[i].parent, ".");
+								strcat(files[i].parent, curr_path + strlen(path));
 								files[i].type = 0;
 								LogApp("%s/%s", files[i].path, files[i].file);
 								fclose(f);
@@ -469,15 +469,15 @@ int CommitPrj()
 int ExportProject()
 {
 	static uint8 encrypted = 0, num_users = 1, usernames[8][16], passwords[8][16], state = 0, selected_str[12], exp_state = 0;
-	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0;
+	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0, select_all = 0, select_all_2 = 0;
 	static enum USER_TYPE user_perm[8];
 	char str[128], str2[128], dir[MAX_PATH];
 	int pct, pct_inc, err, salt_len, hash2_len, ck_len, master_key_len, tmp_len, tmp2_len;
 	static int16 num_files;
 	static uint64 f_timer, cur_timer, hexcode;
-	static char dots[3] = { "." }, path[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE], master_key[MAXBLOCKSIZE],
-		ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH], newfilepath[MAX_PATH], *extension, *buf,
-		pct_str[128];
+	static char dots[3] = { "." }, path[MAX_PATH], path_cur[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE],
+		master_key[MAXBLOCKSIZE], ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH],
+		newfilepath[MAX_PATH], *extension, *buf, pct_str[128];
 
 	static struct File_sys *files;
 
@@ -509,11 +509,15 @@ int ExportProject()
 		strcpy(dots, ".");
 		steps = 1;
 		can_exp = 0;
+		ZeroMemory(path, MAX_PATH);
+		ZeroMemory(path_cur, MAX_PATH);
+		strcpy(msdk.prj.prj_path, st.CurrPath);
+		files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
 	}
 
 	if (state == 1)
 	{
-		if (nk_begin(ctx, "Export Project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+		if (nk_begin(ctx, "Export Project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 375, 512, 750), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 		{
 			nk_layout_row_dynamic(ctx, 25, 1);
 			nk_label(ctx, "Export path", NK_TEXT_ALIGN_LEFT);
@@ -535,7 +539,7 @@ int ExportProject()
 			nk_layout_row_dynamic(ctx, 25, 1);
 			num_users = nk_propertyi(ctx, "Number of users", 1, num_users, 8, 1, 1);
 
-			nk_layout_row_dynamic(ctx, 256, 1);
+			nk_layout_row_dynamic(ctx, 196, 1);
 			if (nk_group_begin(ctx, "Users", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
 				for (i = 0; i < num_users; i++)
@@ -604,6 +608,53 @@ int ExportProject()
 					}
 
 					nk_layout_row_end(ctx);
+				}
+
+				nk_group_end(ctx);
+			}
+
+			nk_layout_row_dynamic(ctx, 15, 1);
+			if (nk_button_label(ctx, "Select all"))
+			{
+				for (i = 0; i < num_files; i++)
+				{
+					if (files[i].type == 0)
+						files[i].commit = 1;
+				}
+			}
+
+			nk_layout_row_dynamic(ctx, 256, 1);
+			if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+			{
+				nk_layout_row_dynamic(ctx, 15, 1);
+				for (i = 0; i < num_files; i++)
+				{
+					//nk_layout_row_dynamic(ctx, 20, 1);
+					if (strcmp(files[i].parent, ".") == NULL && files[i].type == 0)
+						files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
+				}
+
+				//	nk_tree_pop(ctx);
+				//}
+
+				for (i = 0; i < num_files; i++)
+				{
+					if (files[i].type == 1 && files[i].filenum > 0)
+					{
+						//nk_layout_row_dynamic(ctx, 20, 1);
+						sprintf(str, "%s/%s", files[i].parent, files[i].file);
+						if (nk_tree_push_id(ctx, NK_TREE_NODE, str, NK_MINIMIZED, i))
+						{
+							nk_layout_row_dynamic(ctx, 15, 1);
+							for (j = 0; j < num_files; j++)
+							{
+								if (strcmp(files[j].parent, str) == NULL && files[j].type == 0)
+									files[j].commit = nk_check_label(ctx, files[j].file, files[j].commit == 1);
+							}
+
+							nk_tree_pop(ctx);
+						}
+					}	
 				}
 
 				nk_group_end(ctx);
@@ -702,8 +753,6 @@ int ExportProject()
 			{
 				if (steps == 0)
 				{
-					files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
-
 					pct_inc = (num_files * 2) + 1 + num_users + 1;
 
 					SetCurrentDirectory(path);
@@ -1173,7 +1222,7 @@ int ExportProject()
 			else
 			if (exp_state == 3)
 			{
-
+				
 			}
 
 			if (exp_state == 0)
