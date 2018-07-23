@@ -391,13 +391,34 @@ int SavePrjFile(const char *filename)
 	fwrite(&msdk.prj.tex, 1, 1, f);
 	fwrite(&msdk.prj.curr_rev, sizeof(int16), 1, f);
 	fwrite(&msdk.prj.revisions, sizeof(int16), 1, f);
-	fwrite(&msdk.prj.TDList_entries, sizeof(int16), 1, f);
 
 	if (msdk.prj.curr_rev > 0)
 		fwrite(msdk.prj.exp_path, MAX_PATH, 1, f);
 
 	fclose(f);
 
+	return 1;
+}
+
+int ToDoListSave()
+{
+	FILE *f;
+	char 8filename;
+	
+	filename = StringFormat("%s.tdl", msdk.prj.name);
+	
+	if((f = fopen(filename, "wb")) == NULL)
+	{
+		MessageBoxRes("Error", MB_OK, "Could not open To-Do List file: %s", filename);
+		return 0;
+	}
+	
+	fwrite(&msdk.prj.TDList_entries, sizeof(int16), 1,  f);
+	
+	fwrite(msdk.prj.TDList, sizeof(ToDo), msdk.prj.TDList_entries, f);
+	
+	fclose(f);
+	
 	return 1;
 }
 
