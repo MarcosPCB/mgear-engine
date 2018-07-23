@@ -400,10 +400,10 @@ int SavePrjFile(const char *filename)
 	return 1;
 }
 
-int ToDoListSave()
+int ToDoBaseListSave()
 {
 	FILE *f;
-	char 8filename;
+	char *filename;
 	
 	filename = StringFormat("%s.tdl", msdk.prj.name);
 	
@@ -420,6 +420,46 @@ int ToDoListSave()
 	fclose(f);
 	
 	return 1;
+}
+
+int ToDoRevListSave()
+{
+	FILE *f;
+	char *filename;
+	
+	ToDo *tdl, tdl_c;
+	int16 num_entries;
+	
+	register int16 i, j;
+	
+	filename = StringFormat("tde.tdl", msdk.prj.curr_rev);
+	
+	if((f = fopen(StringFormat("%s.tdl"), "rb")) == NULL)
+	{
+		MessageBoxRes("Error", MB_OK, "Could not open To-Do List file: %s", filename);
+		return 0;
+	}
+	
+	fread(&num_entries, sizeof(int16), 1, f);
+	
+	tdl = malloc(sizeof(ToDo) * num_entries);
+	fread(tdl, sizeof(ToDo), num_entries, 1, f);
+	
+	fclose(f);
+	
+	if((f = fopen(filename, "wb")) == NULL)
+	{
+		MessageBoxRes("Error", MB_OK, "Could not open To-Do List file: %s", filename);
+		return 0;
+	}
+	
+	for(i = 0, j = 0; i < num_entries; i++)
+	{
+		if(strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].properties.word != msdk.prj.TDList[i].properties.word)
+			memcpy(&tdl_c, msdk.prj.TDList[i], sizeof(ToDo));
+		
+	}
+	
 }
 
 int LoadPrjFile(const char *filename)
