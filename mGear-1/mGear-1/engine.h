@@ -1045,7 +1045,7 @@ void Init();
 
 uint8 OpenFont(const char *file,const char *name, uint8 index, size_t font_size);
 
-void Quit();
+extern void Quit();
 
 //For tests only
 //void createmgg();

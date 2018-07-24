@@ -82,7 +82,9 @@ int8 mchalloc(void *data)
 {
 	if (data == NULL)
 	{
+		LogApp("Not enough memory to alloc, function terminated");
 		MessageBoxRes("Memory error", MB_OK, "Not enough memory to alloc, function terminated");
+		
 		return CHERROR;
 	}
 	else
@@ -93,8 +95,10 @@ int8 mchalloc_ab(void *data)
 {
 	if (data == NULL)
 	{
-		MessageBoxRes("Memory error", MB_OK, "Not enough memory to alloc, aborting program");
-		abort();
+		LogApp("Not enough memory to alloc, quitting program");
+		MessageBoxRes("Memory error", MB_OK, "Not enough memory to alloc, quitting program");
+		
+		Quit();
 	}
 	else
 		return NULL;

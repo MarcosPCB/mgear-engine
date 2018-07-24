@@ -3,8 +3,15 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#ifndef LogApp
+	#include <SDL.h>
+	#define LogApp SDL_Log
+#endif
+
 #ifndef _FUNCS_H
 #define _FUNCS_H
+
+extern void Quit();
 
 #define CHERROR -1
 #define mem_assert(expr) assert(expr && "memory not valid");
