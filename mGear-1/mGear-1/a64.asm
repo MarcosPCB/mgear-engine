@@ -3,7 +3,7 @@
 .CODE
 
 _mSqrt64 PROC
-	movd rax, xmm0
+movd rax, xmm0
 	fld dword ptr [rax]
 	fsqrt
 	ret

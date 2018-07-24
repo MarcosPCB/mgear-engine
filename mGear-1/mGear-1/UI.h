@@ -237,8 +237,4 @@ int16 UIMakeList(char list[128][128], int16 sizel);
 
 int8 UIButton(int32 x, int32 y, char *text, int8 font, int16 font_size, int8 layer, uint8 select_mode);
 
-int16 NumDirFile(const char *path, char content[][32]);
-
-int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...);
-
 #endif

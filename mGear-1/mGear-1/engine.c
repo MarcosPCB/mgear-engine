@@ -155,23 +155,6 @@ void FPSCounter()
 	}
 }
 
-char *StringFormat(char *string, ...)
-{
-	char buf[1024];
-
-	va_list args;
-
-	strcpy(buf, string);
-
-	va_start(args, string);
-
-	vsprintf(buf, string, args);
-
-	va_end(args);
-
-	return buf;
-}
-
 void _inline STW(int32 *x, int32 *y)
 {
 	*x=((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
@@ -194,22 +177,6 @@ void _inline STWcf(float *x, float *y)
 {
 	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x));
 	*y=(float) ((((*y*GAME_HEIGHT)/st.screeny)/st.Camera.dimension.y));
-}
-
-uint32 POT(uint32 value)
-{
-	if(value != 0)
-    {
-        value--;
-        value |= (value >> 1); //Or first 2 bits
-        value |= (value >> 2); //Or next 2 bits
-        value |= (value >> 4); //Or next 4 bits
-        value |= (value >> 8); //Or next 8 bits
-        value |= (value >> 16); //Or next 16 bits
-        value++;
-    }
-
-	return value;
 }
 
 void _fastcall WTS(int32 *x, int32 *y)

@@ -11,6 +11,7 @@
 #include "UI.h"
 #include <curl.h>
 #include <tomcrypt.h>
+#include "funcs.h"
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -400,16 +401,46 @@ int SavePrjFile(const char *filename)
 	return 1;
 }
 
+int8 LoadTDLRev(ToDo *tdl, int16 num)
+{
+	int16 i;
+
+	FILE *f;
+
+	int16 num2;
+
+	if ((f = fopen("tde.tdl", "rb")) == NULL)
+		return -1;
+
+	while (!feof(f))
+	{
+		fread(&i, sizeof(int16), 1, f);
+
+		if (i > msdk.prj.TDList_entries)
+		{
+			msdk.prj.TDList_entries++;
+			msdk.prj.TDList = realloc(msdk.prj.TDList, sizeof(ToDo) * msdk.prj.TDList_entries);
+			assert(msdk.prj.TDList);
+		}
+
+		fread(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
+	}
+
+	fclose(f);
+
+	return 0;
+}
+
 int ToDoBaseListSave()
 {
 	FILE *f;
 	char *filename;
 	
-	filename = StringFormat("%s.tdl", msdk.prj.name);
+	filename = StringFormat("base.tdl", msdk.prj.name);
 	
 	if((f = fopen(filename, "wb")) == NULL)
 	{
-		MessageBoxRes("Error", MB_OK, "Could not open To-Do List file: %s", filename);
+		MessageBoxRes("Error", MB_OK, "Could not create base To-Do List file: %s", filename);
 		return 0;
 	}
 	
@@ -427,16 +458,14 @@ int ToDoRevListSave()
 	FILE *f;
 	char *filename;
 	
-	ToDo *tdl, tdl_c;
+	ToDo *tdl;
 	int16 num_entries;
 	
-	register int16 i, j;
+	int16 i, j;
 	
-	filename = StringFormat("tde.tdl", msdk.prj.curr_rev);
-	
-	if((f = fopen(StringFormat("%s.tdl"), "rb")) == NULL)
+	if((f = fopen("base.tdl", "rb")) == NULL)
 	{
-		MessageBoxRes("Error", MB_OK, "Could not open To-Do List file: %s", filename);
+		MessageBoxRes("Error", MB_OK, "Could not open base To-Do List file: %s", filename);
 		return 0;
 	}
 	
@@ -446,17 +475,22 @@ int ToDoRevListSave()
 	fread(tdl, sizeof(ToDo), num_entries, 1, f);
 	
 	fclose(f);
+
+	LoadTDLRev(tdl, num_entries);
 	
-	if((f = fopen(filename, "wb")) == NULL)
+	if((f = fopen("tde.tdl", "wb")) == NULL)
 	{
-		MessageBoxRes("Error", MB_OK, "Could not open To-Do List file: %s", filename);
+		MessageBoxRes("Error", MB_OK, "Could not create To-Do List file: %s", filename);
 		return 0;
 	}
 	
 	for(i = 0, j = 0; i < num_entries; i++)
 	{
-		if(strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].properties.word != msdk.prj.TDList[i].properties.word)
-			memcpy(&tdl_c, msdk.prj.TDList[i], sizeof(ToDo));
+		if (strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].properties.word != msdk.prj.TDList[i].properties.word)
+		{
+			fwrite(&i, sizeof(int16), 1, f);
+			fwrite(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
+		}
 		
 	}
 	

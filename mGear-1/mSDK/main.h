@@ -95,6 +95,8 @@ struct _SDKPRJ
 	int16 curr_rev;
 
 	int32 user_id;
+	char user_name[16];
+	enum USER_TYPE user_type;
 
 	uint8 loaded;
 };

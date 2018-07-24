@@ -7,47 +7,6 @@
 UI_WINDOW UI_Win[MAX_UIWINDOWS];
 UI_SYSTEM UI_Sys;
 
-int16 NumDirFile(const char *path, char content[][32])
-{
-	DIR *dir;
-	dirent *ent;
-	uint16 i=0;
-	int16 filenum=0;
-
-	if((dir=opendir(path))!=NULL)
-	{
-		while((ent=readdir(dir))!=NULL)
-		{
-			strcpy(content[i],ent->d_name);
-			i++;
-			filenum++;
-		}
-
-		closedir(dir);
-	}
-	else
-	{
-		LogApp("Coulnd not open directory");
-		return -1;
-	}
-
-	return filenum;
-}
-
-int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...)
-{
-	char str[512];
-	va_list args;
-
-	va_start(args, string);
-
-	vsprintf(str, string, args);
-
-	va_end(args);
-
-	return MessageBox(NULL, str, caption, type);
-}
-
 void UILoadSystem(char *filename)
 {
 	FILE *file;

@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdarg.h>
 
 #ifndef _MGTYPES_H
 	#include "types.h"
@@ -1086,8 +1087,6 @@ void RestartVideo();
 
 void WindowEvent();
 
-char *StringFormat(char *string, ...);
-
 void _inline STW(int32 *x, int32 *y);
 
 void _inline STWci(int32 *x, int32 *y); //No camera position in calculation
@@ -1095,8 +1094,6 @@ void _inline STWci(int32 *x, int32 *y); //No camera position in calculation
 void _inline STWf(float *x, float *y);
 
 void _inline STWcf(float *x, float *y); //No camera position in calculation
-
-uint32 POT(uint32 value);
 
 void _fastcall WTS(int32 *x, int32 *y);
 
