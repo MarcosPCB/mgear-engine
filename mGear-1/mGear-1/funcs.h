@@ -14,6 +14,15 @@
 extern void Quit();
 
 #define CHERROR -1
+#define ERROR_RETURN -10
+
+#define CHECKMEM(expr) { if(mchalloc(expr) == CHERROR) return ERROR_RETURN; }
+#define ALLOCMEM(data, size) { data = malloc(size); CHECKMEM(data); }
+#define alloc_mem ALLOCMEM
+
+#define OPENFILE_D(file, name, mode) { if((file=fopen(name,mode)) == NULL) { MessageBoxRes("Error", MB_OK, "Could not open file: %s", name); return NULL; } }
+#define OPENFILE_STR(file, name, mode, str) { if((file=fopen(name,mode)) == NULL) { MessageBoxRes("Error", MB_OK, str, name); return NULL; } }
+
 #define mem_assert(expr) assert(expr && "memory not valid");
 
 cdecl int16 NumDirFile(const char *path, char content[][32]);

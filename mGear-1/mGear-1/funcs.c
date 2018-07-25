@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "types.h"
 #include <Windows.h>
+#include "funcs.h"
 
 int16 NumDirFile(const char *path, char content[][32])
 {
@@ -41,6 +42,8 @@ int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...)
 	vsprintf(str, string, args);
 
 	va_end(args);
+
+	LogApp(str);
 
 	return MessageBox(NULL, str, caption, type);
 }

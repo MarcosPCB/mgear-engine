@@ -401,9 +401,9 @@ int SavePrjFile(const char *filename)
 	return 1;
 }
 
-int8 LoadTDLRev(ToDo *tdl, int16 num)
+int8 LoadTDLRev(ToDo *tdl, int16 *num)
 {
-	int16 i;
+	int16 i, j = 0;
 
 	FILE *f;
 
@@ -412,7 +412,9 @@ int8 LoadTDLRev(ToDo *tdl, int16 num)
 	if ((f = fopen("tde.tdl", "rb")) == NULL)
 		return -1;
 
-	while (!feof(f))
+	fread(&num2, sizeof(int16), 1, f);
+
+	while (j < num2)
 	{
 		fread(&i, sizeof(int16), 1, f);
 
@@ -420,15 +422,46 @@ int8 LoadTDLRev(ToDo *tdl, int16 num)
 		{
 			msdk.prj.TDList_entries++;
 			msdk.prj.TDList = realloc(msdk.prj.TDList, sizeof(ToDo) * msdk.prj.TDList_entries);
-			assert(msdk.prj.TDList);
+			if (mchalloc(msdk.prj.TDList) == CHERROR) return -2;
 		}
 
 		fread(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
+
+		j++;
 	}
 
 	fclose(f);
 
 	return 0;
+}
+
+int LoadTDL()
+{
+	FILE *f;
+	
+	int16 i;
+
+	OPENFILE_D(f, "base.tdl", "rb");
+
+	fread(&msdk.prj.TDList_entries, sizeof(int16), 1, f);
+
+	alloc_mem(msdk.prj.TDList, sizeof(ToDo)* msdk.prj.TDList_entries);
+
+	fread(msdk.prj.TDList, sizeof(ToDo), msdk.prj.TDList_entries, f);
+
+	fclose(f);
+
+	if ((i=LoadTDLRev(msdk.prj.TDList, &msdk.prj.TDList_entries)) == -1)
+	{
+		LogApp("No revisions found");
+		return 2;
+	}
+	else
+	if (i == 0)
+	{
+		LogApp("Loaded revisions successfuly");
+		return 1;
+	}
 }
 
 int ToDoBaseListSave()
@@ -461,7 +494,7 @@ int ToDoRevListSave()
 	ToDo *tdl;
 	int16 num_entries;
 	
-	int16 i, j;
+	int16 i, j, altered;
 	
 	if((f = fopen("base.tdl", "rb")) == NULL)
 	{
@@ -472,28 +505,52 @@ int ToDoRevListSave()
 	fread(&num_entries, sizeof(int16), 1, f);
 	
 	tdl = malloc(sizeof(ToDo) * num_entries);
+	CHECKMEM(tdl);
 	fread(tdl, sizeof(ToDo), num_entries, 1, f);
 	
 	fclose(f);
 
-	LoadTDLRev(tdl, num_entries);
+	if (LoadTDLRev(tdl, &num_entries) != NULL)
+	{
+		MessageBoxRes("Error", MB_OK, "Could not merge base TDL with revisioned");
+		return 0;
+	}
 	
 	if((f = fopen("tde.tdl", "wb")) == NULL)
 	{
 		MessageBoxRes("Error", MB_OK, "Could not create To-Do List file: %s", filename);
 		return 0;
 	}
+
+	fseek(f, sizeof(int16), SEEK_SET);
 	
-	for(i = 0, j = 0; i < num_entries; i++)
+	for(i = 0, j = 0, altered = 0; i < num_entries; i++)
 	{
-		if (strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].properties.word != msdk.prj.TDList[i].properties.word)
+		if (msdk.prj.TDList_entries < i)
+		{
+			if (strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].properties.word != msdk.prj.TDList[i].properties.word)
+			{
+				fwrite(&i, sizeof(int16), 1, f);
+				fwrite(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
+
+				altered++;
+			}
+		}
+		else
 		{
 			fwrite(&i, sizeof(int16), 1, f);
 			fwrite(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
+
+			altered++;
 		}
-		
 	}
-	
+
+	rewind(f);
+	fwrite(&altered, sizeof(int16), 1, f);
+
+	fclose(f);
+
+	return 1;
 }
 
 int LoadPrjFile(const char *filename)
