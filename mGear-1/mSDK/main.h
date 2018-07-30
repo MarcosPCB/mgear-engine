@@ -88,7 +88,10 @@ struct _SDKPRJ
 	uint8 code_type;
 	char code_path[MAX_PATH];
 
+	size_t blog_len;
+	char *base_log;
 	char *log;
+	size_t log_len;
 	int16 revisions;
 	ToDo *TDList;
 	int16 TDList_entries;
@@ -97,6 +100,8 @@ struct _SDKPRJ
 	int32 user_id;
 	char user_name[16];
 	enum USER_TYPE user_type;
+	char users[8][16];
+	int8 num_users;
 
 	uint8 loaded;
 };
@@ -115,6 +120,7 @@ struct _mSdk
 	SDKPRJ prj;
 
 	char filepath[MAX_PATH];
+	char program_path[MAX_PATH];
 
 	CURL *curl;
 	CURLM *curlm;

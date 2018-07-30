@@ -103,7 +103,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 							strcpy(tmp, curr_path);
 							strcat(tmp, "/");
 							strcat(tmp, content[j]);
-
+							
 							if ((f = fopen(tmp, "r")) == NULL)
 							{
 								//strcpy(tmp, curr_path);
@@ -380,9 +380,6 @@ int SavePrjFile(const char *filename)
 
 	fwrite(header, 21, 1, f);
 	fwrite(msdk.prj.name, 32, 1, f);
-	fwrite(msdk.prj.code_path, MAX_PATH, 1, f);
-	fwrite(msdk.prj.prj_path, MAX_PATH, 1, f);
-	fwrite(msdk.prj.prj_raw_path, MAX_PATH, 1, f);
 	fwrite(&msdk.prj.audio, 1, 1, f);
 	fwrite(&msdk.prj.code, 1, 1, f);
 	fwrite(&msdk.prj.code_type, 1, 1, f);
@@ -392,6 +389,9 @@ int SavePrjFile(const char *filename)
 	fwrite(&msdk.prj.tex, 1, 1, f);
 	fwrite(&msdk.prj.curr_rev, sizeof(int16), 1, f);
 	fwrite(&msdk.prj.revisions, sizeof(int16), 1, f);
+	fwrite(msdk.prj.user_name, 16, 1, f);
+	fwrite(&msdk.prj.num_users, sizeof(int8), 1, f);
+	fwrite(msdk.prj.users, 16, 8, f);
 
 	if (msdk.prj.curr_rev > 0)
 		fwrite(msdk.prj.exp_path, MAX_PATH, 1, f);
@@ -453,13 +453,13 @@ int LoadTDL()
 
 	if ((i=LoadTDLRev(msdk.prj.TDList, &msdk.prj.TDList_entries)) == -1)
 	{
-		LogApp("No revisions found");
+		LogApp("No TDL revisions found");
 		return 2;
 	}
 	else
 	if (i == 0)
 	{
-		LogApp("Loaded revisions successfuly");
+		LogApp("Loaded TDL revisions successfuly");
 		return 1;
 	}
 }
@@ -553,6 +553,62 @@ int ToDoRevListSave()
 	return 1;
 }
 
+int SaveBaseLog()
+{
+	FILE *f;
+
+	OPENFILE_D(f, "base.clg", "wb");
+
+	fwrite(&msdk.prj.log_len, sizeof(size_t), 1, f);
+	fwrite(msdk.prj.log, msdk.prj.log_len, 1, f);
+
+	fclose(f);
+
+	return 1;
+}
+
+int SaveRevLog()
+{
+	FILE *f;
+
+	OPENFILE_D(f, "rlog.clg", "wb");
+
+	fwrite(&msdk.prj.log_len, sizeof(size_t), 1, f);
+	fwrite(msdk.prj.log, msdk.prj.log_len, 1, f);
+
+	fclose(f);
+
+	return 1;
+}
+
+int LoadBaseLog()
+{
+	FILE *f;
+
+	OPENFILE_D(f, "base.clg", "rb");
+
+	fread(&msdk.prj.blog_len, sizeof(size_t), 1, f);
+	fread(msdk.prj.base_log, msdk.prj.blog_len, 1, f);
+
+	fclose(f);
+
+	return 1;
+}
+
+int LoadRevLog()
+{
+	FILE *f;
+
+	OPENFILE_D(f, "rlog.clg", "rb");
+
+	fread(&msdk.prj.log_len, sizeof(size_t), 1, f);
+	fread(msdk.prj.log, msdk.prj.log_len, 1, f);
+
+	fclose(f);
+
+	return 1;
+}
+
 int LoadPrjFile(const char *filename)
 {
 	FILE *f;
@@ -570,9 +626,6 @@ int LoadPrjFile(const char *filename)
 	}
 
 	fread(msdk.prj.name, 32, 1, f);
-	fread(msdk.prj.prj_path, MAX_PATH, 1, f);
-	fread(msdk.prj.prj_raw_path, MAX_PATH, 1, f);
-	fread(msdk.prj.code_path, MAX_PATH, 1, f);
 	fread(&msdk.prj.audio, 1, 1, f);
 	fread(&msdk.prj.code, 1, 1, f);
 	fread(&msdk.prj.code_type, 1, 1, f);
@@ -582,17 +635,24 @@ int LoadPrjFile(const char *filename)
 	fread(&msdk.prj.tex, 1, 1, f);
 	fread(&msdk.prj.curr_rev, sizeof(int16), 1, f);
 	fread(&msdk.prj.revisions, sizeof(int16), 1, f);
-	fread(&msdk.prj.TDList_entries, sizeof(int16), 1, f);
+	fread(msdk.prj.user_name, 16, 1, f);
+	fread(&msdk.prj.num_users, sizeof(int8), 1, f);
+	fread(msdk.prj.users, 16, 8, f);
 
 	if (msdk.prj.curr_rev > 0)
 		fread(msdk.prj.exp_path, MAX_PATH, 1, f);
-	else
-		msdk.prj.log = NULL;
-
-	if (msdk.prj.TDList_entries == 0)
-		msdk.prj.TDList = NULL;
 
 	fclose(f);
+
+	LoadTDL();
+	LoadBaseLog();
+
+	if (msdk.prj.curr_rev > 0)
+		LoadRevLog();
+
+	GetCurrentDirectory(MAX_PATH, msdk.prj.prj_path);
+	strcpy(msdk.prj.prj_raw_path, msdk.prj.prj_path);
+	strcat(msdk.prj.prj_raw_path, "\\_prj_raw");
 
 	return 1;
 }
@@ -647,6 +707,24 @@ int ExportProject()
 
 	_Files *prj_files;
 
+	BROWSEINFO bi;
+
+	static LPITEMIDLIST pidl;
+
+	char directory[MAX_PATH];
+	char exepath[MAX_PATH];
+	char args[MAX_PATH * 3];
+	static path2[MAX_PATH];
+	MSG msg;
+
+	DWORD error;
+
+	static DWORD exitcode;
+
+	static SHELLEXECUTEINFO info;
+
+	ZeroMemory(&bi, sizeof(bi));
+
 	if (state == 0)
 	{
 		encrypted = 0;
@@ -663,8 +741,8 @@ int ExportProject()
 		can_exp = 0;
 		ZeroMemory(path, MAX_PATH);
 		ZeroMemory(path_cur, MAX_PATH);
-		strcpy(msdk.prj.prj_path, st.CurrPath);
 		files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
+		exp_state = steps = 0;
 	}
 
 	if (state == 1)
@@ -679,7 +757,16 @@ int ExportProject()
 			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, path, MAX_PATH, nk_filter_ascii);
 
 			nk_layout_row_push(ctx, 0.20f);
-			nk_button_label(ctx, "Browse");
+			if (nk_button_label(ctx, "Browse"))
+			{
+				bi.lpszTitle = ("Select a folder to export the project");
+				bi.ulFlags = BIF_USENEWUI;
+
+				pidl = SHBrowseForFolder(&bi);
+
+				if (pidl)
+					SHGetPathFromIDList(pidl, path);
+			}
 			nk_layout_row_end(ctx);
 
 			nk_layout_row_dynamic(ctx, 25, 3);
@@ -816,7 +903,7 @@ int ExportProject()
 			nk_combobox_string(ctx, "Google Drive\0OneDrive\0Drop Box\0Other Storage", &storage, 4, 25, nk_vec2(90, 256));
 
 			can_exp = 0;
-			if (strlen(msdk.prj.exp_path) == 0) can_exp++;
+			if (strlen(path) == 0) can_exp++;
 			
 			for (i = 0; i < num_users; i++)
 			{
@@ -1012,7 +1099,12 @@ int ExportProject()
 
 						sprintf(str, "%d", hexcode);
 
+						SetCurrentDirectory(msdk.prj.exp_path);
+						SetCurrentDirectory("users");
 						CreateDirectory(str, NULL);
+
+						SetCurrentDirectory(msdk.prj.exp_path);
+						SetCurrentDirectory("mgear_sys");
 
 						/*
 						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
@@ -1066,6 +1158,8 @@ int ExportProject()
 						fwrite(&ck, ck_len, 1, f);
 
 						fclose(f);
+
+						steps++;
 					}
 					else
 					{
@@ -1083,14 +1177,22 @@ int ExportProject()
 
 						fclose(f);
 
+						SetCurrentDirectory(msdk.prj.exp_path);
+						SetCurrentDirectory("users");
+
 						for (i = 0; i < num_users; i++)
 						{
 							sprintf(str, "%03d", i);
 							CreateDirectory(str, NULL);
 						}
-					}
 
-					steps++;
+						SetCurrentDirectory(msdk.prj.exp_path);
+						SetCurrentDirectory("mgear_sys");
+
+						exp_state = 1;
+						steps = 0;
+
+					}
 				}
 				else
 				if (steps >= 1 && num_users - steps != 0)
@@ -1162,7 +1264,12 @@ int ExportProject()
 
 					sprintf(str, "%d", hexcode);
 
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("users");
 					CreateDirectory(str, NULL);
+
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("mgear_sys");
 
 					for (i = 0; i < 16; i++)
 					{
@@ -1210,7 +1317,7 @@ int ExportProject()
 					steps++;
 				}
 				
-				if (steps >= 1 && num_users - steps == 0)
+				if (steps > 1 && num_users - steps == 0)
 				{
 					exp_state = 1;
 					steps = 0;
@@ -1222,6 +1329,18 @@ int ExportProject()
 				if (steps < num_files)
 				{
 					SetCurrentDirectory(msdk.prj.prj_path);
+
+					ToDoBaseListSave();
+
+					memcpy(msdk.prj.users, usernames, 8 * 16);
+					msdk.prj.num_users = num_users;
+
+					msdk.prj.revisions = 1;
+					msdk.prj.curr_rev = 1;
+
+					SavePrjFile(msdk.filepath);
+
+					SetCurrentDirectory(msdk.prj.exp_path);
 					SetCurrentDirectory("data");
 					SetCurrentDirectory("v0000");
 					
@@ -1374,7 +1493,24 @@ int ExportProject()
 			else
 			if (exp_state == 3)
 			{
-				
+				if (steps == 0)
+				{
+					if (MessageBoxRes("First Commit", MB_YESNO, "Would you like to push the commit now?") == IDYES)
+					{
+
+					}
+					else
+					{
+						exp_state = 4;
+						steps = 0;
+					}
+				}
+			}
+			else
+			if (exp_state == 4)
+			{
+				MessageBoxRes("Export complete", MB_OK, "Exporting complete");
+				state = 4;
 			}
 
 			if (exp_state == 0)
@@ -1394,6 +1530,9 @@ int ExportProject()
 			if (exp_state == 3)
 				pct = steps + (num_files * 2) + num_users + 1;
 
+			if (exp_state == 4)
+				pct = 100/pct_inc;
+
 			nk_label(ctx, StringFormat("%d%%",pct * pct_inc), NK_TEXT_ALIGN_RIGHT);
 		}
 
@@ -1404,6 +1543,12 @@ int ExportProject()
 	{
 		state = 0;
 		return -1;
+	}
+
+	if (state == 4)
+	{
+		state = 0;
+		return 1;
 	}
 
 	return NULL;
@@ -2277,10 +2422,27 @@ void MenuBar()
 					state = 0;
 				}
 
-				nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT))
+				{
+					SavePrjFile(msdk.filepath);
+
+					if (msdk.prj.curr_rev > 0)
+					{
+						SaveRevLog();
+						ToDoRevListSave();
+					}
+					else
+					{
+						SaveBaseLog();
+						ToDoBaseListSave();
+					}
+				}
+
 				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
 				nk_menu_item_label(ctx, "Import", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Export", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Export", NK_TEXT_LEFT))
+					state = 6;
+
 				if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) st.quit = 1;
 				nk_menu_end(ctx);
 			}
@@ -2323,6 +2485,14 @@ void MenuBar()
 		if (state == 10)
 		{
 			if (Preferences())
+				state = 0;
+		}
+
+		if (state == 6)
+		{
+			temp = ExportProject();
+
+			if (temp == -1 || temp == 1)
 				state = 0;
 		}
 	//}
@@ -2371,7 +2541,7 @@ void Pannel()
 				info.lpFile = exepath;
 				//sprintf(args, "-o \"%s\"", path2);
 				//info.lpParameters = args;
-				info.lpDirectory = msdk.prj.prj_path;
+				info.lpDirectory = st.CurrPath;
 				info.nShow = SW_SHOW;
 
 				if (!ShellExecuteEx(&info))
@@ -2392,7 +2562,7 @@ void Pannel()
 				info.lpFile = exepath;
 				//sprintf(args, "-o \"%s\"", path2);
 				//info.lpParameters = args;
-				info.lpDirectory = msdk.prj.prj_path;
+				info.lpDirectory = st.CurrPath;
 				info.nShow = SW_SHOW;
 
 				if (!ShellExecuteEx(&info))
@@ -2415,7 +2585,7 @@ void Pannel()
 				info.lpFile = exepath;
 				//sprintf(args, "-o \"%s\"", path2);
 				//info.lpParameters = args;
-				info.lpDirectory = msdk.prj.prj_path;
+				info.lpDirectory = st.CurrPath;
 				info.nShow = SW_SHOW;
 
 				if (!ShellExecuteEx(&info))
@@ -2442,8 +2612,8 @@ void Pannel()
 
 				if (nk_group_begin(ctx, "Revisions", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 				{
-					if (msdk.prj.log)
-						nk_label_wrap(ctx, msdk.prj.log);
+					if (msdk.prj.base_log)
+						nk_label_wrap(ctx, msdk.prj.base_log);
 
 					nk_group_end(ctx);
 				}
@@ -2558,6 +2728,8 @@ int main(int argc, char *argv[])
 	register_hash(&sha256_desc);
 	register_hash(&sha512_desc);
 
+	GetCurrentDirectory(MAX_PATH, msdk.program_path);
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
@@ -2591,7 +2763,7 @@ int main(int argc, char *argv[])
 		if (msdk.prj.loaded == 1)
 			Pannel();
 		
-		ExportProject();
+		//ExportProject();
 
 		MenuBar();
 

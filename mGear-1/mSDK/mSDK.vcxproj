@@ -104,6 +104,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\mGear-1\engine.c" />
+    <ClCompile Include="..\mGear-1\funcs.c" />
     <ClCompile Include="..\mGear-1\input.c" />
     <ClCompile Include="..\mGear-1\UI.c" />
     <ClCompile Include="main.c" />
@@ -111,6 +112,7 @@
   <ItemGroup>
     <ClInclude Include="..\mGear-1\dirent.h" />
     <ClInclude Include="..\mGear-1\engine.h" />
+    <ClInclude Include="..\mGear-1\funcs.h" />
     <ClInclude Include="..\mGear-1\input.h" />
     <ClInclude Include="..\mGear-1\nuklear.h" />
     <ClInclude Include="..\mGear-1\nuklear_sdl_gl3.h" />
