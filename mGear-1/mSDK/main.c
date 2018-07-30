@@ -2625,7 +2625,28 @@ void Pannel()
 
 			if (nk_group_begin(ctx, "To do list", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
-				
+				for(i=0;i<msdk.prj.TDList_entries;i++)
+				{
+					if(msdk.prj.TDList[i].properties.creator == msdk.user_id || msdk.prj.TDList[i].properties.assigned_ids & pow(2,msdk.prj.TDList[i].propeties.creator))
+					{
+						switch(msdk.prj.TDList[i].properties.type)
+						{
+							case 0:
+								nk_layout_row_dynamic(ctx,strlen(msdk.prj.TDList[i].entry) / 32, 1);
+								//nk_layout_row_push(ctx,0.10f);
+								msdk.prj.TDList[i].properties.completed = nk_check_text(ctx,msdk.prj.TDList[i].entry, msdk.prj.TDList[i].properties.completed == 1)
+								nk_label_wrap(ctx,msdk.prj.TDList[i].entry);
+								nk_layout_row_dynamic(ctx, 15, 1);
+								nk_label(ctx, StringFormat("Creator: %s",msdk.users[msdk.TDList[i].properties.creator]), NK_TEXT_ALIGN_RIGHT);
+								break;
+							
+							case 1:
+								nk_layout_row_dynamic(ctx,strlen(msdk.prj.TDList[i].entry) / 32, 1);
+								
+								break;
+						}
+					}
+				}
 
 				nk_group_end(ctx);
 			}

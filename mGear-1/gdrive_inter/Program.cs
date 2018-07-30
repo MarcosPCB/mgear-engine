@@ -26,6 +26,8 @@ namespace gdrive_inter
         static DriveService Service;
 
         public string prj_name, user_name, password;
+		
+		public int mode; //Bitwise - 1: upload, 2: download, 4: pull revisions, 8: first commit, 16: create new general revision
 
         public string filen;
 
@@ -39,6 +41,8 @@ namespace gdrive_inter
         public gdrive2()
         {
             UserCredential credential;
+			
+			mode  = 0;
 
             using (var stream = new FileStream("client_secret.json", FileMode.Open, FileAccess.Read))
             {
@@ -172,6 +176,15 @@ namespace gdrive_inter
                     case "-pass":
                         g.password = args[i + 1];
                         break;
+						
+					case "-up":
+					if(g.mode & 1)
+						
+						g.mode+=1;
+						break;
+						
+						case "-down"
+							
 
                 }
             }

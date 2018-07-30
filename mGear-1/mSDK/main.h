@@ -40,7 +40,7 @@ struct _TODOL
 	union Propeties
 	{
 		uint16 word;
-		uint16 type : 2, //0 = text; 1 = checkbox; 2 = list;
+		uint16 type : 2, //0 = checkbox; 1 = list;
 		creator : 3,
 		assigned : 1,
 		assigned_ids : 8,
