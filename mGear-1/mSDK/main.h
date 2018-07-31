@@ -30,6 +30,7 @@ struct _Files_
 	size_t size;
 	int16 rev;
 	int16 f_rev;
+	char hash[512];
 };
 
 typedef struct _Files_ _Files;

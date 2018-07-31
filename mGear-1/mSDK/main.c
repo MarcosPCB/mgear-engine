@@ -76,7 +76,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 
 	int16 filenum;
 
-	char content[2048][32], curr_path[MAX_PATH], tmp[MAX_PATH], str[512];
+	char content[2048][32], curr_path[MAX_PATH], tmp[MAX_PATH], str[512], *buffer;
 
 	i = 0;
 	strcpy(curr_path, path);
@@ -138,6 +138,21 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 								strcat(files[i].parent, curr_path + strlen(path));
 								files[i].type = 0;
 								LogApp("%s/%s", files[i].path, files[i].file);
+								
+								fseek(f, SEEK_END, 0);
+								files[i].size = ftell(f);
+								
+								rewind(f);
+							
+								alloc_mem(buffer, files[i].size);
+							
+								fread(buffer, files[i].size, 1, f);
+							
+								sha256_init(&hash);
+								sha256_process(&hash, buffer, files[i].size);
+								sha256_done(&hash, files[i].hash);
+								
+								free(buffer);
 								fclose(f);
 								l++;
 							}
@@ -202,6 +217,22 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 					strcpy(files[i].parent, ".");
 					files[i].type = 0;
 					LogApp("%s/%s", files[i].path, files[i].file);
+					
+					fseek(f, SEEK_END, 0);
+					files[i].size = ftell(f);
+					
+					rewind(f);
+				
+					alloc_mem(buffer, files[i].size);
+				
+					fread(buffer, files[i].size, 1, f);
+				
+					sha256_init(&hash);
+					sha256_process(&hash, buffer, files[i].size);
+					sha256_done(&hash, files[i].hash);
+					
+					free(buffer);
+					
 					fclose(f);
 				}
 			}
@@ -661,21 +692,89 @@ int LoadPrjFile(const char *filename)
 
 int CommitPrj()
 {
+	static int state = 0;
+	static int16 num_files, num_files_exp;
+	
+	char fhash[512];
+	
+	static struct File_sys *files, *exp_files;
+	
+	FILE *f;
+	
+	if(state == 0)
+	{
+		files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
+		
+		OPENFILE_D(f, StringFormat("%s/index",msdk.prj.exp_path),"rb");
+		
+		fread(&num_files_exp, sizeof(int16), 1, f);
+		
+		alloc_mem(exp_files, num_filex_exp * sizeof(struct File_sys));
+		
+		fread(exp_files, sizeof(struct File_sys) * num_files_exp, 1, f);
+		
+		fclose(f);
+		
+		state = 1;
+	}
+	
 	if (nk_begin(ctx, "Commit", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "Exported project path", NK_TEXT_ALIGN_LEFT);
+		nk_label(ctx, "Exported project path:", NK_TEXT_ALIGN_LEFT);
 
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
-		nk_layout_row_push(ctx, 0.80f);
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, msdk.prj.exp_path, MAX_PATH, nk_filter_ascii);
+		nk_label_wrap(ctx, msdk.prj.exp_path);
+		
+		nk_layout_row_dynamic(ctx, 250, 1);
+		
+		if(nk_group_begin(ctx,"Files", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+		{
+			nk_layout_row_dynamic(ctx, 15, 1);
+			for (i = 0; i < num_files; i++)
+			{	
+				//nk_layout_row_dynamic(ctx, 20, 1);
+				if (strcmp(files[i].parent, ".") == NULL && files[i].type == 0)
+					files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
+			}
 
-		nk_layout_row_push(ctx, 0.20f);
+			//	nk_tree_pop(ctx);
+			//}
+
+			for (i = 0; i < num_files; i++)
+			{
+				if (files[i].type == 1 && files[i].filenum > 0)
+				{
+					//nk_layout_row_dynamic(ctx, 20, 1);
+					sprintf(str, "%s/%s", files[i].parent, files[i].file);
+					if (nk_tree_push_id(ctx, NK_TREE_NODE, str, NK_MINIMIZED, i))
+					{
+						nk_layout_row_dynamic(ctx, 15, 1);
+						for (j = 0; j < num_files; j++)
+						{
+							if (strcmp(files[j].parent, str) == NULL && files[j].type == 0)
+								files[j].commit = nk_check_label(ctx, files[j].file, files[j].commit == 1);
+						}
+
+						nk_tree_pop(ctx);
+					}
+				}	
+			}
+
+			nk_group_end(ctx);
+		}
+
 		nk_button_label(ctx, "Browse");
 		nk_layout_row_end(ctx);
 	}
 
 	nk_end(ctx);
+	
+	if(state == 3)
+	{
+		free(exp_files);
+		free(files);
+		return 1;
+	}
 
 	return NULL;
 }
@@ -730,8 +829,8 @@ int ExportProject()
 	if (state == 0)
 	{
 		encrypted = 0;
-		num_users = 1;
-		ZeroMemory(usernames, 8 * 16);
+		num_users = msdk.prj.num_users;
+		memcpy(usernames, msdk.prj.users, 8 * 16);
 		ZeroMemory(passwords, 8 * 16);
 		admin = 0;
 		memset(user_perm, 0, sizeof(enum USERTYPE) * 8);
@@ -1348,7 +1447,7 @@ int ExportProject()
 					SetCurrentDirectory("data");
 					SetCurrentDirectory("v0000");
 					
-					if (files[steps].type != 0 || files[steps].commit == 1) steps++;
+					if (files[steps].type != 0 || files[steps].commit == 0) steps++;
 					else
 					{
 						strcpy(filepath, files[steps].path);
@@ -1402,6 +1501,7 @@ int ExportProject()
 							}
 							else
 							{
+								/*
 								if ((f = fopen(filepath, "r")) == NULL)
 								{
 									MessageBoxRes("Error", MB_OK, "Error while opening file %s for copy", filepath);
@@ -1409,9 +1509,23 @@ int ExportProject()
 
 								fseek(f, SEEK_END, 0);
 								files[steps].size = ftell(f);
+								
+								rewind(f);
+							
+								char *buffer;
+							
+								alloc_mem(buffer, files[steps].size);
+							
+								fread(buffer, files[steps].size, 1, f);
+							
+								sha256_init(&hash);
+								sha256_process(&hash, buffer, files[steps].size);
+								sha256_done(&hash, files[steps].hash);
 
 								fclose(f);
-
+								
+								free(buffer);
+								*/
 								if (CopyFile(filepath, newfilepath, FALSE) == NULL)
 								{
 									sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
@@ -1425,11 +1539,6 @@ int ExportProject()
 							{
 								MessageBoxRes("Error", MB_OK, "Error while opening file %s for copy", filepath);
 							}
-
-							fseek(f, SEEK_END, 0);
-							files[steps].size = ftell(f);
-
-							fclose(f);
 
 							if (CopyFile(filepath, newfilepath, FALSE) == NULL)
 							{
@@ -1483,10 +1592,13 @@ int ExportProject()
 							strcpy(prj_files[j].path, files[i].parent);
 							prj_files[j].rev = prj_files[i].f_rev = 0;
 							prj_files[j].size = files[i].size;
+							prj_files[j].hash = files[i].hash;
 							j++;
 						}
 					}
-
+					
+					
+					fwrite(&num_files, sizeof(int16), 1, f);
 					fwrite(prj_files, sizeof(_Files)* num_files, 1, f);
 
 					fclose(f);
