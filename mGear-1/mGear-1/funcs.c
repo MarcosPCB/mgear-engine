@@ -50,7 +50,7 @@ int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...)
 
 char *StringFormat(char *string, ...)
 {
-	char buf[1024];
+	static char buf[1024];
 
 	va_list args;
 

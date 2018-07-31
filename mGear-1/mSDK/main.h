@@ -37,16 +37,13 @@ typedef struct _Files_ _Files;
 struct _TODOL
 {
 	char entry[512];
-	union Propeties
-	{
-		uint16 word;
-		uint16 type : 2, //0 = checkbox; 1 = list;
-		creator : 3,
-		assigned : 1,
-		assigned_ids : 8,
-		completed : 1,
-		reserved : 1;
-	} properties;
+
+	uint16 type : 2, //0 = checkbox; 1 = list;
+	creator : 3,
+	assigned : 1,
+	assigned_ids : 8,
+	completed : 1,
+	reserved : 1;
 };
 
 typedef struct _TODOL ToDo;

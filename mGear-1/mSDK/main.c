@@ -30,7 +30,7 @@
 int nkrendered = 0;
 
 struct nk_context *ctx;
-struct nk_font *fonts[2];
+struct nk_font *fonts[5];
 
 int prev_tic, curr_tic, delta, idx;
 int64 FileSize, TransBytes;
@@ -528,13 +528,15 @@ int ToDoRevListSave()
 	{
 		if (msdk.prj.TDList_entries < i)
 		{
-			if (strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].properties.word != msdk.prj.TDList[i].properties.word)
+			/*
+			if (strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].word != msdk.prj.TDList[i].word)
 			{
 				fwrite(&i, sizeof(int16), 1, f);
 				fwrite(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
 
 				altered++;
 			}
+			*/
 		}
 		else
 		{
@@ -1337,6 +1339,8 @@ int ExportProject()
 
 					msdk.prj.revisions = 1;
 					msdk.prj.curr_rev = 1;
+
+					msdk.prj.user_id = 0;
 
 					SavePrjFile(msdk.filepath);
 
@@ -2501,12 +2505,12 @@ void MenuBar()
 void Pannel()
 {
 	register int i, j, k;
-	static int sl, pannel_state = 0;
+	static int sl, pannel_state = 0, selected_entry = -1, tdtype = 0, assigned_ids = 0;
 	static struct nk_color editcolor = { 255, 255, 255, 255 };
-	static char strbuf[32];
+	static char strbuf[32], entry[512];
 	static struct nk_rect bounds;
 	TEX_DATA data;
-	int temp, px, py, sx, sy;
+	int temp, px, py, sx, sy, tmp;
 	struct nk_image texid;
 
 	char directory[MAX_PATH];
@@ -2623,40 +2627,109 @@ void Pannel()
 				nk_group_end(ctx);
 			}
 
-			if (nk_group_begin(ctx, "To do list", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+			//nk_layout_row_dynamic(ctx, st.screeny - 280, 1);
+
+
+			if (nk_group_begin(ctx, "To do list", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
 			{
-				for(i=0;i<msdk.prj.TDList_entries;i++)
+				ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
+				nk_layout_row_dynamic(ctx, st.screeny - 280, 1);
+				if (nk_group_begin(ctx, "List", NULL))
 				{
-					if(msdk.prj.TDList[i].properties.creator == msdk.user_id || msdk.prj.TDList[i].properties.assigned_ids & pow(2,msdk.prj.TDList[i].propeties.creator))
+					for (i = 0; i < msdk.prj.TDList_entries; i++)
 					{
-						switch(msdk.prj.TDList[i].properties.type)
+						if (msdk.prj.TDList[i].creator == msdk.prj.user_id ||
+							(msdk.prj.TDList[i].assigned_ids & (int)pow(2, msdk.prj.TDList[i].creator)) == (int)pow(2, msdk.prj.TDList[i].creator))
 						{
+							switch (msdk.prj.TDList[i].type)
+							{
 							case 0:
-								nk_layout_row_dynamic(ctx,strlen(msdk.prj.TDList[i].entry) / 32, 1);
-								//nk_layout_row_push(ctx,0.10f);
-								msdk.prj.TDList[i].properties.completed = nk_check_text(ctx,msdk.prj.TDList[i].entry, msdk.prj.TDList[i].properties.completed == 1)
-								nk_label_wrap(ctx,msdk.prj.TDList[i].entry);
+								nk_layout_row_begin(ctx, NK_DYNAMIC, (strlen(msdk.prj.TDList[i].entry) / 32) * 15, 2);
+								nk_layout_row_push(ctx, 0.10f);
+								msdk.prj.TDList[i].completed = nk_check_label(ctx, " ", msdk.prj.TDList[i].completed == 1);
+								nk_layout_row_push(ctx, 0.90f);
+								//temp = nk_select_text(ctx, msdk.prj.TDList[i].entry, strlen(msdk.prj.TDList[i].entry), NK_TEXT_ALIGN_LEFT, selected_entry == i);
+								nk_text_wrap(ctx, msdk.prj.TDList[i].entry, 512);
+								nk_layout_row_end(ctx);
+
+								//if (temp == 1)
+									//selected_entry = i;
+
 								nk_layout_row_dynamic(ctx, 15, 1);
-								nk_label(ctx, StringFormat("Creator: %s",msdk.users[msdk.TDList[i].properties.creator]), NK_TEXT_ALIGN_RIGHT);
+								nk_style_set_font(ctx, &fonts[2]->handle);
+								nk_label(ctx, StringFormat("Creator: %s", msdk.prj.users[msdk.prj.TDList[i].creator - 1]), NK_TEXT_ALIGN_RIGHT);
+								nk_style_set_font(ctx, &fonts[0]->handle);
 								break;
-							
+
 							case 1:
-								nk_layout_row_dynamic(ctx,strlen(msdk.prj.TDList[i].entry) / 32, 1);
-								
+								nk_layout_row_dynamic(ctx, strlen(msdk.prj.TDList[i].entry) / 32, 1);
+
 								break;
+							}
 						}
 					}
+
+					nk_group_end(ctx);
 				}
+
+				SetThemeBack();
+
+				nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
+				nk_layout_row_push(ctx, 0.20f);
+				tdtype = nk_combo_string(ctx, "Check\0List\0", tdtype, 2, 20, nk_vec2(100, 80));
+
+				nk_layout_row_push(ctx, 0.50f);
+				nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, entry, tdtype == 0 ? 512 : 128, nk_filter_default);
+
+				nk_layout_row_push(ctx, 0.20f);
+				if (nk_combo_begin_label(ctx, "IDs", nk_vec2(200, 35 + (20 * msdk.prj.num_users))))
+				{
+					nk_layout_row_dynamic(ctx, 20, 1);
+					for (i = 0; i < msdk.prj.num_users; i++)
+					{
+						tmp = (int)pow(2, i);
+						temp = nk_check_label(ctx, msdk.prj.users[i], (assigned_ids & tmp) == tmp);
+
+						if (temp == 1)
+							assigned_ids |= tmp;
+						else
+							(assigned_ids & tmp) == tmp ? assigned_ids -= tmp : NULL;
+					}
+
+					nk_combo_end(ctx);
+				}
+
+				nk_layout_row_push(ctx, 0.10f);
+				if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
+				{
+					if (msdk.prj.TDList_entries == 0)
+						alloc_mem(msdk.prj.TDList, sizeof(ToDo) * 1);
+
+					if (msdk.prj.TDList_entries > 0)
+						msdk.prj.TDList = realloc(msdk.prj.TDList, sizeof(ToDo) * (msdk.prj.TDList_entries + 1));
+
+					strcpy(msdk.prj.TDList[msdk.prj.TDList_entries].entry, entry);
+					msdk.prj.TDList[msdk.prj.TDList_entries].creator = msdk.prj.user_id + 1;
+					msdk.prj.TDList[msdk.prj.TDList_entries].type = tdtype;
+					msdk.prj.TDList[msdk.prj.TDList_entries].assigned_ids = assigned_ids;
+					msdk.prj.TDList[msdk.prj.TDList_entries].completed = 0;
+
+					msdk.prj.TDList_entries++;
+				}
+
+				nk_layout_row_end(ctx);
 
 				nk_group_end(ctx);
 			}
 
+			//nk_layout_row_dynamic(ctx, st.screeny - 240, 1);
 			nk_select_label(ctx, "No image available", NK_TEXT_ALIGN_CENTERED, 1);
+		}
 			
 			
 			//nk_spacing(ctx, 1);
 
-		}
+		//}
 
 		nk_end(ctx);
 
@@ -2715,6 +2788,7 @@ int main(int argc, char *argv[])
 	nk_sdl_font_stash_begin(&atlas);
 	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 13, 0);
 	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
+	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 11, 0);
 	nk_sdl_font_stash_end();
 	nk_style_set_font(ctx, &fonts[0]->handle);
 	background = nk_rgb(28, 48, 62);
