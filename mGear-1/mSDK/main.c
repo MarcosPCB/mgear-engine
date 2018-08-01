@@ -432,214 +432,31 @@ int SavePrjFile(const char *filename)
 	return 1;
 }
 
-int8 LoadTDLRev(ToDo *tdl, int16 *num)
+int LoadLog()
 {
-	int16 i, j = 0;
-
 	FILE *f;
-
-	int16 num2;
-
-	if ((f = fopen("tde.tdl", "rb")) == NULL)
-		return -1;
-
-	fread(&num2, sizeof(int16), 1, f);
-
-	while (j < num2)
+	
+	int i, j, k, num_files;
+	
+	char path[MAX_PATH], path2[MAX_PATH], str[256], str2[256];
+	
+	struct File_sys *files;
+	
+	for(i = 0; i < msdk.prj.num_users; i++)
 	{
-		fread(&i, sizeof(int16), 1, f);
-
-		if (i > msdk.prj.TDList_entries)
+		files = GetContentFolder(StringFormat("%s/users/%03d", msdk.prj.exp_path, i), &num_files);
+		
+		for(j = 0; j < num_files; j++)
 		{
-			msdk.prj.TDList_entries++;
-			msdk.prj.TDList = realloc(msdk.prj.TDList, sizeof(ToDo) * msdk.prj.TDList_entries);
-			if (mchalloc(msdk.prj.TDList) == CHERROR) return -2;
-		}
-
-		fread(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
-
-		j++;
-	}
-
-	fclose(f);
-
-	return 0;
-}
-
-int LoadTDL()
-{
-	FILE *f;
-	
-	int16 i;
-
-	OPENFILE_D(f, "base.tdl", "rb");
-
-	fread(&msdk.prj.TDList_entries, sizeof(int16), 1, f);
-
-	alloc_mem(msdk.prj.TDList, sizeof(ToDo)* msdk.prj.TDList_entries);
-
-	fread(msdk.prj.TDList, sizeof(ToDo), msdk.prj.TDList_entries, f);
-
-	fclose(f);
-
-	if ((i=LoadTDLRev(msdk.prj.TDList, &msdk.prj.TDList_entries)) == -1)
-	{
-		LogApp("No TDL revisions found");
-		return 2;
-	}
-	else
-	if (i == 0)
-	{
-		LogApp("Loaded TDL revisions successfuly");
-		return 1;
-	}
-}
-
-int ToDoBaseListSave()
-{
-	FILE *f;
-	char *filename;
-	
-	filename = StringFormat("base.tdl", msdk.prj.name);
-	
-	if((f = fopen(filename, "wb")) == NULL)
-	{
-		MessageBoxRes("Error", MB_OK, "Could not create base To-Do List file: %s", filename);
-		return 0;
-	}
-	
-	fwrite(&msdk.prj.TDList_entries, sizeof(int16), 1,  f);
-	
-	fwrite(msdk.prj.TDList, sizeof(ToDo), msdk.prj.TDList_entries, f);
-	
-	fclose(f);
-	
-	return 1;
-}
-
-int ToDoRevListSave()
-{
-	FILE *f;
-	char *filename;
-	
-	ToDo *tdl;
-	int16 num_entries;
-	
-	int16 i, j, altered;
-	
-	if((f = fopen("base.tdl", "rb")) == NULL)
-	{
-		MessageBoxRes("Error", MB_OK, "Could not open base To-Do List file: %s", filename);
-		return 0;
-	}
-	
-	fread(&num_entries, sizeof(int16), 1, f);
-	
-	tdl = malloc(sizeof(ToDo) * num_entries);
-	CHECKMEM(tdl);
-	fread(tdl, sizeof(ToDo), num_entries, 1, f);
-	
-	fclose(f);
-
-	if (LoadTDLRev(tdl, &num_entries) != NULL)
-	{
-		MessageBoxRes("Error", MB_OK, "Could not merge base TDL with revisioned");
-		return 0;
-	}
-	
-	if((f = fopen("tde.tdl", "wb")) == NULL)
-	{
-		MessageBoxRes("Error", MB_OK, "Could not create To-Do List file: %s", filename);
-		return 0;
-	}
-
-	fseek(f, sizeof(int16), SEEK_SET);
-	
-	for(i = 0, j = 0, altered = 0; i < num_entries; i++)
-	{
-		if (msdk.prj.TDList_entries < i)
-		{
-			/*
-			if (strcmp(tdl[i].entry, msdk.prj.TDList[i].entry) != NULL || tdl[i].word != msdk.prj.TDList[i].word)
+			if((f = fopen(StringFormat("%s/%s", files[j].path, files[j].file), "rb")) == NULL)
 			{
-				fwrite(&i, sizeof(int16), 1, f);
-				fwrite(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
-
-				altered++;
+				LogApp("Could not open file %s", tringFormat("%s/%s", files[j].path, files[j].file));
+				continue;
 			}
-			*/
-		}
-		else
-		{
-			fwrite(&i, sizeof(int16), 1, f);
-			fwrite(&msdk.prj.TDList[i], sizeof(ToDo), 1, f);
-
-			altered++;
+			
+			if(i == 0 && j == 0)
 		}
 	}
-
-	rewind(f);
-	fwrite(&altered, sizeof(int16), 1, f);
-
-	fclose(f);
-
-	return 1;
-}
-
-int SaveBaseLog()
-{
-	FILE *f;
-
-	OPENFILE_D(f, "base.clg", "wb");
-
-	fwrite(&msdk.prj.log_len, sizeof(size_t), 1, f);
-	fwrite(msdk.prj.log, msdk.prj.log_len, 1, f);
-
-	fclose(f);
-
-	return 1;
-}
-
-int SaveRevLog()
-{
-	FILE *f;
-
-	OPENFILE_D(f, "rlog.clg", "wb");
-
-	fwrite(&msdk.prj.log_len, sizeof(size_t), 1, f);
-	fwrite(msdk.prj.log, msdk.prj.log_len, 1, f);
-
-	fclose(f);
-
-	return 1;
-}
-
-int LoadBaseLog()
-{
-	FILE *f;
-
-	OPENFILE_D(f, "base.clg", "rb");
-
-	fread(&msdk.prj.blog_len, sizeof(size_t), 1, f);
-	fread(msdk.prj.base_log, msdk.prj.blog_len, 1, f);
-
-	fclose(f);
-
-	return 1;
-}
-
-int LoadRevLog()
-{
-	FILE *f;
-
-	OPENFILE_D(f, "rlog.clg", "rb");
-
-	fread(&msdk.prj.log_len, sizeof(size_t), 1, f);
-	fread(msdk.prj.log, msdk.prj.log_len, 1, f);
-
-	fclose(f);
-
-	return 1;
 }
 
 int LoadPrjFile(const char *filename)
@@ -677,11 +494,11 @@ int LoadPrjFile(const char *filename)
 
 	fclose(f);
 
-	LoadTDL();
-	LoadBaseLog();
+	//LoadTDL();
+	//LoadBaseLog();
 
-	if (msdk.prj.curr_rev > 0)
-		LoadRevLog();
+	//if (msdk.prj.curr_rev > 0)
+	//	LoadRevLog();
 
 	GetCurrentDirectory(MAX_PATH, msdk.prj.prj_path);
 	strcpy(msdk.prj.prj_raw_path, msdk.prj.prj_path);
@@ -2733,8 +2550,8 @@ void Pannel()
 
 				if (nk_group_begin(ctx, "Revisions", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 				{
-					if (msdk.prj.base_log)
-						nk_label_wrap(ctx, msdk.prj.base_log);
+					//if (msdk.prj.base_log)
+					//	nk_label_wrap(ctx, msdk.prj.base_log);
 
 					nk_group_end(ctx);
 				}
@@ -2744,9 +2561,9 @@ void Pannel()
 				nk_group_end(ctx);
 			}
 
-			//nk_layout_row_dynamic(ctx, st.screeny - 280, 1);
+			
 
-
+			/*
 			if (nk_group_begin(ctx, "To do list", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
 			{
 				ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
@@ -2838,6 +2655,10 @@ void Pannel()
 
 				nk_group_end(ctx);
 			}
+			
+			*/
+			
+			
 
 			//nk_layout_row_dynamic(ctx, st.screeny - 240, 1);
 			nk_select_label(ctx, "No image available", NK_TEXT_ALIGN_CENTERED, 1);

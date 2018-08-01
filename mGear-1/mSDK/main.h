@@ -68,6 +68,14 @@ struct SDKEXP
 	uint8 encrypted;
 };
 
+struct LOGPRJ
+{
+	char user[16];
+	int16 rev;
+	char *log;
+	_Files *files;
+};
+
 struct _SDKPRJ
 {
 	char name[32];
@@ -86,13 +94,9 @@ struct _SDKPRJ
 	uint8 code_type;
 	char code_path[MAX_PATH];
 
-	size_t blog_len;
-	char *base_log;
-	char *log;
-	size_t log_len;
+	struct LOGPRJ *log;
+	int16 num_logs;
 	int16 revisions;
-	ToDo *TDList;
-	int16 TDList_entries;
 	int16 curr_rev;
 
 	int32 user_id;
