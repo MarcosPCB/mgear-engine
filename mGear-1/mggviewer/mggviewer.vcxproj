@@ -102,6 +102,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\mGear-1\engine.c" />
+    <ClCompile Include="..\mGear-1\funcs.c" />
     <ClCompile Include="..\mGear-1\input.c" />
     <ClCompile Include="..\mGear-1\UI.c" />
     <ClCompile Include="main.c" />
@@ -110,6 +111,7 @@
     <ClInclude Include="..\mGear-1\a.h" />
     <ClInclude Include="..\mGear-1\dirent.h" />
     <ClInclude Include="..\mGear-1\engine.h" />
+    <ClInclude Include="..\mGear-1\funcs.h" />
     <ClInclude Include="..\mGear-1\input.h" />
     <ClInclude Include="..\mGear-1\nuklear.h" />
     <ClInclude Include="..\mGear-1\nuklear_sdl_gl3.h" />
@@ -118,9 +120,17 @@
     <ClInclude Include="..\mGear-1\types.h" />
     <ClInclude Include="..\mGear-1\UI.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resource1.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\mGear-1\a.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mggviewer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\PGE - RAW\icon_viewer_V20_icon.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

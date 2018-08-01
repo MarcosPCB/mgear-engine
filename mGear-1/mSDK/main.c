@@ -698,6 +698,10 @@ int CommitPrj()
 	char fhash[512];
 	
 	static struct File_sys *files, *exp_files;
+
+	char str[256];
+
+	int i = 0, j = 0;
 	
 	FILE *f;
 	
@@ -709,7 +713,7 @@ int CommitPrj()
 		
 		fread(&num_files_exp, sizeof(int16), 1, f);
 		
-		alloc_mem(exp_files, num_filex_exp * sizeof(struct File_sys));
+		alloc_mem(exp_files, num_files_exp * sizeof(struct File_sys));
 		
 		fread(exp_files, sizeof(struct File_sys) * num_files_exp, 1, f);
 		
@@ -1592,7 +1596,7 @@ int ExportProject()
 							strcpy(prj_files[j].path, files[i].parent);
 							prj_files[j].rev = prj_files[i].f_rev = 0;
 							prj_files[j].size = files[i].size;
-							prj_files[j].hash = files[i].hash;
+							memcpy(prj_files[j].hash, files[i].hash, 512);
 							j++;
 						}
 					}
@@ -1744,7 +1748,8 @@ struct nk_color ColorPicker(struct nk_color color)
 	if (nk_combo_begin_color(ctx, color, nk_vec2(200, 250)))
 	{
 		nk_layout_row_dynamic(ctx, 120, 1);
-		color = nk_color_picker(ctx, color, NK_RGB);
+		struct nk_colorf c = nk_color_picker(ctx, nk_color_cf(color), NK_RGB);
+		color = nk_rgb_cf(c);
 		nk_layout_row_dynamic(ctx, 25, 1);
 		color.r = (nk_byte)nk_propertyi(ctx, "R:", 0, color.r, 255, 1, 1);
 		color.g = (nk_byte)nk_propertyi(ctx, "G:", 0, color.g, 255, 1, 1);
@@ -2756,7 +2761,7 @@ void Pannel()
 							switch (msdk.prj.TDList[i].type)
 							{
 							case 0:
-								nk_layout_row_begin(ctx, NK_DYNAMIC, (strlen(msdk.prj.TDList[i].entry) / 32) * 15, 2);
+								nk_layout_row_begin(ctx, NK_DYNAMIC, (strlen(msdk.prj.TDList[i].entry) / 64) * 20, 2);
 								nk_layout_row_push(ctx, 0.10f);
 								msdk.prj.TDList[i].completed = nk_check_label(ctx, " ", msdk.prj.TDList[i].completed == 1);
 								nk_layout_row_push(ctx, 0.90f);
@@ -2786,14 +2791,14 @@ void Pannel()
 
 				SetThemeBack();
 
-				nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
-				nk_layout_row_push(ctx, 0.20f);
+				nk_layout_space_begin(ctx, NK_DYNAMIC, 100, 4);
+				nk_layout_space_push(ctx, nk_rect(0.7f, 0.0f, 0.2f, 0.20f));
 				tdtype = nk_combo_string(ctx, "Check\0List\0", tdtype, 2, 20, nk_vec2(100, 80));
 
-				nk_layout_row_push(ctx, 0.50f);
+				nk_layout_space_push(ctx, nk_rect(0.01f, 0.0f, 0.69f, 1.0f));
 				nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, entry, tdtype == 0 ? 512 : 128, nk_filter_default);
 
-				nk_layout_row_push(ctx, 0.20f);
+				nk_layout_space_push(ctx, nk_rect(0.7f, 0.20f, 0.2f, 0.20f));
 				if (nk_combo_begin_label(ctx, "IDs", nk_vec2(200, 35 + (20 * msdk.prj.num_users))))
 				{
 					nk_layout_row_dynamic(ctx, 20, 1);
@@ -2811,7 +2816,7 @@ void Pannel()
 					nk_combo_end(ctx);
 				}
 
-				nk_layout_row_push(ctx, 0.10f);
+				nk_layout_space_push(ctx, nk_rect(0.90f, 0.0f, 0.10f, 0.40f));
 				if (nk_button_symbol(ctx, NK_SYMBOL_TRIANGLE_RIGHT))
 				{
 					if (msdk.prj.TDList_entries == 0)
@@ -2829,7 +2834,7 @@ void Pannel()
 					msdk.prj.TDList_entries++;
 				}
 
-				nk_layout_row_end(ctx);
+				nk_layout_space_end(ctx);
 
 				nk_group_end(ctx);
 			}

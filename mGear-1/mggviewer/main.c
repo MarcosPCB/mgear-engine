@@ -7,6 +7,7 @@
 #include <math.h>
 #include "dirent.h"
 #include "UI.h"
+#include "funcs.h"
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO

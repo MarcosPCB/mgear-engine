@@ -144,6 +144,7 @@ struct File_sys
 	uint8 commit;
 	int16 filenum; //Folder type only
 	size_t size;
+	char hash[512];
 };
 
 typedef struct _mSdk mSdk;
