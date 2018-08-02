@@ -73,6 +73,7 @@ struct LOGPRJ
 	char user[16];
 	int16 rev;
 	char *log;
+	size_t len;
 	_Files *files;
 };
 
@@ -95,6 +96,7 @@ struct _SDKPRJ
 	char code_path[MAX_PATH];
 
 	struct LOGPRJ *log;
+	int16 *log_list;
 	int16 num_logs;
 	int16 revisions;
 	int16 curr_rev;

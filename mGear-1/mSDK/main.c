@@ -438,7 +438,7 @@ int LoadLog()
 	
 	int i, j, k, num_files;
 	
-	char path[MAX_PATH], path2[MAX_PATH], str[256], str2[256];
+	char path[MAX_PATH], path2[MAX_PATH], str[256], str2[256], header[13] = { "REV_FILE_SDK" }, header2[13];
 	
 	struct File_sys *files;
 	
@@ -450,11 +450,37 @@ int LoadLog()
 		{
 			if((f = fopen(StringFormat("%s/%s", files[j].path, files[j].file), "rb")) == NULL)
 			{
-				LogApp("Could not open file %s", tringFormat("%s/%s", files[j].path, files[j].file));
+				LogApp("Could not open file %s", StringFormat("%s/%s", files[j].path, files[j].file));
+				continue;
+			}
+			
+			fread(header2, 13, 1, f);
+			
+			if(strcmp(header2, header) != NULL)
+			{
+				fclose(f);
 				continue;
 			}
 			
 			if(i == 0 && j == 0)
+			{
+				alloc_mem(msdk.prj.log, sizeof(struct LOGPRJ) * 2);
+				//alloc_mem(msdk.prj.log_list, sizeof(struct int16) * 2);
+			}
+			else
+			{
+				realloc_mem(msdk.prj.log, sizeof(struct LOGPRJ) * msdk.prj.num_logs + 1);
+				//realloc_mem(msdk.prj.log_list, sizeof(struct int16) * 2);
+			}
+			
+			strcpy(msdk.prj.log[j].user, msdk.prj.users[i]);
+			fread(&msdk.prj.log[j].rev, sizeof(int16), 1, f);
+			
+			fread(&msdk.prj.log[j].len, sizeof(size_t), 1, f);
+			alloc_mem_cmd(msdk.prj.log[j].log, msdk.prj.log[j].len, ABORT_CMD);
+			
+			fread(&msdk.prj.log[j].log)
+			
 		}
 	}
 }

@@ -16,12 +16,39 @@ extern void Quit();
 #define CHERROR -1
 #define ERROR_RETURN -10
 
+//Basic C commands for use with _CMD functions
+#define RETURN_CMD(x) { return x; }
+#define CONTINUE_CMD { continue; }
+#define BREAK_CMD { break; }
+#define ABORT_CMD { abort(); }
+
+//Defined expressions
 #define CHECKMEM(expr) { if(mchalloc(expr) == CHERROR) return ERROR_RETURN; }
+#define check_mem CHECKMEM
+
+#define CHECKMEM_CMD(expr, cmd) { if(mchalloc(expr) == CHERROR) cmd }
+#define check_mem_cmd CHECKMEM_CMD
+
 #define ALLOCMEM(data, size) { data = malloc(size); CHECKMEM(data); }
 #define alloc_mem ALLOCMEM
 
+#define ALLOCMEM_CMD(data, size, cmd) { data = malloc(size); cmd }
+#define alloc_mem_cmd ALLOCMEM_CMD
+
+#define REALLOCMEM(data, size) { data = realloc(data, size); CHECKMEM(data); }
+#define REALLOCMEM realloc_mem
+
+#define FREEMEM(data) { if(data != NULL) free(data); }
+#define free_mem FREEMEM
+
 #define OPENFILE_D(file, name, mode) { if((file=fopen(name,mode)) == NULL) { MessageBoxRes("Error", MB_OK, "Could not open file: %s", name); return NULL; } }
+#define OPENFILE_D openfile_d
+
 #define OPENFILE_STR(file, name, mode, str) { if((file=fopen(name,mode)) == NULL) { MessageBoxRes("Error", MB_OK, str, name); return NULL; } }
+#define OPENFILE_STR openfile_str
+
+#define OPENFILE_CMD(file, name, mode, cmd) { if((file=fopen(name,mode)) == NULL) { cmd } }
+#define openfile_cmd OPENFILE_CMD
 
 #define mem_assert(expr) assert(expr && "memory not valid");
 
