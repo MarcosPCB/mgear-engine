@@ -12,6 +12,7 @@
 #include <curl.h>
 #include <tomcrypt.h>
 #include "funcs.h"
+#include <time.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -244,24 +245,6 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	return files;
 }
 
-DWORD LpProgressRoutine(
-	LARGE_INTEGER TotalFileSize,
-	LARGE_INTEGER TotalBytesTransferred,
-	LARGE_INTEGER StreamSize,
-	LARGE_INTEGER StreamBytesTransferred,
-	DWORD dwStreamNumber,
-	DWORD dwCallbackReason,
-	HANDLE hSourceFile,
-	HANDLE hDestinationFile,
-	LPVOID lpData
-	)
-{
-	FileSize = TotalFileSize.QuadPart;
-	TransBytes = TotalBytesTransferred.QuadPart;
-
-	return 0;
-}
-
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
 {
 	size_t written;
@@ -432,11 +415,57 @@ int SavePrjFile(const char *filename)
 	return 1;
 }
 
+int SaveRevFile(const char *filename, char *log, size_t len, int16 num_files, _Files *files)
+{
+	FILE *f;
+
+	time_t t;
+
+	struct tm *tmv;
+
+	uint32 timet;
+
+	char header[13] = { "REV_FILE_SDK" };
+
+	int16 rev = msdk.prj.curr_rev + 1;
+
+	openfile_cmd(f, filename, "wb", MessageBoxRes("Error", MB_OK, "Could not save revision file %d", msdk.prj.curr_rev + 1); return NULL;);
+
+	fwrite(header, 13, 1, f);
+
+	fwrite(&rev, 2, 1, f);
+
+	t = time(NULL);
+
+	tmv = localtime(&t);
+
+	timet = tmv->tm_year << 20;
+	timet |= tmv->tm_mon << 16;
+	timet |= tmv->tm_mday << 11;
+	timet |= tmv->tm_hour << 5;
+	timet |= tmv->tm_min;
+
+	fwrite(&timet, 4, 1, f);
+
+	fwrite(&len, 2, 1, f);
+	fwrite(log, len, 1, f);
+	fwrite(&num_files, 2, 1, f);
+	fwrite(files, sizeof(_Files)* num_files, 1, f);
+
+	fclose(f);
+
+	return 1;
+}
+
 int LoadLog()
 {
 	FILE *f;
 	
-	int i, j, k, num_files;
+	int i, j, k, l, num_files;
+	uint32 time;
+
+	time_t tval, tval2;
+	struct tm tmv;
 	
 	char path[MAX_PATH], path2[MAX_PATH], str[256], str2[256], header[13] = { "REV_FILE_SDK" }, header2[13];
 	
@@ -444,7 +473,7 @@ int LoadLog()
 	
 	for(i = 0; i < msdk.prj.num_users; i++)
 	{
-		files = GetContentFolder(StringFormat("%s/users/%03d", msdk.prj.exp_path, i), &num_files);
+		files = GetFolderTreeContent(StringFormat("%s/users/%03d", msdk.prj.exp_path, i), &num_files);
 		
 		for(j = 0; j < num_files; j++)
 		{
@@ -475,14 +504,80 @@ int LoadLog()
 			
 			strcpy(msdk.prj.log[j].user, msdk.prj.users[i]);
 			fread(&msdk.prj.log[j].rev, sizeof(int16), 1, f);
+
+			fread(&time, sizeof(int32), 1, f);
+
+			msdk.prj.log[j].min = time & 0xFFFFFF8;
+			msdk.prj.log[j].h = (time & 0xFFFFF) >> 6;
+			msdk.prj.log[j].d = (time & 0xFFFF) >> 11;
+			msdk.prj.log[j].m = (time & 0xFFF) >> 16;
+			msdk.prj.log[j].h = time >> 20;
 			
 			fread(&msdk.prj.log[j].len, sizeof(size_t), 1, f);
 			alloc_mem_cmd(msdk.prj.log[j].log, msdk.prj.log[j].len, ABORT_CMD);
 			
-			fread(&msdk.prj.log[j].log)
+			fread(&msdk.prj.log[j].log, msdk.prj.log[j].len, 1, f);
+
+			fread(&msdk.prj.log[j].num_files, sizeof(int16), 1, f);
+
+			alloc_mem_cmd(msdk.prj.log[j].files, sizeof(_Files)* msdk.prj.log[j].num_files, ABORT_CMD);
+
+			fread(msdk.prj.log[j].files, sizeof(_Files)* msdk.prj.log[j].num_files, 1, f);
 			
+			fclose(f);
+
+			msdk.prj.num_logs++;
 		}
 	}
+
+	if (msdk.prj.num_logs > 0)
+	{
+		alloc_mem_cmd(msdk.prj.log_list, sizeof(int16)* msdk.prj.num_logs, ABORT_CMD);
+		//alloc_mem_cmd(list, sizeof(int), ABORT_CMD);
+
+		for (i = 0; i < msdk.prj.num_logs; i++)
+		{
+			for (j = 0, k = 0, l = 0; j < msdk.prj.num_logs; j++)
+			{
+				tmv.tm_min = msdk.prj.log[j].min;
+				tmv.tm_hour = msdk.prj.log[j].h;
+				tmv.tm_mday = msdk.prj.log[j].d;
+				tmv.tm_mon = msdk.prj.log[j].m;
+				tmv.tm_year = msdk.prj.log[j].y;
+
+				tval = mktime(&tmv);
+
+				tmv.tm_min = msdk.prj.log[k].min;
+				tmv.tm_hour = msdk.prj.log[k].h;
+				tmv.tm_mday = msdk.prj.log[k].d;
+				tmv.tm_mon = msdk.prj.log[k].m;
+				tmv.tm_year = msdk.prj.log[k].y;
+
+				tval2 = mktime(&tmv);
+
+				if (tval <= tval2)
+				{
+					for (l = 0; l < i; l++)
+					{
+						if (msdk.prj.log_list[l] == j)
+						{
+							l = -1;
+							break;
+						}
+					}
+
+					if (l == -1) continue;
+					else k = j;
+				}
+			}
+
+			msdk.prj.log_list[i] = k;
+		}
+	}
+
+	free_mem(files);
+
+	return 1;
 }
 
 int LoadPrjFile(const char *filename)
@@ -1278,7 +1373,7 @@ int ExportProject()
 				{
 					SetCurrentDirectory(msdk.prj.prj_path);
 
-					ToDoBaseListSave();
+					//ToDoBaseListSave();
 
 					memcpy(msdk.prj.users, usernames, 8 * 16);
 					msdk.prj.num_users = num_users;
@@ -1446,7 +1541,7 @@ int ExportProject()
 					
 					
 					fwrite(&num_files, sizeof(int16), 1, f);
-					fwrite(prj_files, sizeof(_Files)* num_files, 1, f);
+					fwrite(prj_files, sizeof(_Files) * num_files, 1, f);
 
 					fclose(f);
 
@@ -1522,8 +1617,11 @@ void UnloadPrj()
 	if (msdk.prj.log)
 		free(msdk.prj.log);
 
-	if (msdk.prj.TDList_entries > 0)
-		free(msdk.prj.TDList);
+	if (msdk.prj.log_list)
+		free(msdk.prj.log_list);
+
+	//if (msdk.prj.TDList_entries > 0)
+		//free(msdk.prj.TDList);
 
 	memset(&msdk.prj, 0, sizeof(SDKPRJ));
 }
@@ -2038,9 +2136,9 @@ int NewProject()
 				msdk.prj.audio = msdk.prj.code = msdk.prj.map = msdk.prj.sprites = msdk.prj.ui = msdk.prj.tex = 1;
 				msdk.prj.curr_rev = 0;
 				msdk.prj.revisions = 0;
-				msdk.prj.TDList_entries = 0;
+				//msdk.prj.TDList_entries = 0;
 				msdk.prj.log = NULL;
-				msdk.prj.TDList = NULL;
+				//msdk.prj.TDList = NULL;
 
 				strcpy(msdk.filepath, msdk.prj.prj_path);
 				strcat(msdk.filepath, "\\");
@@ -2392,13 +2490,13 @@ void MenuBar()
 
 					if (msdk.prj.curr_rev > 0)
 					{
-						SaveRevLog();
-						ToDoRevListSave();
+						//SaveRevLog();
+						//ToDoRevListSave();
 					}
 					else
 					{
-						SaveBaseLog();
-						ToDoBaseListSave();
+						//SaveBaseLog();
+						//ToDoBaseListSave();
 					}
 				}
 

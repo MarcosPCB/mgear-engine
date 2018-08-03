@@ -130,7 +130,7 @@
     <ResourceCompile Include="mggviewer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\PGE - RAW\icon_viewer_V20_icon.ico" />
+    <Image Include="MGGViewer.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

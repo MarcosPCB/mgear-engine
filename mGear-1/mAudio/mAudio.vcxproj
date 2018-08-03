@@ -132,7 +132,7 @@
     <None Include="res\mAudio.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\mAudio.ico" />
+    <Image Include="mAudio.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -75,6 +75,13 @@ struct LOGPRJ
 	char *log;
 	size_t len;
 	_Files *files;
+	int16 num_files;
+
+	uint32 min : 6,
+	h : 5,
+	d : 5,
+	m : 4,
+	y : 12;
 };
 
 struct _SDKPRJ

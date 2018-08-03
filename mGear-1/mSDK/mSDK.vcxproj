@@ -122,9 +122,16 @@
     <ClInclude Include="..\mGear-1\UI.h" />
     <ClInclude Include="..\mTex\skins.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\mGear-1\a.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mSDK.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="mSDK.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

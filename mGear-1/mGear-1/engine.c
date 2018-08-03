@@ -12,6 +12,7 @@
 #include <math.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <SDL_syswm.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -1611,6 +1612,24 @@ void Init()
 	}
 
 	LogApp("Opengl context created");
+
+#if defined(_WIN32) && defined(GCL_HICON)
+
+	HINSTANCE handle = GetModuleHandle(NULL);
+	HICON icon = LoadIcon(handle, 101);
+
+	if (icon != NULL)
+	{
+		SDL_SysWMinfo wminfo;
+		SDL_VERSION(&wminfo.version);
+		if (SDL_GetWindowWMInfo(wn, &wminfo) == 1)
+		{
+			HWND hwnd = wminfo.info.win.window;
+			SetClassLong(hwnd, GCL_HICON, (LONG) icon);
+		}
+	}
+
+#endif
 
 //#endif
 

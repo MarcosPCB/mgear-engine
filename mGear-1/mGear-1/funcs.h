@@ -36,16 +36,16 @@ extern void Quit();
 #define alloc_mem_cmd ALLOCMEM_CMD
 
 #define REALLOCMEM(data, size) { data = realloc(data, size); CHECKMEM(data); }
-#define REALLOCMEM realloc_mem
+#define realloc_mem REALLOCMEM
 
 #define FREEMEM(data) { if(data != NULL) free(data); }
 #define free_mem FREEMEM
 
 #define OPENFILE_D(file, name, mode) { if((file=fopen(name,mode)) == NULL) { MessageBoxRes("Error", MB_OK, "Could not open file: %s", name); return NULL; } }
-#define OPENFILE_D openfile_d
+#define openfile_d OPENFILE_D
 
 #define OPENFILE_STR(file, name, mode, str) { if((file=fopen(name,mode)) == NULL) { MessageBoxRes("Error", MB_OK, str, name); return NULL; } }
-#define OPENFILE_STR openfile_str
+#define openfile_str OPENFILE_STR
 
 #define OPENFILE_CMD(file, name, mode, cmd) { if((file=fopen(name,mode)) == NULL) { cmd } }
 #define openfile_cmd OPENFILE_CMD
