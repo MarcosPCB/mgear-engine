@@ -630,14 +630,19 @@ int LoadPrjFile(const char *filename)
 
 int CommitPrj()
 {
-	static int state = 0;
-	static int16 num_files, num_files_exp;
+	static int state = 0, pct_inc, pct;
+	static int16 num_files, num_files_exp, num_files_commited = 0;
 	
-	char fhash[512];
+	char fhash[512], log[1024];
 	
 	static struct File_sys *files, *exp_files;
+	_Files *prj_files;
 
-	char str[256];
+	char str[256], filepath[MAX_PATH], *buf;
+
+	static char exp_state = 0, steps = 0, dots[3], pct_str[32], timed = 0;
+
+	static int64 f_timer;
 
 	int i = 0, j = 0;
 	
@@ -656,60 +661,218 @@ int CommitPrj()
 		fread(exp_files, sizeof(struct File_sys) * num_files_exp, 1, f);
 		
 		fclose(f);
-		
+
+		num_files_commited = 0;
+
 		state = 1;
 	}
 	
-	if (nk_begin(ctx, "Commit", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (state == 1)
 	{
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "Exported project path:", NK_TEXT_ALIGN_LEFT);
-
-		nk_label_wrap(ctx, msdk.prj.exp_path);
-		
-		nk_layout_row_dynamic(ctx, 250, 1);
-		
-		if(nk_group_begin(ctx,"Files", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+		if (nk_begin(ctx, "Commit", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 		{
-			nk_layout_row_dynamic(ctx, 15, 1);
-			for (i = 0; i < num_files; i++)
-			{	
-				//nk_layout_row_dynamic(ctx, 20, 1);
-				if (strcmp(files[i].parent, ".") == NULL && files[i].type == 0)
-					files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
-			}
+			nk_layout_row_dynamic(ctx, 25, 1);
+			nk_label(ctx, "Exported project path:", NK_TEXT_ALIGN_LEFT);
 
-			//	nk_tree_pop(ctx);
-			//}
+			nk_label_wrap(ctx, msdk.prj.exp_path);
 
-			for (i = 0; i < num_files; i++)
+			nk_layout_row_dynamic(ctx, 250, 1);
+
+			if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
-				if (files[i].type == 1 && files[i].filenum > 0)
+				nk_layout_row_dynamic(ctx, 15, 1);
+				for (i = 0; i < num_files; i++)
 				{
-					//nk_layout_row_dynamic(ctx, 20, 1);
-					sprintf(str, "%s/%s", files[i].parent, files[i].file);
-					if (nk_tree_push_id(ctx, NK_TREE_NODE, str, NK_MINIMIZED, i))
+					if (files[i].type == 0)
 					{
-						nk_layout_row_dynamic(ctx, 15, 1);
-						for (j = 0; j < num_files; j++)
+						for (j = 0; j < num_files_exp; j++)
 						{
-							if (strcmp(files[j].parent, str) == NULL && files[j].type == 0)
-								files[j].commit = nk_check_label(ctx, files[j].file, files[j].commit == 1);
+							if (strcmp(files[i].file, exp_files[j].file) == NULL && strcmp(files[i].parent, exp_files[j].parent) == NULL) break;
 						}
 
-						nk_tree_pop(ctx);
+						if (j == num_files_exp)
+							j = -1;
+
+						if (j != -1)
+						{
+							if (memcmp(files[i].hash, exp_files[j].hash, 512) != NULL)
+								files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
+						}
+						else
+							files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
 					}
-				}	
+				}
+
+
+				nk_group_end(ctx);
 			}
 
-			nk_group_end(ctx);
+			nk_layout_row_dynamic(ctx, 100, 1);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, log, 1024, nk_filter_default);
+
+			nk_layout_row_dynamic(ctx, 25, 4);
+			nk_spacing(ctx, 2);
+			if (nk_button_label(ctx, "Commit"))
+				state = 2;
+
+			if (nk_button_label(ctx, "Cancel"))
+				state = 3;
 		}
 
-		nk_button_label(ctx, "Browse");
-		nk_layout_row_end(ctx);
+		nk_end(ctx);
 	}
 
-	nk_end(ctx);
+	if (state == 2)
+	{
+		if (nk_begin(ctx, "Exporting", nk_rect(st.screenx / 2 - 125, st.screeny / 2 - 48, 350, 96), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
+		{
+			nk_layout_row_dynamic(ctx, 25, 2);
+
+			if (timed == 0)
+			{
+				f_timer = st.time;
+				timed = 1;
+			}
+
+			if (timed == 1)
+			{
+				if (st.time - f_timer > TICSPERSECOND / 2)
+				{
+
+					if (strcmp(dots, "...") == NULL)
+						strcpy(dots, ".");
+					else
+						strcat(dots, ".");
+
+					timed = 0;
+					f_timer = 0;
+				}
+			}
+
+			switch (exp_state)
+			{
+			case 0:
+				sprintf(pct_str, "Creating user system%s", dots);
+				break;
+
+			case 1:
+				sprintf(pct_str, "Copying files%s", dots);
+				break;
+
+			case 2:
+				sprintf(pct_str, "Encrypting%s", dots);
+				break;
+
+			case 3:
+				sprintf(pct_str, "Pushing to storage%s", dots);
+				break;
+			}
+
+			nk_label(ctx, pct_str, NK_TEXT_ALIGN_LEFT);
+
+			if (exp_state == 0)
+			{
+				if (steps < num_files)
+				{
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("data");
+					SetCurrentDirectory(StringFormat("v%04d",msdk.prj.revisions));
+
+					if (files[steps].type != 0 || files[steps].commit == 0) steps++;
+					else
+					{
+						strcpy(filepath, files[steps].path);
+						strcat(filepath, "/");
+						strcat(filepath, files[steps].file);
+
+						char extension = strrchr(files[steps].file, '.'), newfilepath[MAX_PATH];
+
+						sprintf(newfilepath, "f%04dr%04d.%s", steps, extension);
+
+						buf = GetRootDir(files[steps].parent);
+
+						if (strcmp(buf, "_prj_raw") == NULL)
+							SetCurrentDirectory("raw");
+						else
+							SetCurrentDirectory("prj");
+				
+						if (CopyFile(filepath, newfilepath, FALSE) == NULL)
+						{
+							sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
+							MessageBox(NULL, str, "Error", MB_OK);
+						}
+
+						SetCurrentDirectory("..");
+
+						steps++;
+					}
+				}
+				else
+				{
+					exp_state = 1;
+
+					SetCurrentDirectory(StringFormat("%s/users/%03d",msdk.prj.exp_path, msdk.prj.user_id));
+
+					prj_files = malloc(sizeof(_Files)* num_files);
+
+					for (i = 0, j = 0; i < num_files; i++)
+					{
+						if (files[i].commit == 1 && files[i].type == 0)
+						{
+							strcpy(prj_files[j].path, files[i].parent);
+							prj_files[j].rev = msdk.prj.curr_rev;
+							prj_files[i].f_rev = msdk.prj.revisions;
+							prj_files[j].size = files[i].size;
+							memcpy(prj_files[j].hash, files[i].hash, 512);
+							j++;
+						}
+					}
+
+					SaveRevFile(StringFormat("%04d.rif", msdk.prj.curr_rev + 1), log, strlen(log), j, prj_files);
+
+					steps = 0;
+				}
+			}
+			else
+			if (exp_state == 1)
+			{
+				if (steps == 0)
+				{
+					if (MessageBoxRes("First Commit", MB_YESNO, "Would you like to push the commit now?") == IDYES)
+					{
+
+					}
+					else
+					{
+						exp_state = 4;
+						steps = 0;
+					}
+				}
+			}
+			else
+			if (exp_state == 3)
+			{
+				MessageBoxRes("Export complete", MB_OK, "Exporting complete");
+				state = 4;
+			}
+
+			if (exp_state == 0)
+					pct = steps + 1;
+
+			if (exp_state == 1)
+				pct = steps + (num_files * 2) + 1;
+
+			if (exp_state == 2)
+				pct = 100 / pct_inc;
+
+			if (exp_state == 3)
+				pct = 100 / pct_inc;
+
+			nk_label(ctx, StringFormat("%d%%", pct * pct_inc), NK_TEXT_ALIGN_RIGHT);
+		}
+
+		nk_end(ctx);
+	}
 	
 	if(state == 3)
 	{
@@ -1477,11 +1640,6 @@ int ExportProject()
 						}
 						else
 						{
-							if ((f = fopen(filepath, "r")) == NULL)
-							{
-								MessageBoxRes("Error", MB_OK, "Error while opening file %s for copy", filepath);
-							}
-
 							if (CopyFile(filepath, newfilepath, FALSE) == NULL)
 							{
 								sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
@@ -1529,7 +1687,7 @@ int ExportProject()
 
 					for (i = 0, j = 0; i < num_files; i++)
 					{
-						if (files[i].commit == 0 && files[i].type == 0)
+						if (files[i].commit == 1 && files[i].type == 0)
 						{
 							strcpy(prj_files[j].path, files[i].parent);
 							prj_files[j].rev = prj_files[i].f_rev = 0;
