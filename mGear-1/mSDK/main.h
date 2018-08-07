@@ -35,6 +35,23 @@ struct _Files_
 
 typedef struct _Files_ _Files;
 
+struct indexer
+{
+	uint16 parent;
+	
+	uint64 branch : 9,
+	v : 14,
+	size : 40,
+	type : 1;
+};
+
+struct index_f
+{
+	char name[MAX_PATH];
+	
+	char hash[512];
+};
+
 struct _TODOL
 {
 	char entry[512];

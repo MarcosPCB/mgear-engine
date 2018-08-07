@@ -245,6 +245,43 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	return files;
 }
 
+struct indexer *IndexContent(const struct File_sys *files, int16 num, struct index_f *array)
+{
+	struct indexer *f;
+	
+	int16 i, j, k, l;
+	
+	alloc_mem(f, num * sizeof(struct indexed));
+	alloc_mem(array, num * sizeof(array));
+	
+	for(i = 0, l = 0; i < num; i++)
+	{
+		strcpy(array[i].name, files[i].file);
+		f[i].type = files[i].type;
+		
+		//Checks if .parent is indexed already
+		for(j=0, k = -1; j < i; j++)
+		{
+			if(strcmp(array[j].name, files[i].parent) == NULL)
+			{
+				k = 1;
+				break;
+			}
+		} 
+		
+		if(k == -1)
+		{
+			strcpy(array[l].name, files[i].parent);
+			if(files[i].type == 0)
+			{
+				//Hash code
+			}
+			
+			f[i].parent = l;
+		}
+	}
+}
+
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
 {
 	size_t written;
@@ -931,6 +968,9 @@ int ExportProject()
 	static DWORD exitcode;
 
 	static SHELLEXECUTEINFO info;
+	
+	static struct indexer *indexed_files;
+	static struct index_f *index_array;
 
 	ZeroMemory(&bi, sizeof(bi));
 
@@ -1720,7 +1760,13 @@ int ExportProject()
 					else
 						exp_state = 3;
 
-					//SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory(msdk.prj.exp_path);
+					
+					openfile_d(f, "log_journal", "wb");
+					
+					
+					
+					fclose(f);
 
 					if ((f = fopen("importer", "wb")) == NULL)
 					{
