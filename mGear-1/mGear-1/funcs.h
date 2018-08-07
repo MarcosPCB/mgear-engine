@@ -50,6 +50,9 @@ extern void Quit();
 #define OPENFILE_CMD(file, name, mode, cmd) { if((file=fopen(name,mode)) == NULL) { cmd } }
 #define openfile_cmd OPENFILE_CMD
 
+#define GETFILESIZE(file, size) { fseek(file, 0, SEEK_END); size = ftell(file); rewind(file); }
+#define getfilesize GETFILESIZE
+
 #define mem_assert(expr) assert(expr && "memory not valid");
 
 cdecl int16 NumDirFile(const char *path, char content[][32]);

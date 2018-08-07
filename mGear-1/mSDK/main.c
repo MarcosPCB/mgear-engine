@@ -635,7 +635,8 @@ int CommitPrj()
 	
 	char fhash[512], log[1024];
 	
-	static struct File_sys *files, *exp_files;
+	static struct File_sys *files;
+	static _Files *exp_files;
 	_Files *prj_files;
 
 	char str[256], filepath[MAX_PATH], *buf;
@@ -656,9 +657,9 @@ int CommitPrj()
 		
 		fread(&num_files_exp, sizeof(int16), 1, f);
 		
-		alloc_mem(exp_files, num_files_exp * sizeof(struct File_sys));
+		alloc_mem(exp_files, num_files_exp * sizeof(_Files));
 		
-		fread(exp_files, sizeof(struct File_sys) * num_files_exp, 1, f);
+		fread(exp_files, sizeof(_Files) * num_files_exp, 1, f);
 		
 		fclose(f);
 
@@ -687,7 +688,7 @@ int CommitPrj()
 					{
 						for (j = 0; j < num_files_exp; j++)
 						{
-							if (strcmp(files[i].file, exp_files[j].file) == NULL && strcmp(files[i].parent, exp_files[j].parent) == NULL) break;
+							if (strcmp(StringFormat("%s/%s", files[i].parent, files[i].file), exp_files[j].path) == NULL) break;
 						}
 
 						if (j == num_files_exp)
@@ -775,8 +776,8 @@ int CommitPrj()
 				if (steps < num_files)
 				{
 					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("data");
-					SetCurrentDirectory(StringFormat("v%04d",msdk.prj.revisions));
+					SetCurrentDirectory("versions");
+					SetCurrentDirectory(StringFormat("%d",msdk.prj.revisions));
 
 					if (files[steps].type != 0 || files[steps].commit == 0) steps++;
 					else
@@ -887,7 +888,7 @@ int CommitPrj()
 int ExportProject()
 {
 	static uint8 encrypted = 0, num_users = 1, usernames[8][16], passwords[8][16], state = 0, selected_str[12], exp_state = 0;
-	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0, select_all = 0, select_all_2 = 0;
+	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0, select_all = 0, select_all_2 = 0, num_files_commited;
 	static enum USER_TYPE user_perm[8];
 	char str[128], str2[128], dir[MAX_PATH];
 	int pct, pct_inc, err, salt_len, hash2_len, ck_len, master_key_len, tmp_len, tmp2_len;
@@ -898,6 +899,8 @@ int ExportProject()
 		newfilepath[MAX_PATH], *extension, *buf, pct_str[128];
 
 	static struct File_sys *files;
+
+	static FILE *fc;
 
 	static symmetric_key key;
 
@@ -949,6 +952,8 @@ int ExportProject()
 		ZeroMemory(path_cur, MAX_PATH);
 		files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
 		exp_state = steps = 0;
+
+		fc = NULL;
 	}
 
 	if (state == 1)
@@ -1176,7 +1181,7 @@ int ExportProject()
 			switch (exp_state)
 			{
 				case 0:
-					sprintf(pct_str, "Creating user system%s",dots);
+					sprintf(pct_str, "Creating base system%s",dots);
 					break;
 
 				case 1:
@@ -1205,16 +1210,7 @@ int ExportProject()
 					SetCurrentDirectory(msdk.prj.name);
 					GetCurrentDirectory(MAX_PATH, msdk.prj.exp_path);
 
-					CreateDirectory("mgear_sys", NULL);
-					CreateDirectory("data", NULL);
-					CreateDirectory("users", NULL);
-					
-					SetCurrentDirectory("data");
-
-					CreateDirectory("v0000", NULL);
-					SetCurrentDirectory("v0000");
-					CreateDirectory("prj", NULL);
-					CreateDirectory("raw", NULL);
+					CreateDirectory("versions", NULL);
 
 					steps++;
 				}
@@ -1222,97 +1218,111 @@ int ExportProject()
 				if (steps == 1)
 				{
 					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("mgear_sys");
-
+					//SetCurrentDirectory("versions");
+					/*
 					if (encrypted != 0)
 					{
-						sha256_init(&hash);
-						sha256_process(&hash, passwords[0], 16);
-						sha256_done(&hash, hashed_password);
+					sha256_init(&hash);
+					sha256_process(&hash, passwords[0], 16);
+					sha256_done(&hash, hashed_password);
 
-						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+					sprintf(str2, "PRNG Error: %s", error_to_string(err));
+					MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(salt, 128, &prng);
+
+					hash2_len = 128;
+
+					pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
+
+					master_key_len = 32;
+
+					aes_keysize(&master_key_len);
+
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+					sprintf(str2, "PRNG Error: %s", error_to_string(err));
+					MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(master_key, master_key_len, &prng);
+
+					if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
+					{
+					sprintf(str2, "RC5 Error: %s", error_to_string(err));
+					MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					i = 0;
+					do
+					{
+					rc5_ecb_encrypt(master_key + i, ck + i, &key);
+					i += 8;
+					} while (i < master_key_len);
+
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+					sprintf(str2, "PRNG Error: %s", error_to_string(err));
+					MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(user_salt[0], 128, &prng);
+
+					tmp2_len = 4;
+
+					pkcs_5_alg2(usernames[0], strlen(usernames[0]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
+
+					for (i = 0; i < 4; i++)
+					{
+					if (i == 0) hexcode = abs(tmp2[i]);
+					else hexcode |= abs(tmp2[i]);
+					hexcode = hexcode << 8;
+					}
+
+					sprintf(str, "ID_%d.UA", hexcode);
+
+					if ((f = fopen(str, "w")) == NULL)
+					{
+					sprintf(str, "User creation error: unable to create user %s file", usernames[0]);
+					MessageBox(NULL, str, "UA Error", MB_OK);
+					}
+
+					ck_len = 32;
+					salt_len = 128;
+					fwrite(&salt_len, sizeof(int), 1, f);
+					fwrite(&ck_len, sizeof(int), 1, f);
+					fwrite(&salt, salt_len, 1, f);
+					fwrite(&ck, ck_len, 1, f);
+
+					fclose(f);
+
+					sprintf(str, "%d", hexcode);
+
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("users");
+					CreateDirectory(str, NULL);
+
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("mgear_sys");
+
+					/*
+					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+					{
+					sprintf(str2, "PRNG Error: %s", error_to_string(err));
+					MessageBox(NULL, str2, "Error", MB_OK);
+					}
+
+					yarrow_read(tmp, 1, &prng);
+					*/
+					/*
+						for (i = 0; i < 16; i++)
 						{
-							sprintf(str2, "PRNG Error: %s", error_to_string(err));
-							MessageBox(NULL, str2, "Error", MB_OK);
-						}
-
-						yarrow_read(salt, 128, &prng);
-
-						hash2_len = 128;
-
-						pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
-
-						master_key_len = 32;
-
-						aes_keysize(&master_key_len);
-
-						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
+						tmp[0] = 0;
+						while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
 						{
-							sprintf(str2, "PRNG Error: %s", error_to_string(err));
-							MessageBox(NULL, str2, "Error", MB_OK);
-						}
-
-						yarrow_read(master_key, master_key_len, &prng);
-
-						if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
-						{
-							sprintf(str2, "RC5 Error: %s", error_to_string(err));
-							MessageBox(NULL, str2, "Error", MB_OK);
-						}
-
-						i = 0;
-						do
-						{
-							rc5_ecb_encrypt(master_key + i, ck + i, &key);
-							i += 8;
-						} while (i < master_key_len);
-
-						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-						{
-							sprintf(str2, "PRNG Error: %s", error_to_string(err));
-							MessageBox(NULL, str2, "Error", MB_OK);
-						}
-
-						yarrow_read(user_salt[0], 128, &prng);
-
-						tmp2_len = 4;
-
-						pkcs_5_alg2(usernames[0], strlen(usernames[0]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
-
-						for (i = 0; i < 4; i++)
-						{
-							if (i == 0) hexcode = abs(tmp2[i]);
-							else hexcode |= abs(tmp2[i]);
-							hexcode = hexcode << 8;
-						}
-
-						sprintf(str, "ID_%d.UA", hexcode);
-
-						if ((f = fopen(str, "w")) == NULL)
-						{
-							sprintf(str, "User creation error: unable to create user %s file", usernames[0]);
-							MessageBox(NULL, str, "UA Error", MB_OK);
-						}
-
-						ck_len = 32;
-						salt_len = 128;
-						fwrite(&salt_len, sizeof(int), 1, f);
-						fwrite(&ck_len, sizeof(int), 1, f);
-						fwrite(&salt, salt_len, 1, f);
-						fwrite(&ck, ck_len, 1, f);
-
-						fclose(f);
-
-						sprintf(str, "%d", hexcode);
-
-						SetCurrentDirectory(msdk.prj.exp_path);
-						SetCurrentDirectory("users");
-						CreateDirectory(str, NULL);
-
-						SetCurrentDirectory(msdk.prj.exp_path);
-						SetCurrentDirectory("mgear_sys");
-
-						/*
 						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
 						{
 						sprintf(str2, "PRNG Error: %s", error_to_string(err));
@@ -1320,43 +1330,29 @@ int ExportProject()
 						}
 
 						yarrow_read(tmp, 1, &prng);
-						*/
-
-						for (i = 0; i < 16; i++)
-						{
-							tmp[0] = 0;
-							while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
-							{
-								if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-								{
-									sprintf(str2, "PRNG Error: %s", error_to_string(err));
-									MessageBox(NULL, str2, "Error", MB_OK);
-								}
-
-								yarrow_read(tmp, 1, &prng);
-							}
-							recover_keys[0][i] = tmp[0];
+						}
+						recover_keys[0][i] = tmp[0];
 						}
 
 						sprintf(str, "rs_%d.UA", hexcode);
 
 						if ((f = fopen(str, "w")) == NULL)
 						{
-							sprintf(str, "User creation error: unable to create recover system %s file", usernames[0]);
-							MessageBox(NULL, str, "UA Error", MB_OK);
+						sprintf(str, "User creation error: unable to create recover system %s file", usernames[0]);
+						MessageBox(NULL, str, "UA Error", MB_OK);
 						}
 
 						if ((err = rc5_setup(recover_keys[0], 16, 24, &key)) != CRYPT_OK)
 						{
-							sprintf(str2, "RC5 Error: %s", error_to_string(err));
-							MessageBox(NULL, str2, "Error", MB_OK);
+						sprintf(str2, "RC5 Error: %s", error_to_string(err));
+						MessageBox(NULL, str2, "Error", MB_OK);
 						}
 
 						i = 0;
 						do
 						{
-							rc5_ecb_encrypt(master_key + i, ck + i, &key);
-							i += 8;
+						rc5_ecb_encrypt(master_key + i, ck + i, &key);
+						i += 8;
 						} while (i < master_key_len);
 
 						ck_len = 32;
@@ -1366,40 +1362,43 @@ int ExportProject()
 						fclose(f);
 
 						steps++;
-					}
-					else
+						}
+						else
+						*/
+					//{
+					if ((f = fopen("user_list.ua", "w")) == NULL)
 					{
-						if ((f = fopen("USER_LIST.UA", "w")) == NULL)
-						{
-							sprintf(str, "User creation error: unable to create user list file");
-							MessageBox(NULL, str, "UA Error", MB_OK);
-						}
-
-						for (i = 0; i < num_users; i++)
-						{
-							sprintf(str, "%s;", usernames[i]);
-							fwrite(str, 128, 1, f);
-						}
-
-						fclose(f);
-
-						SetCurrentDirectory(msdk.prj.exp_path);
-						SetCurrentDirectory("users");
-
-						for (i = 0; i < num_users; i++)
-						{
-							sprintf(str, "%03d", i);
-							CreateDirectory(str, NULL);
-						}
-
-						SetCurrentDirectory(msdk.prj.exp_path);
-						SetCurrentDirectory("mgear_sys");
-
-						exp_state = 1;
-						steps = 0;
-
+						sprintf(str, "User creation error: unable to create user list file");
+						MessageBox(NULL, str, "UA Error", MB_OK);
 					}
+
+					for (i = 0; i < num_users; i++)
+					{
+						sprintf(str, "%s;", usernames[i]);
+						fwrite(str, 128, 1, f);
+					}
+
+					fclose(f);
+
+					//SetCurrentDirectory(msdk.prj.exp_path);
+					//SetCurrentDirectory("users");
+					/*
+					for (i = 0; i < num_users; i++)
+					{
+					sprintf(str, "%03d", i);
+					CreateDirectory(str, NULL);
+					}
+
+					SetCurrentDirectory(msdk.prj.exp_path);
+					SetCurrentDirectory("mgear_sys");
+					*/
+					exp_state = 1;
+					steps = 0;
+
+					//}
 				}
+			}
+				/*
 				else
 				if (steps >= 1 && num_users - steps != 0)
 				{
@@ -1529,28 +1528,58 @@ int ExportProject()
 					steps = 0;
 				}
 			}
+			*/
 			else
 			if (exp_state == 1)
 			{
 				if (steps < num_files)
 				{
-					SetCurrentDirectory(msdk.prj.prj_path);
+					//SetCurrentDirectory(msdk.prj.prj_path);
 
 					//ToDoBaseListSave();
 
-					memcpy(msdk.prj.users, usernames, 8 * 16);
-					msdk.prj.num_users = num_users;
+					if (fc == NULL)
+					{
+						openfile_d(fc, "v0000", "wb");
+						fwrite("REVFILE", 7, 1, fc);
+						fwrite(&msdk.prj.curr_rev, 2, 1, fc);
 
-					msdk.prj.revisions = 1;
-					msdk.prj.curr_rev = 1;
+						prj_files = malloc(sizeof(_Files)* num_files);
 
-					msdk.prj.user_id = 0;
+						for (i = 0, j = 0; i < num_files; i++)
+						{
+							if (files[i].commit == 1 && files[i].type == 0)
+							{
+								strcpy(prj_files[j].path, files[i].parent);
+								strcat(prj_files[j].path, StringFormat("/%s", files[i].file);
+								prj_files[j].f_rev = prj_files[i].f_rev = 0;
+								prj_files[j].size = files[i].size;
+								memcpy(prj_files[j].hash, files[i].hash, 512);
+								j++;
+							}
+						}
 
-					SavePrjFile(msdk.filepath);
+						num_files_commited = j;
 
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("data");
-					SetCurrentDirectory("v0000");
+						fwrite(&j, sizeof(int16), 1, fc);
+						fwrite(prj_files, sizeof(_Files)* j, 1, fc);
+						fwrite("First Commit", 1024, 1, fc);
+
+						memcpy(msdk.prj.users, usernames, 8 * 16);
+						msdk.prj.num_users = num_users;
+
+						msdk.prj.revisions = 0;
+						msdk.prj.curr_rev = 0;
+
+						msdk.prj.user_id = 0;
+
+						SavePrjFile(msdk.filepath);
+
+						SetCurrentDirectory(msdk.prj.exp_path);
+						SetCurrentDirectory("versions");
+						CreateDirectory("0", NULL);
+						SetCurrentDirectory("0");
+					}
 					
 					if (files[steps].type != 0 || files[steps].commit == 0) steps++;
 					else
@@ -1559,17 +1588,17 @@ int ExportProject()
 						strcat(filepath, "/");
 						strcat(filepath, files[steps].file);
 						
-						extension = strrchr(files[steps].file, '.');
+						//extension = strrchr(files[steps].file, '.');
 						
-						sprintf(newfilepath, "f%04dr0000.%s", steps, extension);
+						//sprintf(newfilepath, "f%04dr0000.%s", steps, extension);
 						
-						buf = GetRootDir(files[steps].parent);
+						//buf = GetRootDir(files[steps].parent);
 
-						if (strcmp(buf, "_prj_raw") == NULL)
-							SetCurrentDirectory("raw");
-						else
-							SetCurrentDirectory("prj");
-
+						//if (strcmp(buf, "_prj_raw") == NULL)
+							//SetCurrentDirectory("raw");
+						//else
+							//SetCurrentDirectory("prj");
+						/*
 						if (encrypted == 1)
 						{
 							if (strstr(files[steps].file, ".sdkprj") != NULL || strstr(files[steps].file, ".cfg") != NULL || strstr(files[steps].file, ".list") != NULL
@@ -1631,6 +1660,7 @@ int ExportProject()
 								
 								free(buffer);
 								*/
+						/*
 								if (CopyFile(filepath, newfilepath, FALSE) == NULL)
 								{
 									sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
@@ -1639,21 +1669,50 @@ int ExportProject()
 							}
 						}
 						else
-						{
+						*/
+						//{
+						/*
 							if (CopyFile(filepath, newfilepath, FALSE) == NULL)
 							{
 								sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
 								MessageBox(NULL, str, "Error", MB_OK);
 							}
+							*/
+						//}
+
+						if ((f = fopen(filepath, "rb")) == NULL)
+						{
+							MessageBoxRes("Error", MB_OK, "Could not open file %s", filepath);
+						}
+						else
+						{
+							size_t filesize;
+							getfilesize(f, filesize);
+
+							void *data;
+
+							alloc_mem(data, filesize);
+
+							fread(data, filesize, 1, f);
+							fclose(f);
+
+							fwrite(&filesize, sizeof(size_t), 1, fc);
+							fwrite(data, filesize, 1, fc);
+
+							fflush(fc);
+
+							free_mem(data);
 						}
 
-						SetCurrentDirectory("..");
+						//SetCurrentDirectory("..");
 
 						steps++;
 					}
 				}
 				else
 				{
+					fclose(fc);
+
 					if (encrypted != 0)
 					{
 						exp_state = 2;
@@ -1661,7 +1720,7 @@ int ExportProject()
 					else
 						exp_state = 3;
 
-					SetCurrentDirectory(msdk.prj.exp_path);
+					//SetCurrentDirectory(msdk.prj.exp_path);
 
 					if ((f = fopen("importer", "wb")) == NULL)
 					{
@@ -1682,24 +1741,10 @@ int ExportProject()
 					{
 						MessageBoxRes("Error", MB_OK, "Error: Could not create index file");
 					}
-
-					prj_files = malloc(sizeof(_Files) * num_files);
-
-					for (i = 0, j = 0; i < num_files; i++)
-					{
-						if (files[i].commit == 1 && files[i].type == 0)
-						{
-							strcpy(prj_files[j].path, files[i].parent);
-							prj_files[j].rev = prj_files[i].f_rev = 0;
-							prj_files[j].size = files[i].size;
-							memcpy(prj_files[j].hash, files[i].hash, 512);
-							j++;
-						}
-					}
 					
 					
-					fwrite(&num_files, sizeof(int16), 1, f);
-					fwrite(prj_files, sizeof(_Files) * num_files, 1, f);
+					fwrite(&num_files_commited, sizeof(int), 1, f);
+					fwrite(prj_files, sizeof(_Files) * num_files_commited, 1, f);
 
 					fclose(f);
 
