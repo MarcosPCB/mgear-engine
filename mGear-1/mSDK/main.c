@@ -257,12 +257,18 @@ struct indexer *IndexContent(const struct File_sys *files, int16 num, struct ind
 	for(i = 0, l = 0; i < num; i++)
 	{
 		strcpy(array[i].name, files[i].file);
-		f[i].type = files[i].type;
+		array[i].type = f[i].type = files[i].type;
+		array[i].v = f[i].v = files[i].f_rev;
+		array[i].branch = f[i].branch = files[i].rev;
+		f[i].size = files[i].size;
+		memcpy(f[i].hash, files[i].hash, 512);
+		memcpy(array[i].hash, files[i].hash, 512);
+		array[i].stat = f[i].stat = 0;
 		
 		//Checks if .parent is indexed already
-		for(j=0, k = -1; j < i; j++)
+		for(j = 0, k = -1; j < i; j++)
 		{
-			if(strcmp(array[j].name, files[i].parent) == NULL)
+			if(strcmp(array[j].name, files[i].parent) == NULL && array[j].type == files[i].type)
 			{
 				k = 1;
 				break;
@@ -272,14 +278,27 @@ struct indexer *IndexContent(const struct File_sys *files, int16 num, struct ind
 		if(k == -1)
 		{
 			strcpy(array[l].name, files[i].parent);
-			if(files[i].type == 0)
+			
+			for(j = 0; j < num; j++)
 			{
-				//Hash code
+				if(strcmp(files[j].file, files[i].parent) == NULL && files[j].type == files[i].type) break;
 			}
 			
+			array[l].type = 1;
+			
+			array[l].v = files[j].f_rev;
+			array[l].branch = files[j].rev;
+			array[l].stat = 0;
+			
 			f[i].parent = l;
+			l++;
 		}
+		else
+			f[i].parent = j;
+		
 	}
+	
+	return *f;
 }
 
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)

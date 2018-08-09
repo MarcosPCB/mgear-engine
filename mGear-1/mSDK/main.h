@@ -41,14 +41,17 @@ struct indexer
 	
 	uint64 branch : 9,
 	v : 14,
-	size : 40,
-	type : 1;
+	size : 39,
+	type : 1,
+	stat : 1;
 };
 
 struct index_f
 {
 	char name[MAX_PATH];
-	
+	uint16 type : 1,
+	v : 14,
+	stat : 1; 
 	char hash[512];
 };
 
