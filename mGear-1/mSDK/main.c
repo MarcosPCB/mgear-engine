@@ -286,8 +286,8 @@ struct indexer *IndexContent(const struct File_sys *files, int16 num, struct ind
 			
 			array[l].type = 1;
 			
-			array[l].v = files[j].f_rev;
-			array[l].branch = files[j].rev;
+			array[l].v = files[j].f_rev = array[l].lfcv = 0;
+			array[l].branch = files[j].rev = 0;
 			array[l].stat = 0;
 			
 			f[i].parent = l;
@@ -299,6 +299,23 @@ struct indexer *IndexContent(const struct File_sys *files, int16 num, struct ind
 	}
 	
 	return *f;
+}
+
+int CheckAndIndex(const struct File_sys *files, int16 num, struct index_f *array, struct indexer *f, int16 num2)
+{
+	int16 i, j, k, l;
+	uint8 *list;
+	
+	alloc_mem(list, num);
+	
+	mem_assert(array);
+	mem_assert(f);
+	mem_assert(files);
+	
+	for(i = 0; i < num; i++)
+	{
+		
+	}
 }
 
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
