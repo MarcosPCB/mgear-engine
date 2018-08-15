@@ -245,79 +245,6 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	return files;
 }
 
-struct indexer *IndexContent(const struct File_sys *files, int16 num, struct index_f *array)
-{
-	struct indexer *f;
-	
-	int16 i, j, k, l;
-	
-	alloc_mem(f, num * sizeof(struct indexed));
-	alloc_mem(array, num * sizeof(array));
-	
-	for(i = 0, l = 0; i < num; i++)
-	{
-		strcpy(array[i].name, files[i].file);
-		array[i].type = f[i].type = files[i].type;
-		array[i].v = f[i].v = files[i].f_rev;
-		array[i].branch = f[i].branch = files[i].rev;
-		f[i].size = files[i].size;
-		memcpy(f[i].hash, files[i].hash, 512);
-		memcpy(array[i].hash, files[i].hash, 512);
-		array[i].stat = f[i].stat = 0;
-		
-		//Checks if .parent is indexed already
-		for(j = 0, k = -1; j < i; j++)
-		{
-			if(strcmp(array[j].name, files[i].parent) == NULL && array[j].type == files[i].type)
-			{
-				k = 1;
-				break;
-			}
-		} 
-		
-		if(k == -1)
-		{
-			strcpy(array[l].name, files[i].parent);
-			
-			for(j = 0; j < num; j++)
-			{
-				if(strcmp(files[j].file, files[i].parent) == NULL && files[j].type == files[i].type) break;
-			}
-			
-			array[l].type = 1;
-			
-			array[l].v = files[j].f_rev = array[l].lfcv = 0;
-			array[l].branch = files[j].rev = 0;
-			array[l].stat = 0;
-			
-			f[i].parent = l;
-			l++;
-		}
-		else
-			f[i].parent = j;
-		
-	}
-	
-	return *f;
-}
-
-int CheckAndIndex(const struct File_sys *files, int16 num, struct index_f *array, struct indexer *f, int16 num2)
-{
-	int16 i, j, k, l;
-	uint8 *list;
-	
-	alloc_mem(list, num);
-	
-	mem_assert(array);
-	mem_assert(f);
-	mem_assert(files);
-	
-	for(i = 0; i < num; i++)
-	{
-		
-	}
-}
-
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
 {
 	size_t written;
@@ -526,129 +453,6 @@ int SaveRevFile(const char *filename, char *log, size_t len, int16 num_files, _F
 	fwrite(files, sizeof(_Files)* num_files, 1, f);
 
 	fclose(f);
-
-	return 1;
-}
-
-int LoadLog()
-{
-	FILE *f;
-	
-	int i, j, k, l, num_files;
-	uint32 time;
-
-	time_t tval, tval2;
-	struct tm tmv;
-	
-	char path[MAX_PATH], path2[MAX_PATH], str[256], str2[256], header[13] = { "REV_FILE_SDK" }, header2[13];
-	
-	struct File_sys *files;
-	
-	for(i = 0; i < msdk.prj.num_users; i++)
-	{
-		files = GetFolderTreeContent(StringFormat("%s/users/%03d", msdk.prj.exp_path, i), &num_files);
-		
-		for(j = 0; j < num_files; j++)
-		{
-			if((f = fopen(StringFormat("%s/%s", files[j].path, files[j].file), "rb")) == NULL)
-			{
-				LogApp("Could not open file %s", StringFormat("%s/%s", files[j].path, files[j].file));
-				continue;
-			}
-			
-			fread(header2, 13, 1, f);
-			
-			if(strcmp(header2, header) != NULL)
-			{
-				fclose(f);
-				continue;
-			}
-			
-			if(i == 0 && j == 0)
-			{
-				alloc_mem(msdk.prj.log, sizeof(struct LOGPRJ) * 2);
-				//alloc_mem(msdk.prj.log_list, sizeof(struct int16) * 2);
-			}
-			else
-			{
-				realloc_mem(msdk.prj.log, sizeof(struct LOGPRJ) * msdk.prj.num_logs + 1);
-				//realloc_mem(msdk.prj.log_list, sizeof(struct int16) * 2);
-			}
-			
-			strcpy(msdk.prj.log[j].user, msdk.prj.users[i]);
-			fread(&msdk.prj.log[j].rev, sizeof(int16), 1, f);
-
-			fread(&time, sizeof(int32), 1, f);
-
-			msdk.prj.log[j].min = time & 0xFFFFFF8;
-			msdk.prj.log[j].h = (time & 0xFFFFF) >> 6;
-			msdk.prj.log[j].d = (time & 0xFFFF) >> 11;
-			msdk.prj.log[j].m = (time & 0xFFF) >> 16;
-			msdk.prj.log[j].h = time >> 20;
-			
-			fread(&msdk.prj.log[j].len, sizeof(size_t), 1, f);
-			alloc_mem_cmd(msdk.prj.log[j].log, msdk.prj.log[j].len, ABORT_CMD);
-			
-			fread(&msdk.prj.log[j].log, msdk.prj.log[j].len, 1, f);
-
-			fread(&msdk.prj.log[j].num_files, sizeof(int16), 1, f);
-
-			alloc_mem_cmd(msdk.prj.log[j].files, sizeof(_Files)* msdk.prj.log[j].num_files, ABORT_CMD);
-
-			fread(msdk.prj.log[j].files, sizeof(_Files)* msdk.prj.log[j].num_files, 1, f);
-			
-			fclose(f);
-
-			msdk.prj.num_logs++;
-		}
-	}
-
-	if (msdk.prj.num_logs > 0)
-	{
-		alloc_mem_cmd(msdk.prj.log_list, sizeof(int16)* msdk.prj.num_logs, ABORT_CMD);
-		//alloc_mem_cmd(list, sizeof(int), ABORT_CMD);
-
-		for (i = 0; i < msdk.prj.num_logs; i++)
-		{
-			for (j = 0, k = 0, l = 0; j < msdk.prj.num_logs; j++)
-			{
-				tmv.tm_min = msdk.prj.log[j].min;
-				tmv.tm_hour = msdk.prj.log[j].h;
-				tmv.tm_mday = msdk.prj.log[j].d;
-				tmv.tm_mon = msdk.prj.log[j].m;
-				tmv.tm_year = msdk.prj.log[j].y;
-
-				tval = mktime(&tmv);
-
-				tmv.tm_min = msdk.prj.log[k].min;
-				tmv.tm_hour = msdk.prj.log[k].h;
-				tmv.tm_mday = msdk.prj.log[k].d;
-				tmv.tm_mon = msdk.prj.log[k].m;
-				tmv.tm_year = msdk.prj.log[k].y;
-
-				tval2 = mktime(&tmv);
-
-				if (tval <= tval2)
-				{
-					for (l = 0; l < i; l++)
-					{
-						if (msdk.prj.log_list[l] == j)
-						{
-							l = -1;
-							break;
-						}
-					}
-
-					if (l == -1) continue;
-					else k = j;
-				}
-			}
-
-			msdk.prj.log_list[i] = k;
-		}
-	}
-
-	free_mem(files);
 
 	return 1;
 }
@@ -2786,9 +2590,9 @@ void MenuBar()
 				}
 
 				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Import", NK_TEXT_LEFT);
-				if (nk_menu_item_label(ctx, "Export", NK_TEXT_LEFT))
-					state = 6;
+				//nk_menu_item_label(ctx, "Import", NK_TEXT_LEFT);
+				//if (nk_menu_item_label(ctx, "Export", NK_TEXT_LEFT))
+				//	state = 6;
 
 				if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) st.quit = 1;
 				nk_menu_end(ctx);
@@ -2946,26 +2750,30 @@ void Pannel()
 			if (nk_group_begin(ctx, "Settings", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
 				nk_layout_row_dynamic(ctx, 25, 1);
-				nk_button_label(ctx, "Play");
-				nk_button_label(ctx, "Debug (MGL only)");
+				nk_button_label(ctx, "Run");
+				nk_button_label(ctx, "Debug");
 
-				nk_layout_row_dynamic(ctx, 25, 2);
-				nk_button_label(ctx, "Commit");
-				nk_button_label(ctx, "Check for update");
+				//nk_layout_row_dynamic(ctx, 25, 2);
+				//nk_button_label(ctx, "Commit");
+				//nk_button_label(ctx, "Check for update");
 
-				ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
+				//ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
 
 				nk_layout_row_dynamic(ctx, st.screeny - 240, 1);
 
-				if (nk_group_begin(ctx, "Revisions", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+				if (nk_group_begin(ctx, "Settings", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 				{
-					//if (msdk.prj.base_log)
-					//	nk_label_wrap(ctx, msdk.prj.base_log);
+					nk_layout_row_dynamic(ctx, 20, 1);
+					nk_label(ctx, "Resolution", NK_TEXT_ALIGN_LEFT);
+					//nk_spacing(ctx, 1);
+					
+					//nk_combo_box - need to do
+					nk_edit_string_zero_terminated(ctx, )
 
 					nk_group_end(ctx);
 				}
 
-				SetThemeBack();
+				//SetThemeBack();
 
 				nk_group_end(ctx);
 			}

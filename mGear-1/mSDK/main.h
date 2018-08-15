@@ -35,28 +35,6 @@ struct _Files_
 
 typedef struct _Files_ _Files;
 
-struct indexer
-{
-	uint16 parent; //Parent folders
-	
-	uint64 branch : 9, //Current branch
-	v : 14, //Current version
-	size : 39,
-	type : 1, //Type: folder or file
-	stat : 1; //Status of the file: alive or deleted
-};
-
-struct index_f
-{
-	char name[MAX_PATH];
-	uint16 type : 1, //Type: folder or file
-	v : 14, //Version
-	stat : 1; //Status of the file: alive or deleted
-	char hash[512];
-	
-	uint16 lfcv; //Last full content version
-};
-
 struct _TODOL
 {
 	char entry[512];
