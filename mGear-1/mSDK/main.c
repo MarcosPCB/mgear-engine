@@ -2767,8 +2767,46 @@ void Pannel()
 					nk_label(ctx, "Resolution", NK_TEXT_ALIGN_LEFT);
 					//nk_spacing(ctx, 1);
 					
-					//nk_combo_box - need to do
-					nk_edit_string_zero_terminated(ctx, )
+					SDL_DisplayMode mode;
+					int8 index, num_modes;
+
+					num_modes = SDL_GetNumVideoDisplays();
+					
+					if (nk_combo_begin_label(ctx, StringFormat("%dx%d", msdk.app[0].w, msdk.app[0].h), nk_vec2(nk_widget_width(ctx),
+						35 + (num_modes * 30))))
+					{
+						for (index = 0; index < num_modes; index++)
+						{
+							if (SDL_GetVideoDisplay(index, 0, &mode) != 0)
+							{
+								if (nk_combo_item_label(ctx, StringFormat("%dx%d", mode.w, mode.h), NK_TEXT_ALIGN_LEFT))
+								{
+									msdk.app[0].w = mode.w;
+									msdk.app[0].h = mode.h;
+								}
+							}
+						}
+					}
+
+					nk_layout_row_dynamic(ctx, 20, 2);
+					nk_label(ctx, "Width", NK_TEXT_ALIGN_LEFT);
+					nk_label(ctx, "Height", NK_TEXT_ALIGN_LEFT);
+
+					char buft[4];
+					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 4, nk_filter_decimal);
+					msdk.app[0].w = atoi(buft);
+
+					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 4, nk_filter_decimal);
+					msdk.app[0].h = atoi(buft);
+					
+					nk_layout_row_dynamic(ctx, 20, 1);
+					//map combo
+					nk_layout_row_dynamic(ctx, 20, 2);
+					
+					
+					msdk.app[0].skip_menu = nk_check_label(ctx, "Skip menu", msdk.app[0].skip_menu == 1);
+					
+
 
 					nk_group_end(ctx);
 				}

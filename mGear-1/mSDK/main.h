@@ -14,6 +14,16 @@
 
 #define MCODE_MSVC 0
 
+//Apps
+#define GAMEAPP 0
+#define AUDIOAPP 1
+#define ENGINEERAPP 2
+#define UIAPP 3
+#define TEXAPP 4
+#define CODEAPP 5
+#define SPRITEAPP 6
+#define MGGAPP 7
+
 enum FILE_TYPE
 {
 	F_MGG,
@@ -138,6 +148,27 @@ struct _mSdk
 	CURLcode res;
 	CURLMcode resm;
 	CURLMsg *curlmsg;
+
+	struct APPST
+	{
+		int32 w : 13,
+		h : 13,
+		r_index : 6;
+
+		int64 map : 8,
+		tex : 10,
+		ui : 7,
+		mgg : 10,
+		map_prj : 10,
+		skip_menu : 4;
+		
+		char argument[1024];
+		
+		char **options;
+		
+		int16 num_files;
+
+	} app[10];
 
 	uint8 ffmpeg_downloaded;
 	uint8 ffmpeg_installed;
