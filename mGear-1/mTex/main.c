@@ -1782,7 +1782,8 @@ struct nk_color ColorPicker(struct nk_color color)
 	if (nk_combo_begin_color(ctx, color, nk_vec2(200, 250)))
 	{
 		nk_layout_row_dynamic(ctx, 120, 1);
-		color = nk_color_picker(ctx, color, NK_RGB);
+		struct nk_colorf c = nk_color_picker(ctx, nk_color_cf(color), NK_RGB);
+		color = nk_rgb_cf(c);
 		nk_layout_row_dynamic(ctx, 25, 1);
 		color.r = (nk_byte)nk_propertyi(ctx, "R:", 0, color.r, 255, 1, 1);
 		color.g = (nk_byte)nk_propertyi(ctx, "G:", 0, color.g, 255, 1, 1);

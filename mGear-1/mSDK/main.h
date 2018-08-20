@@ -149,6 +149,9 @@ struct _mSdk
 	CURLMcode resm;
 	CURLMsg *curlmsg;
 
+	struct File_sys *prj_files;
+	int32 num_prj_files;
+
 	struct APPST
 	{
 		int32 w : 13,
@@ -164,7 +167,7 @@ struct _mSdk
 		
 		char argument[1024];
 		
-		char **options;
+		int32 *files;
 		
 		int16 num_files;
 

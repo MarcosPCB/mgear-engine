@@ -55,6 +55,9 @@ extern void Quit();
 
 #define mem_assert(expr) assert(expr && "memory not valid");
 
+#define LOWERSTRING(string) { for(int LOWERSTRINGINT = 0; LOWERSTRINGINT < strlen(string); LOWERSTRINGINT++) tolower(string[LOWERSTRINGINT]); }
+#define lowerstring LOWERSTRING
+
 cdecl int16 NumDirFile(const char *path, char content[][32]);
 
 cdecl int32 MessageBoxRes(const char *caption, UINT type, const char *string, ...);

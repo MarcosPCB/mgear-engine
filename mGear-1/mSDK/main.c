@@ -13,6 +13,7 @@
 #include <tomcrypt.h>
 #include "funcs.h"
 #include <time.h>
+#include <SDL_video.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -243,6 +244,40 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	*num_files = i;
 
 	return files;
+}
+
+int32 *ListFileExtFromFolder(struct File_sys *files, int32 num_files, char fileextension[8], int *listed_files)
+{
+	char *ext;
+	int32 *ids;
+	register int32 i, j;
+
+	mem_assert(files);
+
+	//assert(num_files <= 0);
+	assert(listed_files);
+
+	alloc_mem(ids, 4);
+
+	lowerstring(fileextension);
+	
+	for (i = 0, *listed_files = 0, j = 0; i < num_files; i++)
+	{
+		ext = strrchr(files[i].file, ".");
+		if (ext != NULL)
+		{
+			lowerstring(ext);
+
+			if (strcmp(ext, fileextension) == 0)
+			{
+				realloc_mem(ids, 4 + (i * 2));
+				ids[j] = i;
+				*listed_files++;
+			}
+		}
+	}
+
+	return ids;
 }
 
 size_t CURLWriteData(void *ptr, size_t size, size_t new_mem, FILE *stream)
@@ -785,7 +820,7 @@ int ExportProject()
 	DIR *d;
 	dirent *di;
 
-	register int16 i, j;
+	int16 i, j;
 
 	BOOL cpf;
 
@@ -1431,7 +1466,7 @@ int ExportProject()
 							if (files[i].commit == 1 && files[i].type == 0)
 							{
 								strcpy(prj_files[j].path, files[i].parent);
-								strcat(prj_files[j].path, StringFormat("/%s", files[i].file);
+								strcat(prj_files[j].path, StringFormat("/%s", files[i].file));
 								prj_files[j].f_rev = prj_files[i].f_rev = 0;
 								prj_files[j].size = files[i].size;
 								memcpy(prj_files[j].hash, files[i].hash, 512);
@@ -2565,6 +2600,12 @@ void MenuBar()
 
 						if (temp == 1)
 						{
+							msdk.prj_files = GetFolderTreeContent(msdk.prj.prj_path, &msdk.num_prj_files);
+
+							msdk.app[TEXAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".texprj", &msdk.app[TEXAPP].num_files);
+							msdk.app[MGGAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".mgg", &msdk.app[MGGAPP].num_files);
+							msdk.app[ENGINEERAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".map", &msdk.app[ENGINEERAPP].num_files);
+
 							msdk.prj.loaded = 1;
 							strcpy(msdk.filepath, path);
 						}
@@ -2652,7 +2693,7 @@ void MenuBar()
 void Pannel()
 {
 	register int i, j, k;
-	static int sl, pannel_state = 0, selected_entry = -1, tdtype = 0, assigned_ids = 0;
+	static int sl, pannel_state = 0, selected_entry = -1, tdtype = 0, assigned_ids = 0, app = 0;
 	static struct nk_color editcolor = { 255, 255, 255, 255 };
 	static char strbuf[32], entry[512];
 	static struct nk_rect bounds;
@@ -2763,40 +2804,51 @@ void Pannel()
 
 				if (nk_group_begin(ctx, "Settings", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 				{
-					nk_layout_row_dynamic(ctx, 20, 1);
+					nk_layout_row_dynamic(ctx, 30, 1);
 					nk_label(ctx, "Resolution", NK_TEXT_ALIGN_LEFT);
 					//nk_spacing(ctx, 1);
 					
 					SDL_DisplayMode mode;
 					int8 index, num_modes;
 
-					num_modes = SDL_GetNumVideoDisplays();
+					num_modes = SDL_GetNumDisplayModes(0);
 					
 					if (nk_combo_begin_label(ctx, StringFormat("%dx%d", msdk.app[0].w, msdk.app[0].h), nk_vec2(nk_widget_width(ctx),
 						35 + (num_modes * 30))))
 					{
+						nk_layout_row_dynamic(ctx, 25, 1);
+						int32 rx = 0, ry = 0;
 						for (index = 0; index < num_modes; index++)
 						{
-							if (SDL_GetVideoDisplay(index, 0, &mode) != 0)
+							if (SDL_GetDisplayMode(0, index, &mode) == 0)
 							{
-								if (nk_combo_item_label(ctx, StringFormat("%dx%d", mode.w, mode.h), NK_TEXT_ALIGN_LEFT))
+								if (rx != mode.w || ry != mode.h)
 								{
-									msdk.app[0].w = mode.w;
-									msdk.app[0].h = mode.h;
+									rx = mode.w;
+									ry = mode.h;
+									if (nk_combo_item_label(ctx, StringFormat("%dx%d", mode.w, mode.h), NK_TEXT_ALIGN_LEFT))
+									{
+										msdk.app[0].w = mode.w;
+										msdk.app[0].h = mode.h;
+									}
 								}
 							}
 						}
+
+						nk_combo_end(ctx);
 					}
 
-					nk_layout_row_dynamic(ctx, 20, 2);
+					nk_layout_row_dynamic(ctx, 30, 2);
 					nk_label(ctx, "Width", NK_TEXT_ALIGN_LEFT);
 					nk_label(ctx, "Height", NK_TEXT_ALIGN_LEFT);
 
-					char buft[4];
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 4, nk_filter_decimal);
+					char buft[10];
+					sprintf(buft, "%d", msdk.app[0].w);
+					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 10, nk_filter_decimal);
 					msdk.app[0].w = atoi(buft);
 
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 4, nk_filter_decimal);
+					sprintf(buft, "%d", msdk.app[0].h);
+					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 10, nk_filter_decimal);
 					msdk.app[0].h = atoi(buft);
 					
 					nk_layout_row_dynamic(ctx, 20, 1);
@@ -2914,6 +2966,13 @@ void Pannel()
 			*/
 			
 			
+
+
+			if (nk_group_begin(ctx, "App", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+			{
+				
+				nk_group_end(ctx);
+			}
 
 			//nk_layout_row_dynamic(ctx, st.screeny - 240, 1);
 			nk_select_label(ctx, "No image available", NK_TEXT_ALIGN_CENTERED, 1);
