@@ -42,6 +42,15 @@ mSdk msdk;
 prng_state prng;
 hash_state hash;
 
+char *its(uint8 icon)
+{
+	static char buf[2];
+
+	buf[0] = icon;
+
+	return buf;
+}
+
 char *GetRootDir(const char *path)
 {
 	char final_path[MAX_PATH];
@@ -2355,8 +2364,8 @@ int MGVCompiler()
 		state = 0;
 	}
 
-	if (nk_begin(ctx, "MGV Encoder", nk_rect((st.screenx / 2), (st.screeny / 2), 356, 256), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
-	{
+	//if (nk_begin(ctx, "MGV Encoder", nk_rect((st.screenx / 2), (st.screeny / 2), 356, 256), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	//{
 		nk_layout_row_dynamic(ctx, 25, 1);
 		nk_label(ctx, "Select the video file",NK_TEXT_ALIGN_LEFT);
 
@@ -2449,9 +2458,9 @@ int MGVCompiler()
 				}
 			}
 		}
-	}
+	//}
 
-	nk_end(ctx);
+	//nk_end(ctx);
 
 	if (state > 0)
 	{
@@ -2719,80 +2728,96 @@ void Pannel()
 	//{
 		if (nk_begin(ctx, "Left Pannel", nk_rect(0, 30, st.screenx, st.screeny - 30), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_BACKGROUND))
 		{
-			nk_layout_row_dynamic(ctx, 25, 10);
-
-			nk_spacing(ctx, 1);
 			
-			if (nk_button_label(ctx, "mAudio"))
-			{
-				ZeroMemory(&info, sizeof(info));
-				info.cbSize = sizeof(info);
-				info.lpVerb = ("open");
-				strcpy(exepath, st.CurrPath);
-				strcat(exepath, "\\mAudio.exe");
-				info.lpFile = exepath;
-				//sprintf(args, "-o \"%s\"", path2);
-				//info.lpParameters = args;
-				info.lpDirectory = st.CurrPath;
-				info.nShow = SW_SHOW;
+			nk_layout_row_begin(ctx, NK_STATIC, 30, 15);
 
-				if (!ShellExecuteEx(&info))
-					MessageBox(NULL, "Could not execute mAudio", "Error", MB_OK);
-			}
-			
-			nk_button_label(ctx, "mCode");
+			nk_layout_row_push(ctx, 80);
+			nk_label(ctx, "Resolution:", NK_TEXT_LEFT);
+			//nk_spacing(ctx, 1);
 
-			nk_button_label(ctx, "mEngineer");
-			
-			if (nk_button_label(ctx, "MGGViewer"))
-			{
-				ZeroMemory(&info, sizeof(info));
-				info.cbSize = sizeof(info);
-				info.lpVerb = ("open");
-				strcpy(exepath, st.CurrPath);
-				strcat(exepath, "\\mggviewer.exe");
-				info.lpFile = exepath;
-				//sprintf(args, "-o \"%s\"", path2);
-				//info.lpParameters = args;
-				info.lpDirectory = st.CurrPath;
-				info.nShow = SW_SHOW;
+			SDL_DisplayMode mode;
+			int8 index, num_modes;
 
-				if (!ShellExecuteEx(&info))
-					MessageBox(NULL, "Could not execute MGGViewer", "Error", MB_OK);
-			}
+			num_modes = SDL_GetNumDisplayModes(0);
 
-			if (nk_button_label(ctx, "MGVCreator"))
-				state = 1;
+			nk_layout_row_push(ctx, 200);
 
-			nk_button_label(ctx, "mInterface");
-			nk_button_label(ctx, "mSprite");
-
-			if (nk_button_label(ctx, "mTex"))
-			{
-				ZeroMemory(&info, sizeof(info));
-				info.cbSize = sizeof(info);
-				info.lpVerb = ("open");
-				strcpy(exepath, st.CurrPath);
-				strcat(exepath, "\\mTex.exe");
-				info.lpFile = exepath;
-				//sprintf(args, "-o \"%s\"", path2);
-				//info.lpParameters = args;
-				info.lpDirectory = st.CurrPath;
-				info.nShow = SW_SHOW;
-
-				if (!ShellExecuteEx(&info))
-					MessageBox(NULL, "Could not execute mTex", "Error", MB_OK);
-			}
-
-			nk_spacing(ctx, 1);
-			
-			nk_layout_row_dynamic(ctx, st.screeny - 100, 3);
-
-			if (nk_group_begin(ctx, "Settings", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+			if (nk_combo_begin_label(ctx, StringFormat("%dx%d", msdk.app[0].w, msdk.app[0].h), nk_vec2(nk_widget_width(ctx),
+				35 + (num_modes * 30))))
 			{
 				nk_layout_row_dynamic(ctx, 25, 1);
-				nk_button_label(ctx, "Run");
-				nk_button_label(ctx, "Debug");
+				int32 rx = 0, ry = 0;
+				for (index = 0; index < num_modes; index++)
+				{
+					if (SDL_GetDisplayMode(0, index, &mode) == 0)
+					{
+						if (rx != mode.w || ry != mode.h)
+						{
+							rx = mode.w;
+							ry = mode.h;
+							if (nk_combo_item_label(ctx, StringFormat("%dx%d", mode.w, mode.h), NK_TEXT_ALIGN_LEFT))
+							{
+								msdk.app[0].w = mode.w;
+								msdk.app[0].h = mode.h;
+							}
+						}
+					}
+				}
+
+				nk_combo_end(ctx);
+			}
+
+			nk_layout_row_push(ctx, 45);
+			//nk_layout_row_dynamic(ctx, 30, 2);
+			nk_label(ctx, "Width:", NK_TEXT_LEFT);
+
+			nk_layout_row_push(ctx, 70);
+			char buft[10];
+			sprintf(buft, "%d", msdk.app[0].w);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 10, nk_filter_decimal);
+			msdk.app[0].w = atoi(buft);
+
+			nk_layout_row_push(ctx, 45);
+			nk_label(ctx, "Height:", NK_TEXT_LEFT);
+
+			nk_layout_row_push(ctx, 70);
+			sprintf(buft, "%d", msdk.app[0].h);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 10, nk_filter_decimal);
+			msdk.app[0].h = atoi(buft);
+
+			//nk_layout_row_dynamic(ctx, 20, 1);
+			//map combo
+			//nk_layout_row_dynamic(ctx, 20, 2);
+
+			nk_layout_row_push(ctx, 30);
+			nk_style_set_font(ctx, &fonts[1]->handle);
+
+			nk_button_label(ctx, its(DEBUG_ICON));
+			nk_button_label(ctx, its(PLAY_ICON));
+
+			nk_style_set_font(ctx, &fonts[0]->handle);
+
+			nk_layout_row_push(ctx, 100);
+			msdk.app[0].skip_menu = nk_check_label(ctx, "Skip menu", msdk.app[0].skip_menu == 1);
+
+			nk_layout_row_push(ctx, 30);
+
+			nk_style_set_font(ctx, &fonts[1]->handle);
+			nk_button_label(ctx, its(TERMINAL_ICON));
+
+			nk_style_set_font(ctx, &fonts[0]->handle);
+
+			nk_layout_row_end(ctx);
+
+			nk_layout_row_dynamic(ctx, st.screeny - 100, 3);
+			
+			ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
+
+			if (nk_group_begin(ctx, "Apps", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+			{
+				//nk_layout_row_dynamic(ctx, 25, 1);
+				//nk_button_label(ctx, "Play");
+				//nk_button_label(ctx, "Debug");
 
 				//nk_layout_row_dynamic(ctx, 25, 2);
 				//nk_button_label(ctx, "Commit");
@@ -2800,74 +2825,157 @@ void Pannel()
 
 				//ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
 
-				nk_layout_row_dynamic(ctx, st.screeny - 240, 1);
+				//nk_layout_row_dynamic(ctx, st.screeny - 240, 1);
 
+				
+				nk_layout_space_begin(ctx, NK_DYNAMIC,st.screeny - 150, 30);
+
+				struct nk_rect vec4 = nk_layout_space_bounds(ctx);
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if(nk_button_image(ctx, nk_image_id(msdk.app[AUDIOAPP].icon)))
+				{
+					pannel_state = AUDIOAPP;
+				}
+
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "mAudio");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nEdit and create sound and music lists for your project");
+				nk_layout_space_end(ctx);
+				
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.01f + ((vec4.w * 0.15f) / vec4.h) * 1, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[CODEAPP].icon)))
+				{
+					pannel_state = CODEAPP;
+				}
+
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.01f + ((vec4.w * 0.15f) / vec4.h) * 1, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "mCode");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nThe IDE used for coding your game.\nCan be the the one installed on your computer as such Visual Studio or the default one for coding in MGL");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.02f + ((vec4.w * 0.15f) / vec4.h) * 2, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[ENGINEERAPP].icon)))
+				{
+					pannel_state = ENGINEERAPP;
+				}
+
+				//nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.02f + ((vec4.w * 0.15f) / vec4.h) * 2, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "mEngineer");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nCreate and edit maps for your game");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.03f + ((vec4.w * 0.15f) / vec4.h) * 3, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[UIAPP].icon)))
+				{
+					pannel_state = UIAPP;
+				}
+
+				//nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.03f + ((vec4.w * 0.15f) / vec4.h) * 3, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "mInterface");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nCreate interfaces such as menus and HUD for your game");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 4, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[MGGAPP].icon)))
+				{
+					pannel_state = MGGAPP;
+				}
+
+				//nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 4, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "MGG Viewer");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nVisualize MGG files with their textures and animations");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 5, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[MGVAPP].icon)))
+				{
+					pannel_state = MGVAPP;
+				}
+
+				//nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 5, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "MGV Compiler");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nCompile videos for your game");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 6, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[TEXAPP].icon)))
+				{
+					pannel_state = TEXAPP;
+				}
+
+				//nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 6, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "mTex");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nImport your textures and animate them to be used in the game");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 7, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				if (nk_button_image(ctx, nk_image_id(msdk.app[SPRITEAPP].icon)))
+				{
+					pannel_state = SPRITEAPP;
+				}
+
+				//nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 7, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "mSprite");
+				nk_style_set_font(ctx, &fonts[2]->handle);
+				nk_label_wrap(ctx, "\n\nCreate sprites and define AIs for your game");
+				nk_layout_space_end(ctx);
+
+				nk_style_set_font(ctx, &fonts[0]->handle);
+
+
+				nk_layout_space_end(ctx);
+
+
+				/*
 				if (nk_group_begin(ctx, "Settings", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 				{
-					nk_layout_row_dynamic(ctx, 30, 1);
-					nk_label(ctx, "Resolution", NK_TEXT_ALIGN_LEFT);
-					//nk_spacing(ctx, 1);
-					
-					SDL_DisplayMode mode;
-					int8 index, num_modes;
-
-					num_modes = SDL_GetNumDisplayModes(0);
-					
-					if (nk_combo_begin_label(ctx, StringFormat("%dx%d", msdk.app[0].w, msdk.app[0].h), nk_vec2(nk_widget_width(ctx),
-						35 + (num_modes * 30))))
-					{
-						nk_layout_row_dynamic(ctx, 25, 1);
-						int32 rx = 0, ry = 0;
-						for (index = 0; index < num_modes; index++)
-						{
-							if (SDL_GetDisplayMode(0, index, &mode) == 0)
-							{
-								if (rx != mode.w || ry != mode.h)
-								{
-									rx = mode.w;
-									ry = mode.h;
-									if (nk_combo_item_label(ctx, StringFormat("%dx%d", mode.w, mode.h), NK_TEXT_ALIGN_LEFT))
-									{
-										msdk.app[0].w = mode.w;
-										msdk.app[0].h = mode.h;
-									}
-								}
-							}
-						}
-
-						nk_combo_end(ctx);
-					}
-
-					nk_layout_row_dynamic(ctx, 30, 2);
-					nk_label(ctx, "Width", NK_TEXT_ALIGN_LEFT);
-					nk_label(ctx, "Height", NK_TEXT_ALIGN_LEFT);
-
-					char buft[10];
-					sprintf(buft, "%d", msdk.app[0].w);
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 10, nk_filter_decimal);
-					msdk.app[0].w = atoi(buft);
-
-					sprintf(buft, "%d", msdk.app[0].h);
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, buft, 10, nk_filter_decimal);
-					msdk.app[0].h = atoi(buft);
-					
-					nk_layout_row_dynamic(ctx, 20, 1);
-					//map combo
-					nk_layout_row_dynamic(ctx, 20, 2);
-					
-					
-					msdk.app[0].skip_menu = nk_check_label(ctx, "Skip menu", msdk.app[0].skip_menu == 1);
 					
 
 
 					nk_group_end(ctx);
 				}
+				*/
 
-				//SetThemeBack();
+				SetThemeBack();
 
 				nk_group_end(ctx);
 			}
 
+			
 			
 
 			/*
@@ -2970,7 +3078,108 @@ void Pannel()
 
 			if (nk_group_begin(ctx, "App", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
-				
+				nk_layout_row_dynamic(ctx, 25, 1);
+
+				switch (pannel_state)
+				{
+				case AUDIOAPP: nk_label(ctx, "mAudio", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case TEXAPP: nk_label(ctx, "mTex", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case ENGINEERAPP: nk_label(ctx, "mEngineer", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case UIAPP: nk_label(ctx, "mInterface", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case SPRITEAPP: nk_label(ctx, "mSprite", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case CODEAPP: nk_label(ctx, "mCode", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case MGGAPP: nk_label(ctx, "MGG Viewer", NK_TEXT_ALIGN_LEFT);
+					break;
+
+				case MGVAPP: nk_label(ctx, "MGV Compiler", NK_TEXT_ALIGN_LEFT);
+					break;
+				}
+
+				if (pannel_state != MGVAPP)
+				{
+					if (nk_button_label(ctx, "Run"))
+					{
+						ZeroMemory(&info, sizeof(info));
+						info.cbSize = sizeof(info);
+						info.lpVerb = ("open");
+						strcpy(exepath, st.CurrPath);
+
+						switch (pannel_state)
+						{
+						case AUDIOAPP: strcat(exepath, "\\mAudio.exe");
+							break;
+
+						case ENGINEERAPP: strcat(exepath, "\\mEngineer.exe");
+							break;
+
+						case CODEAPP: strcat(exepath, "\\mCode.exe");
+							break;
+
+						case TEXAPP: strcat(exepath, "\\mTex.exe");
+							break;
+
+						case UIAPP: strcat(exepath, "\\mInterface.exe");
+							break;
+
+						case SPRITEAPP: strcat(exepath, "\\mSprite.exe");
+							break;
+
+						case MGGAPP: strcat(exepath, "\\MGGViewer.exe");
+							break;
+						}
+
+						info.lpFile = exepath;
+						//sprintf(args, "-o \"%s\"", path2);
+						//info.lpParameters = args;
+						info.lpDirectory = st.CurrPath;
+						info.nShow = SW_SHOW;
+
+						if (!ShellExecuteEx(&info))
+						{
+							switch (pannel_state)
+							{
+							case AUDIOAPP: MessageBox(NULL, "Could not execute mAudio", "Error", MB_OK);
+								break;
+
+							case ENGINEERAPP: MessageBox(NULL, "Could not execute mEngineer", "Error", MB_OK);
+								break;
+
+							case CODEAPP: MessageBox(NULL, "Could not execute mCode", "Error", MB_OK);
+								break;
+
+							case UIAPP: MessageBox(NULL, "Could not execute mInterface", "Error", MB_OK);
+								break;
+
+							case SPRITEAPP: MessageBox(NULL, "Could not execute mSprite", "Error", MB_OK);
+								break;
+
+							case TEXAPP: MessageBox(NULL, "Could not execute mTex", "Error", MB_OK);
+								break;
+
+							case MGGAPP: MessageBox(NULL, "Could not execute MGG Viewer", "Error", MB_OK);
+								break;
+							}
+						}
+					}
+
+				}
+				else
+				{
+					MGVCompiler();
+				}
+
 				nk_group_end(ctx);
 			}
 
@@ -3040,7 +3249,7 @@ int main(int argc, char *argv[])
 	nk_sdl_font_stash_begin(&atlas);
 	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 13, 0);
 	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
-	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 11, 0);
+	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 12, 0);
 	nk_sdl_font_stash_end();
 	nk_style_set_font(ctx, &fonts[0]->handle);
 	background = nk_rgb(28, 48, 62);
@@ -3076,6 +3285,15 @@ int main(int argc, char *argv[])
 	register_hash(&sha512_desc);
 
 	GetCurrentDirectory(MAX_PATH, msdk.program_path);
+
+	msdk.app[AUDIOAPP].icon = LoadTexture("data/icon_audio.png", 0, &msdk.app[AUDIOAPP].icon_size);
+	msdk.app[ENGINEERAPP].icon = LoadTexture("data/icon_engineer.png", 0, &msdk.app[ENGINEERAPP].icon_size);
+	msdk.app[CODEAPP].icon = LoadTexture("data/icon_code.png", 0, &msdk.app[CODEAPP].icon_size);
+	msdk.app[UIAPP].icon = LoadTexture("data/icon_interface.png", 0, &msdk.app[UIAPP].icon_size);
+	msdk.app[SPRITEAPP].icon = LoadTexture("data/icon_sprite.png", 0, &msdk.app[SPRITEAPP].icon_size);
+	msdk.app[MGGAPP].icon = LoadTexture("data/icon_viewer.png", 0, &msdk.app[MGGAPP].icon_size);
+	msdk.app[TEXAPP].icon = LoadTexture("data/icon_tex.png", 0, &msdk.app[TEXAPP].icon_size);
+	msdk.app[MGVAPP].icon = LoadTexture("data/icon_mgv.png", 0, &msdk.app[MGVAPP].icon_size);
 
 	while(!st.quit)
 	{

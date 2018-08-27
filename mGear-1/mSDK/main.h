@@ -23,6 +23,30 @@
 #define CODEAPP 5
 #define SPRITEAPP 6
 #define MGGAPP 7
+#define MGVAPP 8
+
+//Font icons
+#define DEBUG_ICON 37
+#define PLAY_ICON 66
+#define STOP_ICON 68
+#define PAUSE_ICON 67
+#define BACK_ICON 69
+#define FOWARD_ICON 70
+#define BACKJUMP_ICON 71
+#define FOWARDJUMP_ICON 72
+#define CONFIG_ICON 35
+#define GEARS_ICON 36
+#define TERMINAL_ICON 118
+#define SAVE_ICON 23
+#define VIDEO_ICON 11
+#define SOUND_ICON 9
+#define IMAGE_ICON 8
+#define TEXT_ICON 7
+#define FILE_ICON 5
+#define FOLDER_ICON 14
+#define UNDO_ICON 24
+#define REDO_ICON 25
+#define ROTATE_ICON 31
 
 enum FILE_TYPE
 {
@@ -170,6 +194,9 @@ struct _mSdk
 		int32 *files;
 		
 		int16 num_files;
+
+		int icon; //Texture ID
+		Pos icon_size;
 
 	} app[10];
 
