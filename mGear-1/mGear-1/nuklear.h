@@ -14341,8 +14341,8 @@ nk_style_from_table(struct nk_context *ctx, const struct nk_color *table)
     toggle->text_active     = table[NK_COLOR_TEXT];
     toggle->padding         = nk_vec2(2.0f, 2.0f);
     toggle->touch_padding   = nk_vec2(0,0);
-    toggle->border_color    = nk_rgba(0,0,0,0);
-    toggle->border          = 0.0f;
+	toggle->border_color	= table[NK_COLOR_TOGGLE]; //nk_rgba(0,0,0,0);
+    toggle->border          = 1.0f;
     toggle->spacing         = 4;
 
     /* option toggle */
@@ -20318,12 +20318,12 @@ nk_draw_checkbox(struct nk_command_buffer *out,
     /* draw background and cursor */
     if (background->type == NK_STYLE_ITEM_COLOR) {
         nk_fill_rect(out, *selector, 0, style->border_color);
-        nk_fill_rect(out, nk_shrink_rect(*selector, style->border), 0, background->data.color);
+        nk_fill_rect(out, nk_shrink_rect(*selector, style->border), 0, cursor->data.color);
     } else nk_draw_image(out, *selector, &background->data.image, nk_white);
     if (active) {
         if (cursor->type == NK_STYLE_ITEM_IMAGE)
             nk_draw_image(out, *cursors, &cursor->data.image, nk_white);
-        else nk_fill_rect(out, *cursors, 0, cursor->data.color);
+        else nk_fill_rect(out, *cursors, 0, background->data.color);
     }
 
     text.padding.x = 0;
@@ -20408,10 +20408,10 @@ nk_do_toggle(nk_flags *state,
     select.x = r.x;
 
     /* calculate the bounds of the cursor inside the selector */
-    cursor.x = select.x + style->padding.x + style->border;
-    cursor.y = select.y + style->padding.y + style->border;
-    cursor.w = select.w - (2 * style->padding.x + 2 * style->border);
-    cursor.h = select.h - (2 * style->padding.y + 2 * style->border);
+    cursor.x = select.x + style->padding.x + style->border + 1;
+    cursor.y = select.y + style->padding.y + style->border + 1;
+    cursor.w = select.w - (2 * style->padding.x + 2 * style->border) - 2;
+    cursor.h = select.h - (2 * style->padding.y + 2 * style->border) - 2;
 
     /* label behind the selector */
     label.x = select.x + select.w + style->spacing;

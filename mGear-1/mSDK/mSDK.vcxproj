@@ -118,9 +118,9 @@
     <ClInclude Include="..\mGear-1\nuklear_sdl_gl3.h" />
     <ClInclude Include="..\mGear-1\shader110.h" />
     <ClInclude Include="..\mGear-1\shader130.h" />
+    <ClInclude Include="..\mGear-1\skins.h" />
     <ClInclude Include="..\mGear-1\types.h" />
     <ClInclude Include="..\mGear-1\UI.h" />
-    <ClInclude Include="..\mTex\skins.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
