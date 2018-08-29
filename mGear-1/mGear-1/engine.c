@@ -1585,6 +1585,15 @@ void Init()
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL,1);
 
 	//Set video mode
+
+#ifdef HAS_SPLASHSCREEN
+	if((wn=SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 960, 540, SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS))==NULL)
+	{
+		LogApp("Error setting splash screen - %s", SDL_GetError());
+		Quit();
+	}
+
+#else
 	if(st.fullscreen)
 	{
 		if((wn=SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL ))==NULL)
@@ -1602,6 +1611,7 @@ void Init()
 				Quit();
 		}
 	}
+#endif
 
 	LogApp("Window created, %d x %d, %d bits",st.screenx,st.screeny,st.bpp);
 
@@ -1722,7 +1732,11 @@ void Init()
 	glClearColor(0,0,0,0);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+#ifdef HAS_SPLASHSCREEN
+	glViewport(0, 0, 960, 540);
+#else
 	glViewport(0,0,st.screenx,st.screeny);
+#endif
 	glEnable(GL_TEXTURE_2D);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_DEPTH_TEST);
@@ -2242,6 +2256,69 @@ SHADER_CREATION:
 	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	
+}
+#ifdef HAS_SPLASHSCREEN
+void DisplaySplashScreen()
+{
+	TEX_DATA splash;
+	splash.vb_id = -1;
+
+	if ((splash.data = LoadTexture(SPLASHSCREEN_FILE, 0, NULL)) == NULL)
+	{
+		LogApp("Error: could not load splash screen file %s", SPLASHSCREEN_FILE);
+	}
+	else
+	{
+		BASICBKD(255, 255, 255);
+		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		Renderer(1);
+		SwapBuffer(wn);
+	}
+}
+#endif
+
+void InitEngineWindow()
+{
+	SDL_DestroyWindow(wn);
+
+	if (st.fullscreen)
+	{
+		if ((wn = SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL)) == NULL)
+		{
+			LogApp("Error setting fullscreen video mode %d x %d %d bits - %s", st.screenx, st.screeny, st.bpp, SDL_GetError());
+			Quit();
+		}
+	}
+	else
+	if (!st.fullscreen)
+	{
+		if ((wn = SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)) == NULL)
+		{
+			LogApp("Error setting widowed video mode %d x %d %d bits - %s", st.screenx, st.screeny, st.bpp, SDL_GetError());
+			Quit();
+		}
+	}
+
+	SDL_GL_MakeCurrent(wn, st.glc);
+
+	glViewport(0, 0, st.screenx, st.screeny);
+
+	glClearColor(0, 0, 0, 0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, st.screenx, st.screeny, 0, 0, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_TEXTURE_2D);
+	SDL_GL_SetSwapInterval(st.vsync);
+
+	if (SDL_GetRelativeMouseMode())
+	{
+		SDL_SetRelativeMouseMode(SDL_FALSE);
+		SDL_SetRelativeMouseMode(SDL_TRUE);
+	}
 }
 
 uint8 OpenFont(const char *file,const char *name, uint8 index, size_t font_size)

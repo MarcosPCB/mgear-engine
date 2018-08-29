@@ -39,6 +39,12 @@
 #ifndef _ENGINE_H
 #define _ENGINE_H
 
+#ifdef HAS_SPLASHSCREEN
+	#ifndef SPLASHSCREEN_FILE
+		#define SPLASHSCREEN_FILE "data/splash.bmp"
+	#endif
+#endif
+
 #define MAX_SPRITES 256
 #define MAX_GRAPHICS 2048
 #define MAX_DRAWCALLS 1024
@@ -1082,6 +1088,14 @@ void FPSCounter();
 
 void CreateLog();
 void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
+
+#ifdef HAS_SPLASHSCREEN
+
+void DisplaySplashScreen();
+
+#endif
+
+void InitEngineWindow();
 
 void RestartVideo();
 

@@ -3383,6 +3383,8 @@ int main(int argc, char *argv[])
 
 	Init();
 
+	DisplaySplashScreen();
+	
 	curl_global_init(CURL_GLOBAL_ALL);
 
 	strcpy(st.WindowTitle,"mSDK");
@@ -3410,7 +3412,7 @@ int main(int argc, char *argv[])
 	curr_tic=GetTicks();
 
 	ctx = nk_sdl_init(wn);
-
+	
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
 	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 13, 0);
@@ -3418,8 +3420,9 @@ int main(int argc, char *argv[])
 	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 12, 0);
 	nk_sdl_font_stash_end();
 	nk_style_set_font(ctx, &fonts[0]->handle);
+	
 	background = nk_rgb(28, 48, 62);
-
+	
 	SETENGINEPATH;
 
 	memset(&msdk, 0, sizeof(mSdk));
@@ -3451,7 +3454,7 @@ int main(int argc, char *argv[])
 	register_hash(&sha512_desc);
 
 	GetCurrentDirectory(MAX_PATH, msdk.program_path);
-
+	
 	msdk.app[AUDIOAPP].icon = LoadTexture("data/icon_audio.png", 0, &msdk.app[AUDIOAPP].icon_size);
 	msdk.app[ENGINEERAPP].icon = LoadTexture("data/icon_engineer.png", 0, &msdk.app[ENGINEERAPP].icon_size);
 	msdk.app[CODEAPP].icon = LoadTexture("data/icon_code.png", 0, &msdk.app[CODEAPP].icon_size);
@@ -3460,6 +3463,9 @@ int main(int argc, char *argv[])
 	msdk.app[MGGAPP].icon = LoadTexture("data/icon_viewer.png", 0, &msdk.app[MGGAPP].icon_size);
 	msdk.app[TEXAPP].icon = LoadTexture("data/icon_tex.png", 0, &msdk.app[TEXAPP].icon_size);
 	msdk.app[MGVAPP].icon = LoadTexture("data/icon_mgv.png", 0, &msdk.app[MGVAPP].icon_size);
+	
+
+	InitEngineWindow();
 
 	while(!st.quit)
 	{

@@ -479,11 +479,11 @@ void SetSkin(struct nk_context *ctx, enum NKUITheme theme)
 		nk_style_default(ctx);
 
 		ctx->style.button.rounding = 0.0f;
-		//ctx->style.button.normal.data.color = ctx->style.button.border_color;
 		ctx->style.property.rounding = 0;
-		//ctx->style.checkbox.normal = ctx->style.button.active;
-		//ctx->style.checkbox.active = 
 	}
+
+	ctx->style.button.rounding = 0.0f;
+	ctx->style.property.rounding = 0;
 }
 
 #endif
