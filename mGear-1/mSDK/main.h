@@ -192,6 +192,7 @@ struct _mSdk
 		char argument[1024];
 		
 		int32 *files;
+		int32 selected;
 		
 		int16 num_files;
 

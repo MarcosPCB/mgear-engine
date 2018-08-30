@@ -5397,6 +5397,8 @@ int main(int argc, char *argv[])
 
 	Init();
 
+	DisplaySplashScreen();
+
 	strcpy(st.WindowTitle,"Tex");
 
 	//OpenFont("font/Roboto-Regular.ttf","arial",0,128);
@@ -5442,6 +5444,46 @@ int main(int argc, char *argv[])
 
 	InitGWEN();
 	SetSkin(ctx, mtex.theme);
+
+	if (argc > 0)
+	{
+		for (i = 0; i < argc; i++)
+		{
+			if (strcmp(argv[i], "-o") == NULL)
+			{
+				char *buf = LoadPrjFile(argv[i + 1]);
+
+				if (buf)
+					MessageBox(NULL, buf, "Error", MB_OK);
+				else
+				{
+					strcpy(mtex.prj_path, argv[i+1]);
+
+					int a = strlen(argv[i + 1]);
+
+					int j;
+
+					for (j = a; j > 0; j--)
+					{
+						if (argv[i + 1][j] == '\\' || argv[i + 1][j] == '/') break;
+					}
+
+					j++;
+
+					strcpy(mtex.filename, argv[i + 1] + j);
+
+					sprintf(st.WindowTitle, "Tex %s", mtex.filename);
+
+					memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
+
+					for (int m = 0; m < j - 1; m++)
+						mtex.mgg.path[m] = argv[i + 1][m];
+				}
+			}
+		}
+	}
+
+	InitEngineWindow();
 
 	while(!st.quit)
 	{

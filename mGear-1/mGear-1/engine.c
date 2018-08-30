@@ -36,6 +36,8 @@ _ENTITIES lmp[MAX_LIGHTMAPS];
 unsigned char *DataN;
 GLuint DataNT, DATA_TEST;
 
+TEX_DATA splash;
+
 //Foreground + Background + Midground
 //Each layer (z position) has 8 sub-layers (slots)
 //The allocation is done during initialization
@@ -389,6 +391,51 @@ int16 LoadTexture(const char *file, uint8 mipmap, Pos *size)
 
 	return tex;
 }
+
+int16 LoadTextureM(void *img_data, size_t data_size, uint8 mipmap, Pos *size)
+{
+	GLuint tex;
+	int x, y, color;
+	uint8 *data;
+
+	data = stbi_load_from_memory(img_data, data_size, &x, &y, &color, NULL);
+
+	if (!data)
+	{
+		LogApp("Error: could not load image data %s", stbi_failure_reason());
+		return -1;
+	}
+
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+
+	if (color == 3)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+	if (color == 4)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	if (mipmap)
+	{
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+	else
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	stbi_image_free(data);
+	if (size)
+	{
+		size->x = x;
+		size->y = y;
+	}
+
+	return tex;
+}
+
 
 #ifndef MGEAR_CLEAN_VERSION
 
@@ -2258,11 +2305,57 @@ SHADER_CREATION:
 	
 }
 #ifdef HAS_SPLASHSCREEN
-void DisplaySplashScreen()
+int DisplaySplashScreen()
 {
-	TEX_DATA splash;
 	splash.vb_id = -1;
 
+#ifdef SPLASHSCREEN_RESOURCE
+	HINSTANCE handle = GetModuleHandle(NULL);
+	HRSRC rsc = FindResource(handle, 102, "PNG");
+
+	if (!rsc)
+	{
+		LogApp("Error loading splash screen resource");
+		return NULL;
+	}
+
+	DWORD size = SizeofResource(handle, rsc);
+
+	if (!size)
+	{
+		LogApp("Error loading splash screen resource");
+		return NULL;
+	}
+
+	void *rscdata = LockResource(LoadResource(handle, rsc));
+
+	void *img = malloc(size);
+
+	memcpy(img, rscdata, size);
+
+	UnlockResource(rscdata);
+
+	if (!rscdata)
+	{
+		LogApp("Error loading splash screen resource");
+		return NULL;
+	}
+
+	if ((splash.data = LoadTextureM(img, size, 0, NULL)) == NULL)
+	{
+		LogApp("Error: could not load splash screen resource");
+	}
+	else
+	{
+		BASICBKD(255, 255, 255);
+		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		Renderer(1);
+		SwapBuffer(wn);
+	}
+
+	free(img);
+
+#else
 	if ((splash.data = LoadTexture(SPLASHSCREEN_FILE, 0, NULL)) == NULL)
 	{
 		LogApp("Error: could not load splash screen file %s", SPLASHSCREEN_FILE);
@@ -2274,11 +2367,35 @@ void DisplaySplashScreen()
 		Renderer(1);
 		SwapBuffer(wn);
 	}
+
+#endif
+
+#if SPLASHSCREEN_ALPHA == 1 || SPLASHSCREEN_ALPHA == 3
+	for (int i = 0; i < 255; i++)
+	{
+		Sleep(SPLASHSCREEN_ALPHA_TIME);
+		SDL_SetWindowOpacity(wn, (float)(1.0f / 255)*i);
+	}
+#endif
+
+	return 1;
 }
 #endif
 
 void InitEngineWindow()
 {
+	Sleep(SPLASHSCREEN_TIME);
+
+#if SPLASHSCREEN_ALPHA > 1
+
+	for (int i = 255; i > 0; i--)
+	{
+		Sleep(SPLASHSCREEN_ALPHA_TIME);
+		SDL_SetWindowOpacity(wn, (float)(1.0f / 255)*i);
+	}
+
+#endif
+
 	SDL_DestroyWindow(wn);
 
 	if (st.fullscreen)
@@ -8958,7 +9075,7 @@ void Renderer(uint8 type)
 
 #endif
 
-	if(type)
+	if(type > 0)
 		st.num_lightmap=1; //Make sure BASICBKD() is being used
 
 	num_targets=st.num_entities;
@@ -9012,6 +9129,9 @@ void Renderer(uint8 type)
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (type == 2)
+			glClearColor(0, 0, 0, 0);
 
 		for(i=z_used;i>-1;i--)
 		{

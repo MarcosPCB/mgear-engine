@@ -1091,7 +1091,7 @@ void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
 
 #ifdef HAS_SPLASHSCREEN
 
-void DisplaySplashScreen();
+int DisplaySplashScreen();
 
 #endif
 
@@ -1252,6 +1252,8 @@ int8 LoadLightmapFromFile(const char *file);
 void LockCamera();
 
 int16 LoadTexture(const char *file, uint8 mipmap, Pos *size);
+
+int16 LoadTextureM(void *img_data, size_t data_size, uint8 mipmap, Pos *size);
 
 //#ifdef MFC_MGEAR
 //}

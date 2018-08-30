@@ -332,7 +332,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	return files;
 }
 
-int32 *ListFileExtFromFolder(struct File_sys *files, int32 num_files, char fileextension[8], int *listed_files)
+int32 *ListFileExtFromFolder(struct File_sys *files, int32 num_files, char fileextension[8], int32 *listed_files)
 {
 	char *ext;
 	int32 *ids;
@@ -349,16 +349,17 @@ int32 *ListFileExtFromFolder(struct File_sys *files, int32 num_files, char filee
 	
 	for (i = 0, *listed_files = 0, j = 0; i < num_files; i++)
 	{
-		ext = strrchr(files[i].file, ".");
+		ext = strrchr(files[i].file, '.');
 		if (ext != NULL)
 		{
 			lowerstring(ext);
 
 			if (strcmp(ext, fileextension) == 0)
 			{
-				realloc_mem(ids, 4 + (i * 2));
+				realloc_mem(ids, 4 + ((j + 1) * 4));
 				ids[j] = i;
-				*listed_files++;
+				*listed_files += 1;
+				j++;
 			}
 		}
 	}
@@ -478,7 +479,6 @@ uint16 LoadCFG()
 	return 1;
 
 }
-
 
 int SavePrjFile(const char *filename)
 {
@@ -3244,7 +3244,6 @@ void Pannel()
 
 			if (nk_group_begin(ctx, gstr, NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 			{
-				//nk_layout_row_dynamic(ctx, 25, 1);
 				/*
 				switch (pannel_state)
 				{
@@ -3275,7 +3274,41 @@ void Pannel()
 				*/
 				if (pannel_state != MGVAPP)
 				{
-					if (nk_button_label(ctx, "Run"))
+					//if (pannel_state == TEXAPP && )
+					//{
+						nk_layout_row_dynamic(ctx, 20, 1);
+						nk_label(ctx, "Project files:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_BOTTOM);
+
+						if (msdk.app[pannel_state].num_files > 0)
+						{
+							if (nk_combo_begin_label(ctx,
+								msdk.app[pannel_state].selected == 0 ? "None" : msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected - 1]].file,
+								nk_vec2(nk_widget_width(ctx), 200)))
+							{
+								for (i = 0; i < msdk.app[pannel_state].num_files + 1; i++)
+								{
+									nk_layout_row_dynamic(ctx, 20, 1);
+									if (nk_combo_item_label(ctx, i == 0 ? "None" : msdk.prj_files[msdk.app[pannel_state].files[i - 1]].file, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE))
+									{
+										msdk.app[pannel_state].selected = i;
+										break;
+									}
+								}
+
+								nk_combo_end(ctx);
+							}
+						}
+						else
+						{
+							nk_combo_begin_label(ctx, "No file available",
+								nk_vec2(nk_widget_width(ctx), 20));
+
+						}
+					//}
+
+					nk_layout_row_dynamic(ctx, 25, 3);
+					nk_spacing(ctx, 2);
+					if (nk_button_label(ctx, "Open"))
 					{
 						ZeroMemory(&info, sizeof(info));
 						info.cbSize = sizeof(info);
@@ -3307,8 +3340,13 @@ void Pannel()
 						}
 
 						info.lpFile = exepath;
-						//sprintf(args, "-o \"%s\"", path2);
-						//info.lpParameters = args;
+						if (msdk.app[pannel_state].selected > 0)
+						{
+							sprintf(args, "-o \"%s/%s\"", msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected]].path,
+								msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected]].file);
+							info.lpParameters = args;
+						}
+
 						info.lpDirectory = st.CurrPath;
 						info.nShow = SW_SHOW;
 
