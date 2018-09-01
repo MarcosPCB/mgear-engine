@@ -7,12 +7,14 @@
 #endif
 
 #include "engine.h"
+#include "funcs.h"
 #include "quicklz.h"
 #include "input.h"
 #include <math.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <SDL_syswm.h>
+#include <time.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -35,6 +37,9 @@ _LIGHTS game_lights[MAX_LIGHTS];
 _ENTITIES lmp[MAX_LIGHTMAPS];
 unsigned char *DataN;
 GLuint DataNT, DATA_TEST;
+
+HANDLE EventHand; 
+HANDLE EventSI;
 
 TEX_DATA splash;
 
@@ -1497,6 +1502,144 @@ static int VBBuffProcess(void *data)
 }
 */
 
+void SendInfo(const char *comm_file, const char *data, int8 command)
+{
+	FILE *f;
+	if ((f = fopen(comm_file, "wb")) == NULL)
+	{
+		MessageBox(NULL, "Could not send data to another instance of the app", "Send data", MB_OK);
+		exit(3);
+	}
+
+	fwrite(&command, 1, 1, f);
+	fwrite(strlen(data), sizeof(size_t), 1, f);
+	fwrite(data, strlen(data), 1, f);
+	fclose(f);
+}
+
+void PreInit( const char AppName[4], int argc, char *argv[])
+{
+	int8 success = 0, sendinfo = 0;
+	int i;
+	char files[256][MAX_PATH];
+
+	srand(time(NULL));
+
+	GetModuleFileName(NULL, st.CurrPath, MAX_PATH);
+	char *buf = strrchr(st.CurrPath, '\\');
+	ZeroMemory(buf, strlen(buf));
+	SetCurrentDirectory(st.CurrPath);
+	GetCurrentDirectory(MAX_PATH, st.CurrPath);
+
+	EventHand = CreateEvent(NULL, TRUE, FALSE, StringFormat("%sEvnmGR", AppName));
+
+	switch (GetLastError())
+	{
+		case ERROR_ALREADY_EXISTS:
+			success = -1;
+			break;
+
+		case ERROR_SUCCESS:
+			success = 1;
+			break;
+	}
+
+	if (success == -1)
+	{
+		CloseHandle(EventHand);
+
+		int8 filenum = NumDirFile(st.CurrPath, files);
+
+		for (i = 0; i < filenum; i++)
+		{
+			char *ext = strrchr(files[i], '.');
+
+			if (strcmp(ext, ".cbaf") == NULL)
+			{
+				ZeroMemory(ext, strlen(ext));
+
+				EventHand = CreateEvent(NULL, TRUE, FALSE, StringFormat("%sSiEv", files[i]));
+
+				switch (GetLastError())
+				{
+					case ERROR_ALREADY_EXISTS:
+						sendinfo = 1;
+						break;
+
+					case ERROR_SUCCESS:
+						sendinfo = 0;
+						break;
+				}
+
+				CloseHandle(EventHand);
+
+				if (sendinfo == 0)
+					continue;
+				else
+					break;
+			}
+		}
+
+		if (sendinfo == 0)
+			exit(2);
+		else
+		{
+			if (argc > 1)
+			{
+				for (int j = 0; j < argc; j++)
+				{
+					if (strcmp(argv[j], "-o") == NULL)
+					{
+						if (j + 1 < argc)
+						{
+							SendInfo(files[i], argv[j + 1], IA_OPENFILE);
+							break;
+						}
+					}
+				}
+			}
+
+			exit(4);
+		}
+	}
+
+	int id, tries = 0;
+	
+IATRY:
+	id = rand();
+
+	EventSI = CreateEvent(NULL, TRUE, FALSE, StringFormat("%s%dSiEv", AppName, id));
+
+	switch (GetLastError())
+	{
+		case ERROR_ALREADY_EXISTS:
+			sendinfo = 1;
+			break;
+
+		case ERROR_SUCCESS:
+			sendinfo = 0;
+			break;
+	}
+
+	FILE *f;
+
+	if ((f = fopen(StringFormat("%s%d", AppName, id), "wb")) == NULL)
+	{
+		if (tries == 2)
+			MessageBoxRes("IA", MB_OK, "Unable to create communication system between apps");
+		else
+		{
+			CloseHandle(EventSI);
+			tries++;
+			goto IATRY;
+		}
+	}
+	else
+	{
+
+	}
+}
+
 void Init()
 {	
 	 uint16 i=0, j=0, l=0;
@@ -1520,7 +1663,8 @@ void Init()
 	//system("pause");
 #endif
 
-	GetCurrentDirectory(MAX_PATH, st.CurrPath);
+	
+	//GetCurrentDirectory(MAX_PATH, st.CurrPath);
 
 	CreateLog();
 
@@ -2374,6 +2518,12 @@ int DisplaySplashScreen()
 	for (int i = 0; i < 255; i++)
 	{
 		Sleep(SPLASHSCREEN_ALPHA_TIME);
+
+		BASICBKD(255, 255, 255);
+		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		Renderer(1);
+		SwapBuffer(wn);
+
 		SDL_SetWindowOpacity(wn, (float)(1.0f / 255)*i);
 	}
 #endif
@@ -2384,13 +2534,21 @@ int DisplaySplashScreen()
 
 void InitEngineWindow()
 {
+#ifdef HAS_SPLASHSCREEN
 	Sleep(SPLASHSCREEN_TIME);
+#endif
 
 #if SPLASHSCREEN_ALPHA > 1
 
 	for (int i = 255; i > 0; i--)
 	{
 		Sleep(SPLASHSCREEN_ALPHA_TIME);
+
+		BASICBKD(255, 255, 255);
+		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		Renderer(1);
+		SwapBuffer(wn);
+
 		SDL_SetWindowOpacity(wn, (float)(1.0f / 255)*i);
 	}
 

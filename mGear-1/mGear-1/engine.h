@@ -145,6 +145,9 @@ double _inline sqrt14(double n);
 #define MIDGROUND_VIEW 2
 #define FOREGROUND_VIEW 1
 
+//Inter app commands.
+#define IA_OPENFILE 0
+
 enum _Enttype
 {
 	SPRITE,
@@ -1046,6 +1049,8 @@ extern _MGG mgg_game[MAX_GAME_MGG];
 extern SDL_Window *wn;
 
 extern const char WindowTitle[32];
+
+void PreInit();
 
 void Init();
 

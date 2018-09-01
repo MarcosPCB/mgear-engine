@@ -91,9 +91,14 @@ uint16 LoadCFG()
 	FILE *file;
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
 	int value=0;
-	if((file=fopen("mtex_settings.cfg","r"))==NULL)
-		if(WriteCFG()==0)
+	if ((file = fopen("mtex_settings.cfg", "r")) == NULL)
+	{
+		if (WriteCFG() == 0)
 			return 0;
+
+		if ((file = fopen("mtex_settings.cfg", "r")) == NULL)
+			return 0;
+	}
 
 	while(!feof(file))
 	{
@@ -5384,6 +5389,8 @@ int main(int argc, char *argv[])
 	int loops, i;
 
 	struct nk_color background;
+
+	PreInit();
 
 	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
 

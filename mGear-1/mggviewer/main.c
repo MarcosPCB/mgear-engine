@@ -63,8 +63,13 @@ uint16 LoadCFG()
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
 	int value=0;
 	if((file=fopen("mggv_settings.cfg","r"))==NULL)
-		if(WriteCFG()==0)
+	{
+		if (WriteCFG() == 0)
 			return 0;
+
+		if ((file = fopen("mggv_settings.cfg", "r")) == NULL)
+			return 0;
+	}
 
 	while(!feof(file))
 	{
@@ -311,6 +316,8 @@ int main(int argc, char *argv[])
 	int loops;
 
 	struct nk_color background;
+
+	PreInit();
 
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 

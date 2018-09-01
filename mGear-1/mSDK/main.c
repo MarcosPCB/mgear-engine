@@ -442,8 +442,13 @@ uint16 LoadCFG()
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
 	int value=0;
 	if((file=fopen("msdk_settings.cfg","r"))==NULL)
-		if(WriteCFG()==0)
+	{
+		if (WriteCFG() == 0)
 			return 0;
+
+		if ((file = fopen("msdk_settings.cfg", "r")) == NULL)
+			return 0;
+	}
 
 	while(!feof(file))
 	{
@@ -558,6 +563,12 @@ int LoadPrjFile(const char *filename)
 {
 	FILE *f;
 	char header[21];
+
+	if (filename == NULL)
+	{
+		MessageBoxRes("Error", MB_OK, "Invalid file NULL");
+		return -1;
+	}
 	
 	if ((f = fopen(filename, "rb")) == NULL)
 		return 0;
@@ -3413,6 +3424,8 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
+	PreInit();
+
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
@@ -3501,7 +3514,42 @@ int main(int argc, char *argv[])
 	msdk.app[MGGAPP].icon = LoadTexture("data/icon_viewer.png", 0, &msdk.app[MGGAPP].icon_size);
 	msdk.app[TEXAPP].icon = LoadTexture("data/icon_tex.png", 0, &msdk.app[TEXAPP].icon_size);
 	msdk.app[MGVAPP].icon = LoadTexture("data/icon_mgv.png", 0, &msdk.app[MGVAPP].icon_size);
-	
+
+	if (argc > 0)
+	{
+		for (int i = 0; i < argc; i++)
+		{
+			if (strcmp(argv[i], "-o") == NULL)
+			{
+				char path[MAX_PATH];
+				strcpy(path, argv[i + 1]);
+
+				char *buf = strrchr(path, '\\');
+				ZeroMemory(buf, strlen(path));
+				SetCurrentDirectory(path);
+
+				int temp = LoadPrjFile(argv[i + 1]);
+
+				if (temp == 0)
+					MessageBox(NULL, "Error could not open the file", "Error", MB_OK);
+
+				if (temp == -1)
+					MessageBox(NULL, "Error invalid file", "Error", MB_OK);
+
+				if (temp == 1)
+				{
+					msdk.prj_files = GetFolderTreeContent(msdk.prj.prj_path, &msdk.num_prj_files);
+
+					msdk.app[TEXAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".texprj", &msdk.app[TEXAPP].num_files);
+					msdk.app[MGGAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".mgg", &msdk.app[MGGAPP].num_files);
+					msdk.app[ENGINEERAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".map", &msdk.app[ENGINEERAPP].num_files);
+
+					msdk.prj.loaded = 1;
+					strcpy(msdk.filepath, argv[i + 1]);
+				}
+			}
+		}
+	}
 
 	InitEngineWindow();
 
