@@ -48,6 +48,24 @@
 #define REDO_ICON 25
 #define ROTATE_ICON 31
 
+//Integrated apps
+#define INTG_PS 0
+#define INTG_IL 1
+#define INTG_GP 2
+#define INTG_AU 3
+#define INTG_VS 4
+
+#define INTG_PS_NAME "Photoshop"
+#define INTG_PS_EXE "Photoshop.exe"
+#define INTG_IL_NAME "Illustrator"
+#define INTG_IL_EXE "Illustrator.exe"
+#define INTG_GP_NAME "Gimp"
+#define INTG_GP_EXE "gimp.exe"
+#define INTG_AU_NAME "Audition"
+#define INTG_AU_EXE "Adobe Audition CC.exe"
+#define INTG_VS_NAME "Visual Studio IDE"
+#define INTG_VS_EXE "devenv.exe"
+
 enum FILE_TYPE
 {
 	F_MGG,
@@ -200,6 +218,16 @@ struct _mSdk
 		Pos icon_size;
 
 	} app[10];
+
+	int8 num_intg_apps;
+
+	struct INTAPP
+	{
+		char name[32];
+		char *path;
+		char *arg;
+		int8 valid;
+	} intg_app[16];
 
 	uint8 ffmpeg_downloaded;
 	uint8 ffmpeg_installed;

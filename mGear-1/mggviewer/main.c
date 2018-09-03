@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
-	PreInit();
+	PreInit("mggv",argc, argv);
 
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
@@ -367,6 +367,24 @@ int main(int argc, char *argv[])
 			FPSCounter();
 
 		nk_input_begin(ctx);
+
+		int8 AC;
+		char *ACdata = CheckAppComm(&AC);
+
+		if (ACdata != NULL && AC >= 0)
+		{
+			if (AC == IA_OPENFILE)
+			{
+				SDL_RestoreWindow(wn);
+				SDL_ShowWindow(wn);
+				SDL_RaiseWindow(wn);
+
+				if (!LoadMGG(&mggv.mgg, ACdata))
+					MessageBox(NULL, "Could not open MGG file", "Error", MB_OK);
+				else
+					ResetAppComm();
+			}
+		}
 
 		while(PollEvent(&events))
 		{

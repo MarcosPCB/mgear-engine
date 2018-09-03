@@ -38,8 +38,12 @@ _ENTITIES lmp[MAX_LIGHTMAPS];
 unsigned char *DataN;
 GLuint DataNT, DATA_TEST;
 
-HANDLE EventHand; 
-HANDLE EventSI;
+#ifdef HAS_IA_COMM
+	HANDLE EventHand; 
+	HANDLE EventSI;
+	int event_id;
+	char comm_file[32];
+#endif
 
 TEX_DATA splash;
 
@@ -629,7 +633,41 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
 
 void Quit()
 {
+	char files[256][32];
+	int16 num;
+
 	//ResetVB();
+#ifdef HAS_IA_COMM
+	CloseHandle(EventHand);
+	CloseHandle(EventSI);
+
+	if (strlen(comm_file) > 5)
+		remove(comm_file);
+
+	//Try to remove the other CBAF files
+
+	num = NumDirFile(st.CurrPath, files);
+
+	for (int i = 0; i < num; i++)
+	{
+		char *ext = strrchr(files[i], '.');
+
+		if (ext == NULL) continue;
+
+		if (strcmp(ext, ".cbaf") == NULL)
+		{
+			ZeroMemory(ext, strlen(ext));
+
+			EventHand = CreateEvent(NULL, TRUE, FALSE, StringFormat("%sSiEv", files[i]));
+
+			if (GetLastError() == ERROR_SUCCESS)
+				remove(StringFormat("%s.cbaf", files[i]));
+
+			CloseHandle(EventHand);
+		}
+	}
+#endif
+
 	InputClose();
 	SDL_DestroyWindow(wn);
 	SDL_Quit();
@@ -638,7 +676,7 @@ void Quit()
 	FMOD_System_Release(st.sound_sys.Sound_System);
 #endif
 	TTF_Quit();
-	exit(1);
+	exit(0);
 }
 
 #ifndef MGEAR_CLEAN_VERSION
@@ -1501,27 +1539,126 @@ static int VBBuffProcess(void *data)
 
 }
 */
+#ifdef HAS_IA_COMM
 
-void SendInfo(const char *comm_file, const char *data, int8 command)
+char *CheckAppComm(int8 *command)
 {
 	FILE *f;
+	char *data = NULL;
+
+	if (strlen(comm_file) > 5)
+	{
+		//DWORD attr = GetFileAttributes(comm_file);
+
+		//SetFileAttributes(comm_file, FILE_ATTRIBUTE_NORMAL);
+
+		if ((f = fopen(comm_file, "rb")) == NULL)
+		{
+			//SetFileAttributes(comm_file, attr | FILE_ATTRIBUTE_HIDDEN);
+			*command = -2;
+			return NULL;
+		}
+
+		fseek(f, 0, SEEK_END);
+
+		size_t size = ftell(f);
+
+		rewind(f);
+
+		int len;
+
+		//if (size > 1) 
+			//len = size;
+
+		if (size > 1 + sizeof(int) + 5)
+		{
+			fread(command, 1, 1, f);
+
+			fread(&len, sizeof(int), 1, f);
+
+			alloc_mem(data, len + 1);
+			fread(data, len + 1, 1, f);
+		}
+
+		fclose(f);
+
+		if (data != NULL && *command >= 0 && len > 0)
+			return data;
+		else
+		{
+			//SetFileAttributes(comm_file, attr | FILE_ATTRIBUTE_HIDDEN);
+			return NULL;
+		}
+	}
+	else
+	{
+		*command = -1;
+		return NULL;
+	}
+}
+
+void ResetAppComm()
+{
+	FILE *f;
+
+	DWORD attr = GetFileAttributes(comm_file);
+
+	SetFileAttributes(comm_file, FILE_ATTRIBUTE_NORMAL);
+
 	if ((f = fopen(comm_file, "wb")) == NULL)
 	{
+		SetFileAttributes(comm_file, attr | FILE_ATTRIBUTE_HIDDEN);
+		return NULL;
+	}
+
+	fseek(f, 0, SEEK_END);
+
+	size_t size = ftell(f);
+
+	char *data;
+	alloc_mem(data, size);
+	memset(data, -1, size);
+
+	fwrite(data, size, 1, f);
+
+	fclose(f);
+
+	SetFileAttributes(comm_file, attr | FILE_ATTRIBUTE_HIDDEN);
+}
+
+void SendInfo(const char *commfile, const char *data, int8 command)
+{
+	FILE *f;
+
+	DWORD attr = GetFileAttributes(commfile);
+
+	SetFileAttributes(commfile, FILE_ATTRIBUTE_NORMAL);
+
+	if ((f = fopen(commfile, "wb")) == NULL)
+	{
+		SetFileAttributes(commfile, attr | FILE_ATTRIBUTE_HIDDEN);
 		MessageBox(NULL, "Could not send data to another instance of the app", "Send data", MB_OK);
 		exit(3);
 	}
-
+	
 	fwrite(&command, 1, 1, f);
-	fwrite(strlen(data), sizeof(size_t), 1, f);
-	fwrite(data, strlen(data), 1, f);
+
+	int len = strlen(data);
+
+	fwrite(&len, sizeof(int), 1, f);
+	fwrite(data, len + 1, 1, f);
 	fclose(f);
+
+	SetFileAttributes(commfile, attr | FILE_ATTRIBUTE_HIDDEN);
 }
 
-void PreInit( const char AppName[4], int argc, char *argv[])
+#endif
+
+void PreInit(const char AppName[4], int argc, char *argv[])
 {
 	int8 success = 0, sendinfo = 0;
 	int i;
-	char files[256][MAX_PATH];
+	char files[256][32];
 
 	srand(time(NULL));
 
@@ -1530,6 +1667,8 @@ void PreInit( const char AppName[4], int argc, char *argv[])
 	ZeroMemory(buf, strlen(buf));
 	SetCurrentDirectory(st.CurrPath);
 	GetCurrentDirectory(MAX_PATH, st.CurrPath);
+
+#ifdef HAS_IA_COMM
 
 	EventHand = CreateEvent(NULL, TRUE, FALSE, StringFormat("%sEvnmGR", AppName));
 
@@ -1553,6 +1692,8 @@ void PreInit( const char AppName[4], int argc, char *argv[])
 		for (i = 0; i < filenum; i++)
 		{
 			char *ext = strrchr(files[i], '.');
+
+			if (ext == NULL) continue;
 
 			if (strcmp(ext, ".cbaf") == NULL)
 			{
@@ -1592,7 +1733,7 @@ void PreInit( const char AppName[4], int argc, char *argv[])
 					{
 						if (j + 1 < argc)
 						{
-							SendInfo(files[i], argv[j + 1], IA_OPENFILE);
+							SendInfo(StringFormat("%s.cbaf", files[i]), argv[j + 1], IA_OPENFILE);
 							break;
 						}
 					}
@@ -1603,30 +1744,28 @@ void PreInit( const char AppName[4], int argc, char *argv[])
 		}
 	}
 
-	int id, tries = 0;
+	int tries = 0;
 	
 IATRY:
-	id = rand();
+	event_id = rand();
 
-	EventSI = CreateEvent(NULL, TRUE, FALSE, StringFormat("%s%dSiEv", AppName, id));
+	EventSI = CreateEvent(NULL, TRUE, FALSE, StringFormat("%s%dSiEv", AppName, event_id));
 
-	switch (GetLastError())
+	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		case ERROR_ALREADY_EXISTS:
-			sendinfo = 1;
-			break;
-
-		case ERROR_SUCCESS:
-			sendinfo = 0;
-			break;
+		CloseHandle(EventSI);
+		goto IATRY;
 	}
 
 	FILE *f;
 
-	if ((f = fopen(StringFormat("%s%d", AppName, id), "wb")) == NULL)
+	if ((f = fopen(StringFormat("%s%d.cbaf", AppName, event_id), "wb")) == NULL)
 	{
 		if (tries == 2)
+		{
 			MessageBoxRes("IA", MB_OK, "Unable to create communication system between apps");
+			comm_file[0] = '\0';
+		}
 		else
 		{
 			CloseHandle(EventSI);
@@ -1636,8 +1775,17 @@ IATRY:
 	}
 	else
 	{
+		int8 fi = -1;
+		fwrite(&fi, 1, 1, f);
+		fclose(f);
+		strcpy(comm_file, StringFormat("%s%d.cbaf", AppName, event_id));
 
+		DWORD attr = GetFileAttributes(comm_file);
+
+		SetFileAttributes(comm_file, attr | FILE_ATTRIBUTE_HIDDEN);
 	}
+
+#endif
 }
 
 void Init()
@@ -2491,6 +2639,7 @@ int DisplaySplashScreen()
 	}
 	else
 	{
+		SDL_SetWindowOpacity(wn, 0.0f);
 		BASICBKD(255, 255, 255);
 		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
 		Renderer(1);

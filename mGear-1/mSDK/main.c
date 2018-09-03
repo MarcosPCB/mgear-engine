@@ -419,7 +419,7 @@ uint16 SaveCFG()
 {
 	FILE *file;
 
-	if ((file = fopen("msdk_settings.cfg", "w")) == NULL)
+	if ((file = fopen(StringFormat("%s\\msdk_settings.cfg", st.CurrPath), "w")) == NULL)
 		return 0;
 
 	fprintf(file, "ScreenX = %d\n", st.screenx);
@@ -430,6 +430,35 @@ uint16 SaveCFG()
 	fprintf(file, "AudioChannels = %d\n", st.audioc);
 	fprintf(file, "VSync = %d\n", st.vsync);
 	fprintf(file, "Theme = %d\n", msdk.theme);
+
+	if (msdk.intg_app[INTG_PS].valid == 1)
+	{
+		fprintf(file, "PS = \"%s\"\n", msdk.intg_app[INTG_PS].path);
+		fprintf(file, "PS_a = \"%s\"\n", msdk.intg_app[INTG_PS].arg);
+	}
+	if (msdk.intg_app[INTG_IL].valid == 1)
+	{
+		fprintf(file, "IL = \"%s\"\n", msdk.intg_app[INTG_IL].path);
+		fprintf(file, "IL_a = \"%s\"\n", msdk.intg_app[INTG_IL].arg);
+	}
+
+	if (msdk.intg_app[INTG_GP].valid == 1)
+	{
+		fprintf(file, "GP = \"%s\"\n", msdk.intg_app[INTG_GP].path);
+		fprintf(file, "GP_a = \"%s\"\n", msdk.intg_app[INTG_GP].arg);
+	}
+
+	if (msdk.intg_app[INTG_AU].valid == 1)
+	{
+		fprintf(file, "AU = \"%s\"\n", msdk.intg_app[INTG_AU].path);
+		fprintf(file, "AU_a = \"%s\"\n", msdk.intg_app[INTG_AU].arg);
+	}
+
+	if (msdk.intg_app[INTG_VS].valid == 1)
+	{
+		fprintf(file, "VS = \"%s\"\n", msdk.intg_app[INTG_VS].path);
+		fprintf(file, "VS_a = \"%s\"\n", msdk.intg_app[INTG_VS].arg);
+	}
 
 	fclose(file);
 
@@ -470,6 +499,146 @@ uint16 LoadCFG()
 			strcpy(st.CurrPath, buf2);
 			continue;
 		}
+
+		if (strcmp(str, "PS") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_PS].path, MAX_PATH);
+			strcpy(msdk.intg_app[INTG_PS].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "PS_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_PS].arg, MAX_PATH * 2);
+			strcpy(msdk.intg_app[INTG_PS].arg, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "IL") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_IL].path, MAX_PATH);
+			strcpy(msdk.intg_app[INTG_IL].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "IL_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_IL].arg, MAX_PATH * 2);
+			strcpy(msdk.intg_app[INTG_IL].arg, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "GP") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_GP].path, MAX_PATH);
+			strcpy(msdk.intg_app[INTG_GP].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "GP_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_GP].arg, MAX_PATH * 2);
+			strcpy(msdk.intg_app[INTG_GP].arg, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "AU") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_AU].path, MAX_PATH);
+			strcpy(msdk.intg_app[INTG_AU].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "AU_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_AU].arg, MAX_PATH * 2);
+			strcpy(msdk.intg_app[INTG_AU].arg, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "VS") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_VS].path, MAX_PATH);
+			strcpy(msdk.intg_app[INTG_VS].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "VS_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(msdk.intg_app[INTG_VS].arg, MAX_PATH * 2);
+			strcpy(msdk.intg_app[INTG_VS].arg, buf2);
+
+			continue;
+		}
+	}
+
+	if (msdk.intg_app[INTG_PS].path != NULL && msdk.intg_app[INTG_PS].arg != NULL)
+	{
+		strcpy(msdk.intg_app[INTG_PS].name, INTG_PS_NAME);
+		msdk.intg_app[INTG_PS].valid = 1;
+	}
+
+	if (msdk.intg_app[INTG_IL].path != NULL && msdk.intg_app[INTG_IL].arg != NULL)
+	{
+		strcpy(msdk.intg_app[INTG_IL].name, INTG_IL_NAME);
+		msdk.intg_app[INTG_IL].valid = 1;
+	}
+
+	if (msdk.intg_app[INTG_GP].path != NULL && msdk.intg_app[INTG_GP].arg != NULL)
+	{
+		strcpy(msdk.intg_app[INTG_GP].name, INTG_GP_NAME);
+		msdk.intg_app[INTG_GP].valid = 1;
+	}
+
+	if (msdk.intg_app[INTG_AU].path != NULL && msdk.intg_app[INTG_AU].arg != NULL)
+	{
+		strcpy(msdk.intg_app[INTG_AU].name, INTG_AU_NAME);
+		msdk.intg_app[INTG_AU].valid = 1;
+	}
+
+	if (msdk.intg_app[INTG_VS].path != NULL && msdk.intg_app[INTG_VS].arg != NULL)
+	{
+		strcpy(msdk.intg_app[INTG_VS].name, INTG_VS_NAME);
+		msdk.intg_app[INTG_VS].valid = 1;
 	}
 
 	if(!st.screenx || !st.screeny || !st.bpp || !st.audioc || !st.audioc || st.vsync>1)
@@ -1953,6 +2122,131 @@ void CheckFFmpegConversionFolder()
 	
 }
 
+void CheckIA()
+{
+	int8 AC;
+	char *ACdata = CheckAppComm(&AC);
+
+	if (ACdata != NULL && AC >= 0)
+	{
+		if (AC == IA_OPENFILE)
+		{
+			SDL_RestoreWindow(wn);
+			SDL_ShowWindow(wn);
+			SDL_RaiseWindow(wn);
+
+			int32 boxm = MessageBoxRes("Warning", MB_YESNOCANCEL | MB_ICONQUESTION | MB_TOPMOST, "Would you like to save your project before opening another file?");
+			
+			if (boxm == IDYES || boxm == IDNO)
+			{
+				if (boxm == IDYES)
+					SavePrjFile(msdk.filepath);
+
+				UnloadPrj();
+
+				char path[MAX_PATH];
+				strcpy(path, ACdata);
+
+				char *buf = strrchr(path, '\\');
+				ZeroMemory(buf, strlen(path));
+				SetCurrentDirectory(path);
+
+				int temp = LoadPrjFile(ACdata);
+
+				if (temp == 0)
+					MessageBox(NULL, "Error could not open the file", "Error", MB_OK);
+
+				if (temp == -1)
+					MessageBox(NULL, "Error invalid file", "Error", MB_OK);
+
+				if (temp == 1)
+				{
+					msdk.prj_files = GetFolderTreeContent(msdk.prj.prj_path, &msdk.num_prj_files);
+
+					msdk.app[TEXAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".texprj", &msdk.app[TEXAPP].num_files);
+					msdk.app[MGGAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".mgg", &msdk.app[MGGAPP].num_files);
+					msdk.app[ENGINEERAPP].files = ListFileExtFromFolder(msdk.prj_files, msdk.num_prj_files, ".map", &msdk.app[ENGINEERAPP].num_files);
+
+					msdk.prj.loaded = 1;
+					strcpy(msdk.filepath, ACdata);
+				}
+			}
+
+			ResetAppComm();
+		}
+	}
+}
+
+char *CheckForInstallation(const char *app)
+{
+	HKEY key = NULL;
+	char data[1024], *ret;
+	int32 size;
+	DWORD type = KEY_ALL_ACCESS;
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, StringFormat("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s", app), 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
+	{
+		return NULL;
+	}
+	else
+	{
+		if (RegQueryValueEx(key, NULL, NULL, NULL, &data, &size) != ERROR_SUCCESS)
+		{
+			RegCloseKey(key);
+			LogApp("Invalid key");
+			return NULL;
+		}
+		else
+		{
+			RegCloseKey(key);
+			LogApp("Key found");
+
+			alloc_mem(ret, size);
+			strcpy(ret, data);
+			return ret;
+		}
+	}
+}
+
+char *GetAppArg(const char *app)
+{
+	HKEY key = NULL;
+	char data[1024], *ret;
+	int32 size;
+
+	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, StringFormat("Applications\\%s\\shell\\open\\command", app), 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
+	{
+		return NULL;
+	}
+	else
+	{
+		if (RegQueryValueEx(key, NULL, NULL, NULL, &data, &size) != ERROR_SUCCESS)
+		{
+			RegCloseKey(key);
+			LogApp("Invalid key");
+			return NULL;
+		}
+		else
+		{
+			RegCloseKey(key);
+			LogApp("Key found");
+
+			alloc_mem(ret, size);
+			memset(ret, NULL, size);
+
+			char *buf = strtok(data, "\"");
+			while (buf != NULL)
+			{
+				buf = strtok(NULL, "\"");
+				if (buf != NULL)
+					strcat(ret, buf);
+			}
+
+			return ret;
+		}
+	}
+}
+
 int Preferences()
 {
 	static char str[32];
@@ -1968,7 +2262,7 @@ int Preferences()
 	//if (msdk.theme == THEME_GWEN) strcpy(str, "GWEN skin");
 	if (msdk.theme == THEME_BLACK) strcpy(str, "Default");
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 100, st.screeny / 2 - 100, 275, 170), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 100, st.screeny / 2 - 150, 275, 350), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -2101,6 +2395,95 @@ int Preferences()
 					}
 				}
 			}
+		}
+
+		nk_layout_row_dynamic(ctx, 190, 1);
+
+		if (nk_group_begin(ctx, "Integrated apps",NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+		{
+			nk_menubar_begin(ctx);
+			
+			nk_layout_row_dynamic(ctx, 20, 1);
+			if (nk_button_label(ctx, "Find apps"))
+			{
+				char fstr[512];
+				strcpy(fstr, "Apps found:\n");
+
+				memset(msdk.intg_app, 0, sizeof(msdk.intg_app));
+
+				if ((msdk.intg_app[INTG_PS].path = CheckForInstallation("Photoshop.exe")) != NULL)
+				{
+					if ((msdk.intg_app[INTG_PS].arg = GetAppArg("Photoshop.exe")) != NULL)
+					{
+						strcat(fstr, "Photoshop\n");
+						msdk.intg_app[INTG_PS].valid = 1;
+						strcpy(msdk.intg_app[INTG_PS].name, "Photoshop");
+						msdk.num_intg_apps++;
+					}
+				}
+
+				if ((msdk.intg_app[INTG_IL].path = CheckForInstallation(INTG_IL_EXE)) != NULL)
+				{
+					if ((msdk.intg_app[INTG_IL].arg = GetAppArg("Illustrator.exe")) != NULL)
+					{
+						strcat(fstr, "Illustrator\n");
+						msdk.intg_app[INTG_IL].valid = 1;
+						strcpy(msdk.intg_app[INTG_IL].name, "Illustrator");
+						msdk.num_intg_apps++;
+					}
+				}
+
+				if ((msdk.intg_app[INTG_GP].path = CheckForInstallation("gimp.exe")) != NULL)
+				{
+					if ((msdk.intg_app[INTG_GP].arg = GetAppArg("gimp.exe")) != NULL)
+					{
+						strcat(fstr, "Gimp\n");
+						msdk.intg_app[INTG_GP].valid = 1;
+						strcpy(msdk.intg_app[INTG_GP].name, "Gimp");
+						msdk.num_intg_apps++;
+					}
+				}
+
+				if ((msdk.intg_app[INTG_AU].path = CheckForInstallation(INTG_AU_EXE)) != NULL)
+				{
+					if ((msdk.intg_app[INTG_AU].arg = GetAppArg(INTG_AU_EXE)) != NULL)
+					{
+						strcat(fstr, "Audition\n");
+						msdk.intg_app[INTG_AU].valid = 1;
+						strcpy(msdk.intg_app[INTG_AU].name, "Audition");
+						msdk.num_intg_apps++;
+					}
+				}
+
+				if ((msdk.intg_app[INTG_VS].path = CheckForInstallation(INTG_VS_EXE)) != NULL)
+				{
+					if ((msdk.intg_app[INTG_VS].arg = GetAppArg(INTG_VS_EXE)) != NULL)
+					{
+						strcat(fstr, "Visual Studio IDE\n");
+						msdk.intg_app[INTG_VS].valid = 1;
+						strcpy(msdk.intg_app[INTG_VS].name, INTG_VS_NAME);
+						msdk.num_intg_apps++;
+					}
+				}
+
+				if (msdk.num_intg_apps != 0)
+					strcat(fstr, StringFormat("Integrated apps: %d\nIntegration complete", msdk.num_intg_apps));
+				else
+					strcpy(fstr, "No valid apps were found for integration");
+
+				MessageBoxRes("Integration", MB_OK | MB_TOPMOST, fstr);
+			}
+
+			nk_menubar_end(ctx);
+
+			nk_layout_row_dynamic(ctx, 20, 1);
+			for (i = 0; i < 16; i++)
+			{
+				if (msdk.intg_app[i].valid == 1)
+					nk_label(ctx, msdk.intg_app[i].name, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+			}
+
+			nk_group_end(ctx);
 		}
 
 		nk_layout_row_dynamic(ctx, 25, 1);
@@ -3324,7 +3707,20 @@ void Pannel()
 						ZeroMemory(&info, sizeof(info));
 						info.cbSize = sizeof(info);
 						info.lpVerb = ("open");
-						strcpy(exepath, st.CurrPath);
+
+						if (pannel_state == CODEAPP && msdk.prj.code == 1)
+						{
+							strcpy(exepath, msdk.intg_app[INTG_VS].path);
+							strcpy(args, msdk.intg_app[INTG_VS].arg);
+
+							char *buf2 = strstr(args, "%1");
+							ZeroMemory(buf2, strlen(buf2));
+
+							strcat(args, StringFormat(" \"mtex_settings.cfg\""));
+							info.lpParameters = args;
+						}
+						else
+							strcpy(exepath, st.CurrPath);
 
 						switch (pannel_state)
 						{
@@ -3334,7 +3730,7 @@ void Pannel()
 						case ENGINEERAPP: strcat(exepath, "\\mEngineer.exe");
 							break;
 
-						case CODEAPP: strcat(exepath, "\\mCode.exe");
+						case CODEAPP: if(msdk.prj.code == 1) strcat(exepath, "\\mCode.exe");
 							break;
 
 						case TEXAPP: strcat(exepath, "\\mTex.exe");
@@ -3424,7 +3820,9 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
-	PreInit();
+	memset(&msdk, 0, sizeof(mSdk));
+
+	PreInit("msdk",argc,argv);
 
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
@@ -3475,8 +3873,6 @@ int main(int argc, char *argv[])
 	background = nk_rgb(28, 48, 62);
 	
 	SETENGINEPATH;
-
-	memset(&msdk, 0, sizeof(mSdk));
 
 	switch (CheckForFFmpeg())
 	{
@@ -3557,6 +3953,8 @@ int main(int argc, char *argv[])
 	{
 		if(st.FPSYes)
 			FPSCounter();
+
+		CheckIA();
 
 		nk_input_begin(ctx);
 

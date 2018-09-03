@@ -1050,7 +1050,7 @@ extern SDL_Window *wn;
 
 extern const char WindowTitle[32];
 
-void PreInit();
+cdecl void PreInit(const char AppName[4], int argc, char *argv[]);
 
 void Init();
 
@@ -1259,6 +1259,10 @@ void LockCamera();
 int16 LoadTexture(const char *file, uint8 mipmap, Pos *size);
 
 int16 LoadTextureM(void *img_data, size_t data_size, uint8 mipmap, Pos *size);
+
+cdecl char *CheckAppComm(int8 *command);
+cdecl void SendInfo(const char *commfile, const char *data, int8 command);
+cdecl void ResetAppComm();
 
 //#ifdef MFC_MGEAR
 //}

@@ -11,6 +11,8 @@
 #include "dirent.h"
 #include "UI.h"
 #include <crtdbg.h>
+#include "funcs.h"
+#include <SDL_syswm.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -34,6 +36,109 @@ struct nk_font *fonts[3];
 int prev_tic, curr_tic, delta;
 
 mTex mtex;
+
+int16 LoadIntApps()
+{
+	FILE *f;
+	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
+
+	memset(mtex.intg_app, 0, sizeof(struct IntApps) * 16);
+
+	if ((f = fopen("msdk_settings.cfg", "r")) == NULL)
+	{
+		LogApp("Could not load integrated apps");
+		return NULL;
+	}
+
+	while (!feof(f))
+	{
+		fgets(buf, sizeof(buf), f);
+		sscanf(buf, "%s = %d", str);
+		if (strcmp(str, "PS") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(mtex.intg_app[INTG_PS].path, MAX_PATH);
+			strcpy(mtex.intg_app[INTG_PS].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "PS_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(mtex.intg_app[INTG_PS].args, MAX_PATH * 2);
+			strcpy(mtex.intg_app[INTG_PS].args, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "IL") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(mtex.intg_app[INTG_IL].path, MAX_PATH);
+			strcpy(mtex.intg_app[INTG_IL].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "IL_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(mtex.intg_app[INTG_IL].args, MAX_PATH * 2);
+			strcpy(mtex.intg_app[INTG_IL].args, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "GP") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(mtex.intg_app[INTG_GP].path, MAX_PATH);
+			strcpy(mtex.intg_app[INTG_GP].path, buf2);
+
+			continue;
+		}
+
+		if (strcmp(str, "GP_a") == NULL)
+		{
+			memcpy(buf3, buf, 2048);
+			buf2 = strtok(buf3, "\"");
+			buf2 = strtok(NULL, "\"");
+			alloc_mem(mtex.intg_app[INTG_GP].args, MAX_PATH * 2);
+			strcpy(mtex.intg_app[INTG_GP].args, buf2);
+
+			continue;
+		}
+	}
+
+	if (mtex.intg_app[INTG_PS].path != NULL && mtex.intg_app[INTG_PS].args != NULL)
+	{
+		strcpy(mtex.intg_app[INTG_PS].name, INTG_PS_NAME);
+		mtex.intg_app[INTG_PS].valid = 1;
+	}
+
+	if (mtex.intg_app[INTG_IL].path != NULL && mtex.intg_app[INTG_IL].args != NULL)
+	{
+		strcpy(mtex.intg_app[INTG_IL].name, INTG_IL_NAME);
+		mtex.intg_app[INTG_IL].valid = 1;
+	}
+
+	if (mtex.intg_app[INTG_GP].path != NULL && mtex.intg_app[INTG_GP].args != NULL)
+	{
+		strcpy(mtex.intg_app[INTG_GP].name, INTG_GP_NAME);
+		mtex.intg_app[INTG_GP].valid = 1;
+	}
+}
 
 uint16 WriteCFG()
 {
@@ -158,6 +263,42 @@ void SetThemeBack()
 		case THEME_DARK:
 			SetSkin(ctx, THEME_DARK);
 	}
+}
+
+void OpenWithIntApp(const char *file, int8 app)
+{
+	//char directory[MAX_PATH];
+	char exepath[MAX_PATH];
+	char args[MAX_PATH * 3];
+	char str[512];
+	static path2[MAX_PATH];
+	MSG msg;
+
+	DWORD error;
+
+	static int state = 0;
+	DWORD exitcode;
+
+	static SHELLEXECUTEINFO info;
+	strcpy(exepath, mtex.intg_app[app].path);
+
+	strcpy(args, mtex.intg_app[app].args);
+
+	char *buf2 = strstr(args, "%1");
+	ZeroMemory(buf2, strlen(buf2));
+
+	strcat(args, StringFormat(" \"%s\"",file));
+
+	ZeroMemory(&info, sizeof(info));
+	info.cbSize = sizeof(info);
+	info.lpVerb = ("open");
+	info.fMask = SEE_MASK_NOCLOSEPROCESS; //| SEE_MASK_FLAG_NO_UI | SEE_MASK_NOASYNC;
+	info.lpFile = exepath;
+	info.lpParameters = args;
+	//info.lpDirectory = directory;
+	info.nShow = SW_SHOW;
+	if (!ShellExecuteEx(&info))
+		MessageBoxRes("Error", MB_OK, "Could not execute %",mtex.intg_app[app].name);
 }
 
 void UnloadmTexMGG()
@@ -2657,7 +2798,7 @@ void MenuBar()
 
 	//if (nkrendered==0)
 	//{
-		if (nk_begin(ctx, "MenuBar", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BACKGROUND))
+		if (nk_begin(ctx, "MenuBar", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
 		{
 			nk_menubar_begin(ctx);
 			nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
@@ -3110,7 +3251,7 @@ void LeftPannel()
 
 	if (nkrendered == 0)
 	{
-		if (nk_begin(ctx, "Tool pannel", nk_rect(0, 30, st.screenx * 0.20f, (st.screeny - 30) / 2), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_BACKGROUND))
+		if (nk_begin(ctx, "Tool pannel", nk_rect(0, 30, st.screenx * 0.20f, (st.screeny - 30) / 2), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 		{
 			nk_layout_row_dynamic(ctx, 30, 2);
 			mtex.dn_mode = nk_option_label(ctx, "Diffuse texture", mtex.dn_mode == 0) ? 0 : mtex.dn_mode;
@@ -4424,7 +4565,7 @@ void ViewerBox()
 	char str[8];
 
 	if (nk_begin(ctx, "Texture viewer", nk_rect(0, 30 + ((st.screeny - 30) / 2), st.screenx * 0.20f, (st.screeny - 30) / 2),
-		NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_BACKGROUND))
+		NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
 		nk_layout_space_begin(ctx, NK_DYNAMIC, st.screenx * 0.20f, 5);
 
@@ -4639,7 +4780,7 @@ void Canvas()
 	ctx->style.selectable.normal_active = nk_style_item_color(nk_rgb(255, 128, 32));
 	ctx->style.selectable.hover_active = nk_style_item_color(nk_rgb(255, 128, 32));
 
-	if (nk_begin(ctx, mtex.mgg.name, nk_rect(0.20f * st.screenx, 30, 0.70f * st.screenx, st.screeny - 30), NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_BACKGROUND))
+	if (nk_begin(ctx, mtex.mgg.name, nk_rect(0.20f * st.screenx, 30, 0.70f * st.screenx, st.screeny - 30), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
 		option = mtex.canvas;
 
@@ -4891,6 +5032,8 @@ void Canvas()
 							}
 						}
 
+						struct nk_rect coords = nk_widget_bounds(ctx);
+
 						if (nk_selectable_image_label(ctx, nk_image_id(mtex.textures[mtex.mgg.fn[i]]), " ", NK_TEXT_ALIGN_MIDDLE, &mtex.selection[i]))
 						{
 							if (st.keys[LSHIFT_KEY].state)
@@ -4941,6 +5084,28 @@ void Canvas()
 								mtex.sel_slot = i;
 							}
 
+						}
+
+						if (mtex.intg_app[INTG_PS].valid == 1 || mtex.intg_app[INTG_GP].valid == 1 || mtex.intg_app[INTG_GP].valid == 1)
+						{
+							if (nk_contextual_begin(ctx, NULL, nk_vec2(300, 300), coords))
+							{
+								nk_layout_row_dynamic(ctx, 20, 1);
+								for (int o = 0; o < 3; o++)
+								{
+									if (mtex.intg_app[o].valid == 1)
+									{
+										if (nk_button_label(ctx, StringFormat("Open with %s", mtex.intg_app[o].name)))
+										{
+											OpenWithIntApp(mtex.mgg.files[mtex.mgg.fn[i]], o);
+											nk_contextual_close(ctx);
+											break;
+										}
+									}
+								}
+
+								nk_contextual_end(ctx);
+							}
 						}
 
 						names[j] = mtex.mgg.fn[i];
@@ -5182,8 +5347,13 @@ void Canvas()
 					}
 				}
 
+				struct nk_rect coords;
+
 				if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+				{
+					coords = nk_widget_bounds(ctx);
 					texu = nk_selectable_image_label(ctx, nk_image_id(mtex.textures_n[mtex.mgg.fnn[i]]), " ", NK_TEXT_ALIGN_MIDDLE, &mtex.selection[i]);
+				}
 				else
 					texu = nk_selectable_label(ctx, "No normal map", NK_TEXT_ALIGN_LEFT, &mtex.selection[i]);
 
@@ -5241,6 +5411,31 @@ void Canvas()
 
 				}
 
+				if (mtex.mgg.fnn[i] < 1024 && mtex.mgg.fnn[i] != -1)
+				{
+					if (mtex.intg_app[INTG_PS].valid == 1 || mtex.intg_app[INTG_GP].valid == 1 || mtex.intg_app[INTG_GP].valid == 1)
+					{
+						if (nk_contextual_begin(ctx, NULL, nk_vec2(300, 300), coords))
+						{
+							nk_layout_row_dynamic(ctx, 20, 1);
+							for (int o = 0; o < 3; o++)
+							{
+								if (mtex.intg_app[o].valid == 1)
+								{
+									if (nk_button_label(ctx, StringFormat("Open with %s", mtex.intg_app[o].name)))
+									{
+										OpenWithIntApp(mtex.mgg.files_n[mtex.mgg.fnn[i]], o);
+										nk_contextual_close(ctx);
+										break;
+									}
+								}
+							}
+
+							nk_contextual_end(ctx);
+						}
+					}
+				}
+
 				names[j] = mtex.mgg.fnn[i];
 				nm[j] = counter;
 
@@ -5284,7 +5479,7 @@ void AnimBox()
 	static int inrect = 0;
 	struct nk_rect bounds;
 
-	if (nk_begin(ctx, "Animation Box", nk_rect(0.90f * st.screenx, 30, 0.10f * st.screenx, st.screeny - 30), NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_BACKGROUND))
+	if (nk_begin(ctx, "Animation Box", nk_rect(0.90f * st.screenx, 30, 0.10f * st.screenx, st.screeny - 30), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
 		nk_layout_row_dynamic(ctx, 0.07f * st.screenx, 1);
 		if (nk_button_label(ctx, "None"))
@@ -5390,7 +5585,7 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
-	PreInit();
+	PreInit("mtex",argc,argv);
 
 	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
 
@@ -5400,6 +5595,8 @@ int main(int argc, char *argv[])
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
 
+	LoadIntApps();
+	
 	strcpy(st.LogName, "mtex.log");
 
 	Init();
@@ -5492,13 +5689,102 @@ int main(int argc, char *argv[])
 
 	InitEngineWindow();
 
+BACKLOOP:
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
 			FPSCounter();
 
 		nk_input_begin(ctx);
+		
+		int8 AC;
+		char *ACdata = CheckAppComm(&AC);
 
+		if (ACdata != NULL && AC >= 0)
+		{
+			char *buf;
+
+			if (AC == IA_OPENFILE)
+			{
+				SDL_RestoreWindow(wn);
+				SDL_ShowWindow(wn);
+				SDL_RaiseWindow(wn);
+
+				switch (MessageBoxRes("Warning", MB_YESNOCANCEL | MB_ICONQUESTION | MB_TOPMOST, "Would you like to save this project before opening another file?"))
+				{
+				case IDYES:
+					SavePrjFile(mtex.prj_path);
+					UnloadmTexMGG();
+					buf = LoadPrjFile(ACdata);
+
+					if (buf)
+						MessageBox(NULL, buf, "Error", MB_OK);
+					else
+					{
+						strcpy(mtex.prj_path, ACdata);
+
+						int a = strlen(ACdata);
+
+						int j;
+
+						for (j = a; j > 0; j--)
+						{
+							if (ACdata[j] == '\\' || ACdata[j] == '/') break;
+						}
+
+						j++;
+
+						strcpy(mtex.filename, ACdata + j);
+
+						sprintf(st.WindowTitle, "Tex %s", mtex.filename);
+
+						memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
+
+						for (int m = 0; m < j - 1; m++)
+							mtex.mgg.path[m] = ACdata[m];
+					}
+
+					break;
+
+				case IDNO:
+					UnloadmTexMGG();
+					buf = LoadPrjFile(ACdata);
+
+					if (buf)
+						MessageBox(NULL, buf, "Error", MB_OK);
+					else
+					{
+						strcpy(mtex.prj_path, ACdata);
+
+						int a = strlen(ACdata);
+
+						int j;
+
+						for (j = a; j > 0; j--)
+						{
+							if (ACdata[j] == '\\' || ACdata[j] == '/') break;
+						}
+
+						j++;
+
+						strcpy(mtex.filename, ACdata + j);
+
+						sprintf(st.WindowTitle, "Tex %s", mtex.filename);
+
+						memcpy(&mtex.mgg2, &mtex.mgg, sizeof(mtex.mgg));
+
+						for (int m = 0; m < j - 1; m++)
+							mtex.mgg.path[m] = ACdata[m];
+					}
+
+					break;
+				}
+			}
+
+			ResetAppComm();
+		}
+		
 		while(PollEvent(&events))
 		{
 			WindowEvents();
@@ -5575,6 +5861,20 @@ int main(int argc, char *argv[])
 		nkrendered = 0;
 
 		CheckForChanges();
+	}
+
+	if (mtex.mgg.num_frames > 0)
+	{
+		switch (MessageBoxRes("Warning", MB_YESNOCANCEL | MB_ICONQUESTION | MB_TOPMOST, "Would you like to save this project before quitting?"))
+		{
+			case IDYES:
+				SavePrjFile(mtex.prj_path);
+				break;
+
+			case IDCANCEL:
+				st.quit = 0;
+				goto BACKLOOP;
+		}
 	}
 
 	UnloadmTexMGG();

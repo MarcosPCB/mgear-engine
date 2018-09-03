@@ -29,6 +29,25 @@
 #define RE_SEVERR 128
 #define RE_MISCOMS 256
 
+// Integrated apps
+#define INTG_PS 0
+#define INTG_IL 1
+#define INTG_GP 2
+
+#define INTG_PS_NAME "Photoshop"
+#define INTG_PS_EXE "Photoshop.exe"
+#define INTG_IL_NAME "Illustrator"
+#define INTG_IL_EXE "Illustrator.exe"
+#define INTG_GP_NAME "Gimp"
+#define INTG_GP_EXE "gimp.exe"
+
+struct IntApps
+{
+	char name[32];
+	char *path, *args;
+	int8 valid;
+};
+
 struct _mTex
 {
 	int16 command;
@@ -66,6 +85,8 @@ struct _mTex
 		int16 frameoffset_x[512];
 		int16 frameoffset_y[512];
 	} mgg, mgg2;
+
+	struct IntApps intg_app[16];
 
 	int8 changes_detected;
 };
