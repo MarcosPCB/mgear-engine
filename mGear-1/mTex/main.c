@@ -301,6 +301,108 @@ void OpenWithIntApp(const char *file, int8 app)
 		MessageBoxRes("Error", MB_OK, "Could not execute %",mtex.intg_app[app].name);
 }
 
+FILETIME *GetFileLastModification(const char *filename)
+{
+	FILETIME ft;
+	HANDLE f;
+
+	if ((f = CreateFile(filename, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+		return NULL;
+
+	if (GetFileTime(f, NULL, NULL, &ft) == NULL)
+	{
+		CloseHandle(f);
+		return NULL;
+	}
+
+	CloseHandle(f);
+
+	return &ft;
+}
+
+int8 CheckFilesForModification(int16 file, int8 normal)
+{
+	HANDLE f;
+	FILETIME ft;
+	SYSTEMTIME st, st2;
+
+	if (normal == NULL)
+	{
+		if ((f = CreateFile(mtex.mgg.files[mtex.mgg.fn[file]], GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+			return NULL;
+	}
+	else
+	{
+		if ((f = CreateFile(mtex.mgg.files[mtex.mgg.fnn[file]], GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+			return NULL;
+	}
+
+	if (GetFileTime(f, NULL, NULL, &ft) == NULL)
+	{
+		CloseHandle(f);
+		return NULL;
+	}
+
+	CloseHandle(f);
+
+	if (FileTimeToSystemTime(&ft, &st) == NULL)
+		return NULL;
+
+	if (normal == NULL)
+	{
+		if (FileTimeToSystemTime(&mtex.mgg.ftime[mtex.mgg.fn[file]], &st2) == NULL)
+			return NULL;
+	}
+	else
+	{
+		if (FileTimeToSystemTime(&mtex.mgg.ftime_n[mtex.mgg.fnn[file]], &st2) == NULL)
+			return NULL;
+	}
+
+	if (st.wYear != st2.wYear || st.wMonth != st2.wMonth || st.wDay != st2.wDay || st.wHour != st2.wHour || st.wMinute != st2.wMinute ||
+		st.wSecond != st2.wSecond || st.wMilliseconds != st2.wMilliseconds)
+	{
+		if (normal == NULL) mtex.mgg.ftime[mtex.mgg.fn[file]] = ft;
+		else mtex.mgg.ftime_n[mtex.mgg.fnn[file]] = ft;
+
+		return 1;
+	}
+	else
+		return -1;
+
+}
+
+void UpdateFiles()
+{
+	register int16 i, j;
+
+	for (i = 0; i < mtex.mgg.num_frames; i++)
+	{
+		if (CheckFilesForModification(i, 0) == 1)
+		{
+			glDeleteTextures(1, &mtex.textures[mtex.mgg.fn[i]]);
+			if ((mtex.textures[mtex.mgg.fn[i]] = LoadTexture(mtex.mgg.files[mtex.mgg.fn[i]], mtex.mgg.mipmap, &mtex.size[mtex.mgg.fn[i]])) == -1)
+			{
+				MessageBoxRes("Refresh error", MB_OK, "Error while refreshing texture: %s", mtex.mgg.files[mtex.mgg.fn[i]]);
+				continue;
+			}
+		}
+
+		if (CheckFilesForModification(i, 1) == 1)
+		{
+			glDeleteTextures(1, &mtex.textures[mtex.mgg.fnn[i]]);
+			if ((mtex.textures_n[mtex.mgg.fnn[i]] = LoadTexture(mtex.mgg.files[mtex.mgg.fnn[i]], mtex.mgg.mipmap, &mtex.size[mtex.mgg.fnn[i]])) == -1)
+			{
+				MessageBoxRes("Refresh error", MB_OK, "Error while refreshing texture: %s", mtex.mgg.files[mtex.mgg.fnn[i]]);
+				continue;
+			}
+		}
+	}
+}
+
 void UnloadmTexMGG()
 {
 	register int i;
@@ -1907,6 +2009,8 @@ char *LoadPrjFile(const char *filepath)
 				MessageBox(NULL, buf2, "Error", MB_OK);
 			}
 
+			mtex.mgg.ftime[i] =*GetFileLastModification(mtex.mgg.files[i]);
+
 			if (mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
 			{
 				if ((mtex.textures_n[i] = LoadTexture(mtex.mgg.files_n[i], mtex.mgg.mipmap, NULL)) == -1)
@@ -1914,6 +2018,8 @@ char *LoadPrjFile(const char *filepath)
 					sprintf(buf2, "Error: Texture %s could not be loaded", mtex.mgg.files_n[i]);
 					MessageBox(NULL, buf2, "Error", MB_OK);
 				}
+
+				mtex.mgg.ftime_n[i] = *GetFileLastModification(mtex.mgg.files_n[i]);
 			}
 		}
 	}
@@ -2433,6 +2539,8 @@ int NewMGGBox(const char path[MAX_PATH])
 								continue;
 							}
 
+							mtex.mgg.ftime[j] = *GetFileLastModification(mtex.mgg.files[j]);
+
 							j++;
 						}
 					}
@@ -2470,6 +2578,8 @@ int NewMGGBox(const char path[MAX_PATH])
 								MessageBox(NULL, strerror, "Error", MB_OK);
 								continue;
 							}
+
+							mtex.mgg.ftime_n[j] = *GetFileLastModification(mtex.mgg.files_n[j]);
 
 							if (size.x != mtex.size[j].x || size.y != mtex.size[j].y)
 							{
@@ -3328,6 +3438,8 @@ void LeftPannel()
 												break;
 											}
 
+											mtex.mgg.ftime[mtex.mgg.num_frames] = *GetFileLastModification(path2);
+
 											mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 											mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 
@@ -3390,6 +3502,8 @@ void LeftPannel()
 													MessageBox(NULL, strerror, "Error", MB_OK);
 													goto FINALIZE_LOOP;
 												}
+
+												mtex.mgg.ftime_n[mtex.mgg.num_frames - 1] =*GetFileLastModification(path2);
 
 												if (size.x != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].y)
 												{
@@ -3459,6 +3573,8 @@ void LeftPannel()
 											break;
 										}
 
+										mtex.mgg.ftime[mtex.mgg.num_frames] = *GetFileLastModification(path2);
+
 										mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 										mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 
@@ -3509,6 +3625,8 @@ void LeftPannel()
 												MessageBox(NULL, strerror, "Error", MB_OK);
 												goto CONTINUE_LOOP;
 											}
+
+											mtex.mgg.ftime[mtex.mgg.num_frames - 1] = *GetFileLastModification(path2);
 
 											if (size.x != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].y)
 											{
@@ -3588,6 +3706,8 @@ void LeftPannel()
 												break;
 											}
 
+											mtex.mgg.ftime_n[mtex.selected] = *GetFileLastModification(mtex.mgg.fn[mtex.selected]);
+
 											if (size.x != mtex.size[mtex.mgg.fn[mtex.selected]].x || size.y != mtex.size[mtex.mgg.fn[mtex.selected]].y)
 											{
 												sprintf(strerror, "Error: Normal texture %s has a different width and height from the diffuse texture", files);
@@ -3653,6 +3773,8 @@ void LeftPannel()
 											MessageBox(NULL, strerror, "Error", MB_OK);
 											break;
 										}
+
+										mtex.mgg.ftime_n[mtex.selected + i - 1] =*GetFileLastModification(path2);
 
 										if (size.x != mtex.size[mtex.mgg.fn[mtex.selected + i - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.selected + i - 1]].y)
 										{
@@ -5799,6 +5921,7 @@ BACKLOOP:
 		while(GetTicks() > curr_tic && loops < 10)
 		{
 			//nk_clear(ctx);
+			UpdateFiles();
 			Finish();
 
 			if (mtex.anim_selected != -1 && mtex.play)

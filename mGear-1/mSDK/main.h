@@ -37,15 +37,15 @@
 #define CONFIG_ICON 35
 #define GEARS_ICON 36
 #define TERMINAL_ICON 118
-#define SAVE_ICON 23
-#define VIDEO_ICON 11
-#define SOUND_ICON 9
-#define IMAGE_ICON 8
-#define TEXT_ICON 7
-#define FILE_ICON 5
-#define FOLDER_ICON 14
-#define UNDO_ICON 24
-#define REDO_ICON 25
+#define SAVE_ICON 49
+#define VIDEO_ICON 90
+#define SOUND_ICON 88
+#define IMAGE_ICON 87
+#define TEXT_ICON 86
+#define FFILE_ICON 84
+#define FFOLDER_ICON 50
+#define UNDO_ICON 26
+#define REDO_ICON 27
 #define ROTATE_ICON 31
 
 //Integrated apps
@@ -190,6 +190,8 @@ struct _mSdk
 	CURLcode res;
 	CURLMcode resm;
 	CURLMsg *curlmsg;
+
+	int8 update;
 
 	struct File_sys *prj_files;
 	int32 num_prj_files;

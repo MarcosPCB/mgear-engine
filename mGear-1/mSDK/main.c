@@ -386,6 +386,230 @@ int CURLProgress(void *bar, double t, /* dltotal */ double d, /* dlnow */ double
 	return 0;
 }
 
+int8 DownloadUpdate()
+{
+	static FILE *f;
+	nk_size size;
+	static int state = 0, temp, temp2;
+
+	if (state == 0)
+	{
+		if ((f = fopen("..\\temp\\Update.exe", "wb")) == NULL)
+		{
+			LogApp("Could not update SDK: Error while creating Update file");
+			return 2;
+		}
+
+		msdk.curl = curl_easy_init();
+		msdk.curlm = curl_multi_init();
+
+		curl_easy_setopt(msdk.curl, CURLOPT_URL, "https://mgear1.sourceforge.io/version/SDKUpdate.exe");
+		curl_easy_setopt(msdk.curl, CURLOPT_TIMEOUT, 120L);
+		curl_easy_setopt(msdk.curl, CURLOPT_CAINFO, "./ca-bundle.crt");
+		curl_easy_setopt(msdk.curl, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(msdk.curl, CURLOPT_SSL_VERIFYHOST, 0);
+
+		curl_easy_setopt(msdk.curl, CURLOPT_WRITEFUNCTION, CURLWriteData);
+
+		curl_easy_setopt(msdk.curl, CURLOPT_WRITEDATA, f);
+
+		curl_easy_setopt(msdk.curl, CURLOPT_VERBOSE, 0);
+
+		curl_easy_setopt(msdk.curl, CURLOPT_NOPROGRESS, 0);
+		curl_easy_setopt(msdk.curl, CURLOPT_PROGRESSFUNCTION, CURLProgress);
+		curl_easy_setopt(msdk.curl, CURLOPT_FAILONERROR, 1);
+
+		curl_multi_add_handle(msdk.curlm, msdk.curl);
+
+		state = 1;
+	}
+
+	if (nk_begin(ctx, "Update", nk_rect(st.screenx / 2 - 200, st.screeny / 2 - 75, 400, 150), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	{
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, StringFormat("Downloading update: %0.2f%% - %0.2fmb / %0.2fmb", (msdk.download_now / msdk.download_total) * 100.0f,
+			msdk.download_now / (1024.0f * 1024.0f), msdk.download_total / (1024.0f * 1024.0f)), NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_BOTTOM);
+
+		size = (msdk.download_now / msdk.download_total) * 100.0f;
+
+		nk_progress(ctx, &size, 100, NULL);
+
+		nk_layout_row_dynamic(ctx, 25, 3);
+		if (state == 1)
+		{
+			if (nk_button_label(ctx, "Cancel"))
+			{
+				curl_multi_remove_handle(msdk.curlm, msdk.curl);
+				curl_multi_cleanup(msdk.curlm);
+				curl_easy_cleanup(msdk.curl);
+				state = 4;
+			}
+		}
+
+		if (state == 2)
+		{
+			if (nk_button_label(ctx, "Ok"))
+			{
+				state = 5;
+			}
+		}
+	}
+
+	nk_end(ctx);
+
+	if (state == 1)
+	{
+		msdk.resm = curl_multi_perform(msdk.curlm, &temp);
+
+		msdk.curlmsg = curl_multi_info_read(msdk.curlm, &temp2);
+
+		if (msdk.curlmsg && msdk.curlmsg->msg == CURLMSG_DONE)
+		{
+			curl_multi_remove_handle(msdk.curlm, msdk.curl);
+			curl_easy_cleanup(msdk.curl);
+			curl_multi_cleanup(msdk.curlm);
+			state = 0;
+
+			fclose(f);
+
+			system("start ..\\temp\\Update.exe");
+			LogApp("Closing SDK for update");
+			Quit();
+		}
+		else
+		{
+			if (msdk.resm == CURLE_HTTP_RETURNED_ERROR)
+			{
+				curl_multi_remove_handle(msdk.curlm, msdk.curl);
+				curl_easy_cleanup(msdk.curl);
+				curl_multi_cleanup(msdk.curlm);
+				fclose(f);
+				remove("..\\temp\\Update.exe");
+				state = 2;
+				MessageBoxRes("Update error", MB_OK, curl_multi_strerror(msdk.resm));
+			}
+		}
+	}
+
+	if (state == 4 && state == 5)
+	{
+		msdk.update = 0;
+		return 2;
+	}
+
+	return NULL;
+}
+
+char *GetSDKVersion()
+{
+	HKEY key = NULL;
+	char data[1024], *buf;
+	int32 size;
+
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Space In a Bottle", 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
+	{
+		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Space In a Bottle", 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
+		{
+			return NULL;
+		}
+	}
+	else
+	{
+		if (RegQueryValueEx(key, "Version", NULL, NULL, &data, &size) != ERROR_SUCCESS)
+		{
+			RegCloseKey(key);
+			LogApp("Invalid key");
+			return NULL;
+		}
+		else
+		{
+			RegCloseKey(key);
+			LogApp("Key found");
+
+			alloc_mem(buf, size);
+			memset(buf, NULL, size);
+
+			buf = strtok(data, "\"");
+
+			return buf;
+		}
+	}
+}
+
+int8 CheckForUpdate()
+{
+	FILE *f;
+	char buf[1024];
+
+	msdk.curl = curl_easy_init();
+
+	if ((f = fopen("update.html", "w")) == NULL)
+	{
+		MessageBoxRes("Update error", MB_OK, "Error while checking for update");
+		return -1;
+	}
+
+	curl_easy_setopt(msdk.curl, CURLOPT_URL, "https://mgear1.sourceforge.io/version/index.html");
+	curl_easy_setopt(msdk.curl, CURLOPT_TIMEOUT, 120L);
+	curl_easy_setopt(msdk.curl, CURLOPT_CAINFO, "./ca-bundle.crt");
+	curl_easy_setopt(msdk.curl, CURLOPT_SSL_VERIFYPEER, 0);
+	curl_easy_setopt(msdk.curl, CURLOPT_SSL_VERIFYHOST, 0);
+
+	curl_easy_setopt(msdk.curl, CURLOPT_WRITEFUNCTION, CURLWriteData);
+
+	curl_easy_setopt(msdk.curl, CURLOPT_WRITEDATA, f);
+
+	curl_easy_setopt(msdk.curl, CURLOPT_VERBOSE, 0);
+
+	curl_easy_setopt(msdk.curl, CURLOPT_NOPROGRESS, 1);
+
+	curl_easy_setopt(msdk.curl, CURLOPT_FAILONERROR, 1);
+
+	CURLcode r = curl_easy_perform(msdk.curl);
+
+	curl_easy_cleanup(msdk.curl);
+
+	fclose(f);
+
+	if (r == CURLE_HTTP_RETURNED_ERROR)
+	{
+		LogApp("%s", curl_easy_strerror(r));
+		remove("update.html");
+		return NULL;
+	}
+
+	if ((f = fopen("update.html", "r")) == NULL)
+	{
+		MessageBoxRes("Update error", MB_OK, "Error while checking for update");
+		return -1;
+	}
+
+	fgets(buf, 1024, f);
+
+	char *key = GetSDKVersion();
+
+	if (key == NULL)
+	{
+		MessageBoxRes("Update error", MB_OK, "Error while checking your SDK version, please intalled it again");
+		return -1;
+	}
+
+	if (strcmp(buf, key) != NULL)
+	{
+		remove("update.html");
+		if (MessageBoxRes("New version", MB_YESNO, "A new version of the SDK is available. Would you like to download now?") == IDYES)
+		{
+			return 1;
+		}
+		else
+			return NULL;
+	}
+
+	remove("update.html");
+
+	return NULL;
+}
+
 uint16 WriteCFG()
 {
 	FILE *file;
@@ -2254,6 +2478,7 @@ int Preferences()
 	static FILE *f;
 	static int state = 0;
 	int temp, temp2;
+	nk_size size;
 
 	if (msdk.theme == THEME_WHITE) strcpy(str, "White skin");
 	if (msdk.theme == THEME_RED) strcpy(str, "Red skin");
@@ -2262,7 +2487,9 @@ int Preferences()
 	//if (msdk.theme == THEME_GWEN) strcpy(str, "GWEN skin");
 	if (msdk.theme == THEME_BLACK) strcpy(str, "Default");
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 100, st.screeny / 2 - 150, 275, 350), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	SetCurrentDirectory(msdk.program_path);
+
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 150, 320, 350), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -2337,7 +2564,7 @@ int Preferences()
 			{
 				if (msdk.ffmpeg_downloaded == 0)
 				{
-					if ((f = fopen("..\\temp\\ffmpeg-32-bit.zip", "wb")) == NULL)
+					if ((f = fopen(StringFormat("..\\temp\\ffmpeg-32-bit.zip"), "wb")) == NULL)
 						MessageBox(NULL, "Error: could not create ZIP file", "Error", MB_OK);
 					else
 					{
@@ -2397,107 +2624,116 @@ int Preferences()
 			}
 		}
 
-		nk_layout_row_dynamic(ctx, 190, 1);
-
-		if (nk_group_begin(ctx, "Integrated apps",NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+		if (msdk.downloading == 0)
 		{
-			nk_menubar_begin(ctx);
-			
-			nk_layout_row_dynamic(ctx, 20, 1);
-			if (nk_button_label(ctx, "Find apps"))
+			nk_layout_row_dynamic(ctx, 190, 1);
+
+			if (nk_group_begin(ctx, "Integrated apps", NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 			{
-				char fstr[512];
-				strcpy(fstr, "Apps found:\n");
+				nk_menubar_begin(ctx);
 
-				memset(msdk.intg_app, 0, sizeof(msdk.intg_app));
-
-				if ((msdk.intg_app[INTG_PS].path = CheckForInstallation("Photoshop.exe")) != NULL)
+				nk_layout_row_dynamic(ctx, 20, 1);
+				if (nk_button_label(ctx, "Find apps"))
 				{
-					if ((msdk.intg_app[INTG_PS].arg = GetAppArg("Photoshop.exe")) != NULL)
+					char fstr[512];
+					strcpy(fstr, "Apps found:\n");
+
+					memset(msdk.intg_app, 0, sizeof(msdk.intg_app));
+
+					if ((msdk.intg_app[INTG_PS].path = CheckForInstallation("Photoshop.exe")) != NULL)
 					{
-						strcat(fstr, "Photoshop\n");
-						msdk.intg_app[INTG_PS].valid = 1;
-						strcpy(msdk.intg_app[INTG_PS].name, "Photoshop");
-						msdk.num_intg_apps++;
+						if ((msdk.intg_app[INTG_PS].arg = GetAppArg("Photoshop.exe")) != NULL)
+						{
+							strcat(fstr, "Photoshop\n");
+							msdk.intg_app[INTG_PS].valid = 1;
+							strcpy(msdk.intg_app[INTG_PS].name, "Photoshop");
+							msdk.num_intg_apps++;
+						}
 					}
+
+					if ((msdk.intg_app[INTG_IL].path = CheckForInstallation(INTG_IL_EXE)) != NULL)
+					{
+						if ((msdk.intg_app[INTG_IL].arg = GetAppArg("Illustrator.exe")) != NULL)
+						{
+							strcat(fstr, "Illustrator\n");
+							msdk.intg_app[INTG_IL].valid = 1;
+							strcpy(msdk.intg_app[INTG_IL].name, "Illustrator");
+							msdk.num_intg_apps++;
+						}
+					}
+
+					if ((msdk.intg_app[INTG_GP].path = CheckForInstallation("gimp.exe")) != NULL)
+					{
+						if ((msdk.intg_app[INTG_GP].arg = GetAppArg("gimp.exe")) != NULL)
+						{
+							strcat(fstr, "Gimp\n");
+							msdk.intg_app[INTG_GP].valid = 1;
+							strcpy(msdk.intg_app[INTG_GP].name, "Gimp");
+							msdk.num_intg_apps++;
+						}
+					}
+
+					if ((msdk.intg_app[INTG_AU].path = CheckForInstallation(INTG_AU_EXE)) != NULL)
+					{
+						if ((msdk.intg_app[INTG_AU].arg = GetAppArg(INTG_AU_EXE)) != NULL)
+						{
+							strcat(fstr, "Audition\n");
+							msdk.intg_app[INTG_AU].valid = 1;
+							strcpy(msdk.intg_app[INTG_AU].name, "Audition");
+							msdk.num_intg_apps++;
+						}
+					}
+
+					if ((msdk.intg_app[INTG_VS].path = CheckForInstallation(INTG_VS_EXE)) != NULL)
+					{
+						if ((msdk.intg_app[INTG_VS].arg = GetAppArg(INTG_VS_EXE)) != NULL)
+						{
+							strcat(fstr, "Visual Studio IDE\n");
+							msdk.intg_app[INTG_VS].valid = 1;
+							strcpy(msdk.intg_app[INTG_VS].name, INTG_VS_NAME);
+							msdk.num_intg_apps++;
+						}
+					}
+
+					if (msdk.num_intg_apps != 0)
+						strcat(fstr, StringFormat("Integrated apps: %d\nIntegration complete", msdk.num_intg_apps));
+					else
+						strcpy(fstr, "No valid apps were found for integration");
+
+					MessageBoxRes("Integration", MB_OK | MB_TOPMOST, fstr);
 				}
 
-				if ((msdk.intg_app[INTG_IL].path = CheckForInstallation(INTG_IL_EXE)) != NULL)
+				nk_menubar_end(ctx);
+
+				nk_layout_row_dynamic(ctx, 20, 1);
+				for (i = 0; i < 16; i++)
 				{
-					if ((msdk.intg_app[INTG_IL].arg = GetAppArg("Illustrator.exe")) != NULL)
-					{
-						strcat(fstr, "Illustrator\n");
-						msdk.intg_app[INTG_IL].valid = 1;
-						strcpy(msdk.intg_app[INTG_IL].name, "Illustrator");
-						msdk.num_intg_apps++;
-					}
+					if (msdk.intg_app[i].valid == 1)
+						nk_label(ctx, msdk.intg_app[i].name, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
 				}
 
-				if ((msdk.intg_app[INTG_GP].path = CheckForInstallation("gimp.exe")) != NULL)
-				{
-					if ((msdk.intg_app[INTG_GP].arg = GetAppArg("gimp.exe")) != NULL)
-					{
-						strcat(fstr, "Gimp\n");
-						msdk.intg_app[INTG_GP].valid = 1;
-						strcpy(msdk.intg_app[INTG_GP].name, "Gimp");
-						msdk.num_intg_apps++;
-					}
-				}
-
-				if ((msdk.intg_app[INTG_AU].path = CheckForInstallation(INTG_AU_EXE)) != NULL)
-				{
-					if ((msdk.intg_app[INTG_AU].arg = GetAppArg(INTG_AU_EXE)) != NULL)
-					{
-						strcat(fstr, "Audition\n");
-						msdk.intg_app[INTG_AU].valid = 1;
-						strcpy(msdk.intg_app[INTG_AU].name, "Audition");
-						msdk.num_intg_apps++;
-					}
-				}
-
-				if ((msdk.intg_app[INTG_VS].path = CheckForInstallation(INTG_VS_EXE)) != NULL)
-				{
-					if ((msdk.intg_app[INTG_VS].arg = GetAppArg(INTG_VS_EXE)) != NULL)
-					{
-						strcat(fstr, "Visual Studio IDE\n");
-						msdk.intg_app[INTG_VS].valid = 1;
-						strcpy(msdk.intg_app[INTG_VS].name, INTG_VS_NAME);
-						msdk.num_intg_apps++;
-					}
-				}
-
-				if (msdk.num_intg_apps != 0)
-					strcat(fstr, StringFormat("Integrated apps: %d\nIntegration complete", msdk.num_intg_apps));
-				else
-					strcpy(fstr, "No valid apps were found for integration");
-
-				MessageBoxRes("Integration", MB_OK | MB_TOPMOST, fstr);
+				nk_group_end(ctx);
 			}
-
-			nk_menubar_end(ctx);
-
-			nk_layout_row_dynamic(ctx, 20, 1);
-			for (i = 0; i < 16; i++)
-			{
-				if (msdk.intg_app[i].valid == 1)
-					nk_label(ctx, msdk.intg_app[i].name, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
-			}
-
-			nk_group_end(ctx);
 		}
 
 		nk_layout_row_dynamic(ctx, 25, 1);
 
 		if (msdk.downloading == 1)
 		{
-			sprintf(str, "Downloading %0.2f", (msdk.download_now / msdk.download_total)*100.0f);
+			sprintf(str, "Downloading %0.2f%% - %0.2fmb / %0.2fmb", (msdk.download_now / msdk.download_total)*100.0f, msdk.download_now / (1024.0f * 1024.0f),
+				msdk.download_total / (1024.0f * 1024.0f));
 			nk_label(ctx, str, NK_TEXT_ALIGN_LEFT);
+			size = (msdk.download_now / msdk.download_total)*100.0f;
+			nk_progress(ctx, &size, 100, 0);
 		}
 
 		if (msdk.downloading == 0)
 		{
 			if (nk_button_label(ctx, "Ok"))
 			{
+				if (msdk.prj.loaded == 1)
+					SetCurrentDirectory(msdk.prj.prj_path);
+
 				SaveCFG();
 				nk_end(ctx);
 				return 1;
@@ -3251,6 +3487,9 @@ void Pannel()
 
 			nk_style_set_font(ctx, &fonts[1]->handle);
 			nk_button_label(ctx, its(TERMINAL_ICON));
+			
+			nk_layout_row_push(ctx, 30);
+			if (nk_button_label(ctx, its(FFOLDER_ICON))) system(StringFormat("start %s", msdk.prj.prj_path));
 
 			nk_style_set_font(ctx, &fonts[0]->handle);
 
@@ -3911,7 +4150,9 @@ int main(int argc, char *argv[])
 	msdk.app[TEXAPP].icon = LoadTexture("data/icon_tex.png", 0, &msdk.app[TEXAPP].icon_size);
 	msdk.app[MGVAPP].icon = LoadTexture("data/icon_mgv.png", 0, &msdk.app[MGVAPP].icon_size);
 
-	if (argc > 0)
+	msdk.update = CheckForUpdate();
+
+	if (argc > 0 && msdk.update == 0)
 	{
 		for (int i = 0; i < argc; i++)
 		{
@@ -3981,12 +4222,17 @@ int main(int argc, char *argv[])
 
 		DrawSys();
 
-		if (msdk.prj.loaded == 1)
-			Pannel();
-		
-		//ExportProject();
+		if (msdk.update == 0)
+		{
+			if (msdk.prj.loaded == 1)
+				Pannel();
 
-		MenuBar();
+			//ExportProject();
+
+			MenuBar();
+		}
+		else
+			DownloadUpdate();
 
 		UIMain_DrawSystem();
 		//MainSound();

@@ -84,6 +84,9 @@ struct _mTex
 		uint8 RLE, mipmap;
 		int16 frameoffset_x[512];
 		int16 frameoffset_y[512];
+
+		FILETIME ftime[512];
+		FILETIME ftime_n[512];
 	} mgg, mgg2;
 
 	struct IntApps intg_app[16];
