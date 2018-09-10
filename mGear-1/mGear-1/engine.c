@@ -2698,13 +2698,15 @@ void InitEngineWindow()
 		Renderer(1);
 		SwapBuffer(wn);
 
-		SDL_SetWindowOpacity(wn, (float)(1.0f / 255)*i);
+		SDL_SetWindowOpacity(wn, (float)(1.0f / 255.0f)*i);
 	}
+
+	SDL_SetWindowOpacity(wn, 0.0f);
 
 #endif
 
 	SDL_DestroyWindow(wn);
-
+	
 	if (st.fullscreen)
 	{
 		if ((wn = SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL)) == NULL)
@@ -2714,16 +2716,19 @@ void InitEngineWindow()
 		}
 	}
 	else
-	if (!st.fullscreen)
 	{
 		if ((wn = SDL_CreateWindow(st.WINDOW_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, st.screenx, st.screeny, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE)) == NULL)
 		{
 			LogApp("Error setting widowed video mode %d x %d %d bits - %s", st.screenx, st.screeny, st.bpp, SDL_GetError());
 			Quit();
 		}
+
+		LogApp("%s", SDL_GetError());
 	}
 
 	SDL_GL_MakeCurrent(wn, st.glc);
+
+	LogApp("%s", SDL_GetError());
 
 	glViewport(0, 0, st.screenx, st.screeny);
 

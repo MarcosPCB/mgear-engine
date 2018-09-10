@@ -5757,7 +5757,7 @@ int main(int argc, char *argv[])
 	cfg.oversample_v = 2;
 
 	nk_sdl_font_stash_begin(&atlas);
-	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 13, 0);
+	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 16, 0);
 	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
 	nk_sdl_font_stash_end();
 	nk_style_set_font(ctx, &fonts[0]->handle);
@@ -5921,7 +5921,6 @@ BACKLOOP:
 		while(GetTicks() > curr_tic && loops < 10)
 		{
 			//nk_clear(ctx);
-			UpdateFiles();
 			Finish();
 
 			if (mtex.anim_selected != -1 && mtex.play)
@@ -5957,6 +5956,9 @@ BACKLOOP:
 			loops++;
 			SetTimerM(1);
 		}
+
+		if (curr_tic % 30 == 0) 
+			UpdateFiles();
 
 		DrawSys();
 

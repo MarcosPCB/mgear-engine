@@ -332,7 +332,7 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 	return files;
 }
 
-int32 *ListFileExtFromFolder(struct File_sys *files, int32 num_files, char fileextension[8], int32 *listed_files)
+int32 *ListFileExtFromFolder(struct File_sys *files, int32 num_files, char fileextension[8], int16 *listed_files)
 {
 	char *ext;
 	int32 *ids;
@@ -503,8 +503,8 @@ int8 DownloadUpdate()
 char *GetSDKVersion()
 {
 	HKEY key = NULL;
-	char data[1024], *buf;
-	int32 size;
+	unsigned char data[1024], *buf;
+	int32 size = 1024;
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Space In a Bottle", 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
 	{
@@ -515,7 +515,7 @@ char *GetSDKVersion()
 	}
 	else
 	{
-		if (RegQueryValueEx(key, "Version", NULL, NULL, &data, &size) != ERROR_SUCCESS)
+		if (RegQueryValueEx(key, "Version", NULL, NULL, data, &size) != ERROR_SUCCESS)
 		{
 			RegCloseKey(key);
 			LogApp("Invalid key");
@@ -2404,8 +2404,8 @@ void CheckIA()
 char *CheckForInstallation(const char *app)
 {
 	HKEY key = NULL;
-	char data[1024], *ret;
-	int32 size;
+	unsigned char data[1024], *ret;
+	int32 size = 1024;
 	DWORD type = KEY_ALL_ACCESS;
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, StringFormat("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s", app), 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
@@ -2414,7 +2414,7 @@ char *CheckForInstallation(const char *app)
 	}
 	else
 	{
-		if (RegQueryValueEx(key, NULL, NULL, NULL, &data, &size) != ERROR_SUCCESS)
+		if (RegQueryValueEx(key, NULL, NULL, NULL, data, &size) != ERROR_SUCCESS)
 		{
 			RegCloseKey(key);
 			LogApp("Invalid key");
@@ -2435,8 +2435,8 @@ char *CheckForInstallation(const char *app)
 char *GetAppArg(const char *app)
 {
 	HKEY key = NULL;
-	char data[1024], *ret;
-	int32 size;
+	unsigned char data[1024], *ret;
+	int32 size = 1024;
 
 	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, StringFormat("Applications\\%s\\shell\\open\\command", app), 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
 	{
@@ -2444,7 +2444,7 @@ char *GetAppArg(const char *app)
 	}
 	else
 	{
-		if (RegQueryValueEx(key, NULL, NULL, NULL, &data, &size) != ERROR_SUCCESS)
+		if (RegQueryValueEx(key, NULL, NULL, NULL, data, &size) != ERROR_SUCCESS)
 		{
 			RegCloseKey(key);
 			LogApp("Invalid key");
@@ -4075,7 +4075,7 @@ int main(int argc, char *argv[])
 	
 	curl_global_init(CURL_GLOBAL_ALL);
 
-	strcpy(st.WindowTitle,"mSDK");
+	strcpy(st.WindowTitle, "mSDK");
 
 	//OpenFont("font/Roboto-Regular.ttf","arial",0,128);
 	//OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);
@@ -4103,9 +4103,9 @@ int main(int argc, char *argv[])
 	
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
-	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 13, 0);
+	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 16, 0);
 	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
-	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\ProggyClean.ttf", 12, 0);
+	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 14, 0);
 	nk_sdl_font_stash_end();
 	nk_style_set_font(ctx, &fonts[0]->handle);
 	
@@ -4149,7 +4149,7 @@ int main(int argc, char *argv[])
 	msdk.app[MGGAPP].icon = LoadTexture("data/icon_viewer.png", 0, &msdk.app[MGGAPP].icon_size);
 	msdk.app[TEXAPP].icon = LoadTexture("data/icon_tex.png", 0, &msdk.app[TEXAPP].icon_size);
 	msdk.app[MGVAPP].icon = LoadTexture("data/icon_mgv.png", 0, &msdk.app[MGVAPP].icon_size);
-
+	
 	msdk.update = CheckForUpdate();
 
 	if (argc > 0 && msdk.update == 0)
@@ -4222,7 +4222,7 @@ int main(int argc, char *argv[])
 
 		DrawSys();
 
-		if (msdk.update == 0)
+		if (msdk.update == 0 || msdk.update == -1)
 		{
 			if (msdk.prj.loaded == 1)
 				Pannel();

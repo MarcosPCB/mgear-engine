@@ -345,7 +345,10 @@ int main(int argc, char *argv[])
 
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
+	struct nk_font *fonts = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 16, 0);
 	nk_sdl_font_stash_end();
+	nk_style_set_font(ctx, &fonts->handle);
+
 	background = nk_rgb(28, 48, 62);
 
 	SETENGINEPATH;
