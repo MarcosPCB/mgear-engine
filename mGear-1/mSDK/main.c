@@ -590,7 +590,7 @@ int8 CheckForUpdate()
 
 	if (key == NULL)
 	{
-		MessageBoxRes("Update error", MB_OK, "Error while checking your SDK version, please intalled it again");
+		MessageBoxRes("Update error", MB_OK, "Error while checking your SDK version, please installed it again");
 		return -1;
 	}
 
@@ -2867,7 +2867,7 @@ int NewProject()
 		{
 			ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
 			nk_button_label(ctx, "Create");
-			nk_style_default(ctx);
+			SetThemeBack();
 		}
 		else
 		{

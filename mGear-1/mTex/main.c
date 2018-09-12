@@ -2088,9 +2088,9 @@ int NewMGGBox(const char path[MAX_PATH])
 		state = 1;
 	}
 
-	if (nk_begin(ctx, "Create new MGG project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - (564/2), 512, 564), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+	if (nk_begin(ctx, "Create new MGG project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - (575/2), 512, 575), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 20, 2);
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
 
 		nk_layout_row_push(ctx, 0.85f);
 		nk_edit_string(ctx, NK_EDIT_SIMPLE, path2, &len, MAX_PATH, nk_filter_default);
@@ -2113,14 +2113,14 @@ int NewMGGBox(const char path[MAX_PATH])
 
 		nk_layout_row_end(ctx);
 
-		nk_layout_row_dynamic(ctx, 10, 1);
-		nk_label(ctx, "Project name", NK_TEXT_ALIGN_LEFT);
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_label(ctx, "Project name", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_BOTTOM);
 
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_edit_string(ctx, NK_EDIT_SIMPLE, prj_name, &len_prj_n, 32, nk_filter_default);
 
-		nk_layout_row_dynamic(ctx, 10, 1);
-		nk_label(ctx, "MGG internal name", NK_TEXT_ALIGN_LEFT);
+		nk_layout_row_dynamic(ctx, 20, 1);
+		nk_label(ctx, "MGG internal name", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_BOTTOM);
 
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_edit_string(ctx, NK_EDIT_SIMPLE, mgg_name, &len_in_n, 32, nk_filter_default);
@@ -5757,6 +5757,7 @@ int main(int argc, char *argv[])
 	cfg.oversample_v = 2;
 
 	nk_sdl_font_stash_begin(&atlas);
+	
 	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 16, 0);
 	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
 	nk_sdl_font_stash_end();
