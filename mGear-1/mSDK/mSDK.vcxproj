@@ -107,7 +107,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;LIBCURL.LIB;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;LIBCURL.LIB;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <ShowProgress>NotSet</ShowProgress>
@@ -164,7 +164,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;libcurl.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <OutputFile>$(SolutionDir)\SDK\bin\$(TargetFileName)</OutputFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>

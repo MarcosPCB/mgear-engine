@@ -193,6 +193,8 @@ struct _mSdk
 
 	int8 update;
 
+	char open_recent[10][MAX_PATH];
+
 	struct File_sys *prj_files;
 	int32 num_prj_files;
 

@@ -15,11 +15,15 @@
 #include <stdarg.h>
 #include <SDL_syswm.h>
 #include <time.h>
+#include <errno.h>
+#include <string.h>
+#include <signal.h>
+#include <DbgHelp.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
 //#define STBI_NO_PSD
-#define STBI_NO_GIF
+//#define STBI_NO_GIF
 #define STBI_NO_PNM
 #define STBI_NO_HDR
 #define STBI_NO_PIC
@@ -134,6 +138,8 @@ void CreateLog()
 	fprintf(file,"Log created\n");
 
 	fclose(file);
+
+	freopen(filepath, "a+", stderr);
 }
 
 /*
@@ -142,6 +148,66 @@ void StartTimer()
 	GetTicks();
 }
 */
+
+void ProcessError(const char *funcname)
+{
+	DWORD err = GetLastError();
+	int errn = errno;
+	if (err != ERROR_SUCCESS)
+	{
+		char errormsg[1024];
+		FormatMessage( FORMAT_MESSAGE_FROM_SYSTEM, NULL, err, NULL,
+			errormsg, 1024, NULL);
+
+		err = GetLastError();
+
+		MessageBoxRes("Error", MB_OK, "Error code %d - %s", err, errormsg);
+		if (funcname)
+			LogApp("Error at: %s with code %d - %s", __FUNCTION__, err, errormsg);
+	}
+
+	if (errn != NULL)
+	{
+		MessageBoxRes("Standard error", MB_OK, "Error code %d - %s", errn, strerror(errn));
+		if (funcname)
+			LogApp("Error at: %s with code %d - %s", __FUNCTION__, errn, strerror(errn));
+	}
+}
+
+void SignalError(int signum)
+{
+	HANDLE process;
+	SYMBOL_INFO *sym;
+	void *stack[100];
+	uint16 frames;
+
+	if (signum == SIGSEGV)
+		LogApp("SIGSEGV Error:");
+
+	if (signum == SIGILL)
+		LogApp("SIGILL Error:");
+
+	if (signum == SIGFPE)
+		LogApp("SIGFPE Error:");
+
+	process = GetCurrentProcess();
+
+	SymInitialize(process, NULL, TRUE);
+
+	frames = CaptureStackBackTrace(NULL, 100, stack, NULL);
+
+	sym = calloc(sizeof(SYMBOL_INFO)+256 * sizeof(char), 1);
+	sym->MaxNameLen = 255;
+	sym->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+	for (int i = 0; i < frames; i++)
+	{
+		SymFromAddr(process, (DWORD64)(stack[i]), 0, &sym);
+		LogApp("%i: %s - 0x%0X\n", frames - i - 1, sym->Name, sym->Address);
+	}
+
+	free(sym);
+}
 
 void _fastcall SetTimerM(unsigned long long int x)
 {
@@ -648,6 +714,8 @@ void Quit()
 
 	num = NumDirFile(st.CurrPath, files);
 
+	SetCurrentDirectory(st.CurrPath);
+
 	for (int i = 0; i < num; i++)
 	{
 		char *ext = strrchr(files[i], '.');
@@ -661,7 +729,10 @@ void Quit()
 			EventHand = CreateEvent(NULL, TRUE, FALSE, StringFormat("%sSiEv", files[i]));
 
 			if (GetLastError() == ERROR_SUCCESS)
-				remove(StringFormat("%s.cbaf", files[i]));
+			{
+				if(remove(StringFormat("%s.cbaf", files[i])) == -1)
+					ProcessError(NULL);
+			}
 
 			CloseHandle(EventHand);
 		}
@@ -676,6 +747,9 @@ void Quit()
 	FMOD_System_Release(st.sound_sys.Sound_System);
 #endif
 	TTF_Quit();
+
+	fclose(stderr);
+
 	exit(0);
 }
 
@@ -1660,6 +1734,10 @@ void PreInit(const char AppName[4], int argc, char *argv[])
 	int i;
 	char files[256][32];
 
+	signal(SIGSEGV, SignalError);
+	signal(SIGFPE, SignalError);
+	signal(SIGILL, SignalError);
+
 	srand(time(NULL));
 
 	GetModuleFileName(NULL, st.CurrPath, MAX_PATH);
@@ -2234,7 +2312,7 @@ SHADER_CREATION:
 						glGetShaderInfoLog(st.renderer.FShader[i-1],1024,NULL,logs[0]);
 
 					LogApp("Shader %d: %s",i ,logs[0]);
-					LogApp("Counld not compile shader");
+					LogApp("Could not compile shader");
 				}
 			}
 

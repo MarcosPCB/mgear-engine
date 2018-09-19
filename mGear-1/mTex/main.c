@@ -298,7 +298,10 @@ void OpenWithIntApp(const char *file, int8 app)
 	//info.lpDirectory = directory;
 	info.nShow = SW_SHOW;
 	if (!ShellExecuteEx(&info))
-		MessageBoxRes("Error", MB_OK, "Could not execute %",mtex.intg_app[app].name);
+	{
+		MessageBoxRes("Error", MB_OK, "Could not execute %", mtex.intg_app[app].name);
+		ProcessError(NULL);
+	}
 }
 
 FILETIME *GetFileLastModification(const char *filename)
@@ -308,10 +311,14 @@ FILETIME *GetFileLastModification(const char *filename)
 
 	if ((f = CreateFile(filename, GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+	{
+		GetError;
 		return NULL;
+	}
 
 	if (GetFileTime(f, NULL, NULL, &ft) == NULL)
 	{
+		GetError;
 		CloseHandle(f);
 		return NULL;
 	}
@@ -331,17 +338,24 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 	{
 		if ((f = CreateFile(mtex.mgg.files[mtex.mgg.fn[file]], GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+		{
+			GetError;
 			return NULL;
+		}
 	}
 	else
 	{
 		if ((f = CreateFile(mtex.mgg.files[mtex.mgg.fnn[file]], GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+		{
+			GetError;
 			return NULL;
+		}
 	}
 
 	if (GetFileTime(f, NULL, NULL, &ft) == NULL)
 	{
+		GetError;
 		CloseHandle(f);
 		return NULL;
 	}
@@ -349,17 +363,26 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 	CloseHandle(f);
 
 	if (FileTimeToSystemTime(&ft, &st) == NULL)
+	{
+		GetError;
 		return NULL;
+	}
 
 	if (normal == NULL)
 	{
 		if (FileTimeToSystemTime(&mtex.mgg.ftime[mtex.mgg.fn[file]], &st2) == NULL)
+		{
+			GetError;
 			return NULL;
+		}
 	}
 	else
 	{
 		if (FileTimeToSystemTime(&mtex.mgg.ftime_n[mtex.mgg.fnn[file]], &st2) == NULL)
+		{
+			GetError;
 			return NULL;
+		}
 	}
 
 	if (st.wYear != st2.wYear || st.wMonth != st2.wMonth || st.wDay != st2.wDay || st.wHour != st2.wHour || st.wMinute != st2.wMinute ||
@@ -386,6 +409,7 @@ void UpdateFiles()
 			glDeleteTextures(1, &mtex.textures[mtex.mgg.fn[i]]);
 			if ((mtex.textures[mtex.mgg.fn[i]] = LoadTexture(mtex.mgg.files[mtex.mgg.fn[i]], mtex.mgg.mipmap, &mtex.size[mtex.mgg.fn[i]])) == -1)
 			{
+				GetError;
 				MessageBoxRes("Refresh error", MB_OK, "Error while refreshing texture: %s", mtex.mgg.files[mtex.mgg.fn[i]]);
 				continue;
 			}
@@ -396,6 +420,7 @@ void UpdateFiles()
 			glDeleteTextures(1, &mtex.textures[mtex.mgg.fnn[i]]);
 			if ((mtex.textures_n[mtex.mgg.fnn[i]] = LoadTexture(mtex.mgg.files[mtex.mgg.fnn[i]], mtex.mgg.mipmap, &mtex.size[mtex.mgg.fnn[i]])) == -1)
 			{
+				GetError;
 				MessageBoxRes("Refresh error", MB_OK, "Error while refreshing texture: %s", mtex.mgg.files[mtex.mgg.fnn[i]]);
 				continue;
 			}
@@ -812,7 +837,12 @@ const char *CopyThisFile(char *filepath, char *newpath)
 	char *data;
 
 	if ((f = fopen(filepath, "rb")) == NULL)
+	{
+		ProcessError(NULL);
 		return 0;
+	}
+
+	fclose(f);
 
 	len = strlen(filepath);
 
@@ -840,8 +870,18 @@ const char *CopyThisFile(char *filepath, char *newpath)
 		return -2;
 	}
 
+	if (CopyFile(filepath, newpath, FALSE) == NULL)
+	{
+		GetError;
+		return -1;
+	}
+	else
+		return newfile;
+	/*
 	if ((f2 = fopen(newfile, "wb")) == NULL)
 	{
+		perror("Copying file error: ");
+		//MessageBoxRes("Copy error", MB_OK, "%s - %s", newfile, stderr);
 		fclose(f);
 		return -1;
 	}
@@ -862,6 +902,7 @@ const char *CopyThisFile(char *filepath, char *newpath)
 	free(data);
 
 	return newfile;
+	*/
 }
 
 char *StrTokNull(char *string)
@@ -910,6 +951,7 @@ int8 SavePrjFile(char *filepath)
 	if ((f = fopen(filepath, "w")) == NULL)
 	{
 		LogApp("Error: Could not create file %s", filepath);
+		ProcessError(NULL);
 		return NULL;
 	}
 
@@ -1079,6 +1121,7 @@ char *LoadPrjFile(const char *filepath)
 	{
 		sprintf(error_string, "Could not open project file %s", filepath);
 		LogApp(error_string);
+		ProcessError(NULL);
 		return error_string;
 	}
 	
@@ -2526,7 +2569,7 @@ int NewMGGBox(const char path[MAX_PATH])
 						if (tok == -2)
 							tok = tex[fls[i]];
 
-						if (tok)
+						if (tok != NULL && tok != -1 && tok != -2)
 						{
 							mtex.mgg.fn[j] = j;
 							strcpy(mtex.mgg.files[j], tok);
@@ -2566,7 +2609,7 @@ int NewMGGBox(const char path[MAX_PATH])
 						if (tok == -2)
 							tok = tex[flsn[i]];
 
-						if (tok)
+						if (tok != NULL && tok != -1 && tok != -2)
 						{
 							mtex.mgg.fnn[j] = j;
 							strcpy(mtex.mgg.files_n[j], tok);

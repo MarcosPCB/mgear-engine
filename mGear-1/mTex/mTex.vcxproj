@@ -105,7 +105,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <ShowProgress>NotSet</ShowProgress>
@@ -159,7 +159,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <OutputFile>$(SolutionDir)SDK\bin\$(TargetName)$(TargetExt)</OutputFile>
     </Link>

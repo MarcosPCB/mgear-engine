@@ -1050,6 +1050,10 @@ extern SDL_Window *wn;
 
 extern const char WindowTitle[32];
 
+void ProcessError(const char* funcname);
+
+#define GetError ProcessError(__FUNCTION__)
+
 cdecl void PreInit(const char AppName[4], int argc, char *argv[]);
 
 void Init();
@@ -1104,7 +1108,7 @@ void InitEngineWindow();
 
 void RestartVideo();
 
-void WindowEvent();
+void WindowEvents();
 
 void _inline STW(int32 *x, int32 *y);
 

@@ -404,7 +404,7 @@ int8 DownloadUpdate()
 		msdk.curlm = curl_multi_init();
 
 		curl_easy_setopt(msdk.curl, CURLOPT_URL, "https://mgear1.sourceforge.io/version/SDKUpdate.exe");
-		curl_easy_setopt(msdk.curl, CURLOPT_TIMEOUT, 120L);
+		curl_easy_setopt(msdk.curl, CURLOPT_TIMEOUT, 10L);
 		curl_easy_setopt(msdk.curl, CURLOPT_CAINFO, "./ca-bundle.crt");
 		curl_easy_setopt(msdk.curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(msdk.curl, CURLOPT_SSL_VERIFYHOST, 0);
@@ -465,33 +465,57 @@ int8 DownloadUpdate()
 
 		if (msdk.curlmsg && msdk.curlmsg->msg == CURLMSG_DONE)
 		{
-			curl_multi_remove_handle(msdk.curlm, msdk.curl);
-			curl_easy_cleanup(msdk.curl);
-			curl_multi_cleanup(msdk.curlm);
-			state = 0;
-
-			fclose(f);
-
-			system("start ..\\temp\\Update.exe");
-			LogApp("Closing SDK for update");
-			Quit();
-		}
-		else
-		{
-			if (msdk.resm == CURLE_HTTP_RETURNED_ERROR)
+			if (msdk.curlmsg->data.result != CURLE_OK)
 			{
+				MessageBoxRes("Update error", MB_OK, curl_multi_strerror(msdk.curlmsg->data.result));
 				curl_multi_remove_handle(msdk.curlm, msdk.curl);
 				curl_easy_cleanup(msdk.curl);
 				curl_multi_cleanup(msdk.curlm);
 				fclose(f);
 				remove("..\\temp\\Update.exe");
 				state = 2;
+			}
+			else
+			{
+				curl_multi_remove_handle(msdk.curlm, msdk.curl);
+				curl_easy_cleanup(msdk.curl);
+				curl_multi_cleanup(msdk.curlm);
+				state = 0;
+
+				fclose(f);
+
+				system("start ..\\temp\\Update.exe");
+				LogApp("Closing SDK for update");
+				Quit();
+			}
+		}
+		else
+		{
+			if (msdk.resm == CURLE_HTTP_RETURNED_ERROR)
+			{
 				MessageBoxRes("Update error", MB_OK, curl_multi_strerror(msdk.resm));
+				curl_multi_remove_handle(msdk.curlm, msdk.curl);
+				curl_easy_cleanup(msdk.curl);
+				curl_multi_cleanup(msdk.curlm);
+				fclose(f);
+				remove("..\\temp\\Update.exe");
+				state = 2;
+			}
+			
+			if (msdk.resm != CURLE_OK)
+			{
+				MessageBoxRes("Update error", MB_OK, curl_multi_strerror(msdk.resm));
+				curl_multi_remove_handle(msdk.curlm, msdk.curl);
+				curl_easy_cleanup(msdk.curl);
+				curl_multi_cleanup(msdk.curlm);
+				fclose(f);
+				remove("..\\temp\\Update.exe");
+				state = 2;
 			}
 		}
 	}
 
-	if (state == 4 && state == 5)
+	if (state == 4 || state == 5)
 	{
 		msdk.update = 0;
 		return 2;
@@ -510,6 +534,7 @@ char *GetSDKVersion()
 	{
 		if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\WOW6432Node\\Space In a Bottle", 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
 		{
+			GetError;
 			return NULL;
 		}
 	}
@@ -517,6 +542,7 @@ char *GetSDKVersion()
 	{
 		if (RegQueryValueEx(key, "Version", NULL, NULL, data, &size) != ERROR_SUCCESS)
 		{
+			GetError;
 			RegCloseKey(key);
 			LogApp("Invalid key");
 			return NULL;
@@ -545,6 +571,7 @@ int8 CheckForUpdate()
 
 	if ((f = fopen("update.html", "w")) == NULL)
 	{
+		GetError;
 		MessageBoxRes("Update error", MB_OK, "Error while checking for update");
 		return -1;
 	}
@@ -684,6 +711,16 @@ uint16 SaveCFG()
 		fprintf(file, "VS_a = \"%s\"\n", msdk.intg_app[INTG_VS].arg);
 	}
 
+	fprintf(file, "[Recent]");
+
+	for (int i = 0; i < 10; i++)
+	{
+		if (msdk.open_recent[i] == '\0')
+			break;
+		
+		fprintf(file, "\"%s\"", msdk.open_recent[i]);
+	}
+
 	fclose(file);
 
 	return 1;
@@ -693,7 +730,11 @@ uint16 LoadCFG()
 {
 	FILE *file;
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
-	int value=0;
+	int value = 0, recent = 0;
+
+	for (int i = 0; i < 10; i++)
+		msdk.open_recent[i][0] = '\0';
+
 	if((file=fopen("msdk_settings.cfg","r"))==NULL)
 	{
 		if (WriteCFG() == 0)
@@ -706,6 +747,23 @@ uint16 LoadCFG()
 	while(!feof(file))
 	{
 		fgets(buf,sizeof(buf),file);
+
+		if (recent == 1)
+		{
+			if (recent < 11)
+			{
+				buf2 = strtok(buf, "\"");
+				strcpy(msdk.open_recent[recent - 1], buf2);
+				recent++;
+				continue;
+			}
+			else
+			{
+				recent = 0;
+				break;
+			}
+		}
+
 		sscanf(buf,"%s = %d", str, &value);
 		if(strcmp(str,"ScreenX")==NULL) st.screenx=value;
 		if(strcmp(str,"ScreenY")==NULL) st.screeny=value;
@@ -721,6 +779,12 @@ uint16 LoadCFG()
 			buf2 = strtok(buf3, "\"");
 			buf2 = strtok(NULL, "\"");
 			strcpy(st.CurrPath, buf2);
+			continue;
+		}
+
+		if (strcmp(str, "[Recent]") == NULL)
+		{
+			recent = 1;
 			continue;
 		}
 
@@ -878,6 +942,27 @@ uint16 LoadCFG()
 
 }
 
+int8 AddToRecent(const char *file)
+{
+	if (!file)
+	{
+		LogApp("Invalid file path");
+		return NULL;
+	}
+
+	for (int i = 9; i > 0; i++)
+	{
+		if (i > 0 && msdk.open_recent[i - 1][0] == '\0')
+			break;
+
+		strcpy(msdk.open_recent[i], msdk.open_recent[i - 1]);
+	}
+
+	strcpy(msdk.open_recent[0], file);
+
+	return 1;
+}
+
 int SavePrjFile(const char *filename)
 {
 	FILE *f;
@@ -885,7 +970,10 @@ int SavePrjFile(const char *filename)
 
 
 	if ((f = fopen(filename, "wb")) == NULL)
+	{
+		GetError;
 		return 0;
+	}
 
 	fwrite(header, 21, 1, f);
 	fwrite(msdk.prj.name, 32, 1, f);
@@ -964,7 +1052,10 @@ int LoadPrjFile(const char *filename)
 	}
 	
 	if ((f = fopen(filename, "rb")) == NULL)
+	{
+		GetError;
 		return 0;
+	}
 
 	fread(header, 21, 1, f);
 
@@ -2410,12 +2501,14 @@ char *CheckForInstallation(const char *app)
 
 	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, StringFormat("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\%s", app), 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
 	{
+		GetError;
 		return NULL;
 	}
 	else
 	{
 		if (RegQueryValueEx(key, NULL, NULL, NULL, data, &size) != ERROR_SUCCESS)
 		{
+			GetError;
 			RegCloseKey(key);
 			LogApp("Invalid key");
 			return NULL;
@@ -2440,12 +2533,14 @@ char *GetAppArg(const char *app)
 
 	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, StringFormat("Applications\\%s\\shell\\open\\command", app), 0, KEY_QUERY_VALUE, &key) != ERROR_SUCCESS)
 	{
+		GetError;
 		return NULL;
 	}
 	else
 	{
 		if (RegQueryValueEx(key, NULL, NULL, NULL, data, &size) != ERROR_SUCCESS)
 		{
+			GetError;
 			RegCloseKey(key);
 			LogApp("Invalid key");
 			return NULL;
@@ -2971,6 +3066,8 @@ int NewProject()
 					return -1;
 				}
 
+				AddToRecent(msdk.filepath);
+
 				msdk.prj.loaded = 1;
 
 				nk_end(ctx);
@@ -3255,7 +3352,7 @@ void MenuBar()
 			nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
 
 			nk_layout_row_push(ctx, 45);
-			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(120, 270)))
+			if (nk_menu_begin_label(ctx, "File", NK_TEXT_LEFT, nk_vec2(120, 310)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 				if (nk_menu_item_label(ctx, "New project", NK_TEXT_LEFT))
@@ -3300,12 +3397,14 @@ void MenuBar()
 
 							msdk.prj.loaded = 1;
 							strcpy(msdk.filepath, path);
+
+							AddToRecent(path);
 						}
 					}
 
 					state = 0;
 				}
-
+				
 				if (nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT))
 				{
 					SavePrjFile(msdk.filepath);
@@ -4183,6 +4282,8 @@ int main(int argc, char *argv[])
 
 					msdk.prj.loaded = 1;
 					strcpy(msdk.filepath, argv[i + 1]);
+
+					AddToRecent(argv[i + 1]);
 				}
 			}
 		}
