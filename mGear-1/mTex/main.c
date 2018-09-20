@@ -164,6 +164,7 @@ uint16 WriteCFG()
 	fprintf(file,"AudioChannels = %d\n",st.audioc);
 	fprintf(file,"VSync = %d\n",st.vsync);
 	fprintf(file, "Theme = %d\n", mtex.theme);
+	fprintf(file, "FPS = 0\n");
 
 	fclose(file);
 
@@ -185,6 +186,7 @@ uint16 SaveCFG()
 	fprintf(file, "AudioChannels = %d\n", st.audioc);
 	fprintf(file, "VSync = %d\n", st.vsync);
 	fprintf(file, "Theme = %d\n", mtex.theme);
+	fprintf(file, "FPS = %d\n", st.FPSYes);
 
 	fclose(file);
 
@@ -217,6 +219,7 @@ uint16 LoadCFG()
 		if(strcmp(str,"AudioChannels")==NULL) st.audioc=value;
 		if(strcmp(str,"VSync")==NULL) st.vsync=value;
 		if (strcmp(str, "Theme") == NULL) mtex.theme = value;
+		if (strcmp(str, "FPS") == NULL) st.FPSYes = value;
 		if (strcmp(str, "CurrentPath") == NULL)
 		{
 			memcpy(buf3, buf, 2048);
@@ -339,7 +342,7 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 		if ((f = CreateFile(mtex.mgg.files[mtex.mgg.fn[file]], GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
 		{
-			GetError;
+			GetErrorS;
 			return NULL;
 		}
 	}
@@ -348,14 +351,14 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 		if ((f = CreateFile(mtex.mgg.files[mtex.mgg.fnn[file]], GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL, OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
 		{
-			GetError;
+			GetErrorS;
 			return NULL;
 		}
 	}
 
 	if (GetFileTime(f, NULL, NULL, &ft) == NULL)
 	{
-		GetError;
+		GetErrorS;
 		CloseHandle(f);
 		return NULL;
 	}
@@ -364,7 +367,7 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 
 	if (FileTimeToSystemTime(&ft, &st) == NULL)
 	{
-		GetError;
+		GetErrorS;
 		return NULL;
 	}
 
@@ -372,7 +375,7 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 	{
 		if (FileTimeToSystemTime(&mtex.mgg.ftime[mtex.mgg.fn[file]], &st2) == NULL)
 		{
-			GetError;
+			GetErrorS;
 			return NULL;
 		}
 	}
@@ -380,7 +383,7 @@ int8 CheckFilesForModification(int16 file, int8 normal)
 	{
 		if (FileTimeToSystemTime(&mtex.mgg.ftime_n[mtex.mgg.fnn[file]], &st2) == NULL)
 		{
-			GetError;
+			GetErrorS;
 			return NULL;
 		}
 	}
@@ -494,6 +497,8 @@ void UnloadmTexMGG()
 		mtex.mult_selection = 0;
 		mtex.dn_mode = 0;
 		mtex.canvas = 0;
+
+		strcpy(st.WindowTitle, "Tex");
 	}
 }
 
@@ -870,7 +875,7 @@ const char *CopyThisFile(char *filepath, char *newpath)
 		return -2;
 	}
 
-	if (CopyFile(filepath, newpath, FALSE) == NULL)
+	if (CopyFile(filepath, newfile, FALSE) == NULL)
 	{
 		GetError;
 		return -1;
@@ -2105,7 +2110,7 @@ int NewMGGBox(const char path[MAX_PATH])
 	ZeroMemory(&ofn, sizeof(ofn));
 	ofn.lStructSize = sizeof(ofn);
 	ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
-	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.tga;*.bmp\0Any File\0*.*\0";
+	ofn.lpstrFilter = "Image Files\0*.png;*.jpg;*.tga;*.bmp;*.psd;*.gif\0Any File\0*.*\0";
 	ofn.nMaxFile = MAX_PATH + (32 * 512);
 	ofn.lpstrFile = files;
 	ofn.lpstrTitle = "Select textures to import";
@@ -2751,7 +2756,7 @@ int Preferences()
 	if (mtex.theme == THEME_GWEN) strcpy(str, "GWEN skin");
 	if (mtex.theme == THEME_BLACK) strcpy(str, "Default");
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 100, st.screeny / 2 - 100, 200, 128), NK_WINDOW_TITLE | NK_WINDOW_BORDER))
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 100, st.screeny / 2 - 100, 200, 158), NK_WINDOW_TITLE | NK_WINDOW_BORDER))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -2807,6 +2812,9 @@ int Preferences()
 		}
 
 		nk_layout_row_dynamic(ctx, 25, 1);
+
+		st.FPSYes = nk_check_label(ctx, "FPS Counter", st.FPSYes == 1);
+
 		if (nk_button_label(ctx, "Ok"))
 		{
 			SaveCFG();
@@ -5786,7 +5794,7 @@ int main(int argc, char *argv[])
 	UILoadSystem("UI_Sys.cfg");
 	*/
 
-	st.FPSYes=1;
+	//st.FPSYes=1;
 
 	st.Developer_Mode=0;
 
@@ -5859,8 +5867,8 @@ BACKLOOP:
 
 	while(!st.quit)
 	{
-		if(st.FPSYes)
-			FPSCounter();
+		//if(st.FPSYes)
+		FPSCounter();
 
 		nk_input_begin(ctx);
 		
@@ -6001,7 +6009,7 @@ BACKLOOP:
 			SetTimerM(1);
 		}
 
-		if (curr_tic % 30 == 0) 
+		if (curr_tic % 120 == 0) 
 			UpdateFiles();
 
 		DrawSys();
@@ -6028,8 +6036,9 @@ BACKLOOP:
 		SwapBuffer(wn);
 
 		nkrendered = 0;
-
-		CheckForChanges();
+		
+		if (mtex.mgg.num_frames > 0)
+			CheckForChanges();
 	}
 
 	if (mtex.mgg.num_frames > 0)

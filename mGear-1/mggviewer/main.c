@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
 
 	InitMGG();
 
-	st.FPSYes=1;
+	//st.FPSYes=1;
 
 	st.Developer_Mode=1;
 

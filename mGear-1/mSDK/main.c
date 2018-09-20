@@ -660,6 +660,7 @@ uint16 WriteCFG()
 	fprintf(file,"AudioChannels = %d\n",st.audioc);
 	fprintf(file,"VSync = %d\n",st.vsync);
 	fprintf(file, "Theme = %d\n", msdk.theme);
+	fprintf(file, "FPS = 1\n");
 
 	fclose(file);
 
@@ -681,6 +682,7 @@ uint16 SaveCFG()
 	fprintf(file, "AudioChannels = %d\n", st.audioc);
 	fprintf(file, "VSync = %d\n", st.vsync);
 	fprintf(file, "Theme = %d\n", msdk.theme);
+	fprintf(file, "FPS = %d\n", st.FPSYes);
 
 	if (msdk.intg_app[INTG_PS].valid == 1)
 	{
@@ -773,6 +775,7 @@ uint16 LoadCFG()
 		if(strcmp(str,"AudioChannels")==NULL) st.audioc=value;
 		if(strcmp(str,"VSync")==NULL) st.vsync=value;
 		if (strcmp(str, "Theme") == NULL) msdk.theme = value;
+		if (strcmp(str, "FPS") == NULL) st.FPSYes = value;
 		if (strcmp(str, "CurrentPath") == NULL)
 		{
 			memcpy(buf3, buf, 2048);
@@ -2584,7 +2587,7 @@ int Preferences()
 
 	SetCurrentDirectory(msdk.program_path);
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 150, 320, 350), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 380), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -2638,6 +2641,9 @@ int Preferences()
 
 			nk_combo_end(ctx);
 		}
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		st.FPSYes = nk_check_label(ctx, "FPS counter", st.FPSYes == 1);
 
 		nk_layout_row_dynamic(ctx, 25, 2);
 		if (msdk.ffmpeg_downloaded == 1)
@@ -4192,7 +4198,7 @@ int main(int argc, char *argv[])
 	*/
 	UILoadSystem("UI_Sys.cfg");
 
-	st.FPSYes=1;
+	//st.FPSYes=1;
 
 	st.Developer_Mode=1;
 
@@ -4293,8 +4299,8 @@ int main(int argc, char *argv[])
 
 	while(!st.quit)
 	{
-		if(st.FPSYes)
-			FPSCounter();
+		//if(st.FPSYes)
+		FPSCounter();
 
 		CheckIA();
 
