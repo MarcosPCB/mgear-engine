@@ -149,7 +149,7 @@ void StartTimer()
 }
 */
 
-void ProcessError(const char *funcname)
+void _ProcessError(const char *funcname, int8 silent)
 {
 	DWORD err = GetLastError();
 	int errn = errno;
@@ -161,16 +161,24 @@ void ProcessError(const char *funcname)
 
 		err = GetLastError();
 
-		MessageBoxRes("Error", MB_OK, "Error code %d - %s", err, errormsg);
+		if (!silent)
+			MessageBoxRes("Error", MB_OK, "Error code %d - %s", err, errormsg);
+		else
+			LogApp("Error code %d - %s", err, errormsg);
+
 		if (funcname)
-			LogApp("Error at: %s with code %d - %s", __FUNCTION__, err, errormsg);
+			LogApp("Error at: %s with code %d - %s", funcname, err, errormsg);
 	}
 
 	if (errn != NULL)
 	{
-		MessageBoxRes("Standard error", MB_OK, "Error code %d - %s", errn, strerror(errn));
+		if (!silent)
+			MessageBoxRes("Standard error", MB_OK, "Standard error code %d - %s", errn, strerror(errn));
+		else
+			LogApp("Standard error code %d - %s", err, strerror(errn));
+
 		if (funcname)
-			LogApp("Error at: %s with code %d - %s", __FUNCTION__, errn, strerror(errn));
+			LogApp("Error at: %s with code %d - %s", funcname, errn, strerror(errn));
 	}
 }
 
@@ -221,7 +229,7 @@ unsigned long long _fastcall GetTimerM()
 
 void FPSCounter()
 {
-	if((SDL_GetTicks() - st.FPSTime)!=0)
+	if((SDL_GetTicks() - st.FPSTime)!=0 && st.FPSYes)
 	{
 		st.FPS=SDL_GetTicks()-st.FPSTime;
 		st.FPS=1000/st.FPS;
@@ -231,6 +239,10 @@ void FPSCounter()
 		st.FPSTime=SDL_GetTicks();
 		SDL_SetWindowTitle(wn,st.WINDOW_NAME);
 	}
+	
+	if (!st.FPSYes)
+		SDL_SetWindowTitle(wn, st.WindowTitle);
+
 }
 
 void _inline STW(int32 *x, int32 *y)
@@ -452,7 +464,11 @@ int16 LoadTexture(const char *file, uint8 mipmap, Pos *size)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 	else
+	{
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glGenerateMipmap(GL_TEXTURE_2D);
+	}
 
 	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

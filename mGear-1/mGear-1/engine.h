@@ -1050,9 +1050,11 @@ extern SDL_Window *wn;
 
 extern const char WindowTitle[32];
 
-void ProcessError(const char* funcname);
+void _ProcessError(const char* funcname, int8 silent);
 
-#define GetError ProcessError(__FUNCTION__)
+#define GetError _ProcessError(__FUNCTION__, NULL)
+#define GetErrorS _ProcessError(__FUNCTION__, 1)
+#define ProcessError(function_caller) _ProcessError(function_caller, NULL)
 
 cdecl void PreInit(const char AppName[4], int argc, char *argv[]);
 
