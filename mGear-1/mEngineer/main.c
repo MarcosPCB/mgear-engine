@@ -27,6 +27,8 @@
 
 mEng meng, nmeng;
 
+struct nk_font *fonts[4];
+
 int nkrendered = 0;
 
 struct nk_context *ctx;
@@ -67,10 +69,19 @@ uint16 LoadCFG()
 {
 	FILE *file;
 	char buf[2048], str[128], str2[2048], *buf2, buf3[2048];
-	int value=0;
-	if((file=fopen("meng_settings.cfg","r"))==NULL)
-		if(WriteCFG()==0)
+	int value = 0, recent = 0;
+
+	//for (int i = 0; i < 10; i++)
+		//msdk.open_recent[i][0] = '\0';
+
+	if ((file = fopen("meng_settings.cfg", "r")) == NULL)
+	{
+		if (WriteCFG() == 0)
 			return 0;
+
+		if ((file = fopen("meng_settings.cfg", "r")) == NULL)
+			return 0;
+	}
 
 	while(!feof(file))
 	{
@@ -9794,7 +9805,7 @@ void NewLeftPannel()
 
 int main(int argc, char *argv[])
 {
-	int8 i=0, test=0, ch, ch2, ch3;
+	int16 i=0, test=0, ch, ch2, ch3;
 	int16 testa = 0;
 	char options[8][16]={"Test 1", "Option 2", "vagina 3", "mGear 4"}, str[64];
 
@@ -9810,16 +9821,20 @@ int main(int argc, char *argv[])
 
 	//_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 
+	PreInit("meng", argc, argv);
+
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
 
+	strcpy(st.LogName, "meng.log");
+		
 	Init();
 
-	strcpy(st.WindowTitle,"Engineer v0.01 Alpha");
+	strcpy(st.WindowTitle,"Engineer");
 
-	OpenFont("font/Roboto-Regular.ttf","arial",0,128);
-	OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);
+	OpenFont("Font/Roboto-Regular.ttf","arial",0,128);
+	OpenFont("Font/Roboto-Bold.ttf","arial bold",1,128);
 	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
@@ -9833,6 +9848,17 @@ int main(int argc, char *argv[])
 	}
 	*/
 	//UILoadSystem("UI_Sys.cfg");
+
+	if (argc > 0)
+	{
+		for (i = 0; i < argc; i++)
+		{
+			if (strcmp(argv[i], "-p") == NULL)
+				strcpy(meng.prj_path, argv[i + 1]);
+		}
+	}
+
+	SetCurrentDirectory(meng.prj_path);
 
 	meng.num_mgg=0;
 	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
@@ -9851,9 +9877,11 @@ int main(int argc, char *argv[])
 
 	Renderer(1);
 
-	//LoadSpriteList("sprite.list");
+	LoadSpriteList("sprite.slist");
 
 	LoadSoundList("sound.list");
+
+	background = nk_rgb(28, 48, 62);
 
 	for (i = 0; i < st.num_sounds; i++)
 		strcpy(meng.soundlist[i], st.sounds[i].path);
@@ -9888,17 +9916,24 @@ int main(int argc, char *argv[])
 	meng.editor=0;
 	meng.hide_ui=0;
 
+	SetCurrentDirectory(st.CurrPath);
+
 	ctx = nk_sdl_init(wn);
 
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
+	fonts[0] = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 16, 0);
+	fonts[1] = nk_font_atlas_add_from_file(atlas, "Font\\mUI.ttf", 18, 0);
+	fonts[2] = nk_font_atlas_add_from_file(atlas, "Font\\Roboto-Regular.ttf", 14, 0);
 	nk_sdl_font_stash_end();
-	background = nk_rgb(28, 48, 62);
+	nk_style_set_font(ctx, &fonts[0]->handle);
+
+	SetCurrentDirectory(meng.prj_path);
 
 	NewMap();
 
 	SETENGINEPATH;
-	SetDirContent("mgg");
+	//SetDirContent("mgg");
 
 	while(!st.quit)
 	{

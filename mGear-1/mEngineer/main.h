@@ -187,6 +187,8 @@ struct _mEng
 
 	char soundlist[128][128];
 	char musiclist[128][128];
+
+	char prj_path[MAX_PATH];
 };
 
 typedef struct _mEng mEng;
