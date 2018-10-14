@@ -149,7 +149,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)APIs\FMOD\inc;$(SolutionDir)mGear-1;$(SolutionDir)APIs\Nuklear;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)APIs\FMOD\inc;$(SolutionDir)mGear-1;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(MSBuildProjectDirectory)</OutDir>
   </PropertyGroup>
@@ -181,12 +181,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)\APIs\Nuklear;$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)\APIs\Nuklear;$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -471,6 +471,7 @@
     <ClInclude Include="..\mGear-1\engine.h" />
     <ClInclude Include="..\mGear-1\funcs.h" />
     <ClInclude Include="..\mGear-1\input.h" />
+    <ClInclude Include="..\mGear-1\nuklear.h" />
     <ClInclude Include="..\mGear-1\physics.h" />
     <ClInclude Include="..\mGear-1\quicklz.h" />
     <ClInclude Include="..\mGear-1\skins.h" />
@@ -478,7 +479,6 @@
     <ClInclude Include="..\mGear-1\UI.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="mggeditor.h" />
-    <ClInclude Include="nuklear.h" />
     <ClInclude Include="nuklear_sdl_gl3.h" />
   </ItemGroup>
   <ItemGroup>

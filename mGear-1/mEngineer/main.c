@@ -28,6 +28,8 @@
 	#include <crtdbg.h>
 #endif
 
+#define NK_TEXT_LB NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_BOTTOM
+
 //extern _MGG mgg_sys[3];
 
 mEng meng, nmeng;
@@ -41,6 +43,31 @@ struct nk_context *ctx;
 int prev_tic, curr_tic, delta;
 
 char *Layers[] = { "Background 1", "Background 2", "Background 3", "Midground", "Foreground" };
+
+void SetThemeBack()
+{
+	switch (meng.theme)
+	{
+		case THEME_BLACK:
+			SetSkin(ctx, THEME_BLACK);
+			break;
+
+		case THEME_RED:
+			SetSkin(ctx, THEME_RED);
+			break;
+
+		case THEME_WHITE:
+			SetSkin(ctx, THEME_WHITE);
+			break;
+
+		case THEME_BLUE:
+			SetSkin(ctx, THEME_BLUE);
+			break;
+
+		case THEME_DARK:
+			SetSkin(ctx, THEME_DARK);
+	}
+}
 
 uint16 WriteCFG()
 {
@@ -4330,7 +4357,7 @@ static void ViewPortCommands()
 		meng.current_command=0;
 	}	
 
-	if(!CheckCollisionMouse(2458/2,4885,2458,8939,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
+	if(!CheckCollisionMouse(2470/2,4885,2470,8939,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
 	{
 		if(meng.command==CAM_LIM_X)
 		{
@@ -5161,6 +5188,21 @@ static void ViewPortCommands()
 					{
 						for(k=meng.z_slot[l];k>-1;k--)
 						{
+							if (meng.curlayer == 0 && l>23)
+								break;
+
+							if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
+								break;
+
+							if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
+								break;
+
+							if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
+								break;
+
+							if (meng.curlayer == 4 && l<48)
+								break;
+
 							i=meng.z_buffer[l][k];
 
 							if(i>1099) continue;
@@ -5327,6 +5369,21 @@ static void ViewPortCommands()
 					{
 						for(k=meng.z_slot[l];k>-1;k--)
 						{
+							if (meng.curlayer == 0 && l>23)
+								break;
+
+							if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
+								break;
+
+							if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
+								break;
+
+							if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
+								break;
+
+							if (meng.curlayer == 4 && l<48)
+								break;
+
 							i=meng.z_buffer[l][k];
 
 							if(i<2000 || i>3000) continue;
@@ -8199,7 +8256,8 @@ struct nk_color ColorPicker(struct nk_color color)
 	if (nk_combo_begin_color(ctx, color, nk_vec2(200, 250)))
 	{
 		nk_layout_row_dynamic(ctx, 120, 1);
-		color = nk_color_picker(ctx, color, NK_RGB);
+		struct nk_colorf c = nk_color_picker(ctx, nk_color_cf(color), NK_RGB);
+		color = nk_rgb_cf(c);
 		nk_layout_row_dynamic(ctx, 25, 1);
 		color.r = (nk_byte)nk_propertyi(ctx, "R:", 0, color.r, 255, 1, 1);
 		color.g = (nk_byte)nk_propertyi(ctx, "G:", 0, color.g, 255, 1, 1);
@@ -8403,7 +8461,7 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang)
 				if (nk_button_symbol(ctx, NK_SYMBOL_X))
 					chained = 0;
 
-				nk_style_default(ctx);
+				SetThemeBack(ctx,meng.theme);
 			}
 			else
 				if (nk_button_symbol(ctx, NK_SYMBOL_X))
@@ -9254,7 +9312,7 @@ void SpriteListSelection()
 			nk_group_end(ctx);
 		}
 
-		nk_style_default(ctx);
+		SetThemeBack(ctx,meng.theme);
 
 		nk_layout_row_dynamic(ctx, 30, 3);
 		nk_spacing(ctx, 2);
@@ -9357,7 +9415,7 @@ void TextureListSelection()
 				nk_group_end(ctx);
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack(ctx,meng.theme);
 
 			nk_layout_row_dynamic(ctx, 30, 3);
 			nk_spacing(ctx, 2);
@@ -9560,7 +9618,7 @@ void NewLeftPannel()
 				meng.pannel_choice = SELECT_EDIT;
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack(ctx,meng.theme);
 
 			if (meng.pannel_choice == DRAW_SECTOR)
 				ctx->style.button.normal = ctx->style.button.hover;
@@ -9571,7 +9629,7 @@ void NewLeftPannel()
 				meng.pannel_choice = DRAW_SECTOR;
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack(ctx,meng.theme);
 
 			if (meng.pannel_choice == ADD_OBJ)
 				ctx->style.button.normal = ctx->style.button.hover;
@@ -9582,7 +9640,7 @@ void NewLeftPannel()
 				meng.pannel_choice = ADD_OBJ;
 			}
 
-			nk_style_default(ctx);
+			SetThemeBack(ctx,meng.theme);
 
 			if (meng.pannel_choice == ADD_SPRITE)
 				ctx->style.button.normal = ctx->style.button.hover;
@@ -9590,23 +9648,55 @@ void NewLeftPannel()
 			if (nk_button_label(ctx, "Add Sprite"))
 				meng.command = meng.pannel_choice = ADD_SPRITE;
 
-			nk_style_default(ctx);
+			SetThemeBack(ctx,meng.theme);
 
 			if (meng.pannel_choice == ADD_LIGHT)
 				ctx->style.button.normal = ctx->style.button.hover;
 
-			nk_button_label(ctx, "Lighting");
+			if (nk_button_label(ctx, "Lighting"))
+				meng.command = meng.pannel_choice = NLIGHTING;
 
-			nk_style_default(ctx);
+			SetThemeBack(ctx,meng.theme);
 
 			nk_spacing(ctx, 1);
+
+			if (meng.pannel_choice == NLIGHTING)
+			{
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_button_label(ctx, "Add light");
+
+				struct nk_color lcolor;
+				lcolor.r = meng.lightmap_color.r;
+				lcolor.b = meng.lightmap_color.b;
+				lcolor.g = meng.lightmap_color.g;
+
+				lcolor = ColorPicker(lcolor);
+
+				meng.lightmap_color.r = lcolor.r;
+				meng.lightmap_color.g = lcolor.g;
+				meng.lightmap_color.b = lcolor.b;
+
+				nk_label(ctx, "Lightmap resolution", NK_TEXT_LB);
+				nk_layout_row_dynamic(ctx, 30, 1);
+				nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, StringFormat("%d", meng.lightmap_res.x), 2048, nk_filter_decimal);
+				
+				meng.lightmap_res.y = meng.lightmap_res.x;
+				meng.light.color.r = lcolor.r;
+				meng.light.color.g = lcolor.g;
+				meng.light.color.b = lcolor.b;
+
+				meng.light.falloff = nk_propertyf(ctx, "Fallof", 0, meng.light.falloff, 32768, 0.1, 0.01);
+				meng.light.intensity = nk_propertyi(ctx, "Intensity", 0, meng.light.intensity, 512, 32, 1);
+				
+				nk_button_label(ctx, "Load lightmap");
+			}
 
 			if (meng.pannel_choice == SELECT_EDIT)
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 				char *layers2[] = { "Foreground", "Midground", "Background 1", "Background 2", "Background 3" };
 
-				nk_label(ctx, "Current layer", NK_TEXT_ALIGN_LEFT);
+				nk_label(ctx, "Current layer", NK_TEXT_LB);
 				meng.curlayer = nk_combo(ctx, layers2, 5, meng.curlayer, 25, nk_vec2(110, 200));
 
 				if (meng.command2 == EDIT_SPRITE)
@@ -9617,7 +9707,7 @@ void NewLeftPannel()
 
 					nk_layout_row_dynamic(ctx, 30, 1);
 
-					nk_label(ctx, "Current layer of the sprite", NK_TEXT_ALIGN_LEFT);
+					nk_label(ctx, "Current layer of the sprite", NK_TEXT_LB);
 					meng.spr2.type = nk_combo(ctx, Layers, 5, st.Current_Map.sprites[meng.sprite_edit_selection].type_s, 25, nk_vec2(110, 200));
 
 					st.Current_Map.sprites[meng.sprite_edit_selection].position.z = GetZLayer(st.Current_Map.sprites[meng.sprite_edit_selection].position.z,
@@ -9692,7 +9782,7 @@ void NewLeftPannel()
 
 					nk_layout_row_dynamic(ctx, 30, 1);
 
-					nk_label(ctx, "Current layer of the scenario", NK_TEXT_ALIGN_LEFT);
+					nk_label(ctx, "Current layer of the scenario", NK_TEXT_LB);
 					meng.obj2.type = nk_combo(ctx, Layers, 5, st.Current_Map.obj[meng.obj_edit_selection].type, 25, nk_vec2(110, 200));
 
 					st.Current_Map.obj[meng.obj_edit_selection].position.z = GetZLayer(st.Current_Map.obj[meng.obj_edit_selection].position.z,
@@ -9996,6 +10086,7 @@ int main(int argc, char *argv[])
 	NewMap();
 
 	SetSkin(ctx, THEME_BLACK);
+	meng.theme = THEME_BLACK;
 
 	SETENGINEPATH;
 	//SetDirContent("mgg");
@@ -10028,11 +10119,6 @@ int main(int argc, char *argv[])
 
 			if(st.gt==INGAME)
 			{
-				if(meng.editor==1)
-				{
-					MGGEditorMain();
-				}
-				else
 				if(meng.editor==0)
 				{
 
@@ -10150,10 +10236,6 @@ int main(int argc, char *argv[])
 			ENGDrawLight();
 		}
 
-		MenuBar();
-		NewLeftPannel();
-		CoordBar();
-
 		if (meng.command == SPRITE_PHY)
 			PhysicsBox(meng.sprite_edit_selection);
 
@@ -10176,6 +10258,10 @@ int main(int argc, char *argv[])
 
 		if (meng.command == SPRITE_TAG)
 			TagBox(st.Current_Map.sprites[meng.sprite_edit_selection].GameID, meng.sprite_edit_selection);
+
+		NewLeftPannel();
+		CoordBar();
+		MenuBar();
 
 		//MapProperties();
 		//CameraProperties();

@@ -83,6 +83,16 @@
 #define LIGHTVIEW_MODE 6
 #define ALLVIEW_MODE 7
 
+#define NLIGHTING 100
+#define NADD_LIGHT 101
+#define NADD_LIGHT_PANNEL 102
+#define NLOAD_LIGHT 103
+#define NEDIT_LIGHT 104
+#define NCREATE_LIGHTMAP 105
+#define NEDIT_LIGHTMAP 106
+#define NLIGHTMAP_PANNEL 107
+
+
 struct _mEng
 {
 	int8 viewmode;
@@ -190,6 +200,8 @@ struct _mEng
 	char musiclist[128][128];
 
 	char prj_path[MAX_PATH];
+
+	enum NKUITheme theme;
 };
 
 typedef struct _mEng mEng;
