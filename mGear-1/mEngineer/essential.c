@@ -10,6 +10,7 @@ void NewMap()
 	meng.command2 = 0;
 	meng.scroll2 = 0;
 	meng.mgg_sel = 0;
+	meng.curlayer = 1;
 
 	if (st.Current_Map.obj)
 		free(st.Current_Map.obj);

@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 	_MGGFORMAT mgg;
 	_MGGANIM *mga = NULL;
 	unsigned char FileName[260], filename[256], animfile[260], tmp[4096], str[2][32], framename[260], framename2[260], fileframe[64], files[MAX_FILES][64],
-		files_n[MAX_FILES][64], *token;
+		files_n[MAX_FILES][64], *token, debug = 0;
 	int16 t = 0, value, p = 0, a = -1, val[16], *offx = NULL, *offy = NULL, start_frame = 0;
 	unsigned char header[21] = { "MGG File Version 2" }, *MGIbuf, *MGIimagedata, *imagebuf, *error_str, loading_str[256], loading_pct, RLE = 0, *DataN;
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas = 0, *dimx, *dimy, numfiles = 0;
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 	memset(files_n, 0, MAX_FILES * 64);
 	memset(ca_normal, 0, 32);
 
-	printf("MGG Creator 1.0\nMaster Gear Graphics Creator 2018");
+	printf("MGG Creator 1.0\nMaster Gear Graphics Creator 2018\n");
 
 	if(argc<3)
 	{
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 		printf("-o output path file name\n");
 		printf("-p path to the folder with frames and the instructions file\n");
 		printf("-i instructions file name\n");
+		printf("-debug debugs the instruction file");
 		printf("EXAMPLE: -o \"test.mgg\" -p \"test/frames\" -i \"test.texprj\" \n");
 		//printf("OBS: Use double // for paths\n");
 		exit(0);
@@ -80,6 +81,12 @@ int main(int argc, char *argv[])
 				strcpy(animfile, argv[i + 1]);
 				strcat(animfile, "\\");
 				strcat(animfile, argv[i + 3]);
+				i++;
+			}
+			else
+			if (strcmp(argv[i], "-debug") == NULL)
+			{
+				debug = 1;
 				i++;
 			}
 		}
@@ -105,6 +112,13 @@ int main(int argc, char *argv[])
 		sscanf(tmp,"%s %s",str[0], str[1]);
 		if(strcmp(str[0],"\0")==NULL)
 			continue;
+
+		if (debug == 1)
+		{
+			printf("Found expression: %s", tmp);
+			getch();
+		}
+
 		if(p==1)
 		{
 			if(a==-1)
@@ -660,7 +674,7 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					strtok(tmp, ",\"");
+					strtok(tmp, " ,\"");
 
 					token = strtok(NULL, " ,\"");
 					i = atoi(token);
@@ -679,6 +693,7 @@ int main(int argc, char *argv[])
 					}
 
 					strcpy(files[i], token);
+					printf("File: \"%s\"\n", token);
 				}
 			}
 
@@ -717,6 +732,7 @@ int main(int argc, char *argv[])
 						}
 
 						strcpy(files[k], token);
+						printf("File: \"%s\"\n", token);
 					}
 				}
 			}
@@ -751,6 +767,7 @@ int main(int argc, char *argv[])
 					}
 
 					strcpy(files_n[i], token);
+					printf("File: \"%s\"\n", token);
 
 					normals[i] = 1;
 				}
@@ -793,6 +810,7 @@ int main(int argc, char *argv[])
 						if (strcmp(token, "null") != NULL)
 						{
 							strcpy(files_n[k], token);
+							printf("File: \"%s\"\n", token);
 							normals[k] = 1;
 						}
 					}

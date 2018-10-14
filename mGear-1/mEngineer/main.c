@@ -6,6 +6,8 @@
 #include "dirent.h"
 #include "UI.h"
 #include "mggeditor.h"
+#include <commdlg.h>
+#include <Windows.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -18,6 +20,9 @@
 #define NK_SDL_GL3_IMPLEMENTATION
 #include "nuklear.h"
 #include "nuklear_sdl_gl3.h"
+
+#define _NKUI_SKINS
+#include "skins.h"
 
 #ifdef _DEBUG
 	#include <crtdbg.h>
@@ -35,7 +40,7 @@ struct nk_context *ctx;
 
 int prev_tic, curr_tic, delta;
 
-char *Layers[] = { "Background 3", "Background 2", "Background 1", "Midground", "Foreground" };
+char *Layers[] = { "Background 1", "Background 2", "Background 3", "Midground", "Foreground" };
 
 uint16 WriteCFG()
 {
@@ -4662,6 +4667,9 @@ static void ViewPortCommands()
 						if(meng.viewmode!=1 && meng.viewmode<5)
 							break;
 
+						if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
+							break;
+
 						i=meng.z_buffer[l][k];
 
 						if(i<10000) continue;
@@ -4820,6 +4828,21 @@ static void ViewPortCommands()
 
 					for(k=meng.z_slot[l]-1;k>-1;k--)
 					{
+						if (meng.curlayer == 0 && l>23)
+							break;
+
+						if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
+							break;
+
+						if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
+							break;
+
+						if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
+							break;
+
+						if (meng.curlayer == 4 && l<48)
+							break;
+
 						i=meng.z_buffer[l][k];
 
 						if(i<2000 || i>9999) continue;
@@ -4833,6 +4856,7 @@ static void ViewPortCommands()
 								break;
 						}
 						*/
+
 						if(got_it) break;
 
 						if(CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
@@ -4929,6 +4953,21 @@ static void ViewPortCommands()
 
 					for(k=meng.z_slot[l]-1;k>-1;k--)
 					{
+						if (meng.curlayer == 0 && l>23)
+							break;
+
+						if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
+							break;
+
+						if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
+							break;
+
+						if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
+							break;
+
+						if (meng.curlayer == 4 && l<48)
+							break;
+
 						i=meng.z_buffer[l][k];
 
 						if(i>1099) continue;
@@ -8891,8 +8930,24 @@ void MenuBar()
 						{
 							mggid = i;
 							meng.command == MGG_SEL;
-							SetDirContent("mgg");
-							state = 8;
+							OPENFILENAME ofn;
+							char path[MAX_PATH];
+							ZeroMemory(&path, sizeof(path));
+							ZeroMemory(&ofn, sizeof(ofn));
+							ofn.lStructSize = sizeof(ofn);
+							ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
+							ofn.lpstrFilter = "MGG files\0*.mgg\0";
+							ofn.nMaxFile = MAX_PATH;
+							ofn.lpstrFile = path;
+							ofn.lpstrTitle = "Select the MGG file";
+							//ofn.hInstance = OFN_EXPLORER;
+							ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+							if (GetOpenFileName(&ofn))
+							{
+								strcpy(filename, path);
+								state = 8;
+							}
 							break;
 						}
 					}
@@ -8927,13 +8982,13 @@ void MenuBar()
 	{
 		meng.command = meng.pannel_choice =  MGG_SEL;
 
-		check = FileBrowser(filename);
+		//check = FileBrowser(filename);
 
-		if (check == -1)
-			state = 0;
+		//if (check == -1)
+			//state = 0;
 
-		if (check == 1)
-		{
+		//if (check == 1)
+		//{
 			if (LoadMGG(&mgg_map[mggid], filename))
 			{
 				strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg], filename);
@@ -8949,7 +9004,7 @@ void MenuBar()
 				state = 0;
 				meng.command = meng.pannel_choice =  NONE_MODE;
 			}
-		}
+		//}
 	}
 
 	if (state == 9)
@@ -9548,6 +9603,12 @@ void NewLeftPannel()
 
 			if (meng.pannel_choice == SELECT_EDIT)
 			{
+				nk_layout_row_dynamic(ctx, 30, 1);
+				char *layers2[] = { "Foreground", "Midground", "Background 1", "Background 2", "Background 3" };
+
+				nk_label(ctx, "Current layer", NK_TEXT_ALIGN_LEFT);
+				meng.curlayer = nk_combo(ctx, layers2, 5, meng.curlayer, 25, nk_vec2(110, 200));
+
 				if (meng.command2 == EDIT_SPRITE)
 				{
 					editcolor.r = st.Current_Map.sprites[meng.sprite_edit_selection].color.r;
@@ -9556,6 +9617,7 @@ void NewLeftPannel()
 
 					nk_layout_row_dynamic(ctx, 30, 1);
 
+					nk_label(ctx, "Current layer of the sprite", NK_TEXT_ALIGN_LEFT);
 					meng.spr2.type = nk_combo(ctx, Layers, 5, st.Current_Map.sprites[meng.sprite_edit_selection].type_s, 25, nk_vec2(110, 200));
 
 					st.Current_Map.sprites[meng.sprite_edit_selection].position.z = GetZLayer(st.Current_Map.sprites[meng.sprite_edit_selection].position.z,
@@ -9630,6 +9692,7 @@ void NewLeftPannel()
 
 					nk_layout_row_dynamic(ctx, 30, 1);
 
+					nk_label(ctx, "Current layer of the scenario", NK_TEXT_ALIGN_LEFT);
 					meng.obj2.type = nk_combo(ctx, Layers, 5, st.Current_Map.obj[meng.obj_edit_selection].type, 25, nk_vec2(110, 200));
 
 					st.Current_Map.obj[meng.obj_edit_selection].position.z = GetZLayer(st.Current_Map.obj[meng.obj_edit_selection].position.z,
@@ -9840,14 +9903,14 @@ int main(int argc, char *argv[])
 	InitMGG();
 
 	//LoadMGG(&mgg_map[0], "tex01n.mgg");
-	/*
+	
 	if(LoadMGG(&mgg_sys[0],"data/mEngUI.mgg")==NULL)
 	{
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
-	*/
-	//UILoadSystem("UI_Sys.cfg");
+	
+	UILoadSystem("UI_Sys.cfg");
 
 	if (argc > 0)
 	{
@@ -9879,7 +9942,7 @@ int main(int argc, char *argv[])
 
 	LoadSpriteList("sprite.slist");
 
-	LoadSoundList("sound.list");
+	LoadSoundList("Data/Audio/sound.list");
 
 	background = nk_rgb(28, 48, 62);
 
@@ -9931,6 +9994,8 @@ int main(int argc, char *argv[])
 	SetCurrentDirectory(meng.prj_path);
 
 	NewMap();
+
+	SetSkin(ctx, THEME_BLACK);
 
 	SETENGINEPATH;
 	//SetDirContent("mgg");

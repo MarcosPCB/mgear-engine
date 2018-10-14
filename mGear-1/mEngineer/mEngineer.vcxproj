@@ -473,6 +473,7 @@
     <ClInclude Include="..\mGear-1\input.h" />
     <ClInclude Include="..\mGear-1\physics.h" />
     <ClInclude Include="..\mGear-1\quicklz.h" />
+    <ClInclude Include="..\mGear-1\skins.h" />
     <ClInclude Include="..\mGear-1\types.h" />
     <ClInclude Include="..\mGear-1\UI.h" />
     <ClInclude Include="main.h" />
