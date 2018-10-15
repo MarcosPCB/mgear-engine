@@ -4344,13 +4344,14 @@ void LightingMisc()
 			if (!gl[i].stat)
 			{
 				gl[i].stat = 2;
+					
 				gl[i].W_w = gl[i].W_h = 2048;
 				gl[i].obj_id = -1;
 
 				gl[i].w_pos = st.mouse;
 				STW(&gl[i].w_pos.x, &gl[i].w_pos.y);
 
-				gl[i].T_w = gl[i].T_h = meng.lightmap_res.x;
+				gl[i].T_w = gl[i].T_h = mSqrt(1.0f / ((1.0f / 512) * meng.light.fallof));
 
 				gl[i].falloff[0] = meng.light.falloff;
 				gl[i].color[0] = meng.light.color;
