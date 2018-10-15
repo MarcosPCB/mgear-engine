@@ -19,11 +19,13 @@ static const char *Texture_VShader[64]={
 	   "TexCoord2 = TexCoord;\n"
 	   "colore = Color;\n"
 	   "TexLight2 = TexLight;\n"
-	"};\n"
+	"}\n"
 };
 
 static const char *Texture_FShader[64]={
 	"#version 130\n"
+
+	"precision mediump float;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -45,12 +47,14 @@ static const char *Texture_FShader[64]={
 	"else\n"
 	"if( light_type == 2)\n"
 		"FColor = texture(texu, TexCoord2) * 4.0;\n"
-	"};"
+	"}"
 
 };
 
 static const char *TextureNoT_FShader[64]={
 	"#version 130\n"
+
+	"precision mediump float;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -68,12 +72,14 @@ static const char *TextureNoT_FShader[64]={
 			"discard;\n"
 		"else\n"
 		"FColor = Diffuse;\n"
-	"};\n"
+	"}\n"
 
 };
 
 static const char *TextureT_FShader[64]={
 	"#version 130\n"
+
+	"precision mediump float;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -102,12 +108,14 @@ static const char *TextureT_FShader[64]={
 		"}\n"
 
 		
-	"};\n"
+	"}\n"
 
 };
 
 static const char *Blend_FShader[64]={
 	"#version 130\n"
+
+	"precision mediump float;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -125,7 +133,7 @@ static const char *Blend_FShader[64]={
 		"vec4 Alpha = texture(texu2, TexCoord2);\n"
 
 		"FColor = vec4(Alpha.rgb * Diffuse.rgb,1.0);\n"
-	"};\n"
+	"}\n"
 
 };
 
@@ -262,6 +270,8 @@ const char *Lightmap_FShader[128]={
 
 static const char *Lightmap_FShader[128]={
 	"#version 130\n"
+
+	"precision mediump float;\n"
 	
 	"in vec2 TexCoord2;\n"
 
@@ -292,14 +302,14 @@ static const char *Lightmap_FShader[128]={
 
 			"vec3 N = normalize(texture(texu3, TexCoord2).rgb * 2.0 - 1.0);\n"
 
-			"FColor = texture(texu, TexCoord2) * colore * (Lightmap * max(dot(N, L), 0.0));\n"
+			"FColor = texture(texu, TexCoord2) * colore + (Lightmap * max(dot(N, L), 0.0));\n"
 		"}\n"
 		"else\n"
 		"if(normal == 2.0)\n"
 		"{\n"
 			"vec4 Lightmap = texture(texu2, TexLight2) * 4.0;\n"
 
-			"FColor = texture(texu, TexCoord2) * colore * Lightmap;\n"
+			"FColor = texture(texu, TexCoord2) * (colore + Lightmap);\n"
 		"}\n"
 		"else\n"
 		"if(normal == 3.0)\n"

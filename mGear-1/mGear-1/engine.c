@@ -210,11 +210,13 @@ void SignalError(int signum)
 
 	for (int i = 0; i < frames; i++)
 	{
-		SymFromAddr(process, (DWORD64)(stack[i]), 0, &sym);
+		SymFromAddr(process, (DWORD64)(stack[i]), 0, sym);
 		LogApp("%i: %s - 0x%0X\n", frames - i - 1, sym->Name, sym->Address);
 	}
 
 	free(sym);
+
+	MessageBoxRes("Critical error", MB_ICONERROR | MB_OK, "Critical error detected. Check %s for more information", st.LogName);
 }
 
 void _fastcall SetTimerM(unsigned long long int x)
@@ -8391,9 +8393,15 @@ int32 LoadSpriteCFG(char *filename, int id)
 				continue;
 			}
 
-			if(CheckMGGFile(str2))
+			tok = strtok(str2, "\"");
+
+			char cpath[MAX_PATH];
+			GetCurrentDirectory(MAX_PATH, cpath);
+			char *mggpath = StringFormat("%s\\Data\\Textures\\%s", cpath, tok);
+
+			if(CheckMGGFile(mggpath))
 			{
-				value=CheckMGGInSystem(str2);
+				value=CheckMGGInSystem(mggpath);
 
 				if(value>999 && value<1003)
 				{
@@ -8415,7 +8423,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 				else
 				if(value==-1)
 				{
-					if(!LoadMGG(&mgg_game[id2],str2))
+					if(!LoadMGG(&mgg_game[id2],mggpath))
 					{
 						//fclose(file);
 						//return 0;
@@ -9182,30 +9190,32 @@ void DrawMap()
 					 || (st.viewmode & 4 && st.Current_Map.obj[i].position.z>31 && st.Current_Map.obj[i].position.z<40) || (st.viewmode & 8 && st.Current_Map.obj[i].position.z>39 && st.Current_Map.obj[i].position.z<48)
 					  || (st.viewmode & 16 && st.Current_Map.obj[i].position.z>47 && st.Current_Map.obj[i].position.z<57))
 				{
-					if(st.Current_Map.obj[i].flag & 2)
+					if (st.Current_Map.obj[i].flag & 2)
 					{
-						max_f=mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].num_frames;
-						curf=mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].startID;
+						max_f = mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].num_frames;
+						curf = mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].startID;
 
-						st.Current_Map.obj[i].current_frame=curf+(st.Camera.position.x/512);
+						st.Current_Map.obj[i].current_frame = curf + (st.Camera.position.x / 512);
 
-						if(st.Current_Map.obj[i].current_frame>max_f-1)
-							st.Current_Map.obj[i].current_frame=max_f-1;
+						if (st.Current_Map.obj[i].current_frame>max_f - 1)
+							st.Current_Map.obj[i].current_frame = max_f - 1;
 						else
-						if(st.Current_Map.obj[i].current_frame<0)
-							st.Current_Map.obj[i].current_frame=0;
+						if (st.Current_Map.obj[i].current_frame < 0)
+							st.Current_Map.obj[i].current_frame = 0;
 
-						DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-							st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,
-							mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].current_frame],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,
-							st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z,st.Current_Map.obj[i].flag);
+						DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
+							st.Current_Map.obj[i].angle, st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
+							st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].current_frame],
+							st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
+							st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
 
 					}
 					else
-						DrawGraphic(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-							st.Current_Map.obj[i].angle,st.Current_Map.obj[i].color.r,st.Current_Map.obj[i].color.g,st.Current_Map.obj[i].color.b,
-							mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],st.Current_Map.obj[i].color.a,st.Current_Map.obj[i].texpan.x,st.Current_Map.obj[i].texpan.y,
-							st.Current_Map.obj[i].texsize.x,st.Current_Map.obj[i].texsize.y,st.Current_Map.obj[i].position.z,st.Current_Map.obj[i].flag);
+						DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
+						st.Current_Map.obj[i].angle, st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
+						st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],
+						st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
+						st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
 				}
 			}
 
@@ -10186,6 +10196,7 @@ int8 LoadSoundList(char *name)
 
 	while(!feof(file))
 	{
+		memset(buf, 0, 1024);
 		fgets(buf,1024,file);
 
 		tok=strtok(buf," \"");
