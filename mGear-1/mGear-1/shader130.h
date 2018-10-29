@@ -2,7 +2,7 @@
 #define SHADER130_H
 
 static const char *Texture_VShader[64]={
-	"#version 130\n"
+	"#version 330\n"
 
 	"in vec3 Position;\n"
 	"in vec2 TexCoord;\n"
@@ -15,10 +15,10 @@ static const char *Texture_VShader[64]={
 
 	"void main()\n"
 	"{\n"
-	   "gl_Position = vec4(Position, 1.0);\n"
-	   "TexCoord2 = TexCoord;\n"
-	   "colore = Color;\n"
-	   "TexLight2 = TexLight;\n"
+		"gl_Position = vec4(Position, 1.0);\n"
+		"TexCoord2 = TexCoord;\n"
+		"colore = Color;\n"
+		"TexLight2 = TexLight;\n"
 	"}\n"
 };
 
@@ -40,13 +40,13 @@ static const char *Texture_FShader[64]={
 	"void main()\n"
 	"{\n"
 	"if( light_type == 0)\n"
-		"FColor = texture(texu, TexCoord2);\n"
+		"FColor += texture(texu, TexCoord2);\n"
 	"else\n"
 	"if( light_type == 1)\n"
-		"FColor = texture(texu, TexCoord2) * 2.0;\n"
+		"FColor += texture(texu, TexCoord2) * 2.0;\n"
 	"else\n"
 	"if( light_type == 2)\n"
-		"FColor = texture(texu, TexCoord2) * 4.0;\n"
+		"FColor += texture(texu, TexCoord2) * 4.0;\n"
 	"}"
 
 };
@@ -269,17 +269,21 @@ const char *Lightmap_FShader[128]={
 */
 
 static const char *Lightmap_FShader[128]={
-	"#version 130\n"
+	"#version 330\n"
 
 	"precision mediump float;\n"
-	
+
 	"in vec2 TexCoord2;\n"
 
 	"in vec4 colore;\n"
 
 	"in vec2 TexLight2;\n"
 
-	"out vec4 FColor;\n"
+	"uniform vec3 Lightpos;\n"
+
+	"layout (location = 0) out vec4 FColor;\n"
+	"layout (location = 1) out vec4 NColor;\n"
+	"layout (location = 2) out vec4 Amb;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -287,13 +291,21 @@ static const char *Lightmap_FShader[128]={
 
 	"uniform sampler2D texu3;\n"
 
+	"uniform sampler2D texu4;\n"
+
 	"uniform float normal;\n"
+
+	"uniform vec3 falloff;\n"
+	"uniform vec2 res;\n"
+
+	"uniform vec2 camp;\n"
+	"uniform vec2 cams;\n"
 
 	"void main()\n"
 	"{\n"
 		"if(normal == 0.0)\n"
 			"FColor = texture(texu, TexCoord2) * colore;\n"
-		"else\n"
+
 		"if(normal == 1.0)\n"
 		"{\n"
 			"vec4 Lightmap = texture(texu2, TexLight2) * 4.0;\n"
@@ -304,16 +316,51 @@ static const char *Lightmap_FShader[128]={
 
 			"FColor = texture(texu, TexCoord2) * colore + (Lightmap * max(dot(N, L), 0.0));\n"
 		"}\n"
-		"else\n"
+		//		"else\n"
 		"if(normal == 2.0)\n"
 		"{\n"
-			"vec4 Lightmap = texture(texu2, TexLight2) * 4.0;\n"
+		//"vec4 Lightmap = texture(texu2, TexLight2);\n"
 
-			"FColor = texture(texu, TexCoord2) * (colore + Lightmap);\n"
+			"FColor = texture(texu, TexCoord2);\n"
+			"Amb = colore;\n"
 		"}\n"
-		"else\n"
+		//		"else\n"
 		"if(normal == 3.0)\n"
-			"FColor = texture(texu, TexCoord2) * colore;\n"
+			"FColor = texture(texu, TexCoord2);\n"
+
+		"if(normal == 4.0)\n"
+			"FColor = texture(texu, TexCoord2) * (texture(texu2, TexCoord2) + (texture(texu4, TexCoord2) * 3));\n"
+
+		"if(normal == 5.0)\n"
+		"{\n"
+		"vec3 LightDir = vec3(Lightpos.xy - gl_FragCoord.xy, Lightpos.z);\n"
+			//"LightDir.y *= res.x / res.y;\n"
+
+			"float D = length(LightDir);\n"
+
+			"vec3 Ambient = texture(texu2, TexLight2).rgb;\n"
+
+			//calculate attenuation
+			//"float Attenuation = clamp((1.0 / (0.01 + (falloff.x * D))) - 0.01, 0.0, 10);\n"
+			"float Attenuation = 1/pow((D/(falloff.x * cams.x))+1,2);\n"
+			"Attenuation = ((Attenuation - falloff.z) / (1 - Attenuation));\n"
+			//"Attenuation = clamp(falloff.y / pow((D / falloff.x) + 1, 2), 0.0, falloff.y); \n"
+			//"float Attenuation = pow(smoothstep(falloff.x, 0, D), falloff.y);\n"
+
+			//the calculation which brings it all together
+			//"vec3 Intensity = Ambient + Attenuation;\n"
+			"vec3 FinalColor = Attenuation * colore.rgb;\n"
+
+			"FColor = vec4(FinalColor, 1.0);\n"
+			//"NColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+		"}\n"
+
+		"if(normal == 6.0)\n"
+		"{\n"
+			"FColor = texture(texu, TexCoord2);\n"
+			"NColor = texture(texu2, TexCoord2);\n"
+		"}\n"
+
 	"}\n"
 };
 

@@ -569,7 +569,7 @@ struct _MGMOBJ_
 	_OBJTYPE type;
 	_OBJBLOCK block_type;
 	uint16 flag;
-	uint8 amblight;
+	float amblight;
 	int16 lightmapid;
 	int16 current_frame;
 };
@@ -841,7 +841,7 @@ struct _Render
 	GLuint FBTex[8];
 	GLuint RBO[8];
 
-	GLuint Buffers[4];
+	GLuint Buffers[8];
 
 	uint16 shader_version;
 
@@ -868,8 +868,8 @@ struct _GAME_LIGHTMAPS_
 {
 	Pos w_pos;
 
-	uint32 W_w;
-	uint32 W_h;
+	int32 W_w;
+	int32 W_h;
 
 	uint16 T_w;
 	uint16 T_h;
@@ -1041,7 +1041,7 @@ extern _SETTINGS st;
 extern _ENTITIES ent[MAX_GRAPHICS];
 extern SDL_Event events;
 extern _LIGHTS game_lights[MAX_LIGHTS];
-extern _ENTITIES lpm[MAX_LIGHTMAPS]; 
+extern _ENTITIES lmp[MAX_LIGHTMAPS]; 
 
 extern _MGG mgg_sys[3];
 extern _MGG mgg_map[MAX_MAP_MGG];
@@ -1056,7 +1056,7 @@ void _ProcessError(const char* funcname, int8 silent);
 #define GetErrorS _ProcessError(__FUNCTION__, 1)
 #define ProcessError(function_caller) _ProcessError(function_caller, NULL)
 
-cdecl void PreInit(const char AppName[4], int argc, char *argv[]);
+void PreInit(const char AppName[4], int argc, char *argv[]);
 
 void Init();
 
@@ -1149,6 +1149,8 @@ uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, 
 GLuint GenerateLightmapTexture(unsigned char* data, uint16 w, uint16 h);
 uint8 AddLightToTexture(GLuint *tex, unsigned char* data, uint16 w, uint16 h);
 uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uint16 h);
+
+uint32 NAddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float constant, float linear, float quadratic, float intensity);
 #endif
 
 //Faster square root
@@ -1266,9 +1268,9 @@ int16 LoadTexture(const char *file, uint8 mipmap, Pos *size);
 
 int16 LoadTextureM(void *img_data, size_t data_size, uint8 mipmap, Pos *size);
 
-cdecl char *CheckAppComm(int8 *command);
-cdecl void SendInfo(const char *commfile, const char *data, int8 command);
-cdecl void ResetAppComm();
+char *CheckAppComm(int8 *command);
+void SendInfo(const char *commfile, const char *data, int8 command);
+void ResetAppComm();
 
 //#ifdef MFC_MGEAR
 //}

@@ -136,4 +136,9 @@ void NewMap()
 	st.Current_Map.bck3_size.x = st.Current_Map.bck3_size.y = TEX_PAN_RANGE;
 
 	meng.curlayer = 1;
+	meng.light.type = POINT_LIGHT_NORMAL;
+	meng.light.color.r = meng.light.color.g = meng.light.color.b = 255;
+	meng.light.falloff = 32;
+	meng.light.c = 0.1;
+	meng.light.intensity = 1;
 }

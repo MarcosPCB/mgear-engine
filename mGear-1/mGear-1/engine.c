@@ -1030,6 +1030,61 @@ uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uin
 	return 1;
 }
 
+uint32 NAddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float constant, float linear, float quadratic, float intensity)
+{
+	register uint16 i, j, x, y;
+	float d, att;
+	register uint32 col;
+	uint8 max;
+
+	x = w / 2;
+	y = h / 2;
+
+	if (!data)
+		return 0;
+
+	for (i = 0; i<h; i++)
+	{
+		for (j = 0; j<w; j++)
+		{
+			d = ((x - j)*(x - j)) + ((y - i)*(y - i));
+			d = mSqrt(d);
+
+			if (d == 0.0f)
+				d = 1.0f;
+
+			att = 255.0f / (constant + (d * linear) + (d * d * quadratic));
+			max = 255;
+
+			float df = abs(((d / (w / 2.0f)) - 1.0f));
+
+			col = ((float) (b * df) * att) * intensity;
+
+			if ((data[(i*w * 3) + (j * 3)] + col)>max)
+				data[(i*w * 3) + (j * 3)] = max;
+			else
+				data[(i*w * 3) + (j * 3)] += (unsigned char)col;
+
+			col = ((float) (g * df) * att) * intensity;
+
+			if ((data[(i*w * 3) + (j * 3) + 1] + col)>max)
+				data[(i*w * 3) + (j * 3) + 1] = max;
+			else
+				data[(i*w * 3) + (j * 3) + 1] += (unsigned char)col;
+
+			col = ((float) (r * df) * att) * intensity;
+
+			if ((data[(i*w * 3) + (j * 3) + 2] + col)>max)
+				data[(i*w * 3) + (j * 3) + 2] = max;
+			else
+				data[(i*w * 3) + (j * 3) + 2] += (unsigned char)col;
+
+		}
+	}
+
+	return 1;
+}
+
 uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, uint16 intensity, LIGHT_TYPE type)
 {
 	register uint16 i, j;
@@ -1056,19 +1111,31 @@ uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint
 
 			if(type==POINT_LIGHT_STRONG)
 			{
-				att/=(d*d*falloff);
+				att /= (1.0f + (d * (falloff/10.0f)) + (d*d*falloff));
 				max=255;
 			}
 			else
 			if(type==POINT_LIGHT_NORMAL)
 			{
-				att/=(1.0f + falloff * (d*d));
-				max=64;
+				att /= (1.0f + (d * falloff) + (d*d*(falloff/10.0f)));
+				max=255;
 			}
 			else
+			if (type == POINT_LIGHT_MEDIUM)
 			{
-				att/=(d*falloff);
-				max=128;
+				att = 255.0f - (d / falloff);
+				if (att < 0.0f) att = 0;
+				if (att > 255.0f) att = 255;
+				att *= att;
+				max = 255;
+			}
+			if (type == SPOTLIGHT_NORMAL)
+			{
+				att = 255.0f - ((d*d) / (falloff*falloff));
+				if (att < 0.0f) att = 0;
+				if (att > 255.0f) att = 255.0f;
+				att *= att;
+				max=255;
 			}
 
 			col=b*att*intensity;
@@ -2174,7 +2241,7 @@ void Init()
 #endif
 	glEnable(GL_TEXTURE_2D);
 	glDepthFunc(GL_LEQUAL);
-	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_DEPTH_TEST);
 	glClearDepth(1.0);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -2248,12 +2315,19 @@ void Init()
 
 		glFramebufferTexture2D(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT3,GL_TEXTURE_2D,st.renderer.FBTex[3],0);
 
+		glGenTextures(1, &st.renderer.FBTex[4]);
+		glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[4]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, st.renderer.FBTex[4], 0);
+
 		glBindFramebuffer(GL_FRAMEBUFFER,0);
 		
-		st.renderer.Buffers[0]=GL_COLOR_ATTACHMENT0;
-		st.renderer.Buffers[1]=GL_COLOR_ATTACHMENT1;
-		st.renderer.Buffers[2]=GL_COLOR_ATTACHMENT2;
-		st.renderer.Buffers[3]=GL_COLOR_ATTACHMENT3;
+		st.renderer.Buffers[0] = GL_COLOR_ATTACHMENT0;
+		st.renderer.Buffers[1] = GL_COLOR_ATTACHMENT1;
+		st.renderer.Buffers[2] = GL_COLOR_ATTACHMENT2;
+		st.renderer.Buffers[3] = GL_COLOR_ATTACHMENT3;
+		st.renderer.Buffers[4] = GL_COLOR_ATTACHMENT4;
 
 SHADER_CREATION:
 
@@ -2556,7 +2630,12 @@ SHADER_CREATION:
 				st.renderer.unifs[2]=glGetUniformLocation(st.renderer.Program[3],"texu2");
 				st.renderer.unifs[3]=glGetUniformLocation(st.renderer.Program[3],"texu3");
 				st.renderer.unifs[4]=glGetUniformLocation(st.renderer.Program[3],"normal");
-				st.renderer.unifs[5]=glGetUniformLocation(st.renderer.Program[2],"light_type");
+				st.renderer.unifs[5]=glGetUniformLocation(st.renderer.Program[3],"Lightpos");
+				st.renderer.unifs[6] = glGetUniformLocation(st.renderer.Program[3], "res");
+				st.renderer.unifs[7] = glGetUniformLocation(st.renderer.Program[3], "falloff");
+				st.renderer.unifs[8] = glGetUniformLocation(st.renderer.Program[3], "texu4");
+				st.renderer.unifs[9] = glGetUniformLocation(st.renderer.Program[3], "camp");
+				st.renderer.unifs[10] = glGetUniformLocation(st.renderer.Program[3], "cams");
 				//st.renderer.unifs[6]=glGetUniformLocation(st.renderer.Program[3],"Tile");
 				//st.renderer.unifs[7]=glGetUniformLocation(st.renderer.Program[3],"Tiles");
 
@@ -4853,6 +4932,181 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 #ifndef MGEAR_CLEAN_VERSION
 
+int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 light_id, TEX_DATA data, int32 z)
+{
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
+
+	register uint32 i = 0, j = 0, k = 0;
+
+	x += data.x_offset;
+	y += data.y_offset;
+
+	if (CheckBounds(x, y, sizex, sizey, z))
+		return 1;
+
+	if (st.num_entities == MAX_GRAPHICS - 1)
+		return 2;
+	else
+		i = st.num_entities;
+
+	ent[i].data = data;
+
+#if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
+
+	tx1 = x;
+	ty1 = y;
+	tx2 = sizex;
+	ty2 = sizey;
+
+	if (z>56) z = 56;
+	else if (z<16) z += 16;
+
+	z_buffer[z][z_slot[z]] = i;
+	z_slot[z]++;
+
+	if (z>z_used) z_used = z;
+
+
+	x -= st.Camera.position.x;
+	y -= st.Camera.position.y;
+
+	sizex *= st.Camera.dimension.x;
+	sizey *= st.Camera.dimension.y;
+
+	x *= st.Camera.dimension.x;
+	y *= st.Camera.dimension.y;
+
+	//timej=GetTicks();
+
+	ent[i].vertex[0] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
+	ent[i].vertex[1] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
+	ent[i].vertex[2] = z;
+
+	ent[i].vertex[3] = (float)x + (((x + (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
+	ent[i].vertex[4] = (float)y + (((x + (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
+	ent[i].vertex[5] = z;
+
+	ent[i].vertex[6] = (float)x + (((x + (sizex / 2)) - x)*mCos(ang) - ((y + (sizey / 2)) - y)*mSin(ang));
+	ent[i].vertex[7] = (float)y + (((x + (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
+	ent[i].vertex[8] = z;
+
+	ent[i].vertex[9] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y + (sizey / 2)) - y)*mSin(ang));
+	ent[i].vertex[10] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
+	ent[i].vertex[11] = z;
+
+	int32 d, a;
+	int8 v1, v2;
+
+	d = mSqrt(((x - st.game_lightmaps[light_id].w_pos.x) * (x - st.game_lightmaps[light_id].w_pos.x)) + (y - st.game_lightmaps[light_id].w_pos.y) * (y - st.game_lightmaps[light_id].w_pos.y));
+	a = abs((atan((x - st.game_lightmaps[light_id].w_pos.x) / (y - st.game_lightmaps[light_id].w_pos.y)) * (180 / pi)) - ang);
+
+	if ((a >= 0 && a <= 45) || (a >= 315 && a <= 360))
+	{
+		v1 = 2;
+		v2 = 3;
+	}
+
+	if ((a >= 45 && a <= 135))
+	{
+		v1 = 1;
+		v2 = 2;
+	}
+
+	if ((a >= 135 && a <= 225))
+	{
+		v1 = 1;
+		v2 = 4;
+	}
+
+	if ((a >= 225 && a <= 160))
+	{
+		v1 = 3;
+		v2 = 4;
+	}
+
+
+	//timel=GetTicks() - timej;
+
+	//ang=1000;
+
+	//ang/=10;
+
+	ax = (float)1 / (GAME_WIDTH / 2);
+	ay = (float)1 / (GAME_HEIGHT / 2);
+
+	ay *= -1.0f;
+
+	az = (float)1 / (4096 / 2);
+
+	if (data.vb_id == -1)
+	{
+		ent[i].texcor[0] = 0;
+		ent[i].texcor[1] = 0;
+		ent[i].texcor[2] = 32768;
+		ent[i].texcor[3] = 0;
+		ent[i].texcor[4] = 32768;
+		ent[i].texcor[5] = 32768;
+		ent[i].texcor[6] = 0;
+		ent[i].texcor[7] = 32768;
+	}
+	else
+	{
+		ent[i].texcor[0] = data.posx;
+		ent[i].texcor[1] = data.posy;
+
+		ent[i].texcor[2] = data.posx + data.sizex;
+		ent[i].texcor[3] = data.posy;
+
+		ent[i].texcor[4] = data.posx + data.sizex;
+		ent[i].texcor[5] = data.posy + data.sizey;
+
+		ent[i].texcor[6] = data.posx;
+		ent[i].texcor[7] = data.posy + data.sizey;
+	}
+
+	//timej=GetTicks();
+
+	for (j = 0; j<12; j += 3)
+	{
+		ent[i].vertex[j] *= ax;
+		ent[i].vertex[j] -= 1;
+
+		ent[i].vertex[j + 1] *= ay;
+		ent[i].vertex[j + 1] += 1;
+
+		ent[i].vertex[j + 2] *= az;
+		ent[i].vertex[j + 2] -= 1;
+
+		if (j<7)
+		{
+			ent[i].texcor[j] /= (float)32768;
+			ent[i].texcor[j + 1] /= (float)32768;
+
+			if ((j + 2)<7)
+				ent[i].texcor[j + 2] /= (float)32768;
+		}
+	}
+
+	if (data.vb_id != -1)
+	{
+		vbdt[data.vb_id].num_elements++;
+		ent[i].data.loc = vbdt[data.vb_id].num_elements - 1;
+	}
+	else
+	{
+		texone_ids[texone_num] = i;
+		texone_num++;
+	}
+
+#endif
+
+	//timel=GetTicks() - timej;
+
+	st.num_entities++;
+
+	return 0;
+}
+
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z, int16 flags, int32 sizeax, int32 sizeay, int32 sizemx, int32 sizemy)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
@@ -5125,76 +5379,132 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	return 0;
 }
 
-int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius)
+int8 DrawLight(int32 x, int32 y, int32 z, int32 radius, Color color, float falloff, float intensity, float f3, int16 ang)
 {
-	 uint16 i=0;
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
 
-	uint8 val=0;
-	/*
-	Pos dim=st.Camera.dimension;
+	uint8 val = 0;
 
-	x-=st.Camera.position.x;
-	y-=st.Camera.position.y;
+	uint32 i = 0, j = 0, k = 0;
 
-	if(dim.x<0) dim.x*=-1;
-	if(dim.y<0) dim.y*=-1;
+	int32 sizex, sizey, x2 = x, y2 = y;
 
-	if(dim.x<1) dim.x=GAME_WIDTH/dim.x;
-	else dim.x*=GAME_WIDTH;
-	if(dim.y<1) dim.y=GAME_HEIGHT/dim.y;
-	else dim.y*=GAME_HEIGHT;
+	sizex = sizey = radius;
 
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
+	if (CheckBounds(x, y, sizex, sizey, 17))
+		return 1;
 
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
+	tx1 = x;
+	ty1 = y;
+	tx2 = sizex;
+	ty2 = sizey;
 
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y-(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
+	x -= st.Camera.position.x;
+	y -= st.Camera.position.y;
 
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y-(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
+	i = st.num_lightmap;
 
-	tmp=x+(((x+(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
-
-	tmp=y+(((x+(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
-
-	tmp=x+(((x-(sizex/2))-x)*cos((ang*pi)/180) - ((y+(sizey/2))-y)*sin((ang*pi)/180));
-	if(tmp>dim.x) val++;
-
-	tmp=y+(((x-(sizex/2))-x)*sin((ang*pi)/180) - ((y+(sizey/2))-y)*cos((ang*pi)/180));
-	if(tmp>dim.y) val++;
-
-	if(val==8) return 1;
-	*/
-	//for( uint32 i=0;i<MAX_GRAPHICS+1;i++)
-	//{
-
-	i=st.num_lights;
-
-	if(i==MAX_LIGHTS-1)
+	if (i == MAX_LIGHTMAPS)
 		return 2;
 
-	game_lights[i].pos.x=(float) x/GAME_WIDTH;
-	game_lights[i].pos.y=(float) y/GAME_HEIGHT;
-	game_lights[i].pos.y*=-1.0f;
-	game_lights[i].pos.y+=1.0f;
-	game_lights[i].pos.z=(float) z/4096;
+	sizex *= st.Camera.dimension.x;
+	sizey *= st.Camera.dimension.y;
 
-	game_lights[i].radius=(float) radius/GAME_HEIGHT;
-	
-	game_lights[i].color.r=(float) r/255;
-	game_lights[i].color.g=(float) g/255;
-	game_lights[i].color.b=(float) b/255;
+	x *= st.Camera.dimension.x;
+	y *= st.Camera.dimension.y;
 
-	game_lights[i].color.a=(float) intensity/255;
+	lmp[i].vertex[0] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[1] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[2] = 0;
 
-	game_lights[i].falloff=falloff;
+	lmp[i].vertex[3] = (float)x + (((x + (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[4] = (float)y + (((x + (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[5] = 0;
 
-	st.num_lights++;
+	lmp[i].vertex[6] = (float)x + (((x + (sizex / 2)) - x)*mCos(ang) - ((y + (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[7] = (float)y + (((x + (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[8] = 0;
+
+	lmp[i].vertex[9] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y + (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[10] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[11] = 0;
+
+
+	ax = (float)1 / (GAME_WIDTH / 2);
+	ay = (float)1 / (GAME_HEIGHT / 2);
+
+	ay *= -1.0f;
+
+	az = (float)1 / (4096 / 2);
+
+	lmp[i].texcorlight[0] = (float)tx1 + (((tx1 - (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 - (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[1] = (float)ty1 + (((tx1 - (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 - (ty2 / 2)) - ty1)*mCos(ang));
+
+	lmp[i].texcorlight[2] = (float)tx1 + (((tx1 + (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 - (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[3] = (float)ty1 + (((tx1 + (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 - (ty2 / 2)) - ty1)*mCos(ang));
+
+	lmp[i].texcorlight[4] = (float)tx1 + (((tx1 + (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 + (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[5] = (float)ty1 + (((tx1 + (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 + (ty2 / 2)) - ty1)*mCos(ang));
+
+	lmp[i].texcorlight[6] = (float)tx1 + (((tx1 - (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 + (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[7] = (float)ty1 + (((tx1 - (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 + (ty2 / 2)) - ty1)*mCos(ang));
+
+	WTSf(&lmp[i].texcorlight[0], &lmp[i].texcorlight[1]);
+	WTSf(&lmp[i].texcorlight[2], &lmp[i].texcorlight[3]);
+	WTSf(&lmp[i].texcorlight[4], &lmp[i].texcorlight[5]);
+	WTSf(&lmp[i].texcorlight[6], &lmp[i].texcorlight[7]);
+
+	lmp[i].texcorlight[0] /= (float)st.screenx;
+	lmp[i].texcorlight[1] /= (float)st.screeny;
+	lmp[i].texcorlight[2] /= (float)st.screenx;
+	lmp[i].texcorlight[3] /= (float)st.screeny;
+	lmp[i].texcorlight[4] /= (float)st.screenx;
+	lmp[i].texcorlight[5] /= (float)st.screeny;
+	lmp[i].texcorlight[6] /= (float)st.screenx;
+	lmp[i].texcorlight[7] /= (float)st.screeny;
+
+	lmp[i].texcorlight[1] *= -1;
+	lmp[i].texcorlight[3] *= -1;
+	lmp[i].texcorlight[5] *= -1;
+	lmp[i].texcorlight[7] *= -1;
+
+	WTS(&x2, &y2);
+
+	//x += st.Camera.position.x;
+	//y += st.Camera.position.y;
+
+	lmp[i].pos.x = x2;
+	lmp[i].pos.y = y2;
+
+	z = (z*st.screenx) / 4096;
+
+	lmp[i].texcor[2] = z;
+
+	lmp[i].texcor[0] = falloff;
+	lmp[i].texcor[1] = intensity;
+	lmp[i].texcor[3] = f3;
+
+	for (j = 0; j<12; j += 3)
+	{
+		lmp[i].vertex[j] *= ax;
+		lmp[i].vertex[j] -= 1;
+
+		lmp[i].vertex[j + 1] *= ay;
+		lmp[i].vertex[j + 1] += 1;
+
+		lmp[i].vertex[j + 2] *= az;
+		lmp[i].vertex[j + 2] -= 1;
+	}
+
+	for (j = 0; j<16; j += 4)
+	{
+		lmp[i].color[j] = color.r;
+		lmp[i].color[j + 1] = color.g;
+		lmp[i].color[j + 2] = color.b;
+		lmp[i].color[j + 3] = color.a;
+	}
+
+	st.num_lightmap++;
 
 	return 0;
 }
@@ -5267,6 +5577,10 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 			lmp[i].texcor[5]=1;
 			lmp[i].texcor[6]=0;
 			lmp[i].texcor[7]=1;
+
+			lmp[i].texrepeat[0] = (float) x / GAME_WIDTH;
+			lmp[i].texrepeat[1] = (float) (GAME_HEIGHT - y) / GAME_HEIGHT;
+			lmp[i].texrepeat[2] = 0.0;
 
 			for(j=0;j<12;j+=3)
 			{
@@ -9204,16 +9518,16 @@ void DrawMap()
 							st.Current_Map.obj[i].current_frame = 0;
 
 						DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
-							st.Current_Map.obj[i].angle, st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
-							st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].current_frame],
+							st.Current_Map.obj[i].angle, (float)st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, (float) st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
+							(float) st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].current_frame],
 							st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
 							st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
 
 					}
 					else
 						DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
-						st.Current_Map.obj[i].angle, st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
-						st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],
+						st.Current_Map.obj[i].angle, (float)st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, (float) st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
+						(float) st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],
 						st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
 						st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
 				}
@@ -9228,7 +9542,7 @@ void DrawMap()
 				{
 					if((st.viewmode & 32 && (~st.Current_Map.sprites[i].flags & 2)) || ((~st.viewmode & 32) && st.Current_Map.sprites[i].flags & 2) || ((~st.viewmode & 32) && (~st.Current_Map.sprites[i].flags & 2)))
 						DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
-							st.Current_Map.sprites[i].color.r,st.Current_Map.sprites[i].color.g,st.Current_Map.sprites[i].color.b,
+						(float)st.Current_Map.sprites[i].color.r, (float)st.Current_Map.sprites[i].color.g, (float) st.Current_Map.sprites[i].color.b,
 							mgg_game[st.Current_Map.sprites[i].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
 							st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z,st.Current_Map.sprites[i].flags,
 							st.Current_Map.sprites[i].size_a.x,st.Current_Map.sprites[i].size_a.y,st.Current_Map.sprites[i].size_m.x,st.Current_Map.sprites[i].size_m.y);
@@ -9236,8 +9550,9 @@ void DrawMap()
 			}
 
 			for(i=1;i<=st.num_lights;i++)
-				if(st.viewmode & LIGHT_VIEW || st.viewmode & INGAME_VIEW)
-					DrawLightmap(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].w_pos.z,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,st.game_lightmaps[i].tex,0,st.game_lightmaps[i].ang);
+			if (st.viewmode & LIGHT_VIEW || st.viewmode & INGAME_VIEW)
+				DrawLight(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, st.game_lightmaps[i].w_pos.z, st.game_lightmaps[i].W_w,
+				st.game_lightmaps[i].ambient_color, st.game_lightmaps[i].falloff[0], st.game_lightmaps[i].falloff[1], st.game_lightmaps[i].falloff[2], st.game_lightmaps[i].ang);
 
 	
 	/*
@@ -9353,7 +9668,7 @@ void DrawSys()
 void Renderer(uint8 type)
 {
 
-	GLint unif, texcat, vertat, pos, col, texc, tex_bound[2]= { -1, -1 };
+	GLint unif, texcat, vertat, pos, col, texc, tex_bound[2] = { -1, -1 }, state = 0;
 	GLenum error;
 
 	uint32 num_targets=0;
@@ -9507,20 +9822,20 @@ void Renderer(uint8 type)
 
 		glUniform1i(st.renderer.unifs[3],1);
 
-		glUniform1f(st.renderer.unifs[4],0);
+		glUniform1i(st.renderer.unifs[8], 3);
 
-		glBindFramebuffer(GL_FRAMEBUFFER,st.renderer.FBO[0]);
+		//glDisable(GL_DEPTH_TEST);
 
-		glDrawBuffers(1,&st.renderer.Buffers[0]);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glActiveTexture(GL_TEXTURE0);
 
-		glActiveTexture(GL_TEXTURE0);
+		//glBindVertexArray(vbd.vao_id);
 
-		glBindVertexArray(vbd.vao_id);
+		//glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
 
-		glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
-
+		//glBlendFunc(GL_ONE, GL_ONE);
+		/*
 		if(z_used>15)
 		{
 			for(i=0;i<st.num_lightmap;i++)
@@ -9534,23 +9849,169 @@ void Renderer(uint8 type)
 				glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 			}
 		}
+		*/
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glActiveTexture(GL_TEXTURE2);
+		//glActiveTexture(GL_TEXTURE2);
 
-		glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
+		//glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
 
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-		glBindFramebuffer(GL_FRAMEBUFFER,0);
+		//glBindFramebuffer(GL_FRAMEBUFFER,0);
 
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		if (type == 2)
 			glClearColor(0, 0, 0, 0);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (z_used > 31 || z_used < 24)
+		{
+			//glUniform1f(st.renderer.unifs[4], 0);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+
+		if (z_used > 23 && z_used < 32)
+		{
+			//glUniform1f(st.renderer.unifs[4], 0);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
+
+			glDrawBuffers(3, st.renderer.Buffers);
+
+			state = 1;
+		}
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		for(i=z_used;i>-1;i--)
 		{
+			if (i < 32 && i > 23 && state == 0)
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
+
+				glDrawBuffers(3, st.renderer.Buffers);
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				state = 1;
+			}
+
+			if (i == 23)
+			{
+				//glDrawBuffers(0, NULL);
+				if(state == 0)
+					glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
+
+				glActiveTexture(GL_TEXTURE0);
+
+				glBindTexture(GL_TEXTURE_2D,st.renderer.FBTex[0]);
+
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				//glGenerateMipmap(GL_TEXTURE_2D);
+
+				glActiveTexture(GL_TEXTURE1);
+
+				glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[1]);
+
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				//glGenerateMipmap(GL_TEXTURE_2D);
+
+				glActiveTexture(GL_TEXTURE2);
+
+				glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[2]);
+
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				//glGenerateMipmap(GL_TEXTURE_2D);
+
+				glDrawBuffers(1, &st.renderer.Buffers[3]);
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				glUniform1f(st.renderer.unifs[4], 5);
+
+				glBindVertexArray(vbd.vao_id);
+
+				glBindBuffer(GL_ARRAY_BUFFER, vbd.vbo_id);
+
+				glBlendFunc(GL_ONE, GL_ONE);
+
+				for (uint16 n = 0; n<st.num_lightmap; n++)
+				{
+					glUniform3f(st.renderer.unifs[5], lmp[n].pos.x, st.screeny - lmp[n].pos.y, lmp[n].texcor[2]);
+					glUniform2f(st.renderer.unifs[6], st.screenx, st.screeny);
+					glUniform3f(st.renderer.unifs[7], lmp[n].texcor[0], lmp[n].texcor[1], lmp[n].texcor[3]);
+
+					Pos camp = st.Camera.position; 
+					PosF cams = st.Camera.dimension;
+
+					WTS(&camp.x, &camp.y);
+
+					glUniform2f(st.renderer.unifs[9], camp.x, camp.x);
+					glUniform2f(st.renderer.unifs[10], cams.x, cams.y);
+
+					glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), lmp[n].vertex);
+					glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), vbd.texcoord);
+					glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)), 16 * sizeof(GLubyte), lmp[n].color);
+					glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)), 8 * sizeof(float), lmp[n].texcorlight);
+
+					glDrawRangeElements(GL_TRIANGLES, 0, 6, 6, GL_UNSIGNED_SHORT, 0);
+				}
+
+				//glBlendEquation(GL_FUNC_ADD);
+
+				//glDrawBuffers(1, &st.renderer.Buffers[3]);
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+				if (state == 0)
+					glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				glActiveTexture(GL_TEXTURE3);
+
+				glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[3]);
+
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+				//glGenerateMipmap(GL_TEXTURE_2D);
+
+				glUniform1f(st.renderer.unifs[4], 4);
+
+				glBindVertexArray(vbd.vao_id);
+
+				glBindBuffer(GL_ARRAY_BUFFER, vbd.vbo_id);
+
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+				//glUniform3f(st.renderer.unifs[5], lmp[1].texrepeat[0], lmp[1].texrepeat[1], lmp[1].texrepeat[2]);
+
+				glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), vbd.vertex);
+				glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), vbd.texcoord);
+				//glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)), 16 * sizeof(GLubyte), vbd.color);
+				//glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)), 8 * sizeof(float), ent[z_buffer[i][j]].texcorlight);
+				//glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte))+(8*sizeof(GLfloat)),4*sizeof(float),ent[z_buffer[i][j]].texrepeat);
+
+				glDrawRangeElements(GL_TRIANGLES, 0, 6, 6, GL_UNSIGNED_SHORT, 0);
+
+				glBindVertexArray(0);
+
+				state = 0;
+			}
+
+			if (i < 24 && state != 0)
+			{
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				state = 0;
+			}
+
 			for(j=0;j<z_slot[i];j++)
 			{
 				if(ent[z_buffer[i][j]].data.vb_id!=-1)
@@ -9569,7 +10030,7 @@ void Renderer(uint8 type)
 					//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
 
 					if(i<16  || ent[z_buffer[i][j]].lightmapid==-2)
-						glUniform1f(st.renderer.unifs[4],3);
+						glUniform1f(st.renderer.unifs[4],1);
 					else
 					{
 						glActiveTexture(GL_TEXTURE1);
@@ -9585,13 +10046,15 @@ void Renderer(uint8 type)
 						}
 						else
 						{
-							//if(tex_bound[1]!=vbdt[m].texture)
-							//{
-							//	glBindTexture(GL_TEXTURE_2D,vbdt[m].texture);
-								//tex_bound[1]=vbdt[m].texture;
-							//}
-
-							glUniform1f(st.renderer.unifs[4],2);
+							/*
+							if(tex_bound[1]!=vbdt[m].texture)
+							{
+								glBindTexture(GL_TEXTURE_2D,DataNT);
+								tex_bound[1]=vbdt[m].texture;
+							}
+							*/
+							if (i > 23 && i < 32) glUniform1f(st.renderer.unifs[4], 2);
+							else glUniform1f(st.renderer.unifs[4], 0);
 						}
 
 					}
@@ -9634,7 +10097,7 @@ void Renderer(uint8 type)
 					//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
 
 					if(i<16 || ent[z_buffer[i][j]].lightmapid==-2)
-						glUniform1f(st.renderer.unifs[4],3);
+						glUniform1f(st.renderer.unifs[4],1);
 					else
 					{
 						glActiveTexture(GL_TEXTURE1);
@@ -9657,7 +10120,8 @@ void Renderer(uint8 type)
 								tex_bound[1]=ent[z_buffer[i][j]].data.data;
 							}
 
-							glUniform1f(st.renderer.unifs[4],2);
+							if(i > 23 && i < 32) glUniform1f(st.renderer.unifs[4],2);
+							else glUniform1f(st.renderer.unifs[4], 0);
 						}
 					}
 
@@ -9679,6 +10143,8 @@ void Renderer(uint8 type)
 
 			if(i==0) break;
 		}
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		memset(z_buffer,0,57*(2048)*sizeof(int16));
 		memset(z_slot,0,57*sizeof(int16));
@@ -9811,7 +10277,7 @@ void Renderer(uint8 type)
 					}
 
 					if(i<16)
-						glUniform1i(st.renderer.unifs[4],3);
+						glUniform1i(st.renderer.unifs[4], 1);
 					else
 					{
 						glActiveTexture(GL_TEXTURE1);
@@ -9900,7 +10366,7 @@ void Renderer(uint8 type)
 					}
 
 					if(i<16)
-						glUniform1i(st.renderer.unifs[4],3);
+						glUniform1i(st.renderer.unifs[4], 1);
 					else
 					{
 						glActiveTexture(GL_TEXTURE1);

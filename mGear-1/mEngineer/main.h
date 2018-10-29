@@ -171,9 +171,10 @@ struct _mEng
 
 	struct Light
 	{
-		uint16 intensity;
-		ColorA16 color;
+		float intensity;
+		Color color;
 		float falloff;
+		float c, l, q;
 		uint8 light_id;
 		LIGHT_TYPE type;
 	} light;

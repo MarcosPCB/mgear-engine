@@ -4345,26 +4345,24 @@ void LightingMisc()
 			{
 				gl[i].stat = 2;
 					
-				gl[i].W_w = gl[i].W_h = 2048;
 				gl[i].obj_id = -1;
 
 				gl[i].w_pos = st.mouse;
 				STW(&gl[i].w_pos.x, &gl[i].w_pos.y);
 
-				gl[i].T_w = gl[i].T_h = mSqrt(1.0f / ((1.0f / 512) * meng.light.fallof));
+				gl[i].w_pos.z = meng.lightmappos.z;
+
+				//gl[i].T_w = gl[i].T_h = 
+
+				gl[i].W_w = gl[i].W_h = (meng.light.falloff * (mSqrt(1.0f/meng.light.c) - 1.0f)) * 3;
+				STW(&gl[i].W_w, &gl[i].W_h);
 
 				gl[i].falloff[0] = meng.light.falloff;
-				gl[i].color[0] = meng.light.color;
-				gl[i].ambient_color = meng.lightmap_color;
-				gl[i].type[0] = POINT_LIGHT_NORMAL;
-				gl[i].num_lights = 1;
-				gl[i].t_pos[0].x = gl[i].t_pos[0].y = meng.lightmap_res.x / 2;
+				gl[i].falloff[2] = meng.light.c;
+				//gl[i].color[0] = meng.light.color;
+				gl[i].ambient_color = meng.light.color;
+				gl[i].falloff[1] = meng.light.intensity;
 
-				gl[i].data = GenerateLightmap(gl[i].T_w, gl[i].T_h);
-				gl[i].tex = GenerateLightmapTexture(gl[i].data, gl[i].T_w, gl[i].T_h);
-				FillLightmap(gl[i].data, gl[i].ambient_color.r, gl[i].ambient_color.g, gl[i].ambient_color.b, gl[i].T_w, gl[i].T_h);
-				AddLightToLightmap(gl[i].data, gl[i].T_w, gl[i].T_h, 255, 255, 255, gl[i].falloff[0], gl[i].t_pos[0].x, gl[i].t_pos[0].y, 0, meng.light.intensity, POINT_LIGHT_NORMAL);
-				AddLightToTexture(&gl[i].tex, gl[i].data, gl[i].T_w, gl[i].T_h);
 				st.num_lights++;
 				st.mouse1 = 0;
 				break;
@@ -9710,28 +9708,33 @@ void NewLeftPannel()
 					meng.command = NADD_LIGHT;
 
 				struct nk_color lcolor;
-				lcolor.r = meng.lightmap_color.r;
-				lcolor.b = meng.lightmap_color.b;
-				lcolor.g = meng.lightmap_color.g;
+				lcolor.r = meng.light.color.r;
+				lcolor.b = meng.light.color.b;
+				lcolor.g = meng.light.color.g;
 
 				lcolor = ColorPicker(lcolor);
 
-				meng.lightmap_color.r = lcolor.r;
-				meng.lightmap_color.g = lcolor.g;
-				meng.lightmap_color.b = lcolor.b;
+				//meng.lightmap_color.r = lcolor.r;
+				//meng.lightmap_color.g = lcolor.g;
+				//meng.lightmap_color.b = lcolor.b;
 
-				nk_label(ctx, "Lightmap resolution", NK_TEXT_LB);
+				//nk_label(ctx, "Lightmap resolution", NK_TEXT_LB);
 				nk_layout_row_dynamic(ctx, 30, 1);
-				nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, StringFormat("%d", meng.lightmap_res.x), 2048, nk_filter_decimal);
+				//nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, StringFormat("%d", meng.lightmap_res.x), 2048, nk_filter_decimal);
 				
-				meng.lightmap_res.y = meng.lightmap_res.x;
+				//meng.lightmap_res.y = meng.lightmap_res.x;
 				meng.light.color.r = lcolor.r;
 				meng.light.color.g = lcolor.g;
 				meng.light.color.b = lcolor.b;
 
-				meng.light.falloff = nk_propertyf(ctx, "Fallof", 0, meng.light.falloff, 32768, 0.1, 0.01);
-				meng.light.intensity = nk_propertyi(ctx, "Intensity", 0, meng.light.intensity, 512, 32, 1);
-				
+				//char *lighttype[] = { "Point Light medium", "Point Light strong", "Point Light normal", "SpotLight medium", "SpotLight strong", "SpotLight normal" };
+				//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
+
+				meng.light.falloff = nk_propertyf(ctx, "Radius", 0, meng.light.falloff, 32768, 0.02, 0.01);
+				meng.lightmappos.z = nk_propertyi(ctx, "Z", -4096, meng.lightmappos.z, 4096, 4, 1);
+				//meng.light.intensity = nk_propertyf(ctx, "Intensity", 0, meng.light.intensity, 32, 0.1, 0.01);
+				meng.light.c = nk_propertyf(ctx, "Cutoff", 0, meng.light.c, 32, 0.1, 0.01);
+
 				nk_button_label(ctx, "Load lightmap");
 			}
 
@@ -9840,7 +9843,7 @@ void NewLeftPannel()
 					st.Current_Map.obj[meng.obj_edit_selection].color.g = editcolor.g;
 					st.Current_Map.obj[meng.obj_edit_selection].color.b = editcolor.b;
 
-					st.Current_Map.obj[meng.obj_edit_selection].amblight = nk_propertyi(ctx, "Amb. Light", 0, st.Current_Map.obj[meng.obj_edit_selection].amblight, 255, 4, 1);
+					st.Current_Map.obj[meng.obj_edit_selection].amblight = nk_propertyf(ctx, "Amb. Light", 0, st.Current_Map.obj[meng.obj_edit_selection].amblight, 1.0, 0.1, 0.01);
 
 					if (st.Current_Map.obj[meng.obj_edit_selection].type == BACKGROUND3 || st.Current_Map.obj[meng.obj_edit_selection].type == BACKGROUND2
 						|| st.Current_Map.obj[meng.obj_edit_selection].type == FOREGROUND)
@@ -9895,7 +9898,7 @@ void NewLeftPannel()
 				meng.obj.color.g = editcolor.g;
 				meng.obj.color.b = editcolor.b;
 
-				meng.obj.amblight = nk_propertyi(ctx, "Amb. Light", 0, meng.obj.amblight, 255, 4, 1);
+				meng.obj.amblight = nk_propertyf(ctx, "Amb. Light", 0, meng.obj.amblight, 1.0, 0.1, 0.01);
 
 				nk_layout_row_dynamic(ctx, (st.screenx * 0.15f) / 2, 2);
 
