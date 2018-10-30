@@ -4932,7 +4932,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 #ifndef MGEAR_CLEAN_VERSION
 
-int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 light_id, TEX_DATA data, int32 z)
+int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 light_id, int32 ldist, TEX_DATA data, int32 z)
 {
 	float tmp, ax, ay, az, tx1, ty1, tx2, ty2;
 
@@ -4957,15 +4957,6 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	ty1 = y;
 	tx2 = sizex;
 	ty2 = sizey;
-
-	if (z>56) z = 56;
-	else if (z<16) z += 16;
-
-	z_buffer[z][z_slot[z]] = i;
-	z_slot[z]++;
-
-	if (z>z_used) z_used = z;
-
 
 	x -= st.Camera.position.x;
 	y -= st.Camera.position.y;
@@ -4994,36 +4985,49 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	ent[i].vertex[10] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
 	ent[i].vertex[11] = z;
 
-	int32 d, a;
-	int8 v1, v2;
+	//int32 d, a;
+	int32 v[4], af_v[3], num_af_v = 0, a;
 
-	d = mSqrt(((x - st.game_lightmaps[light_id].w_pos.x) * (x - st.game_lightmaps[light_id].w_pos.x)) + (y - st.game_lightmaps[light_id].w_pos.y) * (y - st.game_lightmaps[light_id].w_pos.y));
-	a = abs((atan((x - st.game_lightmaps[light_id].w_pos.x) / (y - st.game_lightmaps[light_id].w_pos.y)) * (180 / pi)) - ang);
+	//d = mSqrt(((x - st.game_lightmaps[light_id].w_pos.x) * (x - st.game_lightmaps[light_id].w_pos.x)) + (y - st.game_lightmaps[light_id].w_pos.y) * (y - st.game_lightmaps[light_id].w_pos.y));
+	a = abs((((float) atan((x - st.game_lightmaps[light_id].w_pos.x) / (y - st.game_lightmaps[light_id].w_pos.y)) * (180.0f / pi)) * 10.0f) - ang);
 
-	if ((a >= 0 && a <= 45) || (a >= 315 && a <= 360))
+	//if (d >= st.game_lightmaps[light_id].falloff[0])
+		//return 1;
+
+	for (uint8 k = 0, l = 0; k < 11; k += 2, l++)
 	{
-		v1 = 2;
-		v2 = 3;
+		v[l] = mSqrt(((ent[i].vertex[k] - st.game_lightmaps[light_id].w_pos.x) * (ent[i].vertex[k] - st.game_lightmaps[light_id].w_pos.x)) +
+			(ent[i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) * (ent[i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y));
 	}
 
-	if ((a >= 45 && a <= 135))
-	{
-		v1 = 1;
-		v2 = 2;
-	}
+	af_v[0] = v[0];
 
-	if ((a >= 135 && a <= 225))
+	for (uint8 k = 0, t = 0; k < 4; k++)
 	{
-		v1 = 1;
-		v2 = 4;
-	}
+		t = 0;
+		for (uint8 l = 0; l < 4; l++)
+		{
+			if (l == k) continue;
 
-	if ((a >= 225 && a <= 160))
-	{
-		v1 = 3;
-		v2 = 4;
-	}
+			if (v[k] < v[l])
+				t++;
+		}
 
+		if (t > 2)
+		{
+			af_v[num_af_v] = k;
+			num_af_v++;
+		}
+	}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+	ent[i].vertex[0] += a * mCos(a);
+	ent[i].vertex[1] += a * mSin(a);
+	ent[i].vertex[3] += a * mCos(a);
+	ent[i].vertex[4] += a * mSin(a);
+	ent[i].vertex[6] += a * mCos(a);
+	ent[i].vertex[7] += a * mSin(a);
+	ent[i].vertex[9] += a * mCos(a);
+	ent[i].vertex[10] += a * mSin(a);
 
 	//timel=GetTicks() - timej;
 
@@ -9824,7 +9828,7 @@ void Renderer(uint8 type)
 
 		glUniform1i(st.renderer.unifs[8], 3);
 
-		//glDisable(GL_DEPTH_TEST);
+		glDisable(GL_DEPTH_TEST);
 
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -10585,7 +10589,7 @@ void Renderer(uint8 type)
 			}
 		}
 
-		glEnable(GL_DEPTH_TEST);
+		//glEnable(GL_DEPTH_TEST);
 
 		memset(z_buffer,0,(5*8)*(2048));
 		memset(z_slot,0,5*8);

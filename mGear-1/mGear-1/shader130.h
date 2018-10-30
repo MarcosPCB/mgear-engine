@@ -322,7 +322,7 @@ static const char *Lightmap_FShader[128]={
 		//"vec4 Lightmap = texture(texu2, TexLight2);\n"
 
 			"FColor = texture(texu, TexCoord2);\n"
-			"Amb = colore;\n"
+			"Amb = vec4(colore.rgb, texture(texu, TexCoord2).a);\n"
 		"}\n"
 		//		"else\n"
 		"if(normal == 3.0)\n"
