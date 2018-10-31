@@ -901,6 +901,8 @@ struct _GAME_LIGHTMAPS_
 	uint8 alpha;
 
 	Color ambient_color;
+
+	uint8 num_shadows;
 };
 
 typedef struct _GAME_LIGHTMAPS_ _GAME_LIGHTMAPS;
@@ -937,6 +939,7 @@ struct _SETTINGS_
 	uint32 num_ui;
 	uint8 num_lights;
 	uint8 num_lightmap;
+	uint8 num_shadows;
 	uint16 num_calls;
 
 	uint8 num_uiwindow;
@@ -1165,6 +1168,9 @@ uint32 NAddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uin
 	int32 _cdecl mXOR32(int32, int32);
 	#define mXOR mXOR32
 #endif
+
+#define P2(expr) expr * expr
+#define GetDistance(x, y, x2, y2, dist) { dist = mSqrt(P2(x - x2) + P2(y - y2)); }
 
 //Faster than math.h functions
 float mCos(int16 ang);

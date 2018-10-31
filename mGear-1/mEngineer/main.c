@@ -4362,6 +4362,7 @@ void LightingMisc()
 				//gl[i].color[0] = meng.light.color;
 				gl[i].ambient_color = meng.light.color;
 				gl[i].falloff[1] = meng.light.intensity;
+				gl[i].falloff[4] = meng.light.l + 24;
 
 				st.num_lights++;
 				st.mouse1 = 0;
@@ -9731,9 +9732,9 @@ void NewLeftPannel()
 				//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
 
 				meng.light.falloff = nk_propertyf(ctx, "Radius", 0, meng.light.falloff, 32768, 0.02, 0.01);
-				meng.lightmappos.z = nk_propertyi(ctx, "Z", -4096, meng.lightmappos.z, 4096, 4, 1);
-				//meng.light.intensity = nk_propertyf(ctx, "Intensity", 0, meng.light.intensity, 32, 0.1, 0.01);
+				meng.lightmappos.z = nk_propertyi(ctx, "Intensity", -4096, meng.lightmappos.z, 4096, 4, 1);
 				meng.light.c = nk_propertyf(ctx, "Cutoff", 0, meng.light.c, 32, 0.1, 0.01);
+				meng.light.l = nk_propertyi(ctx, "Midground Z", 0, meng.light.l, 8, 1, 1);
 
 				nk_button_label(ctx, "Load lightmap");
 			}
