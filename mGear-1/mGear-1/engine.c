@@ -4945,6 +4945,9 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	if (CheckBounds(x, y, sizex, sizey, z))
 		return 1;
 
+	if (st.game_lightmaps[light_id].falloff[4] > z)
+		return 1;
+
 	if (st.game_lightmaps[light_id].num_shadows == (MAX_LIGHTMAPS / 16) - 1)
 		return 2;
 	else
@@ -4970,8 +4973,6 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	//timej=GetTicks();
 
-	z = (4096 * z) / 56;
-
 	shw[m][i].vertex[0] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
 	shw[m][i].vertex[1] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
 	shw[m][i].vertex[2] = z;
@@ -4989,9 +4990,15 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	shw[m][i].vertex[11] = z;
 
 	//int32 d, a;
-	int32 v[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4];
+	int32 v[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4], zdw = 32 - z, zdl = zl - z;
 
-	zl = (4096 * zl) / 56;
+	zl = 32 - z;
+
+	z = (16384 * z) / 56;
+
+	zl = (16384 * zl) / 56;
+	zdl = (16384 * zdl) / 56;
+	zdw = (16384 * zdw) / 56;
 
 	//d = mSqrt(((x - st.game_lightmaps[light_id].w_pos.x) * (x - st.game_lightmaps[light_id].w_pos.x)) + (y - st.game_lightmaps[light_id].w_pos.y) * (y - st.game_lightmaps[light_id].w_pos.y));
 	//a = abs((((float) atan((x - st.game_lightmaps[light_id].w_pos.x) / (y - st.game_lightmaps[light_id].w_pos.y)) * (180.0f / pi)) * 10.0f) - ang);
@@ -5003,8 +5010,12 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	{
 		v[l] = mSqrt(((shw[m][i].vertex[k] - st.game_lightmaps[light_id].w_pos.x) * (shw[m][i].vertex[k] - st.game_lightmaps[light_id].w_pos.x)) +
 			(shw[m][i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) * (shw[m][i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) + 
-			((shw[m][i].vertex[k + 2] - zl) * (shw[m][i].vertex[k + 2] - zl)));
+			((zdw - zdl) * (zdw - zdl)));
 	}
+
+	ldist = mSqrt(((x - st.game_lightmaps[light_id].w_pos.x) * (x - st.game_lightmaps[light_id].w_pos.x)) +
+		(y - st.game_lightmaps[light_id].w_pos.y) * (y - st.game_lightmaps[light_id].w_pos.y) +
+		((zl) * (zl)));
 	
 	/*
 	af_v[0] = v[0];
@@ -5028,14 +5039,14 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
 	*/
 
-	shw[m][i].vertex[0] += (float) v[0] * ((shw[m][i].vertex[0] - st.game_lightmaps[light_id].w_pos.x) / v[0]);
-	shw[m][i].vertex[1] += (float) v[0] * ((shw[m][i].vertex[1] - st.game_lightmaps[light_id].w_pos.y) / v[0]);
-	shw[m][i].vertex[3] += (float) v[1] * ((shw[m][i].vertex[3] - st.game_lightmaps[light_id].w_pos.x) / v[1]);
-	shw[m][i].vertex[4] += (float) v[1] * ((shw[m][i].vertex[4] - st.game_lightmaps[light_id].w_pos.y) / v[1]);
-	shw[m][i].vertex[6] += (float) v[2] * ((shw[m][i].vertex[6] - st.game_lightmaps[light_id].w_pos.x) / v[2]);
-	shw[m][i].vertex[7] += (float) v[2] * ((shw[m][i].vertex[7] - st.game_lightmaps[light_id].w_pos.y) / v[2]);
-	shw[m][i].vertex[9] += (float) v[3] * ((shw[m][i].vertex[9] - st.game_lightmaps[light_id].w_pos.x) / v[3]);
-	shw[m][i].vertex[10] += (float) v[3] * ((shw[m][i].vertex[10] - st.game_lightmaps[light_id].w_pos.y) / v[3]);
+	shw[m][i].vertex[0] += (float)ldist * ((shw[m][i].vertex[0] - st.game_lightmaps[light_id].w_pos.x) / v[0]);
+	shw[m][i].vertex[1] += (float)ldist * ((shw[m][i].vertex[1] - st.game_lightmaps[light_id].w_pos.y) / v[0]);
+	shw[m][i].vertex[3] += (float)ldist * ((shw[m][i].vertex[3] - st.game_lightmaps[light_id].w_pos.x) / v[1]);
+	shw[m][i].vertex[4] += (float)ldist * ((shw[m][i].vertex[4] - st.game_lightmaps[light_id].w_pos.y) / v[1]);
+	shw[m][i].vertex[6] += (float)ldist * ((shw[m][i].vertex[6] - st.game_lightmaps[light_id].w_pos.x) / v[2]);
+	shw[m][i].vertex[7] += (float)ldist * ((shw[m][i].vertex[7] - st.game_lightmaps[light_id].w_pos.y) / v[2]);
+	shw[m][i].vertex[9] += (float)ldist * ((shw[m][i].vertex[9] - st.game_lightmaps[light_id].w_pos.x) / v[3]);
+	shw[m][i].vertex[10] += (float)ldist * ((shw[m][i].vertex[10] - st.game_lightmaps[light_id].w_pos.y) / v[3]);
 
 	//timel=GetTicks() - timej;
 
@@ -5049,6 +5060,37 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	ay *= -1.0f;
 
 	az = (float)1 / (4096 / 2);
+
+	shw[m][i].texcorlight[0] = (float)tx1 + (((tx1 - (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 - (ty2 / 2)) - ty1)*mSin(ang));
+	shw[m][i].texcorlight[1] = (float)ty1 + (((tx1 - (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 - (ty2 / 2)) - ty1)*mCos(ang));
+
+	shw[m][i].texcorlight[2] = (float)tx1 + (((tx1 + (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 - (ty2 / 2)) - ty1)*mSin(ang));
+	shw[m][i].texcorlight[3] = (float)ty1 + (((tx1 + (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 - (ty2 / 2)) - ty1)*mCos(ang));
+
+	shw[m][i].texcorlight[4] = (float)tx1 + (((tx1 + (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 + (ty2 / 2)) - ty1)*mSin(ang));
+	shw[m][i].texcorlight[5] = (float)ty1 + (((tx1 + (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 + (ty2 / 2)) - ty1)*mCos(ang));
+
+	shw[m][i].texcorlight[6] = (float)tx1 + (((tx1 - (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 + (ty2 / 2)) - ty1)*mSin(ang));
+	shw[m][i].texcorlight[7] = (float)ty1 + (((tx1 - (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 + (ty2 / 2)) - ty1)*mCos(ang));
+
+	WTSf(&shw[m][i].texcorlight[0], &shw[m][i].texcorlight[1]);
+	WTSf(&shw[m][i].texcorlight[2], &shw[m][i].texcorlight[3]);
+	WTSf(&shw[m][i].texcorlight[4], &shw[m][i].texcorlight[5]);
+	WTSf(&shw[m][i].texcorlight[6], &shw[m][i].texcorlight[7]);
+
+	shw[m][i].texcorlight[0] /= (float)st.screenx;
+	shw[m][i].texcorlight[1] /= (float)st.screeny;
+	shw[m][i].texcorlight[2] /= (float)st.screenx;
+	shw[m][i].texcorlight[3] /= (float)st.screeny;
+	shw[m][i].texcorlight[4] /= (float)st.screenx;
+	shw[m][i].texcorlight[5] /= (float)st.screeny;
+	shw[m][i].texcorlight[6] /= (float)st.screenx;
+	shw[m][i].texcorlight[7] /= (float)st.screeny;
+
+	shw[m][i].texcorlight[1] *= -1;
+	shw[m][i].texcorlight[3] *= -1;
+	shw[m][i].texcorlight[5] *= -1;
+	shw[m][i].texcorlight[7] *= -1;
 
 	if (data.vb_id == -1)
 	{
@@ -10006,7 +10048,7 @@ void Renderer(uint8 type)
 						glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), shw[p][o].vertex);
 						glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), shw[p][o].texcor);
 						//glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)), 16 * sizeof(GLubyte), lmp[n].color);
-						//glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)), 8 * sizeof(float), lmp[n].texcorlight);
+						glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)), 8 * sizeof(float), shw[p][o].texcorlight);
 
 						glDrawRangeElements(GL_TRIANGLES, 0, 6, 6, GL_UNSIGNED_SHORT, 0);
 					}

@@ -151,7 +151,7 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)APIs\FMOD\inc;$(SolutionDir)mGear-1;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>$(MSBuildProjectDirectory)</OutDir>
+    <OutDir>$(SolutionDir)SDK\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug64|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -183,6 +183,7 @@
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)SDK\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -211,7 +212,7 @@
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>

@@ -8473,7 +8473,7 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang)
 
 			pos->x = nk_propertyi(ctx, "X:", GAME_UNIT_MIN, pos->x, GAME_UNIT_MAX, 1024, 128);
 			pos->y = nk_propertyi(ctx, "Y:", GAME_UNIT_MIN, pos->y, GAME_UNIT_MAX, 1024, 128);
-			pos->z = nk_propertyi(ctx, "Z:", 0, pos->z, 7 * 8, 2, 1);
+			pos->z = nk_propertyi(ctx, "Z:", 0, pos->z, 7 * 8, 1, 1);
 			*ang = nk_propertyi(ctx, "Ang:", -3600, *ang, 3600*2, 150, 30);
 
 			nk_group_end(ctx);
