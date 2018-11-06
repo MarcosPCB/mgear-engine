@@ -5,6 +5,7 @@
 #include <math.h>
 #include "dirent.h"
 #include "UI.h"
+#include "physics.h"
 #include "mggeditor.h"
 #include <commdlg.h>
 #include <Windows.h>
@@ -5083,13 +5084,13 @@ static void ViewPortCommands()
 
 									st.Current_Map.obj[i].position.x-=meng.p.x;
 									st.Current_Map.obj[i].position.y-=meng.p.y;
-
+									/*
 									if(st.Current_Map.obj[i].lightmapid!=-1)
 									{
 										st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
 										st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
 									}
-
+									*/
 									p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
 									p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
 
@@ -5567,7 +5568,7 @@ static void ViewPortCommands()
 						st.game_lightmaps[j].num_lights=0;
 						free(st.game_lightmaps[j].data);
 						glDeleteTextures(1,&st.game_lightmaps[j].tex);
-						st.Current_Map.obj[st.game_lightmaps[j].obj_id].lightmapid=-1;
+						//st.Current_Map.obj[st.game_lightmaps[j].obj_id].lightmapid=-1;
 						st.game_lightmaps[j].obj_id=-1;
 						st.game_lightmaps[j].stat=0;
 
@@ -5578,7 +5579,7 @@ static void ViewPortCommands()
 								memcpy(&st.game_lightmaps[k],&st.game_lightmaps[k+1],sizeof(_GAME_LIGHTMAPS));
 								free(st.game_lightmaps[k+1].data);
 								st.game_lightmaps[k+1].stat=0;
-								st.Current_Map.obj[st.game_lightmaps[k].obj_id].lightmapid=k;
+								//st.Current_Map.obj[st.game_lightmaps[k].obj_id].lightmapid=k;
 							}
 						}
 
@@ -6611,7 +6612,7 @@ static void ViewPortCommands()
 					if(CheckCollisionMouseWorld(st.Current_Map.obj[j].position.x,st.Current_Map.obj[j].position.y,st.Current_Map.obj[j].size.x,st.Current_Map.obj[j].size.y,st.Current_Map.obj[j].angle,
 						st.Current_Map.obj[j].position.z) && !st.keys[LALT_KEY].state)
 					{
-						if(st.mouse1 && st.Current_Map.obj[j].lightmapid==-1 && st.Current_Map.obj[j].type==MIDGROUND)
+						if(st.mouse1 && st.Current_Map.obj[j].type==MIDGROUND)
 						{
 							meng.obj_lightmap_sel=j;
 							st.mouse1=0;
@@ -6859,7 +6860,7 @@ static void ViewPortCommands()
 							meng.command=RGB_LIGHTMAP;
 							meng.command2=i;
 
-							st.Current_Map.obj[meng.obj_lightmap_sel].lightmapid=i;
+							//st.Current_Map.obj[meng.obj_lightmap_sel].lightmapid=i;
 
 							st.game_lightmaps[i].obj_id=meng.obj_lightmap_sel;
 
@@ -8849,7 +8850,7 @@ void MenuBar()
 					for (i = 0; i<MAX_OBJS; i++)
 					{
 						st.Current_Map.obj[i].type = BLANK;
-						st.Current_Map.obj[i].lightmapid = -1;
+						//st.Current_Map.obj[i].lightmapid = -1;
 					}
 
 					for (i = 0; i<MAX_SPRITES; i++)
@@ -10252,12 +10253,18 @@ int main(int argc, char *argv[])
 						}*/
 					}
 				}
+
+
 			}
 			else
 			if(st.gt==MAIN_MENU || st.gt==GAME_MENU)
 				Menu();
 
-			
+			for (int sp = 0; sp < st.Current_Map.num_sprites; sp++)
+			{
+				st.Current_Map.sprites[sp].current_sector = UpdateSector(st.Current_Map.sprites[sp].position, st.Current_Map.sprites[sp].body.size);
+				st.Current_Map.sprites[sp].body.sector_id = UpdateSector(st.Current_Map.sprites[sp].position, st.Current_Map.sprites[sp].body.size);
+			}
 
 			curr_tic+=1000/TICSPERSECOND;
 			loops++;

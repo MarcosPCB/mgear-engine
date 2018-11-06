@@ -54,7 +54,7 @@ void NewMap()
 	for (i = 0; i<MAX_OBJS; i++)
 	{
 		st.Current_Map.obj[i].type = BLANK;
-		st.Current_Map.obj[i].lightmapid = -1;
+		//st.Current_Map.obj[i].lightmapid = -1;
 	}
 
 	for (i = 0; i<MAX_SPRITES; i++)
@@ -138,7 +138,7 @@ void NewMap()
 	meng.curlayer = 1;
 	meng.light.type = POINT_LIGHT_NORMAL;
 	meng.light.color.r = meng.light.color.g = meng.light.color.b = 255;
-	meng.light.falloff = 32;
-	meng.light.c = 0.1;
+	meng.light.falloff = 256;
+	meng.light.c = 0.01;
 	meng.light.intensity = 1;
 }

@@ -85,7 +85,7 @@ void Menu()
 					for(i=0;i<MAX_OBJS;i++)
 					{
 						st.Current_Map.obj[i].type=BLANK;
-						st.Current_Map.obj[i].lightmapid=-1;
+						//st.Current_Map.obj[i].lightmapid=-1;
 					}
 
 					for(i=0;i<MAX_SPRITES;i++)

@@ -284,6 +284,7 @@ static const char *Lightmap_FShader[128]={
 	"layout (location = 0) out vec4 FColor;\n"
 	"layout (location = 1) out vec4 NColor;\n"
 	"layout (location = 2) out vec4 Amb;\n"
+	"layout (location = 3) out vec4 Mask;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -292,6 +293,8 @@ static const char *Lightmap_FShader[128]={
 	"uniform sampler2D texu3;\n"
 
 	"uniform sampler2D texu4;\n"
+
+	"uniform sampler2D texu5;\n"
 
 	"uniform float normal;\n"
 
@@ -322,18 +325,27 @@ static const char *Lightmap_FShader[128]={
 		//"vec4 Lightmap = texture(texu2, TexLight2);\n"
 
 			"FColor = texture(texu, TexCoord2);\n"
-			"Amb = vec4(colore.rgb, texture(texu, TexCoord2).a);\n"
+			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
+			"Amb = colore;\n"
 		"}\n"
 		//		"else\n"
 		"if(normal == 3.0)\n"
+		"{\n"
+			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
 			"FColor = texture(texu, TexCoord2);\n"
+			"Mask = vec4(0, 0, 0, texture(texu, TexCoord2).a);\n"
+		"}\n"
 
 		"if(normal == 4.0)\n"
-			"FColor = texture(texu, TexCoord2) * (texture(texu2, TexCoord2) + (texture(texu4, TexCoord2) * 3));\n"
+		"{\n"
+			"vec3 L = normalize(texture(texu4, TexCoord2).rgb);\n"
 
+			"vec3 N = normalize(texture(texu3, TexCoord2).rgb * 2.0 - 1.0);\n"
+			"FColor = texture(texu, TexCoord2) * (texture(texu2, TexCoord2) + ((texture(texu4, TexCoord2)) * max(dot(N, L), 0.0)));\n"
+		"}\n"
 		"if(normal == 5.0)\n"
 		"{\n"
-		"vec3 LightDir = vec3(Lightpos.xy - gl_FragCoord.xy, Lightpos.z);\n"
+			"vec3 LightDir = vec3(Lightpos.xy - gl_FragCoord.xy, Lightpos.z);\n"
 			//"LightDir.y *= res.x / res.y;\n"
 
 			"float D = length(LightDir);\n"
@@ -357,8 +369,14 @@ static const char *Lightmap_FShader[128]={
 
 		"if(normal == 6.0)\n"
 		"{\n"
-			"FColor = texture(texu, TexCoord2);\n"
-			"NColor = texture(texu2, TexCoord2);\n"
+			//"NColor = vec4(0.0, 0.0 , 0.0, 1.0);\n"
+			//"Amb = vec4(1.0, 0.0 , 0.0, 1.0);\n"
+			"FColor = vec4(0, 0, 0, clamp(texture(texu5, TexCoord2).a - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+		"}\n"
+
+		"if(normal == 7.0)\n"
+		"{\n"
+			"FColor = vec4(0, 0, 0, 1.0 - texture(texu4, TexCoord2).a);\n"
 		"}\n"
 
 	"}\n"

@@ -231,7 +231,7 @@ struct _ENTITIES_ //To be rendered
 	float texrepeat[4];
 	GLubyte color[16];
 	ColorF Color;
-	int16 lightmapid;
+	int8 scenario;
 };
 
 typedef struct _ENTITIES_ _ENTITIES;
@@ -291,8 +291,7 @@ typedef struct _SOUNDSYS_ _SOUNDSYS;
 
 enum _MGGTYPE_
 {
-	SPRITEM,
-	TEXTUREM,
+	MGG_USED,
 	NONE
 };
 
@@ -516,6 +515,8 @@ struct _SECTOR_
 	uint8 destructive : 2;
 	int16 id;
 	uint8 num_vertexadded;
+	uint8 floor_y_continued;
+	int32 floor_y_up, floor_y_down;
 };
 
 typedef struct _SECTOR_ _SECTOR;
@@ -570,7 +571,7 @@ struct _MGMOBJ_
 	_OBJBLOCK block_type;
 	uint16 flag;
 	float amblight;
-	int16 lightmapid;
+	//int16 lightmapid;
 	int16 current_frame;
 };
 

@@ -211,7 +211,7 @@ typedef struct _Physics Physics;
 
 void InitPhysics(int8 gravity, int32 gravity_vel, int16 gravity_direction, int8 air);
 
-int16 UpdateSector(int16 id);
+int16 UpdateSector(Pos pos, Pos size);
 
 int8 AddDynamicSprite(int16 id);
 void RemoveDynamicSprite(int16 id);
