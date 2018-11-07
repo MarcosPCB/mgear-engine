@@ -304,6 +304,10 @@ static const char *Lightmap_FShader[128]={
 	"uniform vec2 camp;\n"
 	"uniform vec2 cams;\n"
 
+	"uniform float shadow;\n"
+	"uniform float sector;\n"
+	"uniform float sector_y;\n"
+
 	"void main()\n"
 	"{\n"
 		"if(normal == 0.0)\n"
@@ -371,7 +375,13 @@ static const char *Lightmap_FShader[128]={
 		"{\n"
 			//"NColor = vec4(0.0, 0.0 , 0.0, 1.0);\n"
 			//"Amb = vec4(1.0, 0.0 , 0.0, 1.0);\n"
-			"FColor = vec4(0, 0, 0, clamp(texture(texu5, TexCoord2).a - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+
+			"if(sector == 1 && gl_FragCoord.y < sector_y) discard;\n"
+
+			"if(shadow == 0)\n"
+				"FColor = vec4(0, 0, 0, clamp(textureLod(texu5, TexCoord2, 1).a - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+			"else\n"
+				"FColor = vec4(0, 0, 0, clamp(textureLod(texu5, TexCoord2, 1).r - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
 		"}\n"
 
 		"if(normal == 7.0)\n"

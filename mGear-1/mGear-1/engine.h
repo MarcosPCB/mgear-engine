@@ -201,6 +201,7 @@ struct _TEX_DATA
 {
 	GLuint data;
 	GLuint Ndata; //normal map
+	GLuint Sdata;
 	uint8 normal; //boolean for verification
 	int16 vb_id;
 	uint16 loc;
@@ -1074,7 +1075,8 @@ extern void Quit();
 
 int32 CheckMGGInSystem(const char *name); //Check if the MGG is already loaded into the system
 uint32 CheckMGGFile(const char *name); //Check if its a MGG file
-uint32 LoadMGG(_MGG *mgg, const char *name); //Loads a MGG file into a MGG type struct
+uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex); //Loads a MGG file into a MGG type struct
+#define LoadMGG(mgg, name) _LoadMGG(mgg, name, 0)
 
 void FreeMGG(_MGG *file); //Free a MGG struct
 void InitMGG(); //Inits all MGG structs

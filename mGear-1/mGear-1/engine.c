@@ -774,6 +774,48 @@ void Quit()
 
 #ifndef MGEAR_CLEAN_VERSION
 
+GLuint GenerateShadowTexture(unsigned char *data, uint16 w, uint16 h, uint8 channels)
+{
+	register uint16 i, j;
+	register uint8 a;
+
+	GLuint tex;
+
+	unsigned char *shadowdata;
+
+	if (channels != 4)
+	{
+		LogApp("Error: Invalid number of color channels");
+		return -1;
+	}
+
+	if (!data)
+	{
+		LogApp("Error: Invalid image buffer");
+		return -1;
+	}
+
+	alloc_mem(shadowdata, w * h);
+
+	for (i = 0; i < h; i++)
+	{
+		for (j = 0; j < w; j++)
+			shadowdata[(i * w) + j] = data[(i*w * 4) + (j * 4) + 3];
+	}
+
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, shadowdata);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	free_mem(shadowdata);
+
+	return tex;
+}
+
 unsigned char *GenerateAlphaLight(uint16 w, uint16 h)
 {
 	unsigned char *data;
@@ -2638,6 +2680,9 @@ SHADER_CREATION:
 				st.renderer.unifs[9] = glGetUniformLocation(st.renderer.Program[3], "camp");
 				st.renderer.unifs[10] = glGetUniformLocation(st.renderer.Program[3], "cams");
 				st.renderer.unifs[11] = glGetUniformLocation(st.renderer.Program[3], "texu5");
+				st.renderer.unifs[12] = glGetUniformLocation(st.renderer.Program[3], "shadow");
+				st.renderer.unifs[13] = glGetUniformLocation(st.renderer.Program[3], "sector");
+				st.renderer.unifs[14] = glGetUniformLocation(st.renderer.Program[3], "sector_y");
 				//st.renderer.unifs[6]=glGetUniformLocation(st.renderer.Program[3],"Tile");
 				//st.renderer.unifs[7]=glGetUniformLocation(st.renderer.Program[3],"Tiles");
 
@@ -3185,7 +3230,7 @@ uint32 CheckMGGFile(const char *name)
 	return 1;
 }
 
-uint32 LoadMGG(_MGG *mgg, const char *name)
+uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 {
 	FILE *file, *file2;
 	unsigned char *data;
@@ -3359,7 +3404,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 			}
 			else
+			{
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 				glGenerateMipmap(GL_TEXTURE_2D);
+			}
 
 			mgg->frames[i + mggf.num_frames].channel=MGIcolor;
 			mgg->frames[i + mggf.num_frames].w = imgw;
@@ -3367,6 +3416,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 			if(mgg->atlas[i]==NULL)
 				LogApp("Error loading texture from memory");
+
+			if (MGIcolor == 4 && shadowtex == 1)
+				mgg->frames[i + mggf.num_frames].Sdata = GenerateShadowTexture(imgdata, imgw, imgh, MGIcolor);
 
 			if (data)						
 				free(data);
@@ -3429,7 +3481,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 				}
 				else
+				{
+					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 					glGenerateMipmap(GL_TEXTURE_2D);
+				}
 
 				mgg->frames[i + mggf.num_frames].normal = 1;
 
@@ -3495,7 +3551,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 				glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 			}
 			else
+			{
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 				glGenerateMipmap(GL_TEXTURE_2D);
+			}
 
 			mgg->frames[k].w=imgw;
 			mgg->frames[k].h=imgh;
@@ -3507,6 +3567,9 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 			if(mgg->frames[k].data==NULL)
 				LogApp("Error loading texture from memory");
+
+			if (MGIcolor == 4 && shadowtex == 1)
+				mgg->frames[k].Sdata = GenerateShadowTexture(imgdata, imgw, imgh, MGIcolor);
 
 			if (data)						
 				free(data);
@@ -3569,7 +3632,11 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 					glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 				}
 				else
+				{
+					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 					glGenerateMipmap(GL_TEXTURE_2D);
+				}
 
 				mgg->frames[k].normal=1;
 
@@ -3653,6 +3720,7 @@ uint32 LoadMGG(_MGG *mgg, const char *name)
 
 		mgg->frames[i].data=mgg->atlas[imgatlas[i]];
 		mgg->frames[i].Ndata = mgg->frames[imgatlas[i] + mggf.num_frames].Ndata;
+		mgg->frames[i].Sdata = mgg->frames[imgatlas[i] + mggf.num_frames].Sdata;
 		mgg->frames[i].normal = mgg->frames[imgatlas[i] + mggf.num_frames].normal;
 		mgg->frames[i].posx=posx[i];
 		mgg->frames[i].posy=posy[i];
@@ -5009,7 +5077,11 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	int32 v[4], v2[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4], zdw = 32 - z, zdl = zl - z, by = 0;
 
 	if (sector_id != -1)
+	{
 		by = (st.Current_Map.sector[sector_id].base_y - st.Camera.position.y) * st.Camera.dimension.y;
+		shw[m][i].x1y1.x = 1;
+		shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;;
+	}
 
 	zl = 32 - zl;
 
@@ -5105,7 +5177,19 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	//ang=1000;
 
 	//ang/=10;
+	/*
+	if (shw[m][i].vertex[1] > by)
+		shw[m][i].vertex[1] = by;
 
+	if (shw[m][i].vertex[4] > by)
+		shw[m][i].vertex[4] = by;
+
+	if (shw[m][i].vertex[7] > by)
+		shw[m][i].vertex[7] = by;
+
+	if (shw[m][i].vertex[10] > by)
+		shw[m][i].vertex[10] = by;
+		*/
 	ax = (float)1 / (GAME_WIDTH / 2);
 	ay = (float)1 / (GAME_HEIGHT / 2);
 
@@ -5180,7 +5264,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}
 	/*
 	if (shw[m][i].vertex[1] > by)
-		shw[m][i].texcor[1] += by * 2.0f;
+		shw[m][i].texcor[1] += 1.0f - (by / shw[m][i].vertex[1])
 
 	if (shw[m][i].vertex[4] > by)
 		shw[m][i].texcor[3] += by * 2.0f;
@@ -5190,7 +5274,9 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	if (shw[m][i].vertex[10] > by)
 		shw[m][i].texcor[9] += by * 2.0f;
+		
 		*/
+
 	//timej=GetTicks();
 
 	for (j = 0; j<12; j += 3)
@@ -8793,7 +8879,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 	FILE *file;
 	int value, value2, value3;
 	uint16 i, id2, skip, num_frames, gameid, sizedefined = 0;
-	char buf[1024], str[16], str2[16], str3[16], str4[8][16], *tok;
+	char buf[1024], str[16], str2[16], str3[16], str4[8][16], *tok, shadow = 0;
 
 	for (i = 0; i < MAX_GAME_MGG; i++)
 	{
@@ -8834,7 +8920,13 @@ int32 LoadSpriteCFG(char *filename, int id)
 			strcpy(st.Game_Sprites[id].name,str2);
 			continue;
 		}
-		else
+		
+		if (strcmp(str, "SHADOW") == NULL)
+		{
+			shadow = 1;
+			continue;
+		}
+
 		if(strcmp(str,"MGG")==NULL)
 		{
 			sscanf(buf,"%s %s %s",str, str2, str3);
@@ -8875,7 +8967,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 				else
 				if(value==-1)
 				{
-					if(!LoadMGG(&mgg_game[id2],mggpath))
+					if(!_LoadMGG(&mgg_game[id2], mggpath, shadow))
 					{
 						//fclose(file);
 						//return 0;
@@ -9182,7 +9274,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			{
 				st.Game_Sprites[gameid].body.size.x = mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizex + st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y = mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey + st.Game_Sprites[gameid].size_a.y;
+				st.Game_Sprites[gameid].body.size.y = (mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey / (32768 / GAME_HEIGHT)) * 2 + st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 		else
@@ -10142,7 +10234,20 @@ void Renderer(uint8 type)
 						glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 						glActiveTexture(GL_TEXTURE4);
-						glBindTexture(GL_TEXTURE_2D, shw[p][o].data.data);
+
+						if (shw[p][o].data.Sdata != -1)
+						{
+							glUniform1f(st.renderer.unifs[12], 1);
+							glBindTexture(GL_TEXTURE_2D, shw[p][o].data.Sdata);
+						}
+						else
+						{
+							glUniform1f(st.renderer.unifs[12], 0);
+							glBindTexture(GL_TEXTURE_2D, shw[p][o].data.data);
+						}
+
+						glUniform1f(st.renderer.unifs[13], shw[p][o].x1y1.x);
+						glUniform1f(st.renderer.unifs[14], st.screeny - shw[p][o].x1y1.y);
 
 						//glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 						//glStencilMask(0x00);

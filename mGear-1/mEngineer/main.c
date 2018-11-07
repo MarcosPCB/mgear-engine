@@ -5194,19 +5194,19 @@ static void ViewPortCommands()
 							st.Current_Map.obj[i].flag=meng.obj.flag;
 
 							if(meng.obj.type==BACKGROUND3)
-								st.Current_Map.obj[i].position.z=48;
+								st.Current_Map.obj[i].position.z=55;
 							else
 							if(meng.obj.type==BACKGROUND2)
-								st.Current_Map.obj[i].position.z=40;
+								st.Current_Map.obj[i].position.z=47;
 							else
 							if(meng.obj.type==BACKGROUND1)
-								st.Current_Map.obj[i].position.z=32;
+								st.Current_Map.obj[i].position.z=39;
 							else
 							if(meng.obj.type==MIDGROUND)
-								st.Current_Map.obj[i].position.z=24;
+								st.Current_Map.obj[i].position.z=31;
 							else
 							if(meng.obj.type==FOREGROUND)
-								st.Current_Map.obj[i].position.z=16;
+								st.Current_Map.obj[i].position.z=23;
 
 							meng.z_buffer[st.Current_Map.obj[i].position.z][meng.z_slot[st.Current_Map.obj[i].position.z]]=i;
 							meng.z_slot[st.Current_Map.obj[i].position.z]++;
@@ -5374,19 +5374,19 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].angle=0;
 
 							if(meng.spr.type==BACKGROUND3)
-								st.Current_Map.sprites[i].position.z=48;
+								st.Current_Map.sprites[i].position.z=55;
 							else
 							if(meng.spr.type==BACKGROUND2)
-								st.Current_Map.sprites[i].position.z=40;
+								st.Current_Map.sprites[i].position.z=47;
 							else
 							if(meng.spr.type==BACKGROUND1)
-								st.Current_Map.sprites[i].position.z=32;
+								st.Current_Map.sprites[i].position.z=39;
 							else
 							if(meng.spr.type==MIDGROUND)
-								st.Current_Map.sprites[i].position.z=24;
+								st.Current_Map.sprites[i].position.z=31;
 							else
 							if(meng.spr.type==FOREGROUND)
-								st.Current_Map.sprites[i].position.z=16;
+								st.Current_Map.sprites[i].position.z=23;
 
 							meng.z_buffer[st.Current_Map.sprites[i].position.z][meng.z_slot[st.Current_Map.sprites[i].position.z]]=i+2000;
 							meng.z_slot[st.Current_Map.sprites[i].position.z]++;
