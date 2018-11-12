@@ -518,6 +518,7 @@ struct _SECTOR_
 	uint8 num_vertexadded;
 	uint8 floor_y_continued;
 	int32 floor_y_up, floor_y_down;
+	uint8 type; //Floor = 1, Ceiling = 2 - bitwise
 };
 
 typedef struct _SECTOR_ _SECTOR;

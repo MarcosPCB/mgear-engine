@@ -4646,6 +4646,7 @@ static void ViewPortCommands()
 		else
 		if(meng.command==SELECT_EDIT)
 		{
+			/*
 			if(meng.command2==EDIT_SECTOR)
 			{
 				i=meng.com_id;
@@ -4726,7 +4727,7 @@ static void ViewPortCommands()
 					UIDestroyWindow(winid);
 				}
 			}
-
+			*/
 			if(st.Current_Map.num_sector>0)
 			{
 				l=24;
@@ -4765,6 +4766,9 @@ static void ViewPortCommands()
 								{
 									got_it = 1;
 
+									meng.command2 = EDIT_SECTOR;
+									meng.com_id=i;
+
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[0]=p;
 									else
@@ -4791,6 +4795,9 @@ static void ViewPortCommands()
 								if(CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,484,484,0,0))
 								{
 									got_it = 1;
+
+									meng.command2 = EDIT_SECTOR;
+									meng.com_id = i;
 
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[1]=p;
@@ -4853,14 +4860,14 @@ static void ViewPortCommands()
 							else
 								meng.got_it=-1;
 
-							if(st.mouse2)
-							{
-								meng.command2=EDIT_SECTOR;
-								meng.com_id=i;
-								winid=UICreateWindow2(0,0,CENTER,6,4,2048,32,ARIAL);
-								st.mouse2=0;
-								break;
-							}
+							//if(st.mouse2)
+							//{
+								//meng.command2=EDIT_SECTOR;
+								//meng.com_id=i;
+								//winid=UICreateWindow2(0,0,CENTER,6,4,2048,32,ARIAL);
+								//st.mouse2=0;
+								//break;
+							//}
 						}
 
 						if(got_it) break;
@@ -8460,12 +8467,12 @@ int CameraProperties()
 
 }
 
-void TransformBox(Pos *pos, Pos *size, int16 *ang)
+void TransformBox(Pos *pos, Pos *size, int16 *ang, Pos *tpan, Pos *tsize)
 {
 	static int chained = 1;
 	float aspect;
 
-	if (nk_begin(ctx, "Transform Box", nk_rect((st.screenx / 2) - (300 / 2), (st.screeny / 2) - (300 / 2), 300, 300), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
+	if (nk_begin(ctx, "Transform Box", nk_rect((st.screenx / 2) - (300 / 2), (st.screeny / 2) - (450 / 2), 300, 450), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
 	{
 		nk_layout_row_dynamic(ctx, 100, 1);
 		if (nk_group_begin(ctx, "Position", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
@@ -8493,7 +8500,7 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang)
 			nk_layout_row_push(ctx, 0.45f);
 			size->x = nk_propertyi(ctx, "W:", GAME_UNIT_MIN, size->x, GAME_UNIT_MAX, 1024, 128);
 
-			if (chained)
+			if (chained && aspect != 0)
 				size->y = (float) size->x / aspect;
 
 			nk_layout_row_push(ctx, 0.1f);
@@ -8518,6 +8525,88 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang)
 				size->x = (float) size->y * aspect;
 
 			nk_group_end(ctx);
+		}
+
+		if (tpan != NULL && tsize != NULL)
+		{
+			nk_layout_row_dynamic(ctx, 100, 1);
+			if (nk_group_begin(ctx, "Texture", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
+			{
+				nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 3);
+
+				if (tsize->y != 0)
+					aspect = (float)tsize->x / tsize->y;
+				else
+					aspect = 0;
+
+				nk_layout_row_push(ctx, 0.45f);
+				tsize->x = nk_propertyi(ctx, "SW:", GAME_UNIT_MIN, tsize->x, GAME_UNIT_MAX, 1024, 128);
+
+				if (chained)
+					tsize->y = (float)tsize->x / aspect;
+
+				nk_layout_row_push(ctx, 0.1f);
+				if (chained)
+				{
+					ctx->style.button.normal = ctx->style.button.active;
+					ctx->style.button.hover = ctx->style.button.active;
+					if (nk_button_symbol(ctx, NK_SYMBOL_X))
+						chained = 0;
+
+					SetThemeBack(ctx, meng.theme);
+				}
+				else
+				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+					chained = 1;
+
+
+				nk_layout_row_push(ctx, 0.45f);
+				tsize->y = nk_propertyi(ctx, "SH:", GAME_UNIT_MIN, tsize->y, GAME_UNIT_MAX, 1024, 128);
+
+				if (chained && aspect != 0)
+					tsize->x = (float)tsize->y * aspect;
+
+				nk_layout_row_end(ctx);
+
+
+				nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 3);
+
+				if (tpan->y != 0)
+					aspect = (float)tpan->x / tpan->y;
+				else
+					aspect = 0;
+
+				nk_layout_row_push(ctx, 0.45f);
+				tpan->x = nk_propertyi(ctx, "PW:", GAME_UNIT_MIN, tpan->x, GAME_UNIT_MAX, 1024, 128);
+
+				if (chained && aspect != 0)
+					tpan->y = (float)tpan->x / aspect;
+
+				nk_layout_row_push(ctx, 0.1f);
+				if (chained)
+				{
+					ctx->style.button.normal = ctx->style.button.active;
+					ctx->style.button.hover = ctx->style.button.active;
+					if (nk_button_symbol(ctx, NK_SYMBOL_X))
+						chained = 0;
+
+					SetThemeBack(ctx, meng.theme);
+				}
+				else
+				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+					chained = 1;
+
+
+				nk_layout_row_push(ctx, 0.45f);
+				tpan->y = nk_propertyi(ctx, "PH:", GAME_UNIT_MIN, tpan->y, GAME_UNIT_MAX, 1024, 128);
+
+				if (chained && aspect != 0)
+					tpan->x = (float)tpan->y * aspect;
+
+				nk_layout_row_end(ctx);
+
+				nk_group_end(ctx);
+			}
 		}
 
 		nk_layout_row_dynamic(ctx, 15, 1);
@@ -9748,6 +9837,16 @@ void NewLeftPannel()
 				nk_label(ctx, "Current layer", NK_TEXT_LB);
 				meng.curlayer = nk_combo(ctx, layers2, 5, meng.curlayer, 25, nk_vec2(110, 200));
 
+				if (meng.command2 == EDIT_SECTOR)
+				{
+					nk_layout_row_dynamic(ctx, 30, 1);
+
+					st.Current_Map.sector[meng.com_id].floor_y_continued = nk_check_label(ctx, "Perspective floor", st.Current_Map.sector[meng.com_id].floor_y_continued);
+
+					st.Current_Map.sector[meng.com_id].floor_y_up = nk_propertyi(ctx, "Floor up", 0, st.Current_Map.sector[meng.com_id].floor_y_up, 8192, 64, 8);
+					st.Current_Map.sector[meng.com_id].floor_y_down = nk_propertyi(ctx, "Floor down", 0, st.Current_Map.sector[meng.com_id].floor_y_down, 8192, 64, 8);
+				}
+
 				if (meng.command2 == EDIT_SPRITE)
 				{
 					editcolor.r = st.Current_Map.sprites[meng.sprite_edit_selection].color.r;
@@ -10305,11 +10404,11 @@ int main(int argc, char *argv[])
 		{
 			if (meng.command2 == EDIT_SPRITE)
 				TransformBox(&st.Current_Map.sprites[meng.sprite_edit_selection].position, &st.Current_Map.sprites[meng.sprite_edit_selection].body.size,
-				&st.Current_Map.sprites[meng.sprite_edit_selection].angle);
+				&st.Current_Map.sprites[meng.sprite_edit_selection].angle, NULL, NULL);
 
 			if(meng.command2 == EDIT_OBJ)
 				TransformBox(&st.Current_Map.obj[meng.obj_edit_selection].position, &st.Current_Map.obj[meng.obj_edit_selection].size,
-				&st.Current_Map.obj[meng.obj_edit_selection].angle);
+				&st.Current_Map.obj[meng.obj_edit_selection].angle, &st.Current_Map.obj[meng.obj_edit_selection].texpan, &st.Current_Map.obj[meng.obj_edit_selection].texsize);
 		}
 
 		if (meng.command == SPRITE_TAG)

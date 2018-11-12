@@ -2683,6 +2683,7 @@ SHADER_CREATION:
 				st.renderer.unifs[12] = glGetUniformLocation(st.renderer.Program[3], "shadow");
 				st.renderer.unifs[13] = glGetUniformLocation(st.renderer.Program[3], "sector");
 				st.renderer.unifs[14] = glGetUniformLocation(st.renderer.Program[3], "sector_y");
+				st.renderer.unifs[15] = glGetUniformLocation(st.renderer.Program[3], "sector_y_2");
 				//st.renderer.unifs[6]=glGetUniformLocation(st.renderer.Program[3],"Tile");
 				//st.renderer.unifs[7]=glGetUniformLocation(st.renderer.Program[3],"Tiles");
 
@@ -5010,7 +5011,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	//if (sector_id != -1)
 	//{
-		
+
 	//}
 
 	x += data.x_offset;
@@ -5074,13 +5075,41 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	shw[m][i].vertex[11] = z;
 
 	//int32 d, a;
-	int32 v[4], v2[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4], zdw = 32 - z, zdl = zl - z, by = 0;
+	int32 v[4], v2[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4], zdw = 32 - z, zdl = zl - z, by = 0, mdist;
 
-	if (sector_id != -1)
+	if (ldist == 1)
 	{
-		by = (st.Current_Map.sector[sector_id].base_y - st.Camera.position.y) * st.Camera.dimension.y;
-		shw[m][i].x1y1.x = 1;
-		shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;;
+		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 0)
+		{
+			by = (st.Current_Map.sector[sector_id].base_y - st.Camera.position.y) * st.Camera.dimension.y;
+			shw[m][i].x1y1.x = 1;
+			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+		}
+
+		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
+		{
+			by = (st.Current_Map.sector[sector_id].base_y + st.Current_Map.sector[sector_id].floor_y_down - st.Camera.position.y) * st.Camera.dimension.y;
+			shw[m][i].x1y1.x = 2;
+			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
+			shw[m][i].x1y1.z = (by * st.screeny) / GAME_HEIGHT;
+		}
+	}
+	else
+	{
+		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1 && ldist == 0)
+		{
+			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
+			shw[m][i].x1y1.x = 1;
+			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+		}
+
+		if (sector_id == -1)
+		{
+			//by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
+			shw[m][i].x1y1.x = 0;
+			//shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+		}
 	}
 
 	zl = 32 - zl;
@@ -5097,43 +5126,45 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	//if (d >= st.game_lightmaps[light_id].falloff[0])
 		//return 1;
 	
-	if (sector_id == -1)
+	if (ldist == 0)
 	{
-		for (k = 0, l = 0; k < 12; k += 3, l++)
+		if (sector_id == -1)
 		{
-			v[l] = zl;//mSqrt(((shw[m][i].vertex[k] - st.game_lightmaps[light_id].w_pos.x) * (shw[m][i].vertex[k] - st.game_lightmaps[light_id].w_pos.x)) +
-			//(shw[m][i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) * (shw[m][i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) + 
-			//((zdl) * (zdl)));
-
-			v2[l] = zdw;//mSqrt(((shw[m][i].vertex[k] - st.game_lightmaps[light_id].w_pos.x) * (shw[m][i].vertex[k] - st.game_lightmaps[light_id].w_pos.x)) +
-			//(shw[m][i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) * (shw[m][i].vertex[k + 1] - st.game_lightmaps[light_id].w_pos.y) +
-			//((zdw)* (zdw)));
-			//v[l] = zdw;
+			for (k = 0, l = 0; k < 12; k += 3, l++)
+			{
+				v[l] = zl;
+				v2[l] = zdw;
+			}
 		}
-
-		//ldist = zdw;
-
-		/*
-		af_v[0] = v[0];
-
-		for (uint8 k = 0, t = 0; k < 4; k++)
+		else
 		{
-		t = 0;
-		for (uint8 l = 0; l < 4; l++)
-		{
-		if (l == k) continue;
+			mdist = shw[m][i].vertex[1] - by;
+			v2[1] = shw[m][i].vertex[4] - by;
 
-		if (v[k] < v[l])
-		t++;
-		}
+			if (mdist > v2[1])
+				mdist = v2[1];
 
-		if (t > 2)
-		{
-		af_v[num_af_v] = k;
-		num_af_v++;
+			v2[2] = shw[m][i].vertex[7] - by;
+
+			if (mdist > v2[2])
+				mdist = v2[2];
+
+			v2[3] = shw[m][i].vertex[10] - by;
+
+			if (mdist > v2[3])
+				mdist = v2[3];
+
+			for (k = 0, l = 0; k < 12; k += 3, l++)
+			{
+				v2[l] = mdist;
+
+				if (v2[l] > 0) v2[l] -= mdist;
+
+				v2[l] *= (float)GAME_WIDTH / GAME_HEIGHT;
+
+				v[l] = v2[l] + zdl;
+			}
 		}
-		}
-		*/
 
 		shw[m][i].vertex[0] += (float)v2[0] * ((shw[m][i].vertex[0] - tx1) / v[0]);
 		shw[m][i].vertex[1] += (float)v2[0] * ((shw[m][i].vertex[1] - ty1) / v[0]);
@@ -5144,7 +5175,8 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		shw[m][i].vertex[9] += (float)v2[3] * ((shw[m][i].vertex[9] - tx1) / v[3]);
 		shw[m][i].vertex[10] += (float)v2[3] * ((shw[m][i].vertex[10] - ty1) / v[3]);
 	}
-	else
+	
+	if (ldist == 1 && sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 	{
 		for (k = 0, l = 0; k < 12; k += 3, l++)
 		{
@@ -5331,7 +5363,13 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				//DrawShadow(x, y, sizex, sizey, ang, i, dist, data, z, -1);
 
 			if (sector_id > -1 && dist < st.game_lightmaps[i].W_w)
-				DrawShadow(x, y, sizex, sizey, ang, i, dist, data, z, sector_id, st.num_entities);
+			{
+				DrawShadow(x, y, sizex, sizey, ang, i, 0, data, z, sector_id, st.num_entities);
+				DrawShadow(x, y, sizex, sizey, ang, i, 1, data, z, sector_id, st.num_entities);
+			}
+
+			if (sector_id == -1 && dist < st.game_lightmaps[i].W_w)
+				DrawShadow(x, y, sizex, sizey, ang, i, 0, data, z, -1, st.num_entities);
 		}
 	}
 
@@ -10248,6 +10286,7 @@ void Renderer(uint8 type)
 
 						glUniform1f(st.renderer.unifs[13], shw[p][o].x1y1.x);
 						glUniform1f(st.renderer.unifs[14], st.screeny - shw[p][o].x1y1.y);
+						glUniform1f(st.renderer.unifs[15], st.screeny - shw[p][o].x1y1.z);
 
 						//glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 						//glStencilMask(0x00);
