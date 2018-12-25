@@ -5093,15 +5093,18 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
 			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.z = (by * st.screeny) / GAME_HEIGHT;
+
+			by = (st.Current_Map.sector[sector_id].base_y - st.Camera.position.y) * st.Camera.dimension.y;
 		}
 	}
 	else
 	{
-		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1 && ldist == 0)
+		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 		{
 			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.x = 1;
 			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+			by = (st.Current_Map.sector[sector_id].floor_y_up);
 		}
 
 		if (sector_id == -1)
@@ -5138,6 +5141,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		}
 		else
 		{
+			/*
 			mdist = shw[m][i].vertex[1] - by;
 			v2[1] = shw[m][i].vertex[4] - by;
 
@@ -5153,6 +5157,9 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 			if (mdist > v2[3])
 				mdist = v2[3];
+				*/
+
+			mdist = by;
 
 			for (k = 0, l = 0; k < 12; k += 3, l++)
 			{
@@ -5164,6 +5171,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 				v[l] = v2[l] + zdl;
 			}
+			
 		}
 
 		shw[m][i].vertex[0] += (float)v2[0] * ((shw[m][i].vertex[0] - tx1) / v[0]);
@@ -5212,7 +5220,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	/*
 	if (shw[m][i].vertex[1] > by)
 		shw[m][i].vertex[1] = by;
-
+		 
 	if (shw[m][i].vertex[4] > by)
 		shw[m][i].vertex[4] = by;
 
@@ -8827,7 +8835,7 @@ uint32 SaveMap(const char *name)
 				return 0;
 	}
 
-	strcpy(header,"V0.1 mGear-1");
+	strcpy(header,"V1 mGear-1");
 
 	fwrite(header,13,1,file);
 
@@ -9580,7 +9588,7 @@ uint32 LoadMap(const char *name)
 
 	//Checks if it's the same version
 
-	if(strcmp(header,"V0.1 mGear-1")!=NULL)
+	if(strcmp(header,"V1 mGear-1")!=NULL)
 	{
 		LogApp("Invalid map format or version: %s", header);
 				return 0;

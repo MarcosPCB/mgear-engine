@@ -9,6 +9,7 @@
 #include "mggeditor.h"
 #include <commdlg.h>
 #include <Windows.h>
+#include "funcs.h"
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -4468,7 +4469,7 @@ static void ViewPortCommands()
 		if(meng.command==LOAD_LIGHTMAP2)
 		{
 			i=st.num_lights;
-
+			
 			p=st.mouse;
 			STW(&p.x,&p.y);
 
@@ -8306,12 +8307,13 @@ struct nk_color ColorPicker(struct nk_color color)
 	if (nk_combo_begin_color(ctx, color, nk_vec2(200, 250)))
 	{
 		nk_layout_row_dynamic(ctx, 120, 1);
-		struct nk_colorf c = nk_color_picker(ctx, nk_color_cf(color), NK_RGB);
-		color = nk_rgb_cf(c);
+		struct nk_colorf c = nk_color_picker(ctx, nk_color_cf(color), NK_RGBA);
+		color = nk_rgba_cf(c);
 		nk_layout_row_dynamic(ctx, 25, 1);
 		color.r = (nk_byte)nk_propertyi(ctx, "R:", 0, color.r, 255, 1, 1);
 		color.g = (nk_byte)nk_propertyi(ctx, "G:", 0, color.g, 255, 1, 1);
 		color.b = (nk_byte)nk_propertyi(ctx, "B:", 0, color.b, 255, 1, 1);
+		color.a = (nk_byte)nk_propertyi(ctx, "A:", 0, color.a, 255, 1, 1);
 
 		nk_combo_end(ctx);
 	}
@@ -9023,12 +9025,38 @@ void MenuBar()
 
 				if (nk_menu_item_label(ctx, "Open map", NK_TEXT_LEFT))
 				{
-					SetDirContent("mgm");
-					state = 1;
+					//SetDirContent("mgm");
+					LoadMap(StringFormat("%s/test.mgm", meng.prj_path));
+
+					for (i = 0, id = 0; i < st.Current_Map.num_mgg; i++)
+					{
+						if (CheckMGGFile(st.Current_Map.MGG_FILES[i]))
+						{
+							LoadMGG(&mgg_map[id], st.Current_Map.MGG_FILES[i]);
+							strcpy(meng.mgg_list[i], mgg_map[id].name);
+							meng.num_mgg++;
+							id++;
+						}
+						else
+						{
+							FreeMap();
+
+							LogApp("Error while loading map's MGG: %s", st.Current_Map.MGG_FILES[i]);
+							//state = 0;
+							break;
+						}
+
+					}
+
+					//state = 1;
 				}
 
 				nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT);
-				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT))
+				{
+					SaveMap(StringFormat("%s/test.mgm", meng.prj_path));
+				}
+
 				nk_menu_item_label(ctx, "Compile map", NK_TEXT_LEFT);
 				if (nk_menu_item_label(ctx, "Exit", NK_TEXT_LEFT)) st.quit = 1;
 				nk_menu_end(ctx);
@@ -9927,6 +9955,7 @@ void NewLeftPannel()
 					editcolor.r = st.Current_Map.obj[meng.obj_edit_selection].color.r;
 					editcolor.g = st.Current_Map.obj[meng.obj_edit_selection].color.g;
 					editcolor.b = st.Current_Map.obj[meng.obj_edit_selection].color.b;
+					editcolor.a = st.Current_Map.obj[meng.obj_edit_selection].color.a;
 
 					nk_layout_row_dynamic(ctx, 30, 1);
 
@@ -9943,6 +9972,7 @@ void NewLeftPannel()
 					st.Current_Map.obj[meng.obj_edit_selection].color.r = editcolor.r;
 					st.Current_Map.obj[meng.obj_edit_selection].color.g = editcolor.g;
 					st.Current_Map.obj[meng.obj_edit_selection].color.b = editcolor.b;
+					st.Current_Map.obj[meng.obj_edit_selection].color.a = editcolor.a;
 
 					st.Current_Map.obj[meng.obj_edit_selection].amblight = nk_propertyf(ctx, "Amb. Light", 0, st.Current_Map.obj[meng.obj_edit_selection].amblight, 1.0, 0.1, 0.01);
 
@@ -9988,6 +10018,7 @@ void NewLeftPannel()
 				editcolor.r = meng.obj.color.r;
 				editcolor.g = meng.obj.color.g;
 				editcolor.b = meng.obj.color.b;
+				editcolor.a = meng.obj.color.a;
 
 				nk_layout_row_dynamic(ctx, 30, 1);
 
@@ -9998,6 +10029,7 @@ void NewLeftPannel()
 				meng.obj.color.r = editcolor.r;
 				meng.obj.color.g = editcolor.g;
 				meng.obj.color.b = editcolor.b;
+				meng.obj.color.a = editcolor.a;
 
 				meng.obj.amblight = nk_propertyf(ctx, "Amb. Light", 0, meng.obj.amblight, 1.0, 0.1, 0.01);
 
