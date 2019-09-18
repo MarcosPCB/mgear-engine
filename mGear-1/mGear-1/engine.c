@@ -5009,11 +5009,6 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	register uint32 i = 0, j = 0, k = 0, l = 0, m = light_id;
 
-	//if (sector_id != -1)
-	//{
-
-	//}
-
 	x += data.x_offset;
 	y += data.y_offset;
 
@@ -5055,8 +5050,6 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	tx1 *= st.Camera.dimension.x;
 	ty1 *= st.Camera.dimension.y;
-
-	//timej=GetTicks();
 
 	shw[m][i].vertex[0] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
 	shw[m][i].vertex[1] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
@@ -5105,6 +5098,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 			shw[m][i].x1y1.x = 1;
 			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
 			by = (st.Current_Map.sector[sector_id].floor_y_up);
+			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 		}
 
 		if (sector_id == -1)
@@ -5117,119 +5111,67 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	zl = 32 - zl;
 
-	z = (float) (16384.0f * z) / 56.0f;
+	z = (float) (16384.0f * z) /56.0f;
 
 	zl = (float) (16384.0f * zl) / 56.0f;
 	zdl = (float) (16384.0f * zdl) / 56.0f;
 	zdw = (float) (16384.0f * zdw) / 56.0f;
-
-	//d = mSqrt(((x - st.game_lightmaps[light_id].w_pos.x) * (x - st.game_lightmaps[light_id].w_pos.x)) + (y - st.game_lightmaps[light_id].w_pos.y) * (y - st.game_lightmaps[light_id].w_pos.y));
-	//a = abs((((float) atan((x - st.game_lightmaps[light_id].w_pos.x) / (y - st.game_lightmaps[light_id].w_pos.y)) * (180.0f / pi)) * 10.0f) - ang);
-
-	//if (d >= st.game_lightmaps[light_id].falloff[0])
-		//return 1;
 	
 	if (ldist == 0)
 	{
-		if (sector_id == -1)
-		{
-			for (k = 0, l = 0; k < 12; k += 3, l++)
-			{
-				v[l] = zl;
-				v2[l] = zdw;
-			}
-		}
-		else
-		{
-			/*
-			mdist = shw[m][i].vertex[1] - by;
-			v2[1] = shw[m][i].vertex[4] - by;
-
-			if (mdist > v2[1])
-				mdist = v2[1];
-
-			v2[2] = shw[m][i].vertex[7] - by;
-
-			if (mdist > v2[2])
-				mdist = v2[2];
-
-			v2[3] = shw[m][i].vertex[10] - by;
-
-			if (mdist > v2[3])
-				mdist = v2[3];
-				*/
-
-			mdist = by;
-
-			for (k = 0, l = 0; k < 12; k += 3, l++)
-			{
-				v2[l] = mdist;
-
-				if (v2[l] > 0) v2[l] -= mdist;
-
-				v2[l] *= (float)GAME_WIDTH / GAME_HEIGHT;
-
-				v[l] = v2[l] + zdl;
-			}
-			
-		}
-
-		shw[m][i].vertex[0] += (float)v2[0] * ((shw[m][i].vertex[0] - tx1) / v[0]);
-		shw[m][i].vertex[1] += (float)v2[0] * ((shw[m][i].vertex[1] - ty1) / v[0]);
-		shw[m][i].vertex[3] += (float)v2[1] * ((shw[m][i].vertex[3] - tx1) / v[1]);
-		shw[m][i].vertex[4] += (float)v2[1] * ((shw[m][i].vertex[4] - ty1) / v[1]);
-		shw[m][i].vertex[6] += (float)v2[2] * ((shw[m][i].vertex[6] - tx1) / v[2]);
-		shw[m][i].vertex[7] += (float)v2[2] * ((shw[m][i].vertex[7] - ty1) / v[2]);
-		shw[m][i].vertex[9] += (float)v2[3] * ((shw[m][i].vertex[9] - tx1) / v[3]);
-		shw[m][i].vertex[10] += (float)v2[3] * ((shw[m][i].vertex[10] - ty1) / v[3]);
+		shw[m][i].vertex[0] += (float)zdw * ((shw[m][i].vertex[0] - tx1) / zl);
+		shw[m][i].vertex[1] += (float)zdw * ((shw[m][i].vertex[1] - ty1) / zl);
+		shw[m][i].vertex[3] += (float)zdw * ((shw[m][i].vertex[3] - tx1) / zl);
+		shw[m][i].vertex[4] += (float)zdw * ((shw[m][i].vertex[4] - ty1) / zl);
+		shw[m][i].vertex[6] += (float)zdw * ((shw[m][i].vertex[6] - tx1) / zl);
+		shw[m][i].vertex[7] += (float)zdw * ((shw[m][i].vertex[7] - ty1) / zl);
+		shw[m][i].vertex[9] += (float)zdw * ((shw[m][i].vertex[9] - tx1) / zl);
+		shw[m][i].vertex[10] += (float)zdw * ((shw[m][i].vertex[10] - ty1) / zl);
 	}
 	
+	float fty = sizey / st.Camera.dimension.y,
+		//by - shw[m][i].vertex[1],
+		fy = ((st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - st.Camera.position.y) * st.Camera.dimension.y,
+		fy1 = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - (((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+	fy1 *= -1;
+
 	if (ldist == 1 && sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 	{
+		
 		for (k = 0, l = 0; k < 12; k += 3, l++)
 		{
+			
 			v2[l] = shw[m][i].vertex[k + 1] - by;
 
 			if (v2[l] > 0) v2[l] -= (shw[m][i].vertex[k + 1] - by);
 
-			v2[l] *= (float) GAME_WIDTH / GAME_HEIGHT;
+			v2[l] *= (float)GAME_WIDTH / GAME_HEIGHT;
+			//v2[l] *= -1;
 
-			v[l] = v2[l] + zdl;
+			if(l < 2) v[l] = -zl;
+			else v[l] = zl;
+			//v[l] = zdl;
+			
 		}
+		
+		v[0] = v[1] = zl;
+		v2[0] = v2[1] = zdw;
+
+		fty = (zdw * fty) / zl;
+		fy1 = (zdw * fy1) / zl;
 
 		shw[m][i].vertex[0] += (float)v2[0] * ((shw[m][i].vertex[0] - tx1) / v[0]);
-		shw[m][i].vertex[1] += (float)v2[0] * ((shw[m][i].vertex[1] - ty1) / v[0]);
+		shw[m][i].vertex[1] = fy;
+
 		shw[m][i].vertex[3] += (float)v2[1] * ((shw[m][i].vertex[3] - tx1) / v[1]);
-		shw[m][i].vertex[4] += (float)v2[1] * ((shw[m][i].vertex[4] - ty1) / v[1]);
+		shw[m][i].vertex[4] = fy;
+
 		shw[m][i].vertex[6] += (float)v2[2] * ((shw[m][i].vertex[6] - tx1) / v[2]);
 		shw[m][i].vertex[7] += (float)v2[2] * ((shw[m][i].vertex[7] - ty1) / v[2]);
 		shw[m][i].vertex[9] += (float)v2[3] * ((shw[m][i].vertex[9] - tx1) / v[3]);
 		shw[m][i].vertex[10] += (float)v2[3] * ((shw[m][i].vertex[10] - ty1) / v[3]);
 	}
 
-	//DrawLine(shw[m][i].vertex[0], shw[m][i].vertex[1], st.game_lightmaps[light_id].w_pos.x, st.game_lightmaps[light_id].w_pos.y, 255, 0, 0, 255, 8, 0);
-	//DrawLine(shw[m][i].vertex[3], shw[m][i].vertex[4], st.game_lightmaps[light_id].w_pos.x, st.game_lightmaps[light_id].w_pos.y, 255, 0, 0, 255, 8, 0);
-	//DrawLine(shw[m][i].vertex[6], shw[m][i].vertex[7], st.game_lightmaps[light_id].w_pos.x, st.game_lightmaps[light_id].w_pos.y, 255, 0, 0, 255, 8, 0);
-	//DrawLine(shw[m][i].vertex[9], shw[m][i].vertex[10], st.game_lightmaps[light_id].w_pos.x, st.game_lightmaps[light_id].w_pos.y, 255, 0, 0, 255, 8, 0);
-
-	//timel=GetTicks() - timej;
-
-	//ang=1000;
-
-	//ang/=10;
-	/*
-	if (shw[m][i].vertex[1] > by)
-		shw[m][i].vertex[1] = by;
-		 
-	if (shw[m][i].vertex[4] > by)
-		shw[m][i].vertex[4] = by;
-
-	if (shw[m][i].vertex[7] > by)
-		shw[m][i].vertex[7] = by;
-
-	if (shw[m][i].vertex[10] > by)
-		shw[m][i].vertex[10] = by;
-		*/
 	ax = (float)1 / (GAME_WIDTH / 2);
 	ay = (float)1 / (GAME_HEIGHT / 2);
 
@@ -5280,9 +5222,15 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	if (data.vb_id == -1)
 	{
 		shw[m][i].texcor[0] = 0;
-		shw[m][i].texcor[1] = 0;
+
+		if(ldist == 1) shw[m][i].texcor[1] = 0 + (fy1 / fty);
+		else shw[m][i].texcor[1] = 0;
+
 		shw[m][i].texcor[2] = 32768;
-		shw[m][i].texcor[3] = 0;
+
+		if (ldist == 1) shw[m][i].texcor[3] = 0 + (fy1 / fty);
+		else shw[m][i].texcor[3] = 0;
+
 		shw[m][i].texcor[4] = 32768;
 		shw[m][i].texcor[5] = 32768;
 		shw[m][i].texcor[6] = 0;
@@ -5291,10 +5239,14 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	else
 	{
 		shw[m][i].texcor[0] = data.posx;
-		shw[m][i].texcor[1] = data.posy;
+
+		if (ldist == 1) shw[m][i].texcor[1] = data.posy + (float)((1.0f - (fy1 / fty)) * data.sizey);
+		else shw[m][i].texcor[1] = data.posy;
 
 		shw[m][i].texcor[2] = data.posx + data.sizex;
-		shw[m][i].texcor[3] = data.posy;
+
+		if (ldist == 1) shw[m][i].texcor[3] = data.posy + (float)((1.0f - (fy1 / fty)) * data.sizey);
+		else shw[m][i].texcor[3] = data.posy;
 
 		shw[m][i].texcor[4] = data.posx + data.sizex;
 		shw[m][i].texcor[5] = data.posy + data.sizey;
@@ -5302,22 +5254,6 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		shw[m][i].texcor[6] = data.posx;
 		shw[m][i].texcor[7] = data.posy + data.sizey;
 	}
-	/*
-	if (shw[m][i].vertex[1] > by)
-		shw[m][i].texcor[1] += 1.0f - (by / shw[m][i].vertex[1])
-
-	if (shw[m][i].vertex[4] > by)
-		shw[m][i].texcor[3] += by * 2.0f;
-
-	if (shw[m][i].vertex[7] > by)
-		shw[m][i].texcor[5] += by * 2.0f;
-
-	if (shw[m][i].vertex[10] > by)
-		shw[m][i].texcor[9] += by * 2.0f;
-		
-		*/
-
-	//timej=GetTicks();
 
 	for (j = 0; j<12; j += 3)
 	{
@@ -5341,8 +5277,6 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}
 
 #endif
-
-	//timel=GetTicks() - timej;
 
 	shw[m][i].scenario = ent_id;
 
