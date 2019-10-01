@@ -4746,7 +4746,7 @@ static void ViewPortCommands()
 
 						if(i<10000) continue;
 
-						i-=10000;
+						i -= 10000;
 
 						if((CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,484,484,0,0) || 
 							CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,484,484,0,0)))
@@ -4754,9 +4754,9 @@ static void ViewPortCommands()
 							if(st.mouse1)
 							{
 								if (meng.got_it == -1)
-									meng.got_it = i;
-								else
-								if (meng.got_it != -1 && meng.got_it != i)
+									meng.got_it = i + 10000;
+								
+								if (meng.got_it != -1 && meng.got_it != i + 10000)
 									continue;
 
 								p=st.mouse;
@@ -4768,7 +4768,7 @@ static void ViewPortCommands()
 									got_it = 1;
 
 									meng.command2 = EDIT_SECTOR;
-									meng.com_id=i;
+									meng.com_id = i;
 
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[0]=p;
@@ -4858,8 +4858,8 @@ static void ViewPortCommands()
 									break;
 								}
 							}
-							else
-								meng.got_it=-1;
+							//else
+								//meng.got_it=-1;
 
 							//if(st.mouse2)
 							//{
@@ -4946,7 +4946,7 @@ static void ViewPortCommands()
 								{
 									meng.command2=EDIT_SPRITE;
 									meng.p=st.mouse;
-									meng.got_it=i;
+									meng.got_it = i + 2000;
 
 									meng.sprite_edit_selection=i;
 
@@ -4955,8 +4955,8 @@ static void ViewPortCommands()
 									meng.p.x-=st.Current_Map.sprites[i].position.x;
 									meng.p.y-=st.Current_Map.sprites[i].position.y;
 								}
-								else
-								if(meng.got_it!=-1 && meng.got_it!=i)
+								
+								if(meng.got_it != -1 && meng.got_it != i + 2000)
 									continue;
 
 								p=st.mouse;
@@ -4991,11 +4991,11 @@ static void ViewPortCommands()
 									st.mouse_wheel=0;
 								}
 
-								got_it=1;
+								got_it = 1;
 								break;
 							}
-							else
-								meng.got_it=-1;
+							//else
+								//meng.got_it=-1;
 						}
 					}
 				}
@@ -5076,11 +5076,11 @@ static void ViewPortCommands()
 									meng.p.x-=st.Current_Map.obj[i].position.x;
 									meng.p.y-=st.Current_Map.obj[i].position.y;
 								}
-								else
-								if(meng.got_it!=-1 && meng.got_it!=i)
+								
+								if(meng.got_it!=-1 && meng.got_it != i)
 									continue;
-								else
-								{
+								
+								
 									p=st.mouse;
 
 									STW(&p.x, &p.y);
@@ -5129,14 +5129,17 @@ static void ViewPortCommands()
 									*/
 									got_it=1;
 									break;
-								}
+								
 							}
-							else
-								meng.got_it=-1;
+							//else
+								//meng.got_it=-1;
 						}
 					}
 				}
 			}
+
+			if (!st.mouse1 && meng.got_it != -1)
+				meng.got_it = -1;
 		}
 		else
 		if(meng.command==ADD_OBJ && st.Current_Map.num_mgg > 0)
@@ -9026,29 +9029,10 @@ void MenuBar()
 				if (nk_menu_item_label(ctx, "Open map", NK_TEXT_LEFT))
 				{
 					//SetDirContent("mgm");
-					LoadMap(StringFormat("%s/test.mgm", meng.prj_path));
 
-					for (i = 0, id = 0; i < st.Current_Map.num_mgg; i++)
-					{
-						if (CheckMGGFile(st.Current_Map.MGG_FILES[i]))
-						{
-							LoadMGG(&mgg_map[id], st.Current_Map.MGG_FILES[i]);
-							strcpy(meng.mgg_list[i], mgg_map[id].name);
-							meng.num_mgg++;
-							id++;
-						}
-						else
-						{
-							FreeMap();
+					
 
-							LogApp("Error while loading map's MGG: %s", st.Current_Map.MGG_FILES[i]);
-							//state = 0;
-							break;
-						}
-
-					}
-
-					//state = 1;
+					state = 1;
 				}
 
 				nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT);
@@ -9241,14 +9225,15 @@ void MenuBar()
 
 	if (state == 1)
 	{
-		check = FileBrowser(mapname);
+		check = 1;//FileBrowser(mapname);
 
 		if (check == -1)
 			state = 0;
 
 		if (check == 1)
 		{
-			if (LoadMap(mapname))
+
+			if (LoadMap(StringFormat("%s/test.mgm", meng.prj_path)))
 			{
 				memset(meng.mgg_list, 0, 32 * 256);
 				meng.num_mgg = 0;
@@ -9405,10 +9390,10 @@ void SpriteListSelection()
 						{
 							px = ((float)data.posx / 32768) * data.w;
 							ceil(px);
-							px += data.x_offset;
+							//px += data.x_offset;
 							py = ((float)data.posy / 32768) * data.h;
 							ceil(py);
-							py += data.y_offset;
+							//py += data.y_offset;
 							sx = ((float)data.sizex / 32768) * data.w;
 							ceil(sx);
 							sy = ((float)data.sizey / 32768) * data.h;

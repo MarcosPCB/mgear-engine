@@ -5130,46 +5130,56 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}
 	
 	float fty = sizey / st.Camera.dimension.y,
-		//by - shw[m][i].vertex[1],
 		fy = ((st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - st.Camera.position.y) * st.Camera.dimension.y,
-		fy1 = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - (((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+		fy1 = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) -
+		(((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+
 	fy1 *= -1;
 
 	if (ldist == 1 && sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 	{
-		
-		for (k = 0, l = 0; k < 12; k += 3, l++)
+		v2[0] = shw[m][i].vertex[1] - by;
+		v2[1] = shw[m][i].vertex[4] - by;
+		v2[2] = shw[m][i].vertex[7] - by;
+		v2[3] = shw[m][i].vertex[10] - by;
+
+		for (l = 2, k = 3, j = 1; j < 4; j++)
 		{
-			
-			v2[l] = shw[m][i].vertex[k + 1] - by;
-
-			if (v2[l] > 0) v2[l] -= (shw[m][i].vertex[k + 1] - by);
-
-			v2[l] *= (float)GAME_WIDTH / GAME_HEIGHT;
-			//v2[l] *= -1;
-
-			if(l < 2) v[l] = -zl;
-			else v[l] = zl;
-			//v[l] = zdl;
-			
+			if (abs(v2[l]) > abs(v2[j]))
+			{
+				k = l;
+				l = j;
+			}
 		}
+
+		if (v2[l] > 0) v2[l] -= (shw[m][i].vertex[l * 3 + 1] - by);
+		if (v2[k] > 0) v2[k] -= (shw[m][i].vertex[k * 3 + 1] - by);
+		v[k] = -zl;
+		v[l] = -zl;
 		
-		v[0] = v[1] = zl;
-		v2[0] = v2[1] = zdw;
+		for (j = 0; j < 4; j++)
+		{
+			if (j != l && j != k)
+			{
+				v2[j] = zdw;
+				v[j] = zl;
+			}
+		}
 
 		fty = (zdw * fty) / zl;
 		fy1 = (zdw * fy1) / zl;
 
 		shw[m][i].vertex[0] += (float)v2[0] * ((shw[m][i].vertex[0] - tx1) / v[0]);
-		shw[m][i].vertex[1] = fy;
-
 		shw[m][i].vertex[3] += (float)v2[1] * ((shw[m][i].vertex[3] - tx1) / v[1]);
-		shw[m][i].vertex[4] = fy;
-
 		shw[m][i].vertex[6] += (float)v2[2] * ((shw[m][i].vertex[6] - tx1) / v[2]);
-		shw[m][i].vertex[7] += (float)v2[2] * ((shw[m][i].vertex[7] - ty1) / v[2]);
 		shw[m][i].vertex[9] += (float)v2[3] * ((shw[m][i].vertex[9] - tx1) / v[3]);
-		shw[m][i].vertex[10] += (float)v2[3] * ((shw[m][i].vertex[10] - ty1) / v[3]);
+
+		for (j = 0; j < 4; j++)
+		{
+			if (j == l || j == k) shw[m][i].vertex[j * 3 + 1] += (float)v2[j] * ((shw[m][i].vertex[j * 3 + 1] - ty1) / v[j]);
+			else shw[m][i].vertex[j * 3 + 1] = fy;
+		}
+
 	}
 
 	ax = (float)1 / (GAME_WIDTH / 2);
@@ -5221,38 +5231,74 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	if (data.vb_id == -1)
 	{
-		shw[m][i].texcor[0] = 0;
+		if (ldist == 1)
+		{
+			shw[m][i].texcor[0] = 0;
+			shw[m][i].texcor[2] = 32768;
+			shw[m][i].texcor[4] = 32768;
+			shw[m][i].texcor[6] = 0;
 
-		if(ldist == 1) shw[m][i].texcor[1] = 0 + (fy1 / fty);
-		else shw[m][i].texcor[1] = 0;
-
-		shw[m][i].texcor[2] = 32768;
-
-		if (ldist == 1) shw[m][i].texcor[3] = 0 + (fy1 / fty);
-		else shw[m][i].texcor[3] = 0;
-
-		shw[m][i].texcor[4] = 32768;
-		shw[m][i].texcor[5] = 32768;
-		shw[m][i].texcor[6] = 0;
-		shw[m][i].texcor[7] = 32768;
+			for (j = 0; j < 4; j++)
+			{
+				if (j == l || j == k)
+				{
+					if (j > 1) shw[m][i].texcor[j * 2 + 1] = 32768;
+					else shw[m][i].texcor[j * 2 + 1] = 0;
+				}
+				else
+				{
+					if (j > 1) shw[m][i].texcor[j * 2 + 1] = 32768 + 1.0f - (fy1 / fty);
+					else shw[m][i].texcor[j * 2 + 1] = 1.0f - (fy1 / fty);
+				}
+			}
+		}
+		else
+		{
+			shw[m][i].texcor[0] = 0;
+			shw[m][i].texcor[1] = 0;
+			shw[m][i].texcor[2] = 32768;
+			shw[m][i].texcor[3] = 0;
+			shw[m][i].texcor[4] = 32768;
+			shw[m][i].texcor[5] = 32768;
+			shw[m][i].texcor[6] = 0;
+			shw[m][i].texcor[7] = 32768;
+		}
 	}
 	else
 	{
-		shw[m][i].texcor[0] = data.posx;
+		if (ldist == 1)
+		{
+			shw[m][i].texcor[0] = data.posx;
+			shw[m][i].texcor[2] = data.posx + data.sizex;
+			shw[m][i].texcor[4] = data.posx + data.sizex;
+			shw[m][i].texcor[6] = data.posx;
 
-		if (ldist == 1) shw[m][i].texcor[1] = data.posy + (float)((1.0f - (fy1 / fty)) * data.sizey);
-		else shw[m][i].texcor[1] = data.posy;
+			for (j = 0; j < 4; j++)
+			{
+				if (j == l || j == k)
+				{
+					if (j > 1) shw[m][i].texcor[j * 2 + 1] = data.posy + data.sizey;
+					else shw[m][i].texcor[j * 2 + 1] = data.posy;
+				}
+				else
+				{
+					if (j > 1) shw[m][i].texcor[j * 2 + 1] = data.posy + data.sizey + (float)((1.0f - (fy1 / fty)) * data.sizey);
+					else shw[m][i].texcor[j * 2 + 1] = data.posy + (float)((1.0f - (fy1 / fty)) * data.sizey);
+				}
+			}
+		}
+		else
+		{
+			shw[m][i].texcor[0] = data.posx;
+			shw[m][i].texcor[1] = data.posy;
+			shw[m][i].texcor[2] = data.posx + data.sizex;
+			shw[m][i].texcor[3] = data.posy;
+			shw[m][i].texcor[4] = data.posx + data.sizex;
+			shw[m][i].texcor[5] = data.posy + data.sizey;
+			shw[m][i].texcor[6] = data.posx;
+			shw[m][i].texcor[7] = data.posy + data.sizey;
+		}
 
-		shw[m][i].texcor[2] = data.posx + data.sizex;
-
-		if (ldist == 1) shw[m][i].texcor[3] = data.posy + (float)((1.0f - (fy1 / fty)) * data.sizey);
-		else shw[m][i].texcor[3] = data.posy;
-
-		shw[m][i].texcor[4] = data.posx + data.sizex;
-		shw[m][i].texcor[5] = data.posy + data.sizey;
-
-		shw[m][i].texcor[6] = data.posx;
-		shw[m][i].texcor[7] = data.posy + data.sizey;
 	}
 
 	for (j = 0; j<12; j += 3)
@@ -9642,6 +9688,7 @@ uint32 LoadMap(const char *name)
 			st.game_lightmaps[i+1].data=malloc(st.game_lightmaps[i+1].T_w*st.game_lightmaps[i+1].T_h*3);
 	}
 
+	/*
 	fseek(file,4,SEEK_CUR);
 
 	for(i=1;i<=st.Current_Map.num_lights;i++)
@@ -9657,6 +9704,9 @@ uint32 LoadMap(const char *name)
 			st.game_lightmaps[i].tex=GenerateLightmapTexture(st.game_lightmaps[i].data,st.game_lightmaps[i].T_w,st.game_lightmaps[i].T_h);
 		}
 	}
+	*/
+
+
 
 	LogApp("Map %s loaded",name);
 
