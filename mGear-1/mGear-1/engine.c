@@ -5015,8 +5015,8 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	if (CheckBounds(x, y, sizex, sizey, z))
 		return 1;
 
-	if (st.game_lightmaps[light_id].falloff[4] > z)
-		return 1;
+	//if (st.game_lightmaps[light_id].falloff[4] > z)
+		//return 1;
 
 	if (st.game_lightmaps[light_id].num_shadows == (MAX_LIGHTMAPS / 16) - 1)
 		return 2;
@@ -5092,8 +5092,10 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}
 	else
 	{
-		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
+		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1 )
 		{
+			if (zdl <= 0) return 0;
+
 			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.x = 1;
 			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
@@ -5108,6 +5110,8 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 			//shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
 		}
 	}
+
+	if (zdl >= 0) zl *= -1;
 
 	zl = 32 - zl;
 
@@ -5129,12 +5133,29 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		shw[m][i].vertex[10] += (float)zdw * ((shw[m][i].vertex[10] - ty1) / zl);
 	}
 	
-	float fty = sizey / st.Camera.dimension.y,
-		fy = ((st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - st.Camera.position.y) * st.Camera.dimension.y,
-		fy1 = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) -
-		(((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+	float fty = sizey / st.Camera.dimension.y, fy, fy1;
 
-	fy1 *= -1;
+	if (zdl >= 0)
+	{
+		fy = ((st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - st.Camera.position.y) * st.Camera.dimension.y;
+		fy1 = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) -
+			(((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+
+		fy1 *= -1;
+
+		//zl *= -1;
+		//zdw *= -1;
+	}
+	else
+	{
+		fy = ((st.Current_Map.sector[sector_id].base_y + st.Current_Map.sector[sector_id].floor_y_down) - st.Camera.position.y) * st.Camera.dimension.y;
+		fy1 = (st.Current_Map.sector[sector_id].base_y + st.Current_Map.sector[sector_id].floor_y_down) -
+			(((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+
+		
+	}
+
+	
 
 	if (ldist == 1 && sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 	{
@@ -9657,7 +9678,7 @@ uint32 LoadMap(const char *name)
 	fread(st.Current_Map.sector,sizeof(_SECTOR),st.Current_Map.num_sector,file);
 	fread(lights,sizeof(_MGMLIGHT),st.Current_Map.num_lights,file);
 	
-
+	
 	for(i=0;i<st.Current_Map.num_lights;i++)
 	{
 		st.game_lightmaps[i+1].alpha=lights[i].alpha;
@@ -9681,11 +9702,12 @@ uint32 LoadMap(const char *name)
 		memcpy(&st.game_lightmaps[i+1].t_pos2,lights[i].t_pos2,16*sizeof(uPos16));
 
 		st.game_lightmaps[i+1].stat=1;
-
+		/*
 		if(st.game_lightmaps[i+1].alpha)
 			st.game_lightmaps[i+1].data=malloc(st.game_lightmaps[i+1].T_w*st.game_lightmaps[i+1].T_h*4);
 		else
 			st.game_lightmaps[i+1].data=malloc(st.game_lightmaps[i+1].T_w*st.game_lightmaps[i+1].T_h*3);
+			*/
 	}
 
 	/*

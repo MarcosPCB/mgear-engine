@@ -6,7 +6,6 @@
 
 PLAYERC playerc;
 
-
 uint16 WriteCFG()
 {
 	FILE *file;
@@ -698,26 +697,41 @@ int main(int argc, char *argv[])
 
 	st.FPSYes=1;
 
+	PreInit("mgear", argc, argv);
+
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,L"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
 			Quit();
+
+	strcpy(st.LogName, "mgear.log");
 
 	Init();
 
 	strcpy(st.WindowTitle,"mGear Test Demo");
 
-	OpenFont("font/arial.ttf","arial",ARIAL,128);
-	OpenFont("font/ftp.ttf","ftp",FIGHTFONT,128);
+	OpenFont("Font/Roboto-Regular.ttf", "arial", 0, 128);
+	OpenFont("Font/Roboto-Bold.ttf", "arial bold", 1, 128);
 
 	InitMGG();
 
-	if(LoadMGG(&mgg_sys[0],"data/UI.mgg")==NULL)
+	if (LoadMGG(&mgg_sys[0], "data/mEngUI.mgg") == NULL)
 	{
 		LogApp("Could not open UI mgg");
 		Quit();
 	}
 
 	UILoadSystem("UI_Sys.cfg");
+
+	if (argc > 0)
+	{
+		for (uint8 i = 0; i < argc; i++)
+		{
+			if (strcmp(argv[i], "-p") == NULL)
+				strcpy(prj_path, argv[i + 1]);
+		}
+	}
+
+	SetCurrentDirectory(prj_path);
 
 	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
 	st.num_sprites=0;
@@ -727,18 +741,17 @@ int main(int argc, char *argv[])
 
 	Renderer(1);
 
-	LoadSpriteList("sprite.list");
+	LoadSpriteList("sprite.slist");
 
-	LoadMGGList("mgg.list");
+	//LoadMGGList("mgg.list");
 
-	LoadSoundList("sound.list");
+	LoadSoundList("Data/Audio/sound.list");
 
 	st.gt=MAIN_MENU;
+	st.viewmode = 31 + 64;
 
 	curr_tic=GetTicks();
 	delta=1;
-
-	st.viewmode=31;
 
 	st.Developer_Mode = 1;
 
@@ -750,18 +763,22 @@ int main(int argc, char *argv[])
 
 	DefineParticle(0, 0, 5, 0, 0, 0, 64, SparkPart);
 
+	SETENGINEPATH;
 
 	while(!st.quit)
 	{
 		if(st.FPSYes)
 			FPSCounter();
 
+		while (PollEvent(&events))
+		{
+			WindowEvents();
+		}
+
 		loops=0;
 		while(GetTicks() > curr_tic && loops < 10)
 		{
 			Finish();
-
-			InputProcess();
 
 			if (st.gt == MAIN_MENU)
 				Menu();
@@ -787,7 +804,7 @@ int main(int argc, char *argv[])
 
 		if(st.gt==INGAME)
 		{
-			BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);
+			//BASICBKD(st.Current_Map.amb_color.r,st.Current_Map.amb_color.g,st.Current_Map.amb_color.b);
 			DrawMap();
 			DrawMisc();
 		}
@@ -795,6 +812,8 @@ int main(int argc, char *argv[])
 		UIMain_DrawSystem();
 
 		Renderer(0);
+
+		SwapBuffer(wn);
 	}
 
 	StopAllSounds();

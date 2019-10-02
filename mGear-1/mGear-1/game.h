@@ -39,6 +39,8 @@ struct _PLAYER_BSE
 	int16 i;
 };
 
+char prj_path[256];
+
 typedef struct _PLAYER_BSE PLAYERC;
 
 //Base Sequences
