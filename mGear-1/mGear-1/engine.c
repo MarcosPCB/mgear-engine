@@ -8634,7 +8634,7 @@ uint32 PlayMovie(const char *name)
 	rewind(mgv->file);
 	fread(header,21,1,mgv->file);
 
-	if(strcmp(header,"MGV File Version 1.0")!=NULL)
+	if(strcmp(header,"MGV File Version 1.1")!=NULL)
 	{
 		LogApp("Invalid MGV file header %s",name);
 		fclose(mgv->file);
@@ -8675,7 +8675,7 @@ uint32 PlayMovie(const char *name)
 	}
 
 	//rewind(mgv->file);
-	fseek(mgv->file,mgv->totalsize,SEEK_SET);
+	fseek(mgv->file,mgvt.sound_seeker,SEEK_SET);
 
 	buffer=malloc(mgvt.sound_buffer_lenght);
 	fread(buffer,mgvt.sound_buffer_lenght,1,mgv->file);
@@ -8737,36 +8737,47 @@ uint32 PlayMovie(const char *name)
 	glBindTexture(GL_TEXTURE_2D, tex);
 	//glGenerateMipmap(GL_TEXTURE_2D);
 
+	framedata = texdata = NULL;
+
 	while(st.PlayingVideo)
 	{
-
-		WindowEvents();
-
+		
+		while (PollEvent(&events))
+		{
+			WindowEvents();
+		}
+		
 		if(st.quit) break;
 		
 		//glClear(GL_COLOR_BUFFER_BIT);
 		
-		FMOD_System_Update(st.sound_sys.Sound_System);
+		//FMOD_System_Update(st.sound_sys.Sound_System);
 		
 		FMOD_Channel_IsPlaying(ch,&p);
 
 		if(!p) break;
 		
 		FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
-
+		
 		i = (ms*mgv->fps) / 1000;
 		
 		if (i > 0)
 		{
 			if (framedata)
+			{
 				free(framedata);
+				framedata = NULL;
+			}
 
 			if (texdata)
+			{
 				free(texdata);
+				texdata = NULL;
+			}
 		}
-
+		
 		if (i>mgv->num_frames - 1) break;
-
+		
 		rewind(mgv->file);
 		fseek(mgv->file, mgv->seeker[i], SEEK_SET);
 
@@ -8784,7 +8795,9 @@ uint32 PlayMovie(const char *name)
 
 		glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, texdata);
 
-		glGenerateMipmap(GL_TEXTURE_2D);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		
 		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
@@ -8792,6 +8805,8 @@ uint32 PlayMovie(const char *name)
 
 		//if(st.FPSYes)
 			FPSCounter();
+
+			LogApp("Frame %d", i);
 		
 	}
 

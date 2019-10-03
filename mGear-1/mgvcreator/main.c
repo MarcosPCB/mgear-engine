@@ -172,6 +172,10 @@ int main(int argc, char *argv[])
 	fseek(file,sizeof(MGVFORMAT)+21,SEEK_SET);
 	fwrite(framesize,sizeof(uint32),mgv.num_frames + 1,file);
 
+	fseek(file, 21, SEEK_SET);
+	mgv.sound_seeker = totalsize;
+	fwrite(&mgv, sizeof(MGVFORMAT), 1, file);
+
 	printf("Writing audio data...\n");
 
 	//rewind(file);

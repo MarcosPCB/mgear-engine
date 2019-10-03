@@ -765,6 +765,9 @@ int main(int argc, char *argv[])
 
 	SETENGINEPATH;
 
+	PlayMovie("Data/Movies/SIB_Logo.mgv");
+	PlayMovie("_prj_raw/MGVs/Intro.mgv");
+
 	while(!st.quit)
 	{
 		if(st.FPSYes)
