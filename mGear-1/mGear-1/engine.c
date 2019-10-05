@@ -8588,9 +8588,106 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 
 #if (defined MGEAR_CLEAN_VERSION && defined MGEAR_VIDEO_PLAYER) || !defined MGEAR_CLEAN_VERSION
 
+int thread_PM_Frame_Loader(void *data)
+{
+	uint8 *framedata = NULL, *texdata = NULL,  finish = 0;
+	struct PMData *mgv = data;
+	uint32 w, h, c, fsize, curr_frame;
+
+	while (!finish)
+	{
+		SDL_SemWait(mgv->sem);
+
+		if (mgv->curr_frame >= mgv->num_frames || mgv->seen == -1)
+		{
+			SDL_SemPost(mgv->sem);
+			return 0;
+		}
+
+		fseek(mgv->file, mgv->seeker[mgv->curr_frame], SEEK_SET);
+
+		framedata = malloc(mgv->framesize[mgv->curr_frame]);
+
+		if (framedata == NULL)
+		{
+			SDL_SemPost(mgv->sem);
+			LogApp("Unable to allocate memory for MGV frame %d", mgv->curr_frame);
+			continue;
+		}
+
+		fread(framedata, mgv->framesize[mgv->curr_frame], 1, mgv->file);
+
+		fsize = mgv->framesize[mgv->curr_frame];
+
+		curr_frame = mgv->curr_frame;
+
+		mgv->curr_frame++;
+
+		SDL_SemPost(mgv->sem);
+
+
+		texdata = stbi_load_from_memory(framedata, fsize, &w, &h, &c, NULL);
+
+
+		SDL_SemWait(mgv->sem);
+
+		mgv->loaded_frames_addr[curr_frame] = texdata;
+		mgv->w = w;
+		mgv->h = h;
+		mgv->channel = c;
+		mgv->loaded_frames++;
+
+		SDL_SemPost(mgv->sem);
+
+
+		texdata = NULL;
+		free(framedata);
+		framedata = NULL;
+	}
+
+}
+
+int thread_PM_Frame_Deleter(void *data)
+{
+	struct PMData *mgv = data;
+	uint8 finish = 0;
+	int32 seen = 0;
+
+	while (!finish)
+	{
+		SDL_SemWait(mgv->sem);
+
+		if (seen < mgv->seen)
+		{
+			free(mgv->loaded_frames_addr[mgv->seen - 1]);
+			mgv->loaded_frames_addr[mgv->seen - 1] = NULL;
+			seen = mgv->seen;
+		}
+
+		if (seen >= mgv->num_frames || mgv->seen == -1)
+		{
+			for (uint32 i = 0; i < mgv->num_frames; i++)
+			{
+				if (mgv->loaded_frames_addr[i] != NULL)
+				{
+					free(mgv->loaded_frames_addr[i]);
+					mgv->loaded_frames_addr[i] = NULL;
+				}
+			}
+
+			SDL_SemPost(mgv->sem);
+			return 0;
+		}
+
+		SDL_SemPost(mgv->sem);
+
+	}
+
+}
+
 uint32 PlayMovie(const char *name)
 {
-	SDL_Thread *t;
+	SDL_Thread *t, *t2, *t3;
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
 	unsigned int ms, ms1, ms2, o;
 	int ms3, ms4;
@@ -8599,6 +8696,7 @@ uint32 PlayMovie(const char *name)
 	GLint unif;
 	GLint tex;
 	uint8 *framedata, *texdata;
+	struct PMData mgvtdata;
 
 	int w, h, channel;
 
@@ -8695,15 +8793,6 @@ uint32 PlayMovie(const char *name)
 	StopAllSounds();
 	
 	mgv->totalsize=sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32))+21;
-
-
-	y=FMOD_System_PlaySound(st.sound_sys.Sound_System,FMOD_CHANNEL_FREE,mgv->sound,0,&ch);
-
-	if(y!=FMOD_OK)
-	{
-		LogApp("Error while playing sound: %s",FMOD_ErrorString(y));
-		return 0;
-	}
 	
 	//Here's the video part!!
 	i=0;
@@ -8739,6 +8828,30 @@ uint32 PlayMovie(const char *name)
 
 	framedata = texdata = NULL;
 
+	mgvtdata.sem = SDL_CreateSemaphore(1);
+	mgvtdata.framesize = mgv->framesize;
+	mgvtdata.loaded_frames = mgvtdata.curr_frame = mgvtdata.seen = 0;
+	mgvtdata.loaded_frames_addr = calloc(mgv->num_frames, sizeof(uint32));
+	mgvtdata.seeker = mgv->seeker;
+	mgvtdata.file = mgv->file;
+	mgvtdata.num_frames = mgv->num_frames;
+
+	t = SDL_CreateThread(thread_PM_Frame_Loader, "FrameDec_1", &mgvtdata);
+	t2 = SDL_CreateThread(thread_PM_Frame_Loader, "FrameDec_2", &mgvtdata);
+	t3 = SDL_CreateThread(thread_PM_Frame_Deleter, "FrameDel", &mgvtdata);
+
+	SDL_Delay(100);
+
+	y = FMOD_System_PlaySound(st.sound_sys.Sound_System, FMOD_CHANNEL_FREE, mgv->sound, 0, &ch);
+
+	if (y != FMOD_OK)
+	{
+		LogApp("Error while playing sound: %s", FMOD_ErrorString(y));
+		return 0;
+	}
+
+	uint32 i2 = 0;
+
 	while(st.PlayingVideo)
 	{
 		
@@ -8751,7 +8864,7 @@ uint32 PlayMovie(const char *name)
 		
 		//glClear(GL_COLOR_BUFFER_BIT);
 		
-		//FMOD_System_Update(st.sound_sys.Sound_System);
+		FMOD_System_Update(st.sound_sys.Sound_System);
 		
 		FMOD_Channel_IsPlaying(ch,&p);
 
@@ -8760,7 +8873,8 @@ uint32 PlayMovie(const char *name)
 		FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
 		
 		i = (ms*mgv->fps) / 1000;
-		
+
+		/*
 		if (i > 0)
 		{
 			if (framedata)
@@ -8775,10 +8889,12 @@ uint32 PlayMovie(const char *name)
 				texdata = NULL;
 			}
 		}
-		
+		*/
+
 		if (i>mgv->num_frames - 1) break;
 		
-		rewind(mgv->file);
+		/*
+		//rewind(mgv->file);
 		fseek(mgv->file, mgv->seeker[i], SEEK_SET);
 
 		framedata = malloc(mgv->framesize[i]);
@@ -8792,12 +8908,40 @@ uint32 PlayMovie(const char *name)
 		fread(framedata, mgv->framesize[i], 1, mgv->file);
 
 		texdata = stbi_load_from_memory(framedata, mgv->framesize[i], &w, &h, &channel, NULL);
+		*/
 
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, texdata);
+		SDL_SemWait(mgvtdata.sem);
 
-		//glGenerateMipmap(GL_TEXTURE_2D);
+		if (i >= mgvtdata.loaded_frames)
+		{
+			mgvtdata.curr_frame = i + 1;
+			mgvtdata.seen = i;
+
+			SDL_SemPost(mgvtdata.sem);
+			continue;
+		}
+
+		framedata = malloc(mgvtdata.w*mgvtdata.h * 3);
+		
+		memcpy(framedata, mgvtdata.loaded_frames_addr[i], mgvtdata.w * mgvtdata.h * 3);
+		
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, mgvtdata.w, mgvtdata.h, 0, GL_RGB, GL_UNSIGNED_BYTE, framedata);
+
+		if (i2 < i)
+		{
+			i2 = i;
+			mgvtdata.seen++;
+		}
+		//free(mgvtdata.loaded_frames_addr[i]);
+		//mgvtdata.loaded_frames_addr[i] = NULL;
+
+		SDL_SemPost(mgvtdata.sem);
+
+		free(framedata);
+
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glGenerateMipmap(GL_TEXTURE_2D);
 		
 		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 
@@ -8806,8 +8950,7 @@ uint32 PlayMovie(const char *name)
 		//if(st.FPSYes)
 			FPSCounter();
 
-			LogApp("Frame %d", i);
-		
+		//LogApp("Frame %d", i);		
 	}
 
 	glEnable(GL_BLEND);
@@ -8815,11 +8958,21 @@ uint32 PlayMovie(const char *name)
 	glUseProgram(0);
 	glBindVertexArray(0);
 
-	if (framedata)
-		free(framedata);
+	//if (framedata)
+		//free(framedata);
 
-	if (texdata)
-		free(texdata);
+	//if (texdata)
+		//free(texdata);
+
+	SDL_SemWait(mgvtdata.sem);
+	mgvtdata.seen = -1;
+	SDL_SemPost(mgvtdata.sem);
+
+	SDL_WaitThread(t, NULL);
+	SDL_WaitThread(t2, NULL);
+	SDL_WaitThread(t3, NULL);
+
+	SDL_DestroySemaphore(mgvtdata.sem);
 
 	glDeleteTextures(1, &tex);
 	free(mgv->framesize);

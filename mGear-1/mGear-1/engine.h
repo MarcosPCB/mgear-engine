@@ -384,6 +384,20 @@ struct _MGV_
 
 typedef struct _MGV_ _MGV;
 
+struct PMData
+{
+	FILE *file;
+	uint32 *framesize;
+	uint32 num_frames;
+	uint32 *loaded_frames_addr;
+	uint32 loaded_frames;
+	uint32 curr_frame;
+	int32 seen;
+	uint32 *seeker;
+	SDL_sem *sem;
+	uint32 w, h, channel;
+};
+
 //This is where all map textures information stays
 //Each map has it's on set of MGG that can be shared between the other maps
 //Some MGGs that contains the menu and some UI textures are basic and contain it's own structure
