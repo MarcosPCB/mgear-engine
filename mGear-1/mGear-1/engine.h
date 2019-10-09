@@ -1152,6 +1152,7 @@ void _inline WTScf(float *x, float *y); ////No camera position in calculation
 
 #ifndef MGEAR_CLEAN_VERSION
 uint32 PlayMovie(const char *name);
+uint32 PlayBGVideo(const char *name, uint8 play);
 #endif
 
 void ResetVB();
@@ -1272,6 +1273,7 @@ uint8 CheckCollisionPossibility(uint16 id, uint16 id2, int32 *dist); //Checks if
 #endif
 
 void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
+void UIezData(int32 x, int32 y, float size, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int8 layer);
 void HudData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z);
 void StringUI2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);

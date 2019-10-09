@@ -3418,8 +3418,10 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 			if(mgg->atlas[i]==NULL)
 				LogApp("Error loading texture from memory");
 
+#ifndef MGEAR_CLEAN_VERSION
 			if (MGIcolor == 4 && shadowtex == 1)
 				mgg->frames[i + mggf.num_frames].Sdata = GenerateShadowTexture(imgdata, imgw, imgh, MGIcolor);
+#endif
 
 			if (data)						
 				free(data);
@@ -3569,8 +3571,10 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 			if(mgg->frames[k].data==NULL)
 				LogApp("Error loading texture from memory");
 
+#ifndef MGEAR_CLEAN_VERSION
 			if (MGIcolor == 4 && shadowtex == 1)
 				mgg->frames[k].Sdata = GenerateShadowTexture(imgdata, imgw, imgh, MGIcolor);
+#endif
 
 			if (data)						
 				free(data);
@@ -6929,6 +6933,37 @@ void UIData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 	st.num_calls++;
 }
 
+
+//Easier call for UI data with less arguments and fixed aspect size ratio
+void UIezData(int32 x, int32 y, float size, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int8 layer)
+{
+	uint16 i = st.num_calls;
+
+	int32 sx = data.w, sy = data.h;
+
+	STW(&sx, &sy);
+
+	st.renderer.ppline[i].pos.x = x;
+	st.renderer.ppline[i].pos.y = y;
+	st.renderer.ppline[i].pos.z = layer;
+	st.renderer.ppline[i].size.x = (float) size * sx;
+	st.renderer.ppline[i].size.y = (float) size * sy;
+	st.renderer.ppline[i].ang = ang;
+	st.renderer.ppline[i].color.r = r;
+	st.renderer.ppline[i].color.g = g;
+	st.renderer.ppline[i].color.b = b;
+	st.renderer.ppline[i].color.a = a;
+	st.renderer.ppline[i].tex_panx = 0;
+	st.renderer.ppline[i].tex_pany = 0;
+	st.renderer.ppline[i].tex_sizex = TEX_PAN_RANGE;
+	st.renderer.ppline[i].tex_sizey = TEX_PAN_RANGE;
+	st.renderer.ppline[i].data = data;
+
+	st.renderer.ppline[i].type = UI_CALL;
+
+	st.num_calls++;
+}
+
 #ifndef MGEAR_CLEAN_VERSION
 
 void GraphicData(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z)
@@ -8685,13 +8720,229 @@ int thread_PM_Frame_Deleter(void *data)
 
 }
 
+uint32 PlayBGVideo(const char *name, uint8 play)
+{
+	static SDL_Thread *t = NULL, *t2 = NULL, *t3 = NULL;
+	int ReturnVal, ids, ReturnVal2, ReturnVal3;
+	unsigned int ms, ms1, ms2, o;
+	int ms3, ms4;
+	uint32 i=0, j=0;
+	char header[21];
+	GLint unif;
+	GLint tex;
+	uint8 *framedata, *texdata;
+	static struct PMData mgvtdata;
+
+	int w, h, channel;
+
+	uint8 *buffer;
+
+	FMOD_RESULT y;
+	static FMOD_CREATESOUNDEXINFO info;
+	static FMOD_CHANNEL *ch = NULL;
+
+	uint8 id;
+
+	FMOD_BOOL p;
+	
+	_MGVFORMAT mgvt;
+	static _MGV *mgv = NULL;
+
+	float vertex[12]={
+		-1,-1,0, 1,-1,0,
+		1,1,0, -1,1,0 };
+
+	float texcoord[8]={
+		0,1, 1,1,
+		1,0, 0,0 };
+
+	static int8 Playing = 0, looped = 0;
+	static TEX_DATA texd;
+
+	if (!Playing && play == 1)
+	{
+
+		mgv = (_MGV*)malloc(sizeof(_MGV));
+
+		if ((mgv->file = fopen(name, "rb")) == NULL)
+		{
+			LogApp("Error opening MGV file %s", name);
+			return 0;
+		}
+
+		rewind(mgv->file);
+		fread(header, 21, 1, mgv->file);
+
+		if (strcmp(header, "MGV File Version 1.1") != NULL)
+		{
+			LogApp("Invalid MGV file header %s", name);
+			fclose(mgv->file);
+			return 0;
+		}
+
+		rewind(mgv->file);
+		fseek(mgv->file, 21, SEEK_SET);
+
+		fread(&mgvt, sizeof(_MGVFORMAT), 1, mgv->file);
+
+		mgv->fps = mgvt.fps;
+		mgv->num_frames = mgvt.num_frames;
+
+		mgv->framesize = malloc((mgv->num_frames + 1)*sizeof(uint32));
+
+		fseek(mgv->file, sizeof(_MGVFORMAT)+21, SEEK_SET);
+
+		fread(mgv->framesize, sizeof(uint32), mgv->num_frames + 1, mgv->file);
+
+		mgv->totalsize = sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32)) + 21;
+
+		mgv->frames = (_MGVTEX*)malloc((mgv->num_frames + 1)*sizeof(_MGVTEX));
+		mgv->seeker = (uint32*)malloc((mgv->num_frames + 1)*sizeof(uint32));
+
+		for (o = 0; o < mgv->num_frames + 1; o++)
+		{
+
+			if (o == 0)
+				mgv->seeker[0] = mgv->totalsize;
+			else
+			{
+				mgv->seeker[o] = mgv->seeker[o - 1];
+				mgv->seeker[o] += mgv->framesize[o - 1];
+			}
+
+			mgv->totalsize += mgv->framesize[o];
+		}
+
+		//rewind(mgv->file);
+		fseek(mgv->file, mgvt.sound_seeker, SEEK_SET);
+
+		buffer = malloc(mgvt.sound_buffer_lenght);
+		fread(buffer, mgvt.sound_buffer_lenght, 1, mgv->file);
+
+		memset(&info, 0, sizeof(info));
+		info.length = mgvt.sound_buffer_lenght;
+		info.cbsize = sizeof(info);
+
+		y = FMOD_System_CreateSound(st.sound_sys.Sound_System, (const char*)buffer, FMOD_HARDWARE | FMOD_OPENMEMORY | FMOD_LOOP_NORMAL, &info, &mgv->sound);
+
+		if (y != FMOD_OK)
+		{
+			LogApp("Error while creating sound: %s", FMOD_ErrorString(y));
+			return 0;
+		}
+
+		free(buffer);
+
+		//StopAllSounds();
+
+		mgv->totalsize = sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32)) + 21;
+
+		//Here's the video part!!
+		i = 0;
+		glGenTextures(1, &texd.data);
+		//glGenerateMipmap(GL_TEXTURE_2D);
+
+		framedata = texdata = NULL;
+
+		mgvtdata.sem = SDL_CreateSemaphore(1);
+		mgvtdata.framesize = mgv->framesize;
+		mgvtdata.loaded_frames = mgvtdata.curr_frame = mgvtdata.seen = 0;
+		mgvtdata.loaded_frames_addr = calloc(mgv->num_frames, sizeof(uint32));
+		mgvtdata.seeker = mgv->seeker;
+		mgvtdata.file = mgv->file;
+		mgvtdata.num_frames = mgv->num_frames;
+
+		t = SDL_CreateThread(thread_PM_Frame_Loader, "FrameDec_1", &mgvtdata);
+		t2 = SDL_CreateThread(thread_PM_Frame_Loader, "FrameDec_2", &mgvtdata);
+		//t3 = SDL_CreateThread(thread_PM_Frame_Deleter, "FrameDel", &mgvtdata);
+
+		SDL_Delay(100);
+
+		y = FMOD_System_PlaySound(st.sound_sys.Sound_System, FMOD_CHANNEL_FREE, mgv->sound, 0, &ch);
+
+		if (y != FMOD_OK)
+		{
+			LogApp("Error while playing sound: %s", FMOD_ErrorString(y));
+			return 0;
+		}
+
+		Playing = 1;
+	}
+
+	if (play == 0) Playing = 0;
+
+	glBindTexture(GL_TEXTURE_2D, texd.data);
+		
+	FMOD_System_Update(st.sound_sys.Sound_System);
+		
+	FMOD_Channel_IsPlaying(ch,&p);
+		
+	FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
+	
+
+	i = (ms*mgv->fps) / 1000;
+
+	if (i > mgv->num_frames - 1)
+	{
+		FMOD_Channel_SetPosition(ch, 0, FMOD_TIMEUNIT_MS);
+		i = 0;
+	}
+
+	SDL_SemWait(mgvtdata.sem);
+
+	if (i >= mgvtdata.loaded_frames) i -= 1;
+		
+	glBindTexture(GL_TEXTURE_2D, texd.data);
+	glTexImage2D(GL_TEXTURE_2D, 0, 3, mgvtdata.w, mgvtdata.h, 0, GL_RGB, GL_UNSIGNED_BYTE, mgvtdata.loaded_frames_addr[i]);
+
+	texd.w = mgvtdata.w;
+	texd.h = mgvtdata.h;
+	texd.channel = 3;
+	texd.vb_id = -1;
+
+	SDL_SemPost(mgvtdata.sem);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	UIData(8192, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, 32768, 32768, texd, 255, 7);
+		
+	if (Playing == 0)
+	{
+		SDL_WaitThread(t, NULL);
+		SDL_WaitThread(t2, NULL);
+
+		SDL_DestroySemaphore(mgvtdata.sem);
+
+		for (i = 0; i < mgvtdata.loaded_frames; i++)
+		{
+			if (mgvtdata.loaded_frames_addr[i] != NULL)
+			{
+				free(mgvtdata.loaded_frames_addr[i]);
+				mgvtdata.loaded_frames_addr[i] = NULL;
+			}
+		}
+
+		glDeleteTextures(1, &texd.data);
+		free(mgv->framesize);
+		free(mgv->frames);
+		free(mgv->seeker);
+		FMOD_Channel_Stop(ch);
+		FMOD_Sound_Release(mgv->sound);
+		fclose(mgv->file);
+	}
+
+	return 1;
+}
+
 uint32 PlayMovie(const char *name)
 {
 	SDL_Thread *t, *t2, *t3;
 	int ReturnVal, ids, ReturnVal2, ReturnVal3;
 	unsigned int ms, ms1, ms2, o;
 	int ms3, ms4;
-	 uint32 i=0, j=0;
+	uint32 i = 0, j = 0;
 	char header[21];
 	GLint unif;
 	GLint tex;
@@ -8709,116 +8960,116 @@ uint32 PlayMovie(const char *name)
 	uint8 id;
 
 	FMOD_BOOL p;
-	
+
 	_MGVFORMAT mgvt;
 	_MGV *mgv;
 
-	float vertex[12]={
-		-1,-1,0, 1,-1,0,
-		1,1,0, -1,1,0 };
+	float vertex[12] = {
+		-1, -1, 0, 1, -1, 0,
+		1, 1, 0, -1, 1, 0 };
 
-	float texcoord[8]={
-		0,1, 1,1,
-		1,0, 0,0 };
+	float texcoord[8] = {
+		0, 1, 1, 1,
+		1, 0, 0, 0 };
 
-	mgv=(_MGV*) malloc(sizeof(_MGV));
+	mgv = (_MGV*)malloc(sizeof(_MGV));
 
-	if((mgv->file=fopen(name,"rb"))==NULL)
+	if ((mgv->file = fopen(name, "rb")) == NULL)
 	{
-		LogApp("Error opening MGV file %s",name);
-				return 0;
+		LogApp("Error opening MGV file %s", name);
+		return 0;
 	}
 
 	rewind(mgv->file);
-	fread(header,21,1,mgv->file);
+	fread(header, 21, 1, mgv->file);
 
-	if(strcmp(header,"MGV File Version 1.1")!=NULL)
+	if (strcmp(header, "MGV File Version 1.1") != NULL)
 	{
-		LogApp("Invalid MGV file header %s",name);
+		LogApp("Invalid MGV file header %s", name);
 		fclose(mgv->file);
 		return 0;
 	}
 
 	rewind(mgv->file);
-	fseek(mgv->file,21,SEEK_SET);
+	fseek(mgv->file, 21, SEEK_SET);
 
-	fread(&mgvt,sizeof(_MGVFORMAT),1,mgv->file);
+	fread(&mgvt, sizeof(_MGVFORMAT), 1, mgv->file);
 
-	mgv->fps=mgvt.fps;
-	mgv->num_frames=mgvt.num_frames;
-	
-	mgv->framesize=malloc((mgv->num_frames + 1)*sizeof(uint32));
+	mgv->fps = mgvt.fps;
+	mgv->num_frames = mgvt.num_frames;
 
-	fseek(mgv->file,sizeof(_MGVFORMAT)+21,SEEK_SET);
+	mgv->framesize = malloc((mgv->num_frames + 1)*sizeof(uint32));
 
-	fread(mgv->framesize,sizeof(uint32),mgv->num_frames + 1,mgv->file);
+	fseek(mgv->file, sizeof(_MGVFORMAT)+21, SEEK_SET);
 
-	mgv->totalsize=sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32))+21;
+	fread(mgv->framesize, sizeof(uint32), mgv->num_frames + 1, mgv->file);
 
-	mgv->frames=(_MGVTEX*) malloc((mgv->num_frames + 1)*sizeof(_MGVTEX)); 
-	mgv->seeker=(uint32*) malloc((mgv->num_frames + 1)*sizeof(uint32));
+	mgv->totalsize = sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32)) + 21;
 
-	for(o=0;o<mgv->num_frames + 1;o++)
+	mgv->frames = (_MGVTEX*)malloc((mgv->num_frames + 1)*sizeof(_MGVTEX));
+	mgv->seeker = (uint32*)malloc((mgv->num_frames + 1)*sizeof(uint32));
+
+	for (o = 0; o<mgv->num_frames + 1; o++)
 	{
-		
-		if(o==0)
-			mgv->seeker[0]=mgv->totalsize;
+
+		if (o == 0)
+			mgv->seeker[0] = mgv->totalsize;
 		else
 		{
-			mgv->seeker[o]=mgv->seeker[o-1];
-			mgv->seeker[o]+=mgv->framesize[o-1];
+			mgv->seeker[o] = mgv->seeker[o - 1];
+			mgv->seeker[o] += mgv->framesize[o - 1];
 		}
 
-		mgv->totalsize+=mgv->framesize[o];
+		mgv->totalsize += mgv->framesize[o];
 	}
 
 	//rewind(mgv->file);
-	fseek(mgv->file,mgvt.sound_seeker,SEEK_SET);
+	fseek(mgv->file, mgvt.sound_seeker, SEEK_SET);
 
-	buffer=malloc(mgvt.sound_buffer_lenght);
-	fread(buffer,mgvt.sound_buffer_lenght,1,mgv->file);
-	
-	memset(&info,0,sizeof(info));
-	info.length=mgvt.sound_buffer_lenght;
-	info.cbsize=sizeof(info);
+	buffer = malloc(mgvt.sound_buffer_lenght);
+	fread(buffer, mgvt.sound_buffer_lenght, 1, mgv->file);
 
-	y=FMOD_System_CreateSound(st.sound_sys.Sound_System,(const char*) buffer,FMOD_HARDWARE | FMOD_OPENMEMORY,&info,&mgv->sound);
+	memset(&info, 0, sizeof(info));
+	info.length = mgvt.sound_buffer_lenght;
+	info.cbsize = sizeof(info);
 
-	if(y!=FMOD_OK)
+	y = FMOD_System_CreateSound(st.sound_sys.Sound_System, (const char*)buffer, FMOD_HARDWARE | FMOD_OPENMEMORY, &info, &mgv->sound);
+
+	if (y != FMOD_OK)
 	{
-		LogApp("Error while creating sound: %s",FMOD_ErrorString(y));
+		LogApp("Error while creating sound: %s", FMOD_ErrorString(y));
 		return 0;
 	}
 
 	StopAllSounds();
-	
-	mgv->totalsize=sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32))+21;
-	
-	//Here's the video part!!
-	i=0;
 
-	st.PlayingVideo=1;
+	mgv->totalsize = sizeof(_MGVFORMAT)+((mgv->num_frames + 1)*sizeof(uint32)) + 21;
+
+	//Here's the video part!!
+	i = 0;
+
+	st.PlayingVideo = 1;
 
 	glDisable(GL_BLEND);
 
-	glBindFramebuffer(GL_FRAMEBUFFER,0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(st.renderer.Program[2]);
 	glBindVertexArray(vbd.vao_id);
 
-	unif=glGetUniformLocation(st.renderer.Program[2],"texu");
-	glUniform1i(unif,0);
+	unif = glGetUniformLocation(st.renderer.Program[2], "texu");
+	glUniform1i(unif, 0);
 
-	unif=glGetUniformLocation(st.renderer.Program[2],"normal");
-	glUniform1f(unif,0);
+	unif = glGetUniformLocation(st.renderer.Program[2], "normal");
+	glUniform1f(unif, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER,vbd.vbo_id);
+	glBindBuffer(GL_ARRAY_BUFFER, vbd.vbo_id);
 
-	glBufferSubData(GL_ARRAY_BUFFER,0,12*sizeof(float),vertex);
-	glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),texcoord);
-	glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),vbd.color);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), vertex);
+	glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), texcoord);
+	glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)), 16 * sizeof(GLubyte), vbd.color);
 
 	glActiveTexture(GL_TEXTURE0);
 
@@ -8852,63 +9103,29 @@ uint32 PlayMovie(const char *name)
 
 	uint32 i2 = 0;
 
-	while(st.PlayingVideo)
+	while (st.PlayingVideo)
 	{
-		
+
 		while (PollEvent(&events))
 		{
 			WindowEvents();
 		}
-		
-		if(st.quit) break;
-		
-		//glClear(GL_COLOR_BUFFER_BIT);
-		
-		FMOD_System_Update(st.sound_sys.Sound_System);
-		
-		FMOD_Channel_IsPlaying(ch,&p);
 
-		if(!p) break;
-		
-		FMOD_Channel_GetPosition(ch,&ms,FMOD_TIMEUNIT_MS);
-		
+		if (st.quit) break;
+
+		//glClear(GL_COLOR_BUFFER_BIT);
+
+		FMOD_System_Update(st.sound_sys.Sound_System);
+
+		FMOD_Channel_IsPlaying(ch, &p);
+
+		if (!p) break;
+
+		FMOD_Channel_GetPosition(ch, &ms, FMOD_TIMEUNIT_MS);
+
 		i = (ms*mgv->fps) / 1000;
 
-		/*
-		if (i > 0)
-		{
-			if (framedata)
-			{
-				free(framedata);
-				framedata = NULL;
-			}
-
-			if (texdata)
-			{
-				free(texdata);
-				texdata = NULL;
-			}
-		}
-		*/
-
 		if (i>mgv->num_frames - 1) break;
-		
-		/*
-		//rewind(mgv->file);
-		fseek(mgv->file, mgv->seeker[i], SEEK_SET);
-
-		framedata = malloc(mgv->framesize[i]);
-
-		if (framedata == NULL)
-		{
-			LogApp("Unable to allocate memory for MGV frame %d", i);
-			continue;
-		}
-
-		fread(framedata, mgv->framesize[i], 1, mgv->file);
-
-		texdata = stbi_load_from_memory(framedata, mgv->framesize[i], &w, &h, &channel, NULL);
-		*/
 
 		SDL_SemWait(mgvtdata.sem);
 
@@ -8921,11 +9138,11 @@ uint32 PlayMovie(const char *name)
 			continue;
 		}
 
-		framedata = malloc(mgvtdata.w*mgvtdata.h * 3);
-		
-		memcpy(framedata, mgvtdata.loaded_frames_addr[i], mgvtdata.w * mgvtdata.h * 3);
-		
-		glTexImage2D(GL_TEXTURE_2D, 0, 3, mgvtdata.w, mgvtdata.h, 0, GL_RGB, GL_UNSIGNED_BYTE, framedata);
+		//framedata = malloc(mgvtdata.w*mgvtdata.h * 3);
+
+		//memcpy(framedata, mgvtdata.loaded_frames_addr[i], mgvtdata.w * mgvtdata.h * 3);
+
+		glTexImage2D(GL_TEXTURE_2D, 0, 3, mgvtdata.w, mgvtdata.h, 0, GL_RGB, GL_UNSIGNED_BYTE, mgvtdata.loaded_frames_addr[i]);
 
 		if (i2 < i)
 		{
@@ -8937,20 +9154,18 @@ uint32 PlayMovie(const char *name)
 
 		SDL_SemPost(mgvtdata.sem);
 
-		free(framedata);
+		//free(framedata);
 
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glGenerateMipmap(GL_TEXTURE_2D);
-		
-		glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
+
+		glDrawRangeElements(GL_TRIANGLES, 0, 6, 6, GL_UNSIGNED_SHORT, 0);
 
 		SDL_GL_SwapWindow(wn);
 
 		//if(st.FPSYes)
-			FPSCounter();
-
-		//LogApp("Frame %d", i);		
+		FPSCounter();
 	}
 
 	glEnable(GL_BLEND);
@@ -8959,10 +9174,10 @@ uint32 PlayMovie(const char *name)
 	glBindVertexArray(0);
 
 	//if (framedata)
-		//free(framedata);
+	//free(framedata);
 
 	//if (texdata)
-		//free(texdata);
+	//free(texdata);
 
 	SDL_SemWait(mgvtdata.sem);
 	mgvtdata.seen = -1;
@@ -8980,10 +9195,12 @@ uint32 PlayMovie(const char *name)
 	free(buffer);
 	FMOD_Channel_Stop(ch);
 	FMOD_Sound_Release(mgv->sound);
-	st.PlayingVideo=0;
+	st.PlayingVideo = 0;
+
+	fclose(mgv->file);
 
 	return 1;
-	
+
 }
 
 #ifdef ENGINEER

@@ -6,9 +6,23 @@ void Menu()
 {
 	int16 i, j;
 
-	if(UIStringButton(8192,4096-1024,"New Game",FIGHTFONT,4096,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	static float a_anim = 0.00f, rgb_anim = 0.0f;
+
+	if (a_anim < 255.0f && rgb_anim < 255.0f)
 	{
-		LoadMap("STAGE5.mgm");
+		a_anim += 0.5f;
+		rgb_anim += 0.5f;
+	}
+
+	PlayBGVideo("Data/Movies/Menu.mgv", 1);
+
+	UIezData(2048 + 1536, 1536, 0.3f, 0, rgb_anim, rgb_anim, rgb_anim, mgg_sys[1].frames[0], a_anim, 0);
+
+	if(UIStringButton(1024,4096-1024,"New Game",FIGHTFONT,6000,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	{
+		PlayBGVideo("Data/Movies/Menu.mgv", 0);
+		StopMusic();
+		LoadMap(StringFormat("%s/test.mgm", prj_path));
 
 		for(i=0,j=0;i<st.Current_Map.num_mgg;i++)
 		{
@@ -39,7 +53,15 @@ void Menu()
 		PreGameEvent();
 	}
 
-	if(UIStringButton(8192,4096+1024,"Quit",FIGHTFONT,4096,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
+	if (UIStringButton(1024, 4096, "Load Game", FIGHTFONT, 6000, 6, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
+	{
+	}
+
+	if (UIStringButton(1024, 4096 + 1024, "Options", FIGHTFONT, 6000, 6, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
+	{
+	}
+
+	if(UIStringButton(1024, 4096 + 2048,"Quit",FIGHTFONT,6000,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
 		st.quit=1;
 }
 

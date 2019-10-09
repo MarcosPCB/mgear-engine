@@ -710,7 +710,6 @@ int main(int argc, char *argv[])
 	strcpy(st.WindowTitle,"mGear Test Demo");
 
 	OpenFont("Font/Roboto-Regular.ttf", "arial", 0, 128);
-	OpenFont("Font/Roboto-Bold.ttf", "arial bold", 1, 128);
 
 	InitMGG();
 
@@ -747,6 +746,10 @@ int main(int argc, char *argv[])
 
 	LoadSoundList("Data/Audio/sound.list");
 
+	LoadMGG(&mgg_sys[1], "Data/Textures/Menu.mgg");
+
+	OpenFont("UI/Fonts/Bebas-Neue.otf", "Bebas", 1, 128);
+
 	st.gt=MAIN_MENU;
 	st.viewmode = 31 + 64;
 
@@ -766,7 +769,10 @@ int main(int argc, char *argv[])
 	SETENGINEPATH;
 
 	PlayMovie("Data/Movies/SIB_Logo.mgv");
-	PlayMovie("_prj_raw/MGVs/Intro.mgv");
+	PlayMovie("Data/Movies/Intro.mgv");
+
+	PlayMusic(3, 1);
+	SDL_Delay(1000);
 
 	while(!st.quit)
 	{
