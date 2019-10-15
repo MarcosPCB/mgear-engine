@@ -1047,6 +1047,8 @@ struct _SETTINGS_
 
 	char CurrPath[2048];
 	char LogName[32];
+
+	TEX_DATA BasicTex;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
@@ -1144,7 +1146,7 @@ void _inline STWcf(float *x, float *y); //No camera position in calculation
 
 void _fastcall WTS(int32 *x, int32 *y);
 
-void _inline WTSci(int32 *x, int32 *y); //No camera position in calculation
+void _fastcall WTSci(int32 *x, int32 *y); //No camera position in calculation
 
 void _inline WTSf(float *x, float *y);
 

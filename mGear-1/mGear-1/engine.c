@@ -281,7 +281,7 @@ void _fastcall WTS(int32 *x, int32 *y)
 	*y=((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
 }
 
-void _inline WTSci(int32 *x, int32 *y)
+void _fastcall WTSci(int32 *x, int32 *y)
 {
 	*x=((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
 	*y=((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
@@ -2796,8 +2796,9 @@ SHADER_CREATION:
 
 #endif
 
-	DataN=(unsigned char*) calloc(64*64*3,sizeof(unsigned char));
+	DataN = malloc(64 * 64 * 3);
 
+	/*
 	for(i=0;i<64;i++)
 	{
 		for(j=0;j<64;j++)
@@ -2807,18 +2808,27 @@ SHADER_CREATION:
 			DataN[(i*64*3)+(j*3)+2]=255;
 		}
 	}
+	*/
+
+	memset(DataN, 255, 64 * 64 * 3);
 
 	glGenTextures(1,&DataNT);
 	glBindTexture(GL_TEXTURE_2D,DataNT);
 
-	glTexImage2D(GL_TEXTURE_2D,0,GL_RGB8,64,64,0,GL_BGR,GL_UNSIGNED_BYTE,DataN);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 64, 64, 0, GL_RGB, GL_UNSIGNED_BYTE, DataN);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	st.BasicTex.data = DataNT;
+	st.BasicTex.w = st.BasicTex.h = 64;
+	st.BasicTex.channel = 3;
+	st.BasicTex.vb_id = -1;
 	
 }
+
 #ifdef HAS_SPLASHSCREEN
 int DisplaySplashScreen()
 {

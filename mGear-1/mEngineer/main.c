@@ -4374,6 +4374,11 @@ void LightingMisc()
 	}
 }
 
+void LightingEdit()
+{
+	_GAME_LIGHTMAPS *gl = st.game_lightmaps;
+}
+
 static void ViewPortCommands()
 {
 	Pos vertextmp[4];
@@ -4484,6 +4489,9 @@ static void ViewPortCommands()
 		else
 		if (meng.command == NADD_LIGHT)
 			LightingMisc();
+		else
+		if (meng.command == NEDIT_LIGHT)
+			LightingEdit();
 		else
 		if(meng.command==DRAW_SECTOR)
 		{
@@ -8123,6 +8131,29 @@ static void ENGDrawLight()
 		}
 	}
 
+	if (st.num_lights > 0)
+	{
+		for (i = 0; i < st.num_lights; i++)
+		{
+			Pos tmp = st.game_lightmaps[i].w_pos;
+			char textI[2] = { 127, 0};
+
+			//WTSci(&tmp.x, &tmp.y);
+
+			tmp.x -= st.Camera.position.x;
+			tmp.y -= st.Camera.position.y;
+
+			tmp.x *= st.Camera.dimension.x;
+			tmp.y *= st.Camera.dimension.y;
+
+			//DrawUI(tmp.x, tmp.y, 512, 512, 0, 255, 255, 255, 0, 0, 32768, 32768, st.BasicTex, 255, 0);
+			DrawGraphic(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, 300, 300, 0, 255, 255, 255, st.BasicTex,
+				255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+			DrawStringUI(textI, tmp.x, tmp.y, 1024, 1024, 0, 0, 0, 0, 255, 1, 2048, 2048, 0);
+		}
+	}
+
+	/*
 	if(meng.pannel_choice==ADD_LIGHT && meng.command==EDIT_LIGHTMAP)
 	{
 		if(meng.got_it!=-1)
@@ -8147,6 +8178,8 @@ static void ENGDrawLight()
 
 		}
 	}
+	*/
+	/*
 	else
 	if(meng.pannel_choice==ADD_LIGHT && meng.command==EDIT_LIGHTMAP2)
 	{
@@ -8302,7 +8335,7 @@ static void ENGDrawLight()
 
 		DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
 	}
-	
+	*/
 }
 
 struct nk_color ColorPicker(struct nk_color color)
@@ -10151,8 +10184,8 @@ int main(int argc, char *argv[])
 
 	strcpy(st.WindowTitle,"Engineer");
 
-	OpenFont("Font/Roboto-Regular.ttf","arial",0,128);
-	OpenFont("Font/Roboto-Bold.ttf","arial bold",1,128);
+	OpenFont("Font/Roboto-Regular.ttf", "arial", 0, 128);
+	OpenFont("Font/mUI.ttf", "arial bold", 1, 128);
 	//OpenFont("font//tt0524m_.ttf","geometry",2,128);
 
 	InitMGG();
