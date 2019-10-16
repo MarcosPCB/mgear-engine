@@ -130,6 +130,8 @@ struct _mEng
 
 	int16 sector_edit_selection;
 
+	int16 light_edit_selection;
+
 	int16 editview;
 
 	Pos p;

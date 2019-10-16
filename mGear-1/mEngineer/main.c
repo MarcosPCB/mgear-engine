@@ -4366,17 +4366,17 @@ void LightingMisc()
 				gl[i].falloff[1] = meng.light.intensity;
 				gl[i].falloff[4] = meng.light.l + 24;
 
+				int8 lz = meng.light.l + 24;
+
+				meng.z_buffer[lz][meng.z_slot[lz]] = i + 12000;
+				meng.z_slot[lz]++;
+
 				st.num_lights++;
 				st.mouse1 = 0;
 				break;
 			}
 		}
 	}
-}
-
-void LightingEdit()
-{
-	_GAME_LIGHTMAPS *gl = st.game_lightmaps;
 }
 
 static void ViewPortCommands()
@@ -4489,9 +4489,6 @@ static void ViewPortCommands()
 		else
 		if (meng.command == NADD_LIGHT)
 			LightingMisc();
-		else
-		if (meng.command == NEDIT_LIGHT)
-			LightingEdit();
 		else
 		if(meng.command==DRAW_SECTOR)
 		{
@@ -4752,7 +4749,7 @@ static void ViewPortCommands()
 
 						i=meng.z_buffer[l][k];
 
-						if(i<10000) continue;
+						if(i < 10000 || i > 12000) continue;
 
 						i -= 10000;
 
@@ -4884,6 +4881,88 @@ static void ViewPortCommands()
 				//}
 			}
 			
+			if (st.num_lights > 0)
+			{
+				for (l = 24; l < 32; l++)
+				{
+					for (k = meng.z_slot[l] - 1; k>-1; k--)
+					{
+						if (meng.curlayer != MIDGROUND_MODE || l<24 || l>31)
+							break;
+
+						i = meng.z_buffer[l][k];
+
+						if (i < 12000)
+							break;
+
+						i -= 12000;
+
+						_GAME_LIGHTMAPS *gl = st.game_lightmaps;
+
+						if (got_it) break;
+
+						if (st.mouse1 && meng.got_it == i + 12000)
+						{
+							p = st.mouse;
+
+							STW(&p.x, &p.y);
+
+							meng.com_id = i;
+
+							gl[i].w_pos.x = p.x;
+							gl[i].w_pos.y = p.y;
+
+							gl[i].w_pos.x -= meng.p.x;
+							gl[i].w_pos.y -= meng.p.y;
+
+							p.x = gl[i].w_pos.x + 150;
+							p.y = gl[i].w_pos.y - 150;
+						}
+
+						if (CheckCollisionMouseWorld(gl[i].w_pos.x, gl[i].w_pos.y, 300, 300, 0, l))
+						{
+							if (st.mouse1)
+							{
+								if (meng.got_it == -1)
+								{
+									meng.command2 = NEDIT_LIGHT;
+									meng.p = st.mouse;
+									meng.got_it = i + 12000;
+
+									meng.light_edit_selection = i;
+
+									STW(&meng.p.x, &meng.p.y);
+
+									meng.p.x -= gl[i].w_pos.x;
+									meng.p.y -= gl[i].w_pos.y;
+								}
+
+								if (meng.got_it != i + 12000)
+									continue;
+
+								p = st.mouse;
+
+								STW(&p.x, &p.y);
+
+								meng.com_id = i;
+
+								gl[i].w_pos.x = p.x;
+								gl[i].w_pos.y = p.y;
+
+								gl[i].w_pos.x -= meng.p.x;
+								gl[i].w_pos.y -= meng.p.y;
+
+								p.x = gl[i].w_pos.x + 150;
+								p.y = gl[i].w_pos.y - 150;
+
+								got_it = 1;
+								break;
+							}
+						}
+					}
+				}
+			}
+
 			if(st.Current_Map.num_sprites>0)
 			{
 				for(l=16;l<57;l++)
@@ -4944,6 +5023,24 @@ static void ViewPortCommands()
 						*/
 
 						if(got_it) break;
+
+						if (st.mouse1 && meng.got_it == i + 2000)
+						{
+							p = st.mouse;
+
+							STW(&p.x, &p.y);
+
+							meng.com_id = i;
+
+							st.Current_Map.sprites[i].position.x = p.x;
+							st.Current_Map.sprites[i].position.y = p.y;
+
+							st.Current_Map.sprites[i].position.x -= meng.p.x;
+							st.Current_Map.sprites[i].position.y -= meng.p.y;
+
+							p.x = st.Current_Map.sprites[i].position.x + (st.Current_Map.sprites[i].body.size.x / 2);
+							p.y = st.Current_Map.sprites[i].position.y - (st.Current_Map.sprites[i].body.size.y / 2);
+						}
 
 						if(CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
 							st.Current_Map.sprites[i].angle,st.Current_Map.sprites[i].position.z))
@@ -5065,6 +5162,30 @@ static void ViewPortCommands()
 								*/
 
 						if(got_it) break;
+
+						if (st.mouse1 && meng.got_it == i)
+						{
+							p = st.mouse;
+
+							STW(&p.x, &p.y);
+
+							meng.com_id = i;
+
+							st.Current_Map.obj[i].position.x = p.x;
+							st.Current_Map.obj[i].position.y = p.y;
+
+							st.Current_Map.obj[i].position.x -= meng.p.x;
+							st.Current_Map.obj[i].position.y -= meng.p.y;
+							/*
+							if(st.Current_Map.obj[i].lightmapid!=-1)
+							{
+							st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
+							st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
+							}
+							*/
+							p.x = st.Current_Map.obj[i].position.x + (st.Current_Map.obj[i].size.x / 2);
+							p.y = st.Current_Map.obj[i].position.y - (st.Current_Map.obj[i].size.y / 2);
+						}
 
 						if(CheckCollisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,st.Current_Map.obj[i].angle,
 							st.Current_Map.obj[i].position.z))
@@ -8133,7 +8254,7 @@ static void ENGDrawLight()
 
 	if (st.num_lights > 0)
 	{
-		for (i = 0; i < st.num_lights; i++)
+		for (i = 1; i < st.num_lights; i++)
 		{
 			Pos tmp = st.game_lightmaps[i].w_pos;
 			char textI[2] = { 127, 0};
@@ -9367,6 +9488,17 @@ void MenuBar()
 						meng.z_used = 24;
 				}
 
+				for (m = 1; m < st.Current_Map.num_lights; m++)
+				{
+					int8 lz = st.game_lightmaps[m].falloff[4];
+
+					meng.z_buffer[lz][meng.z_slot[lz]] = m + 12000;
+					meng.z_slot[lz]++;
+
+					if (lz>meng.z_used)
+						meng.z_used = lz;
+				}
+
 				state = 0;
 				//break;
 			}
@@ -10028,6 +10160,46 @@ void NewLeftPannel()
 
 					if (nk_button_label(ctx, "Transform"))
 						meng.command = TRANSFORM_BOX;
+				}
+
+				if (meng.command2 == NEDIT_LIGHT)
+				{
+					//nk_layout_row_dynamic(ctx, 30, 1);
+					//if (nk_button_label(ctx, "Add light"))
+						//meng.command = NADD_LIGHT;
+
+					_GAME_LIGHTMAPS *ls;
+					ls = &st.game_lightmaps[meng.light_edit_selection];
+
+					struct nk_color lcolor;
+					lcolor.r = ls->ambient_color.r;
+					lcolor.b = ls->ambient_color.b;
+					lcolor.g = ls->ambient_color.g;
+
+					lcolor = ColorPicker(lcolor);
+
+					//meng.lightmap_color.r = lcolor.r;
+					//meng.lightmap_color.g = lcolor.g;
+					//meng.lightmap_color.b = lcolor.b;
+
+					//nk_label(ctx, "Lightmap resolution", NK_TEXT_LB);
+					nk_layout_row_dynamic(ctx, 30, 1);
+					//nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, StringFormat("%d", meng.lightmap_res.x), 2048, nk_filter_decimal);
+
+					//meng.lightmap_res.y = meng.lightmap_res.x;
+					ls->ambient_color.r = lcolor.r;
+					ls->ambient_color.g = lcolor.g;
+					ls->ambient_color.b = lcolor.b;
+
+					//char *lighttype[] = { "Point Light medium", "Point Light strong", "Point Light normal", "SpotLight medium", "SpotLight strong", "SpotLight normal" };
+					//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
+
+					ls->falloff[0] = nk_propertyf(ctx, "Radius", 0, ls->falloff[0], 32768, 0.02, 0.01);
+					ls->falloff[1] = nk_propertyi(ctx, "Intensity", -4096, ls->falloff[1], 4096, 4, 1);
+					ls->falloff[2] = nk_propertyf(ctx, "Cutoff", 0, ls->falloff[2], 32, 0.1, 0.01);
+					ls->falloff[4] = nk_propertyi(ctx, "Midground Z", 0, ls->falloff[4], 8, 1, 1);
+
+					nk_button_label(ctx, "Load lightmap");
 				}
 			}
 
