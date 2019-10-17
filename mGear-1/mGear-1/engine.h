@@ -945,6 +945,7 @@ struct _SETTINGS_
 
 	uint16 screenx;
 	uint16 screeny;
+	uint16 gamex, gamey;
 	uint8 bpp;
 	uint8 fullscreen;
 	uint32 audiof;

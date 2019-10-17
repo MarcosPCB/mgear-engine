@@ -251,25 +251,25 @@ void FPSCounter()
 void _inline STW(int32 *x, int32 *y)
 {
 	*x=((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
-	*y=((((*y*9216)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+	*y=((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
 void _inline STWci(int32 *x, int32 *y)
 {
 	*x=((((*x*GAME_WIDTH)/st.screenx)));
-	*y=((((*y*GAME_HEIGHT)/st.screeny)));
+	*y=((((*y*st.gamey)/st.screeny)));
 }
 
 void _inline STWf(float *x, float *y)
 {
 	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
-	*y=(float) ((((*y*GAME_HEIGHT)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+	*y=(float) ((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
 }
 
 void _inline STWcf(float *x, float *y)
 {
 	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x));
-	*y=(float) ((((*y*GAME_HEIGHT)/st.screeny)/st.Camera.dimension.y));
+	*y=(float) ((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y));
 }
 
 void _fastcall WTS(int32 *x, int32 *y)
@@ -278,13 +278,13 @@ void _fastcall WTS(int32 *x, int32 *y)
 	*y-=st.Camera.position.y;
 
 	*x=((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
+	*y=((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
 }
 
 void _fastcall WTSci(int32 *x, int32 *y)
 {
 	*x=((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
+	*y=((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
 }
 
 void _inline WTSf(float *x, float *y)
@@ -293,13 +293,13 @@ void _inline WTSf(float *x, float *y)
 	*y-=st.Camera.position.y;
 
 	*x=(float) ((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=(float) ((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
+	*y=(float) ((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
 }
 
 void _inline WTScf(float *x, float *y)
 {
 	*x=(float) ((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=(float) ((*y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
+	*y=(float) ((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
 }
 
 float mCos(int16 ang)
@@ -704,7 +704,7 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
 		radius = sizey;
 
 	x2 = (GAME_WIDTH / 2) - x;
-	y2 = (GAME_HEIGHT / 2) - y;
+	y2 = (st.gamey / 2) - y;
 
 	dist = mSqrt((x2*x2) + (y2*y2));
 
@@ -2293,6 +2293,10 @@ void Init()
 	SDL_GL_SetSwapInterval(st.vsync);
 #endif
 
+	st.gamex = GAME_WIDTH;
+
+	st.gamey = ceil((float)GAME_WIDTH / ((float) st.screenx / (float) st.screeny));
+
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
@@ -2765,13 +2769,13 @@ SHADER_CREATION:
 	st.game_lightmaps[0].stat=1;
 
 	st.game_lightmaps[0].W_w=GAME_WIDTH;
-	st.game_lightmaps[0].W_h=GAME_HEIGHT;
+	st.game_lightmaps[0].W_h=st.gamey;
 
 	st.game_lightmaps[0].T_w=4;
 	st.game_lightmaps[0].T_h=2;
 
 	st.game_lightmaps[0].num_lights=1;
-	st.game_lightmaps[0].w_pos.x=GAME_HEIGHT;
+	st.game_lightmaps[0].w_pos.x=st.gamey;
 	st.game_lightmaps[0].w_pos.y=4096;
 	st.game_lightmaps[0].w_pos.z=0;
 
@@ -2874,7 +2878,7 @@ int DisplaySplashScreen()
 	{
 		SDL_SetWindowOpacity(wn, 0.0f);
 		BASICBKD(255, 255, 255);
-		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		DrawUI(GAME_WIDTH / 2, st.gamey / 2, GAME_WIDTH, st.gamey, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
 		Renderer(1);
 		SwapBuffer(wn);
 	}
@@ -2889,7 +2893,7 @@ int DisplaySplashScreen()
 	else
 	{
 		BASICBKD(255, 255, 255);
-		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		DrawUI(GAME_WIDTH / 2, st.gamey / 2, GAME_WIDTH, st.gamey, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
 		Renderer(1);
 		SwapBuffer(wn);
 	}
@@ -2902,7 +2906,7 @@ int DisplaySplashScreen()
 		Sleep(SPLASHSCREEN_ALPHA_TIME);
 
 		BASICBKD(255, 255, 255);
-		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		DrawUI(GAME_WIDTH / 2, st.gamey / 2, GAME_WIDTH, st.gamey, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
 		Renderer(1);
 		SwapBuffer(wn);
 
@@ -2927,7 +2931,7 @@ void InitEngineWindow()
 		Sleep(SPLASHSCREEN_ALPHA_TIME);
 
 		BASICBKD(255, 255, 255);
-		DrawUI(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
+		DrawUI(GAME_WIDTH / 2, st.gamey / 2, GAME_WIDTH, st.gamey, 0, 255, 255, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, splash, 255, 0);
 		Renderer(1);
 		SwapBuffer(wn);
 
@@ -3022,9 +3026,7 @@ void RestartVideo()
 
 	//SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 //	SDL_RenderPresent(st.glc);
-
-	glViewport(0,0,st.screenx,st.screeny);
-
+	glViewport(0, 0, st.screenx, st.screeny);
 	glClearColor(0,0,0,0);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -3036,6 +3038,53 @@ void RestartVideo()
 	glEnable(GL_TEXTURE_2D);
 	SDL_GL_SetSwapInterval(st.vsync);
 
+	glDeleteFramebuffers(5, st.renderer.FBTex);
+	glDeleteRenderbuffers(1, &st.renderer.RBO[0]);
+
+	glGenFramebuffers(1, &st.renderer.FBO[0]);
+	glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
+
+	glGenRenderbuffers(1, &st.renderer.RBO[0]);
+	glBindRenderbuffer(GL_RENDERBUFFER, st.renderer.RBO[0]);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, st.screenx, st.screeny);
+
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, st.renderer.RBO[0]);
+
+	glGenTextures(1, &st.renderer.FBTex[0]);
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, st.renderer.FBTex[0], 0);
+
+	glGenTextures(1, &st.renderer.FBTex[1]);
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[1]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, st.renderer.FBTex[1], 0);
+
+	glGenTextures(1, &st.renderer.FBTex[2]);
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[2]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, st.renderer.FBTex[2], 0);
+
+	glGenTextures(1, &st.renderer.FBTex[3]);
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[3]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, st.renderer.FBTex[3], 0);
+
+	glGenTextures(1, &st.renderer.FBTex[4]);
+	glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[4]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, st.screenx, st.screeny, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, st.renderer.FBTex[4], 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	/*
 	glBindRenderbuffer(GL_RENDERBUFFER, st.renderer.RBO[0]);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, st.screenx, st.screeny);
 
@@ -3064,6 +3113,7 @@ void RestartVideo()
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, st.renderer.FBTex[3], 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	*/
 	
 	if(SDL_GetRelativeMouseMode())
 	{
@@ -3758,7 +3808,7 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	for(i=0;i<mgg->num_frames;i++)
 	{
 		mgg->frames[i].x_offset=(offx[i]*GAME_WIDTH)/st.screenx;
-		mgg->frames[i].y_offset=(offy[i]*GAME_HEIGHT)/st.screeny;
+		mgg->frames[i].y_offset=(offy[i]*st.gamey)/st.screeny;
 	}
 
 
@@ -4381,7 +4431,7 @@ int8 LoadLightmapFromFile(const char *file)
 			st.game_lightmaps[i].alpha=0;
 
 		st.game_lightmaps[i].W_w=(w*GAME_WIDTH)/st.screenx;
-		st.game_lightmaps[i].W_h=(h*GAME_HEIGHT)/st.screeny;
+		st.game_lightmaps[i].W_h=(h*st.gamey)/st.screeny;
 	}
 	else
 	{
@@ -4771,7 +4821,7 @@ uint8 CheckCollisionMouse(int32 x, int32 y, int32 xsize, int32 ysize, int32 ang)
 	//STW(&mx, &my);
 
 	mx=((((mx*GAME_WIDTH)/st.screenx)));
-	my=((((my*GAME_HEIGHT)/st.screeny)));
+	my=((((my*st.gamey)/st.screeny)));
 
 	if(mx>xl && mx<xb && my>yl && my<yb)
 		return 1; //Collided
@@ -4790,10 +4840,10 @@ uint8 CheckCollisionMouseWorld(int32 x, int32 y, int32 xsize, int32 ysize, int32
 
 	/*
 	x=((x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	y=((y*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
+	y=((y*st.screeny)/st.gamey)*st.Camera.dimension.y;
 
 	xsize=((xsize*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	ysize=((ysize*st.screeny)/GAME_HEIGHT)*st.Camera.dimension.y;
+	ysize=((ysize*st.screeny)/st.gamey)*st.Camera.dimension.y;
 	*/
 
 	//x*=st.Camera.dimension.x;
@@ -4916,7 +4966,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 	Pos vertex[4];
 
-	float ax=1/(GAME_WIDTH/2), ay=1/(GAME_HEIGHT/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+	float ax=1/(GAME_WIDTH/2), ay=1/(st.gamey/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
 
 	memcpy(vertex,vertex_s,4*sizeof(Pos));
 
@@ -4982,7 +5032,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 
 		ax=(float) 1/(GAME_WIDTH/2);
-		ay=(float) 1/(GAME_HEIGHT/2);
+		ay=(float) 1/(st.gamey/2);
 
 		ay*=-1.0f;
 
@@ -5090,16 +5140,16 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		{
 			by = (st.Current_Map.sector[sector_id].base_y - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.x = 1;
-			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+			shw[m][i].x1y1.y = (by * st.screeny) / st.gamey;
 		}
 
 		if (sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 		{
 			by = (st.Current_Map.sector[sector_id].base_y + st.Current_Map.sector[sector_id].floor_y_down - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.x = 2;
-			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+			shw[m][i].x1y1.y = (by * st.screeny) / st.gamey;
 			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
-			shw[m][i].x1y1.z = (by * st.screeny) / GAME_HEIGHT;
+			shw[m][i].x1y1.z = (by * st.screeny) / st.gamey;
 
 			by = (st.Current_Map.sector[sector_id].base_y - st.Camera.position.y) * st.Camera.dimension.y;
 		}
@@ -5112,7 +5162,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.x = 1;
-			shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+			shw[m][i].x1y1.y = (by * st.screeny) / st.gamey;
 			by = (st.Current_Map.sector[sector_id].floor_y_up);
 			by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 		}
@@ -5121,7 +5171,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		{
 			//by = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up - st.Camera.position.y) * st.Camera.dimension.y;
 			shw[m][i].x1y1.x = 0;
-			//shw[m][i].x1y1.y = (by * st.screeny) / GAME_HEIGHT;
+			//shw[m][i].x1y1.y = (by * st.screeny) / st.gamey;
 		}
 	}
 
@@ -5218,7 +5268,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}
 
 	ax = (float)1 / (GAME_WIDTH / 2);
-	ay = (float)1 / (GAME_HEIGHT / 2);
+	ay = (float)1 / (st.gamey / 2);
 
 	ay *= -1.0f;
 
@@ -5416,12 +5466,12 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			if(sizemx!=NULL && sizemy!=NULL)
 			{
 				sizex=(((data.w*GAME_WIDTH)/st.screenx)*sizemx)+sizeax;
-				sizey=(((data.h*GAME_HEIGHT)/st.screeny)*sizemy)+sizeay;
+				sizey=(((data.h*st.gamey)/st.screeny)*sizemy)+sizeay;
 			}
 			else
 			{
 				sizex=((data.w*GAME_WIDTH)/st.screenx)+sizeax;
-				sizey=((data.h*GAME_HEIGHT)/st.screeny)+sizeay;
+				sizey=((data.h*st.gamey)/st.screeny)+sizeay;
 			}
 		}
 	}
@@ -5548,7 +5598,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			//ang/=10;
 	
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(GAME_HEIGHT/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -5714,7 +5764,7 @@ int8 DrawLight(int32 x, int32 y, int32 z, int32 radius, Color color, float fallo
 
 
 	ax = (float)1 / (GAME_WIDTH / 2);
-	ay = (float)1 / (GAME_HEIGHT / 2);
+	ay = (float)1 / (st.gamey / 2);
 
 	ay *= -1.0f;
 
@@ -5848,7 +5898,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(GAME_HEIGHT/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -5864,7 +5914,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 			lmp[i].texcor[7]=1;
 
 			lmp[i].texrepeat[0] = (float) x / GAME_WIDTH;
-			lmp[i].texrepeat[1] = (float) (GAME_HEIGHT - y) / GAME_HEIGHT;
+			lmp[i].texrepeat[1] = (float) (st.gamey - y) / st.gamey;
 			lmp[i].texrepeat[2] = 0.0;
 
 			for(j=0;j<12;j+=3)
@@ -5914,15 +5964,15 @@ void BASICBKD(uint8 r, uint8 g, uint8 b)
 			lmp[i].vertex[5]=0.0f;
 
 			lmp[i].vertex[6]=16384.0f;
-			lmp[i].vertex[7]=9216.0f;
+			lmp[i].vertex[7]=st.gamey;
 			lmp[i].vertex[8]=0.0f;
 
 			lmp[i].vertex[9]=0.0f;
-			lmp[i].vertex[10]=9216.0f;
+			lmp[i].vertex[10]=st.gamey;
 			lmp[i].vertex[11]=0.0f;
 
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(GAME_HEIGHT/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -5979,8 +6029,8 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 
 	if(dim.x<10) dim.x=GAME_WIDTH/dim.x;
 	else dim.x*=GAME_WIDTH;
-	if(dim.y<10) dim.y=GAME_HEIGHT/dim.y;
-	else dim.y*=GAME_HEIGHT;
+	if(dim.y<10) dim.y=st.gamey/dim.y;
+	else dim.y*=st.gamey;
 
 	t3=(int32) dim.x;
 	t4=(int32) dim.y;
@@ -6070,7 +6120,7 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			tmp=mCos(ang*10);
 	
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(GAME_HEIGHT/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -6314,7 +6364,7 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 			ent[i].vertex[11]=z;
 	
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(GAME_HEIGHT/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -6533,7 +6583,7 @@ int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			tmp=mCos(ang*10);
 	
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(GAME_HEIGHT/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -6690,7 +6740,7 @@ int8 DrawUI(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint
 			tmp=mCos(ang*10);
 	*/
 			ax = (float) 1/(16384.0f  / 2.0f);
-			ay=(float) 1/(9216.0f / 2.0f);
+			ay=(float) 1/(st.gamey / 2.0f);
 
 			ay*=-1.0f;
 
@@ -6835,7 +6885,7 @@ int8 DrawUI2(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 			tmp=mCos(ang*10);
 	*/
 			ax=(float) 1/(GAME_WIDTH / 2);
-			ay=(float) 1/(9216.0f / 2);
+			ay=(float) 1/(st.gamey / 2);
 
 			ay*=-1.0f;
 
@@ -7189,7 +7239,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	int16 ang;
 
-	float ax=1/(GAME_WIDTH/2), ay=1/(9216.0f/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+	float ax=1/(GAME_WIDTH/2), ay=1/(st.gamey/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
 
 	i=st.num_entities;
 
@@ -7266,7 +7316,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ent[i].vertex[11]=z;
 
 		ax=(float) 1/(GAME_WIDTH/2);
-		ay=(float) 1/(9216.0f/2);
+		ay=(float) 1/(st.gamey/2);
 
 		ay*=-1.0f;
 
@@ -7473,13 +7523,13 @@ void GetSpriteBodySize(int16 id, int16 gameid)
 			{
 				st.Current_Map.sprites[id].body.size.x=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*GAME_WIDTH)/st.screenx)*
 					st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
-				st.Current_Map.sprites[id].body.size.y=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*9216)/st.screeny)*
+				st.Current_Map.sprites[id].body.size.y=(((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*st.gamey)/st.screeny)*
 					st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
 			}
 			else
 			{
 				st.Current_Map.sprites[id].body.size.x=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].w*GAME_WIDTH)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
-				st.Current_Map.sprites[id].body.size.y=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*9216)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+				st.Current_Map.sprites[id].body.size.y=((mgg_game[st.Current_Map.sprites[id].MGG_ID].frames[st.Current_Map.sprites[id].frame_ID].h*st.gamey)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 	}
@@ -7504,7 +7554,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,9216)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,st.gamey)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -7691,7 +7741,7 @@ int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, in
 			tmp=mCos(ang*10);
 	
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(9216.0f/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -7789,7 +7839,7 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,9216)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,st.gamey)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -7972,7 +8022,7 @@ int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, i
 			tmp=mCos(ang*10);
 	
 			ax=(float) 1/(16384.0f/2);
-			ay=(float) 1/(9216.0f/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -8037,7 +8087,7 @@ int8 DrawStringUIv(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,GAME_HEIGHT)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,st.gamey)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -8175,7 +8225,7 @@ if(st.num_entities==MAX_GRAPHICS-1)
 			tmp=mCos(ang*10);
 	*/
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(9216.0f/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -8239,7 +8289,7 @@ int8 DrawStringUI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,GAME_HEIGHT)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,st.gamey)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -8379,7 +8429,7 @@ if(st.num_entities==MAX_GRAPHICS-1)
 			tmp=mCos(ang*10);
 	*/
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(9216.0f/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -8444,7 +8494,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 	if(st.num_entities==MAX_GRAPHICS-1)
 		return 2;
 
-	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,GAME_HEIGHT)) return 1;
+	//Checkbounds(x,y,sizex,sizey,ang,GAME_WIDTH,st.gamey)) return 1;
 
 	for(i=0;i<MAX_STRINGS;i++)
 	{
@@ -8583,7 +8633,7 @@ int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey,
 			tmp=mCos(ang*10);
 	*/
 			ax=(float) 1/(GAME_WIDTH/2);
-			ay=(float) 1/(9216.0f/2);
+			ay=(float) 1/(st.gamey/2);
 
 			ay*=-1.0f;
 
@@ -8916,7 +8966,7 @@ uint32 PlayBGVideo(const char *name, uint8 play)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-	UIData(8192, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0, 255, 255, 255, 0, 0, 32768, 32768, texd, 255, 7);
+	UIData(8192, st.gamey / 2, GAME_WIDTH, st.gamey, 0, 255, 255, 255, 0, 0, 32768, 32768, texd, 255, 7);
 		
 	if (Playing == 0)
 	{
@@ -9693,13 +9743,13 @@ int32 LoadSpriteCFG(char *filename, int id)
 			{
 				st.Game_Sprites[gameid].body.size.x=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH)/st.screenx)*
 					st.Game_Sprites[gameid].size_m.x)+st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*9216)/st.screeny)*
+				st.Game_Sprites[gameid].body.size.y=(((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*st.gamey)/st.screeny)*
 					st.Game_Sprites[gameid].size_m.y)+st.Game_Sprites[gameid].size_a.y;
 			}
 			else
 			{
 				st.Game_Sprites[gameid].body.size.x=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH)/st.screenx)+st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*9216)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
+				st.Game_Sprites[gameid].body.size.y=((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h*st.gamey)/st.screeny)+st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 	}
@@ -9716,7 +9766,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			{
 				st.Game_Sprites[gameid].body.size.x = mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizex + st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y = (mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey / (32768 / GAME_HEIGHT)) * 2 + st.Game_Sprites[gameid].size_a.y;
+				st.Game_Sprites[gameid].body.size.y = (mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].sizey / (32768 / st.gamey)) * 2 + st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 		else
@@ -9725,13 +9775,13 @@ int32 LoadSpriteCFG(char *filename, int id)
 			{
 				st.Game_Sprites[gameid].body.size.x = (((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH) / st.screenx)*
 					st.Game_Sprites[gameid].size_m.x) + st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y = (((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h * 9216) / st.screeny)*
+				st.Game_Sprites[gameid].body.size.y = (((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h * st.gamey) / st.screeny)*
 					st.Game_Sprites[gameid].size_m.y) + st.Game_Sprites[gameid].size_a.y;
 			}
 			else
 			{
 				st.Game_Sprites[gameid].body.size.x = ((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].w*GAME_WIDTH) / st.screenx) + st.Game_Sprites[gameid].size_a.x;
-				st.Game_Sprites[gameid].body.size.y = ((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h * 9216) / st.screeny) + st.Game_Sprites[gameid].size_a.y;
+				st.Game_Sprites[gameid].body.size.y = ((mgg_game[st.Game_Sprites[gameid].MGG_ID].frames[st.Game_Sprites[gameid].frame[0]].h * st.gamey) / st.screeny) + st.Game_Sprites[gameid].size_a.y;
 			}
 		}
 	}
@@ -9951,8 +10001,8 @@ void LockCamera()
 
 	if(st.Current_Map.cam_area.vert_lim)
 	{
-		if((float) st.Camera.position.y+(9216/st.Camera.dimension.y)>st.Current_Map.cam_area.limit[1].y)
-			st.Camera.position.y=(float) st.Current_Map.cam_area.limit[1].y-(9216/st.Camera.dimension.y);
+		if((float) st.Camera.position.y+(st.gamey/st.Camera.dimension.y)>st.Current_Map.cam_area.limit[1].y)
+			st.Camera.position.y=(float) st.Current_Map.cam_area.limit[1].y-(st.gamey/st.Camera.dimension.y);
 
 		if(st.Camera.position.y<st.Current_Map.cam_area.limit[0].y)
 			st.Camera.position.y=st.Current_Map.cam_area.limit[0].y;
@@ -10171,7 +10221,7 @@ void DrawMap()
 	Pos tmp;
 	
 	if(st.Current_Map.bcktex_id>-1)
-		DrawGraphic(8192,4608,GAME_WIDTH,9216,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,st.Current_Map.bck3_pan.x,st.Current_Map.bck3_pan.y,
+		DrawGraphic(8192,4608,GAME_WIDTH,st.gamey,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,st.Current_Map.bck3_pan.x,st.Current_Map.bck3_pan.y,
 		st.Current_Map.bck3_size.x,st.Current_Map.bck3_size.y,55,0);
 
 			for(i=0;i<st.Current_Map.num_obj;i++)

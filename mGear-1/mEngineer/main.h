@@ -118,6 +118,7 @@ struct _mEng
 	uint16 mgg_sel;
 	uint16 menu_sel;
 	int16 curlayer;
+	int8 LayerBar;
 
 	int8 playing_sound;
 
