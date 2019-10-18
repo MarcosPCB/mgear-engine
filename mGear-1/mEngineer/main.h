@@ -194,6 +194,9 @@ struct _mEng
 	int16 z_buffer[57][2048];
 	int16 z_used;
 
+	int16 layers[57][2048];
+	int16 active_layer;
+
 	int8 loop_complete;
 
 	int8 editor;

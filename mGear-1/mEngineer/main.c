@@ -4403,7 +4403,7 @@ static void ViewPortCommands()
 		meng.current_command=0;
 	}	
 
-	if(!CheckCollisionMouse(2470/2,4885,2470,8939,0) && meng.command!=MGG_SEL && !CheckCollisionMouse(8192,128,16384,256,0))
+	if (!CheckCollisionMouse(2470 / 2, 4885, 2470, 8939, 0) && meng.command != MGG_SEL && !CheckCollisionMouse(8192, 128, 16384, 256, 0) && !CheckCollisionMouse(16384 - 1024, st.gamey / 2, 2048, st.gamey, 0))
 	{
 		if(meng.command==CAM_LIM_X)
 		{
@@ -4768,6 +4768,9 @@ static void ViewPortCommands()
 
 								STW(&p.x,&p.y);
 
+								memset(meng.layers, 0, 57 * 2048 * 2);
+								meng.layers[l][k] = 1;
+
 								if(CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,484,484,0,0))
 								{
 									got_it = 1;
@@ -4923,6 +4926,9 @@ static void ViewPortCommands()
 						{
 							if (st.mouse1)
 							{
+								memset(meng.layers, 0, 57 * 2048 * 2);
+								meng.layers[l][k] = 1;
+
 								if (meng.got_it == -1)
 								{
 									meng.command2 = NEDIT_LIGHT;
@@ -5047,6 +5053,9 @@ static void ViewPortCommands()
 						{
 							if(st.mouse1)
 							{
+								memset(meng.layers, 0, 57 * 2048 * 2);
+								meng.layers[l][k] = 1;
+
 								if(meng.got_it==-1)
 								{
 									meng.command2=EDIT_SPRITE;
@@ -5192,6 +5201,9 @@ static void ViewPortCommands()
 						{
 							if(st.mouse1)
 							{
+								memset(meng.layers, 0, 57 * 2048 * 2);
+								meng.layers[l][k] = 1;
+
 								if(meng.got_it==-1)
 								{
 									meng.command2=EDIT_OBJ;
@@ -7395,7 +7407,330 @@ void CoordBar()
 
 void LayerBar()
 {
+	if (nk_begin(ctx, "Layer bar", nk_rect(st.screenx - 200, 30, 200, st.screeny - 30 - 130), NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE))
+	{
+		//nk_layout_row_dynamic(ctx, 320, 1);
 
+		int16 i, j;
+
+		if (nk_tree_push(ctx, NK_TREE_TAB, "Foreground", NK_MINIMIZED))
+		{
+			//nk_layout_row_dynamic(ctx, 15, 1);
+
+			for (i = 16; i < 24; i++)
+			{
+				if (meng.z_slot[i] > 0)
+				{
+					if (nk_tree_push_id(ctx, NK_TREE_NODE, StringFormat("Z %d", i), NK_MINIMIZED, i))
+					{
+						//nk_layout_row_dynamic(ctx, 15, 1);
+
+						for (j = 0; j < meng.z_slot[i]; j++)
+						{
+							if (meng.z_buffer[i][j] < 2000)
+							{
+								if (nk_select_label(ctx, StringFormat("Scene %d", meng.z_buffer[i][j]), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.obj_edit_selection = meng.z_buffer[i][j];
+										meng.command2 = EDIT_OBJ;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
+							{
+								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 2000;
+										meng.command2 = EDIT_SPRITE;
+									}
+								}
+
+							}
+						}
+
+						nk_tree_pop(ctx);
+					}
+				}
+			}
+
+			nk_tree_pop(ctx);
+		}
+
+		if (nk_tree_push(ctx, NK_TREE_TAB, "Midground", NK_MINIMIZED))
+		{
+			//nk_layout_row_dynamic(ctx, 15, 1);
+
+			for (i = 24; i < 32; i++)
+			{
+				if (meng.z_slot[i] > 0)
+				{
+					if (nk_tree_push_id(ctx, NK_TREE_NODE, StringFormat("Z %d", i), NK_MINIMIZED, i))
+					{
+						//nk_layout_row_dynamic(ctx, 15, 1);
+
+						for (j = 0; j < meng.z_slot[i]; j++)
+						{
+							if (meng.z_buffer[i][j] < 2000)
+							{
+								if (nk_select_label(ctx, StringFormat("Scene %d", meng.z_buffer[i][j]), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.obj_edit_selection = meng.z_buffer[i][j];
+										meng.command2 = EDIT_OBJ;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
+							{
+								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 2000;
+										meng.command2 = EDIT_SPRITE;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 10000 && meng.z_buffer[i][j] < 12000)
+							{
+								if (nk_select_label(ctx, StringFormat("Sector %d", meng.z_buffer[i][j] - 10000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 10000;
+										meng.command2 = EDIT_SECTOR;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 12000)
+							{
+								if (nk_select_label(ctx, StringFormat("Light %d", meng.z_buffer[i][j] - 12000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 12000;
+										meng.command2 = NEDIT_LIGHT;
+									}
+								}
+								
+							}
+
+						}
+
+						nk_tree_pop(ctx);
+					}
+				}
+			}
+
+			nk_tree_pop(ctx);
+		}
+
+		if (nk_tree_push(ctx, NK_TREE_TAB, "Background1", NK_MINIMIZED))
+		{
+			//nk_layout_row_dynamic(ctx, 15, 1);
+
+			for (i = 32; i < 40; i++)
+			{
+				if (meng.z_slot[i] > 0)
+				{
+					if (nk_tree_push_id(ctx, NK_TREE_NODE, StringFormat("Z %d", i), NK_MINIMIZED, i))
+					{
+						//nk_layout_row_dynamic(ctx, 15, 1);
+
+						for (j = 0; j < meng.z_slot[i]; j++)
+						{
+							if (meng.z_buffer[i][j] < 2000)
+							{
+								if (nk_select_label(ctx, StringFormat("Scene %d", meng.z_buffer[i][j]), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j];
+										meng.command2 = EDIT_OBJ;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
+							{
+								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 2000;
+										meng.command2 = EDIT_SPRITE;
+									}
+								}
+
+							}
+						}
+
+						nk_tree_pop(ctx);
+					}
+				}
+			}
+
+			nk_tree_pop(ctx);
+		}
+
+		if (nk_tree_push(ctx, NK_TREE_TAB, "Background2", NK_MINIMIZED))
+		{
+			//nk_layout_row_dynamic(ctx, 15, 1);
+
+			for (i = 40; i < 48; i++)
+			{
+				if (meng.z_slot[i] > 0)
+				{
+					if (nk_tree_push_id(ctx, NK_TREE_NODE, StringFormat("Z %d", i), NK_MINIMIZED, i))
+					{
+						//nk_layout_row_dynamic(ctx, 15, 1);
+
+						for (j = 0; j < meng.z_slot[i]; j++)
+						{
+							if (meng.z_buffer[i][j] < 2000)
+							{
+								if (nk_select_label(ctx, StringFormat("Scene %d", meng.z_buffer[i][j]), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j];
+										meng.command2 = EDIT_OBJ;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
+							{
+								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 2000;
+										meng.command2 = EDIT_SPRITE;
+									}
+								}
+
+							}
+						}
+
+						nk_tree_pop(ctx);
+					}
+				}
+			}
+
+			nk_tree_pop(ctx);
+		}
+
+		if (nk_tree_push(ctx, NK_TREE_TAB, "Background3", NK_MINIMIZED))
+		{
+			//nk_layout_row_dynamic(ctx, 15, 1);
+
+			for (i = 48; i < 56; i++)
+			{
+				if (meng.z_slot[i] > 0)
+				{
+					if (nk_tree_push_id(ctx, NK_TREE_NODE, StringFormat("Z %d", i), NK_MINIMIZED, i))
+					{
+						//nk_layout_row_dynamic(ctx, 15, 1);
+
+						for (j = 0; j < meng.z_slot[i]; j++)
+						{
+							if (meng.z_buffer[i][j] < 2000)
+							{
+								if (nk_select_label(ctx, StringFormat("Scene %d", meng.z_buffer[i][j]), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+									}
+								}
+
+							}
+
+							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
+							{
+								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								{
+									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
+										meng.layers[i][j] = 1;
+									else
+									{
+										memset(meng.layers, 0, 57 * 2048 * 2);
+										meng.layers[i][j] = 1;
+									}
+								}
+
+							}
+						}
+
+						nk_tree_pop(ctx);
+					}
+				}
+			}
+
+			nk_tree_pop(ctx);
+		}
+	}
+
+	nk_end(ctx);
 }
 
 void PhysicsBox(int16 sprite)
@@ -7964,6 +8299,8 @@ int main(int argc, char *argv[])
 	meng.editor=0;
 	meng.hide_ui=0;
 
+	memset(meng.layers, 0, 2048 * 57 * sizeof(int16));
+
 	SetCurrentDirectory(st.CurrPath);
 
 	ctx = nk_sdl_init(wn);
@@ -8163,6 +8500,7 @@ int main(int argc, char *argv[])
 
 		NewLeftPannel();
 		CoordBar();
+		LayerBar();
 		MenuBar();
 
 		//MapProperties();

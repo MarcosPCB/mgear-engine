@@ -11,6 +11,7 @@ void NewMap()
 	meng.scroll2 = 0;
 	meng.mgg_sel = 0;
 	meng.curlayer = 1;
+	meng.LayerBar = 0;
 
 	if (st.Current_Map.obj)
 		free(st.Current_Map.obj);
@@ -49,6 +50,9 @@ void NewMap()
 		///st.Current_Map.sector[i].layers=1;
 		st.Current_Map.sector[i].material = CONCRETE;
 		st.Current_Map.sector[i].tag = 0;
+		st.Current_Map.sector[i].floor_y_continued = 0;
+		st.Current_Map.sector[i].floor_y_up = 0;
+		st.Current_Map.sector[i].floor_y_down = 0;
 	}
 
 	for (i = 0; i<MAX_OBJS; i++)
@@ -120,6 +124,8 @@ void NewMap()
 	memset(meng.z_buffer, 0, 2048 * 57 * sizeof(int16));
 	memset(meng.z_slot, 0, 57 * sizeof(int16));
 	meng.z_used = 0;
+
+	memset(meng.layers, 0, 2048 * 57 * sizeof(int16));
 
 	st.Current_Map.cam_area.area_pos.x = st.Current_Map.cam_area.area_pos.y = 0;
 	st.Current_Map.cam_area.area_size.x = 1.0;
