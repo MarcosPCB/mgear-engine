@@ -92,6 +92,36 @@
 #define NEDIT_LIGHTMAP 106
 #define NLIGHTMAP_PANNEL 107
 
+//Font icons
+#define DEBUG_ICON 37
+#define PLAY_ICON 66
+#define STOP_ICON 68
+#define PAUSE_ICON 67
+#define BACK_ICON 69
+#define FOWARD_ICON 70
+#define BACKJUMP_ICON 71
+#define FOWARDJUMP_ICON 72
+#define CONFIG_ICON 35
+#define GEARS_ICON 36
+#define TERMINAL_ICON 118
+#define SAVE_ICON 49
+#define VIDEO_ICON 90
+#define SOUND_ICON 88
+#define IMAGE_ICON 87
+#define TEXT_ICON 86
+#define FFILE_ICON 84
+#define FFOLDER_ICON 50
+#define UNDO_ICON 26
+#define REDO_ICON 27
+#define ROTATE_ICON 31
+#define UP_ICON 100
+#define DOWN_ICON 102
+#define RIGHT_ICON 101
+#define LEFT_ICON 103
+#define LOADING_ICON 30
+#define LINK_ICON 129
+#define UNLINK_ICON 128
+#define PICKER_ICON 130
 
 struct _mEng
 {

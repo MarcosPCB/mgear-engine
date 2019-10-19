@@ -548,11 +548,11 @@ int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)
 				break;
 
 			case MIDGROUND:
-				curr_z -= 32;
+				curr_z -= 24;
 				break;
 
 			case FOREGROUND:
-				curr_z -= 40;
+				curr_z -= 32;
 				break;
 		}
 	}
@@ -574,7 +574,7 @@ int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)
 			break;
 
 		case FOREGROUND:
-			curr_z -= 32;
+			curr_z -= 24;
 			break;
 		}
 	}
@@ -606,7 +606,7 @@ int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)
 		switch (layer)
 		{
 		case BACKGROUND3:
-			curr_z += 32;
+			curr_z += 24;
 			break;
 
 		case BACKGROUND2:
@@ -628,11 +628,11 @@ int32 GetZLayer(int32 curr_z, _OBJTYPE curr_layer, _OBJTYPE layer)
 		switch (layer)
 		{
 		case BACKGROUND3:
-			curr_z += 40;
+			curr_z += 32;
 			break;
 
 		case BACKGROUND2:
-			curr_z += 32;
+			curr_z += 24;
 			break;
 
 		case BACKGROUND1:
@@ -657,6 +657,12 @@ int8 CheckBounds(int32 x, int32 y, int32 sizex, int32 sizey, int8 z)
 
 		x -= (float)st.Camera.position.x*st.Current_Map.bck2_v;
 		y -= (float)st.Camera.position.y*st.Current_Map.bck2_v;
+
+		sizex *= st.Camera.dimension.x;
+		sizey *= st.Camera.dimension.y;
+
+		x *= st.Camera.dimension.x;
+		y *= st.Camera.dimension.y;
 
 	}
 	else
@@ -5530,6 +5536,12 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 				x-=(float) st.Camera.position.x*st.Current_Map.bck2_v;
 				y-=(float) st.Camera.position.y*st.Current_Map.bck2_v;
 
+				sizex *= st.Camera.dimension.x;
+				sizey *= st.Camera.dimension.y;
+
+				x *= st.Camera.dimension.x;
+				y *= st.Camera.dimension.y;
+
 				ent[i].scenario=-2;
 			}
 			else
@@ -6273,6 +6285,12 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 					y-=(float) st.Camera.position.y*st.Current_Map.bck2_v;
 				}
 
+				sizex *= st.Camera.dimension.x;
+				sizey *= st.Camera.dimension.y;
+
+				x *= st.Camera.dimension.x;
+				y *= st.Camera.dimension.y;
+
 				ent[i].scenario = 0;
 			}
 			else
@@ -6336,11 +6354,11 @@ int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r,
 					y-=(float) st.Camera.position.y*st.Current_Map.fr_v;
 				}
 
-				sizex*=st.Camera.dimension.x;
-				sizey*=st.Camera.dimension.y;
+				sizex*=(float) st.Camera.dimension.x;
+				sizey *= (float) st.Camera.dimension.y;
 
-				x*=st.Camera.dimension.x;
-				y*=st.Camera.dimension.y;
+				x *= (float) st.Camera.dimension.x;
+				y *= (float) st.Camera.dimension.y;
 
 				ent[i].scenario = 0;
 			}

@@ -71,6 +71,21 @@ void SetThemeBack()
 	}
 }
 
+int nk_button_icon_set(uint8 icon)
+{
+	char buf[2];
+
+	buf[0] = icon;
+
+	nk_style_set_font(ctx, &fonts[1]->handle);
+
+	int ret = nk_button_label(ctx, buf);
+
+	nk_style_set_font(ctx, &fonts[0]->handle);
+
+	return ret;
+}
+
 uint16 WriteCFG()
 {
 	FILE *file;
@@ -4603,8 +4618,7 @@ static void ViewPortCommands()
 
 					st.Current_Map.sector[i].num_vertexadded++;
 
-					meng.command=SELECT_EDIT;
-					meng.pannel_choice=SELECT_EDIT;
+					meng.command=DRAW_SECTOR;
 					meng.sub_com=0;
 					meng.com_id=0;
 
@@ -4749,9 +4763,65 @@ static void ViewPortCommands()
 
 						i=meng.z_buffer[l][k];
 
-						if(i < 10000 || i > 12000) continue;
+						if(i < 10000 || i > 12000)
+							continue;
 
 						i -= 10000;
+
+						if (st.mouse1 && meng.got_it == i + 10000)
+						{
+							p = st.mouse;
+
+							STW(&p.x, &p.y);
+
+							if (meng.sector_edit_selection < 1000)
+							{
+								if (st.Current_Map.sector[i].sloped)
+									st.Current_Map.sector[i].vertex[0] = p;
+								else
+								{
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sector[i].vertex[0] = p;
+										st.Current_Map.sector[i].vertex[1].y = st.Current_Map.sector[i].base_y = p.y;
+									}
+
+									if (st.keys[LCTRL_KEY].state)
+									{
+										st.Current_Map.sector[i].vertex[1].y = st.Current_Map.sector[i].base_y = p.y;
+										st.Current_Map.sector[i].vertex[1].x = (st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x) + p.x;
+										st.Current_Map.sector[i].vertex[0] = p;
+									}
+
+									if (!st.keys[LCTRL_KEY].state && !st.keys[LSHIFT_KEY].state)
+										st.Current_Map.sector[i].vertex[0].x = p.x;
+								}
+							}
+							
+							if (meng.sector_edit_selection >= 1000)
+							{
+								if (st.Current_Map.sector[i].sloped)
+									st.Current_Map.sector[i].vertex[1] = p;
+								else
+								{
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sector[i].vertex[1] = p;
+										st.Current_Map.sector[i].vertex[0].y = st.Current_Map.sector[i].base_y = p.y;
+									}
+
+									if (st.keys[LCTRL_KEY].state)
+									{
+										st.Current_Map.sector[i].vertex[0].y = st.Current_Map.sector[i].base_y = p.y;
+										st.Current_Map.sector[i].vertex[0].x = p.x - (st.Current_Map.sector[i].vertex[1].x - st.Current_Map.sector[i].vertex[0].x);
+										st.Current_Map.sector[i].vertex[1] = p;
+									}
+
+									if (!st.keys[LCTRL_KEY].state && !st.keys[LSHIFT_KEY].state)
+										st.Current_Map.sector[i].vertex[1].x = p.x;
+								}
+							}
+						}
 
 						if((CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,484,484,0,0) || 
 							CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,484,484,0,0)))
@@ -4764,7 +4834,7 @@ static void ViewPortCommands()
 								if (meng.got_it != -1 && meng.got_it != i + 10000)
 									continue;
 
-								p=st.mouse;
+								p=st.mouse; 
 
 								STW(&p.x,&p.y);
 
@@ -4777,6 +4847,7 @@ static void ViewPortCommands()
 
 									meng.command2 = EDIT_SECTOR;
 									meng.com_id = i;
+									meng.sector_edit_selection = i;
 
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[0]=p;
@@ -4807,6 +4878,7 @@ static void ViewPortCommands()
 
 									meng.command2 = EDIT_SECTOR;
 									meng.com_id = i;
+									meng.sector_edit_selection = i + 1000;
 
 									if(st.Current_Map.sector[i].sloped)
 										st.Current_Map.sector[i].vertex[1]=p;
@@ -4943,7 +5015,7 @@ static void ViewPortCommands()
 									meng.p.y -= gl[i].w_pos.y;
 								}
 
-								if (meng.got_it != i + 12000)
+								if (meng.got_it != -1 && meng.got_it != i + 12000)
 									continue;
 
 								p = st.mouse;
@@ -5088,9 +5160,10 @@ static void ViewPortCommands()
 								p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
 								p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
 
-								sprintf(str,"%d",st.Current_Map.sprites[i].angle);
-								String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.sprites[i].position.z);
+								//sprintf(str,"%d",st.Current_Map.sprites[i].angle);
+								//String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.sprites[i].position.z);
 
+								/*
 								if(st.mouse_wheel>0 && !st.mouse2)
 								{
 									if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle+=1;
@@ -5104,6 +5177,7 @@ static void ViewPortCommands()
 									else st.Current_Map.sprites[i].angle-=100;
 									st.mouse_wheel=0;
 								}
+								*/
 
 								got_it = 1;
 								break;
@@ -5243,8 +5317,8 @@ static void ViewPortCommands()
 									p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
 									p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
 
-									sprintf(str,"%d",st.Current_Map.obj[i].angle);
-									String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.obj[i].position.z);
+									//sprintf(str,"%d",st.Current_Map.obj[i].angle);
+									//String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.obj[i].position.z);
 									/*
 									if(st.mouse_wheel>0 && !st.mouse2)
 									{
@@ -5669,23 +5743,6 @@ static void ViewPortCommands()
 				st.mouse_wheel=0;
 			}
 		}
-		else
-		if(meng.command==ADD_LIGHT_TO_LIGHTMAP || meng.command==EDIT_LIGHTMAP2 || meng.command==MOVE_LIGHTMAP)
-		{
-			if(st.mouse_wheel>0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state && !st.keys[LCTRL_KEY].state)
-			{
-				if(st.Camera.dimension.x<6) st.Camera.dimension.x+=0.1;
-				if(st.Camera.dimension.y<6) st.Camera.dimension.y+=0.1;
-				st.mouse_wheel=0;
-			}
-
-			if(st.mouse_wheel<0 && !st.mouse1 && !st.mouse2 && !st.keys[LSHIFT_KEY].state && !st.keys[LCTRL_KEY].state)
-			{
-				if(st.Camera.dimension.x>0.2) st.Camera.dimension.x-=0.1;
-				if(st.Camera.dimension.y>0.2) st.Camera.dimension.y-=0.1;
-				st.mouse_wheel=0;
-			}
-		}
 	}
 }
 
@@ -5736,7 +5793,7 @@ static void ENGDrawLight()
 
 	float dist;
 
-	Pos p;
+	Pos p, s;
 	uPos16 p2;
 
 	if(meng.viewmode!=INGAMEVIEW_MODE)
@@ -5769,213 +5826,271 @@ static void ENGDrawLight()
 			DrawLine(st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,
 				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
 		}
-	}
 
-	if (st.num_lights > 0)
-	{
-		for (i = 1; i < st.num_lights; i++)
+		if (st.num_lights > 0)
 		{
-			Pos tmp = st.game_lightmaps[i].w_pos;
-			char textI[2] = { 127, 0};
-
-			//WTSci(&tmp.x, &tmp.y);
-
-			tmp.x -= st.Camera.position.x;
-			tmp.y -= st.Camera.position.y;
-
-			tmp.x *= st.Camera.dimension.x;
-			tmp.y *= st.Camera.dimension.y;
-
-			//DrawUI(tmp.x, tmp.y, 512, 512, 0, 255, 255, 255, 0, 0, 32768, 32768, st.BasicTex, 255, 0);
-			DrawGraphic(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, 300, 300, 0, 255, 255, 255, st.BasicTex,
-				255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-			DrawStringUI(textI, tmp.x, tmp.y, 1024, 1024, 0, 0, 0, 0, 255, 1, 2048, 2048, 0);
-		}
-	}
-
-	/*
-	if(meng.pannel_choice==ADD_LIGHT && meng.command==EDIT_LIGHTMAP)
-	{
-		if(meng.got_it!=-1)
-		{
-			i=meng.got_it;
-
-			DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-				st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-				255,255,255,255,64,24);
-
-			DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-				st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-				255,255,255,255,64,24);
-
-			DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
-				st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-				255,255,255,255,64,24);
-
-			DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
-				st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-				255,255,255,255,64,24);
-
-		}
-	}
-	*/
-	/*
-	else
-	if(meng.pannel_choice==ADD_LIGHT && meng.command==EDIT_LIGHTMAP2)
-	{
-		i=meng.got_it;
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			255,255,255,255,64,24);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			255,255,255,255,64,24);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
-			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,255,255,255,64,24);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
-			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,255,255,255,64,24);
-
-		if(meng.sub_com==2)
-		{
-			for(j=0;j<st.game_lightmaps[i].num_lights;j++)	
+			for (i = 1; i < st.num_lights; i++)
 			{
-				p2.x=(st.game_lightmaps[i].W_w*st.game_lightmaps[i].t_pos[j].x)/st.game_lightmaps[i].T_w;
-				p2.y=(st.game_lightmaps[i].W_h*st.game_lightmaps[i].t_pos[j].y)/st.game_lightmaps[i].T_h;
+				Pos tmp = st.game_lightmaps[i].w_pos;
+				char textI[2] = { 127, 0 };
 
-				p2.x=p2.x+(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2));
-				p2.y=p2.y+(st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2));
-				
-				DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
+				//WTSci(&tmp.x, &tmp.y);
+
+				tmp.x -= st.Camera.position.x;
+				tmp.y -= st.Camera.position.y;
+
+				tmp.x *= st.Camera.dimension.x;
+				tmp.y *= st.Camera.dimension.y;
+
+				//DrawUI(tmp.x, tmp.y, 512, 512, 0, 255, 255, 255, 0, 0, 32768, 32768, st.BasicTex, 255, 0);
+				DrawGraphic(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, 300, 300, 0, 255, 255, 255, st.BasicTex,
+					255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawStringUI(textI, tmp.x, tmp.y, 1024, 1024, 0, 0, 0, 0, 255, 1, 2048, 2048, 0);
 			}
 		}
 
-		if(meng.com_id==1)
+		switch (meng.command2)
 		{
-			j=meng.temp;
-			p2.x=(st.game_lightmaps[i].W_w*st.game_lightmaps[i].t_pos[j].x)/st.game_lightmaps[i].T_w;
-			p2.y=(st.game_lightmaps[i].W_h*st.game_lightmaps[i].t_pos[j].y)/st.game_lightmaps[i].T_h;
+			case EDIT_OBJ:
+				p = st.Current_Map.obj[meng.obj_edit_selection].position;
+				s = st.Current_Map.obj[meng.obj_edit_selection].size;
 
-			p2.x=p2.x+(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2));
-			p2.y=p2.y+(st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2));
-				
-			DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
+				if (p.z < 24)
+				{
+					p.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+					p.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+					p.x += st.Camera.position.x;
+					p.y += st.Camera.position.y;
+				}
+
+				if (p.z > 31 && p.z < 40)
+				{
+					p.x -= (float) st.Camera.position.x*st.Current_Map.bck1_v;
+					p.y -= (float) st.Camera.position.y*st.Current_Map.bck1_v;
+
+					p.x += st.Camera.position.x;
+					p.y += st.Camera.position.y;
+
+					//p.x *= st.Camera.dimension.x;
+					//p.y *= st.Camera.dimension.y;
+
+					//s.x *= st.Camera.dimension.x;
+					//s.y *= st.Camera.dimension.y;
+				}
+
+				if (p.z > 39 && p.z < 48)
+				{
+					p.x -= (float) st.Camera.position.x * st.Current_Map.bck2_v;
+					p.y -= (float) st.Camera.position.y * st.Current_Map.bck2_v;
+
+					p.x += st.Camera.position.x;
+					p.y += st.Camera.position.y;
+
+					//p.x *= (float) st.Camera.dimension.x;
+					//p.y *= (float) st.Camera.dimension.y;
+
+					//s.x *= (float) st.Camera.dimension.x;
+					//s.y *= (float) st.Camera.dimension.y;
+				}
+
+				if (p.z > 47)
+				{
+					p.x /= (float)st.Camera.dimension.x;
+					p.y /= (float)st.Camera.dimension.y;
+
+					p.x += st.Camera.position.x;
+					p.y += st.Camera.position.y;
+
+					s.x /= (float)st.Camera.dimension.x;
+					s.y /= (float)st.Camera.dimension.y;
+				}
+
+				DrawLine(p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x - (s.x / 2), p.y - (s.y / 2), p.x + (s.x / 2), p.y - (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x + (s.x / 2), p.y - (s.y / 2), p.x + (s.x / 2), p.y + (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x + (s.x / 2), p.y + (s.y / 2), p.x - (s.x / 2), p.y + (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x - (s.x / 2), p.y + (s.y / 2), p.x - (s.x / 2), p.y - (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				//Vertices
+
+				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - (s.x / 2), p.y - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + (s.x / 2), p.y - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				//Anchor point
+
+				DrawGraphic(p.x + 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x - 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12, p.y + 96 + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x, p.y + 96, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12, p.y - 96 + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x, p.y - 96, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				break;
+
+			case EDIT_SPRITE:
+				p = st.Current_Map.sprites[meng.sprite_edit_selection].position;
+				s = st.Current_Map.sprites[meng.sprite_edit_selection].body.size;
+
+				if (p.z > 31 && p.z < 40)
+				{
+					p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+					p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+
+					//p.x -= st.Camera.position.x;
+					//p.y -= st.Camera.position.y;
+
+					//p.x *= st.Camera.dimension.x;
+					//p.y *= st.Camera.dimension.y;
+
+					//s.x *= st.Camera.dimension.x;
+					//s.y *= st.Camera.dimension.y;
+				}
+
+				if (p.z > 39 && p.z < 48)
+				{
+					p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+					p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+					p.x += st.Camera.position.x;
+					p.y += st.Camera.position.y;
+
+					//p.x *= (float) st.Camera.dimension.x;
+					//p.y *= (float) st.Camera.dimension.y;
+
+					//s.x *= (float) st.Camera.dimension.x;
+					//s.y *= (float) st.Camera.dimension.y;
+				}
+
+				if (p.z > 47)
+				{
+					p.x /= (float) st.Camera.dimension.x;
+					p.y /= (float) st.Camera.dimension.y;
+
+					p.x += st.Camera.position.x;
+					p.y += st.Camera.position.y;
+
+					s.x /= (float) st.Camera.dimension.x;
+					s.y /= (float) st.Camera.dimension.y;
+				}
+
+				DrawLine(p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x - (s.x / 2), p.y - (s.y / 2), p.x + (s.x / 2), p.y - (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x + (s.x / 2), p.y - (s.y / 2), p.x + (s.x / 2), p.y + (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x + (s.x / 2), p.y + (s.y / 2), p.x - (s.x / 2), p.y + (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x - (s.x / 2), p.y + (s.y / 2), p.x - (s.x / 2), p.y - (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				//Vertices
+
+				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - (s.x / 2), p.y - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + (s.x / 2), p.y - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				//Anchor point
+
+				DrawGraphic(p.x + 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x - 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12, p.y + 96 + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x, p.y + 96, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12, p.y - 96 + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x, p.y - 96, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				break;
+
+			case NEDIT_LIGHT:
+				p = st.game_lightmaps[meng.light_edit_selection].w_pos;
+
+				DrawGraphic(p.x + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				break;
+
+			case EDIT_SECTOR:
+
+				if (meng.sector_edit_selection >= 1000)
+					i = meng.sector_edit_selection - 1000;
+				else
+					i = meng.sector_edit_selection;
+
+				p = st.Current_Map.sector[i].vertex[0];
+				s = st.Current_Map.sector[i].vertex[1];
+
+				DrawLine(p.x + 12 - 128, p.y + 12 - 128, s.x + 12 + 128, s.y + 12 - 128, 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x - 128, p.y - 128, s.x + 128, s.y - 128, 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(s.x + 12 + 128, s.y + 12 - 128, s.x + 12 + 128, s.y + 12 + 128, 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(s.x + 128, s.y - 128, s.x + 128, s.y + 128, 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(s.x + 12 + 128, s.y + 12 + 128, s.x + 12 - 128, s.y + 12 + 128, 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(s.x + 128, s.y + 128, p.x - 128, p.y + 128, 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				DrawLine(p.x + 12 - 128, p.y + 12 + 128, p.x + 12 - 128, p.y + 12 - 128, 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
+				DrawLine(p.x - 128, p.y + 128, p.x - 128, p.y - 128, 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
+
+				//Vertices
+
+				DrawGraphic(p.x + 12 - 128, p.y + 12 - 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - 128, p.y - 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(s.x + 12 + 128, s.y + 12 - 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(s.x + 128, s.y - 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(s.x + 12 + 128, s.y + 12 + 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(s.x + 128, s.y + 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(p.x + 12 - 128, p.y + 12 + 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x - 128, p.y + 128, 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				//Anchor point
+
+				DrawGraphic(p.x + 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(p.x + 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				DrawGraphic(s.x - 96 + 12, s.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(s.x - 96, s.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				break;
 		}
-
 	}
-	else
-	if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP_STEP2)
-	{
-		i=meng.command2;
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,128,32,mgg_sys[0].frames[5],128,0,0,32768,32768,17,0);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			255,128,32,255,st.game_lightmaps[i].W_h/12,24);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)-((st.game_lightmaps[i].W_w/12))),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			255,128,32,255,st.game_lightmaps[i].W_h/12,24);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
-			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
-			255,128,32,255,st.game_lightmaps[i].W_w/12,24);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
-			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)-(st.game_lightmaps[i].W_h/12)),
-			255,128,32,255,st.game_lightmaps[i].W_w/12,24);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16,0);
-
-		DrawGraphic(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),st.game_lightmaps[i].W_w/6,st.game_lightmaps[i].W_h/6,0,
-			255,32,32,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,16,0);
-	}
-	else
-	if(meng.pannel_choice==ADD_LIGHT && meng.command==CREATE_LIGHTMAP)
-	{
-		i=meng.obj_lightmap_sel;
-
-		if(i>-1)
-		{
-			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2),
-				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2)+32,st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2),
-				255,255,255,255,64,24);
-
-			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2)-32,st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
-				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2)+32,st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
-				255,255,255,255,64,24);
-
-			DrawLine(st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
-				st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2)-32,
-				255,255,255,255,64,24);
-
-			DrawLine(st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y+(st.Current_Map.obj[i].size.y/2),
-				st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2),st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2)-32,
-				255,255,255,255,64,24);
-		}
-		else
-		if(i==-2)
-		{
-			//DrawGraphic(meng.lightmappos.x,meng.lightmappos.y,meng.lightmapsize.x,meng.lightmapsize.y,0,255,255,255,mgg_sys[0].frames[4],255,0,0,32768,32768,16);
-
-			DrawLine(meng.lightmappos.x-(meng.lightmapsize.x/2)-32,meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmappos.x+(meng.lightmapsize.x/2)+32,meng.lightmappos.y-(meng.lightmapsize.y/2),255,255,255,255,64,24);
-			DrawLine(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2)+32,255,255,255,255,64,24);
-			DrawLine(meng.lightmappos.x-(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2),meng.lightmappos.x+(meng.lightmapsize.x/2)+32,meng.lightmappos.y+(meng.lightmapsize.y/2),255,255,255,255,64,24);
-			DrawLine(meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y-(meng.lightmapsize.y/2),meng.lightmappos.x+(meng.lightmapsize.x/2),meng.lightmappos.y+(meng.lightmapsize.y/2)+32,255,255,255,255,64,24);
-		}
-	}
-	else
-	if(meng.pannel_choice==ADD_LIGHT && meng.command==ADD_LIGHT_TO_LIGHTMAP)
-	{
-		i=meng.command2;
-
-		texture.data=st.game_lightmaps[i].tex;
-		texture.normal=0;
-		texture.vb_id=-1;
-
-		//DrawGraphic(st.game_lightmaps[i].w_pos.x,st.game_lightmaps[i].w_pos.y,st.game_lightmaps[i].W_w,st.game_lightmaps[i].W_h,0,255,255,255,texture,128,0,0,32768,32768,24,0);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2),
-			255,255,255,255,64,17);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			st.game_lightmaps[i].w_pos.x+((st.game_lightmaps[i].W_w/2)),st.game_lightmaps[i].w_pos.y+(st.game_lightmaps[i].W_h/2),
-			255,255,255,255,64,17);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
-			st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,255,255,255,64,17);
-
-		DrawLine(st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y+((st.game_lightmaps[i].W_h/2)),
-			st.game_lightmaps[i].w_pos.x+(st.game_lightmaps[i].W_w/2),st.game_lightmaps[i].w_pos.y-((st.game_lightmaps[i].W_h/2)),
-			255,255,255,255,64,17);
-		
-		p2=st.game_lightmaps[i].t_pos[meng.light.light_id];
-
-		
-		p2.x=(st.game_lightmaps[i].W_w*st.game_lightmaps[i].t_pos[meng.light.light_id].x)/st.game_lightmaps[i].T_w;
-		p2.y=(st.game_lightmaps[i].W_h*st.game_lightmaps[i].t_pos[meng.light.light_id].y)/st.game_lightmaps[i].T_h;
-
-		p2.x=p2.x+(st.game_lightmaps[i].w_pos.x-(st.game_lightmaps[i].W_w/2));
-		p2.y=p2.y+(st.game_lightmaps[i].w_pos.y-(st.game_lightmaps[i].W_h/2));
-
-		DrawGraphic(p2.x,p2.y,256,256,0,255,255,255,mgg_sys[0].frames[4],255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
-	}
-	*/
 }
 
 struct nk_color ColorPicker(struct nk_color color)
@@ -6186,13 +6301,13 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang, Pos *tpan, Pos *tsize)
 			{
 				ctx->style.button.normal = ctx->style.button.active;
 				ctx->style.button.hover = ctx->style.button.active;
-				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+				if (nk_button_icon_set(LINK_ICON))
 					chained = 0;
 
 				SetThemeBack(ctx,meng.theme);
 			}
 			else
-				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+			if (nk_button_icon_set(UNLINK_ICON))
 					chained = 1;
 
 
@@ -6228,13 +6343,13 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang, Pos *tpan, Pos *tsize)
 				{
 					ctx->style.button.normal = ctx->style.button.active;
 					ctx->style.button.hover = ctx->style.button.active;
-					if (nk_button_symbol(ctx, NK_SYMBOL_X))
+					if (nk_button_icon_set(LINK_ICON))
 						chained = 0;
 
 					SetThemeBack(ctx, meng.theme);
 				}
 				else
-				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+				if (nk_button_icon_set(UNLINK_ICON))
 					chained = 1;
 
 
@@ -6265,13 +6380,13 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang, Pos *tpan, Pos *tsize)
 				{
 					ctx->style.button.normal = ctx->style.button.active;
 					ctx->style.button.hover = ctx->style.button.active;
-					if (nk_button_symbol(ctx, NK_SYMBOL_X))
+					if (nk_button_icon_set(LINK_ICON))
 						chained = 0;
 
 					SetThemeBack(ctx, meng.theme);
 				}
 				else
-				if (nk_button_symbol(ctx, NK_SYMBOL_X))
+				if (nk_button_icon_set(UNLINK_ICON)))
 					chained = 1;
 
 
@@ -7387,19 +7502,6 @@ void CoordBar()
 		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "X: %d Y: %d", st.Camera.position.x, st.Camera.position.y);
 		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "Zoom: %f", st.Camera.dimension.x);
 		nk_layout_row_dynamic(ctx, 15, 1);
-
-		if (meng.LayerBar)
-			ctx->style.button.normal = ctx->style.button.hover;
-
-		if (nk_button_label(ctx, "Layers"))
-		{
-			if (meng.LayerBar)
-				meng.LayerBar = 0;
-			else
-				meng.LayerBar = 1;
-		}
-
-		SetThemeBack(ctx, meng.theme);
 	}
 
 	nk_end(ctx);
@@ -7407,11 +7509,60 @@ void CoordBar()
 
 void LayerBar()
 {
-	if (nk_begin(ctx, "Layer bar", nk_rect(st.screenx - 200, 30, 200, st.screeny - 30 - 130), NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE))
+	if (nk_begin(ctx, "Layer bar", nk_rect(st.screenx - 200, 30, 200, st.screeny - 30 - 130), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
 		//nk_layout_row_dynamic(ctx, 320, 1);
 
 		int16 i, j;
+
+		nk_layout_row_dynamic(ctx, 20, 2);
+		if (nk_button_icon_set(DOWN_ICON))
+		{
+			switch (meng.command2)
+			{
+				case EDIT_OBJ:
+					st.Current_Map.obj[meng.obj_edit_selection].position.z++;
+					if (st.Current_Map.obj[meng.obj_edit_selection].position.z > 56)
+						st.Current_Map.obj[meng.obj_edit_selection].position.z = 56;
+					break;
+
+				case EDIT_SPRITE:
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z++;
+					if (st.Current_Map.sprites[meng.sprite_edit_selection].position.z > 56)
+						st.Current_Map.sprites[meng.sprite_edit_selection].position.z = 56;
+					break;
+
+				case NEDIT_LIGHT:
+					st.game_lightmaps[meng.light_edit_selection].falloff[4] += 1.0f;
+					if (st.game_lightmaps[meng.light_edit_selection].falloff[4] > 31.0f)
+						st.game_lightmaps[meng.light_edit_selection].falloff[4] = 31.0f;
+					break;
+			}
+		}
+
+		if (nk_button_icon_set(UP_ICON))
+		{
+			switch (meng.command2)
+			{
+			case EDIT_OBJ:
+				st.Current_Map.obj[meng.obj_edit_selection].position.z--;
+				if (st.Current_Map.obj[meng.obj_edit_selection].position.z < 16)
+					st.Current_Map.obj[meng.obj_edit_selection].position.z = 16;
+				break;
+
+			case EDIT_SPRITE:
+				st.Current_Map.sprites[meng.sprite_edit_selection].position.z--;
+				if (st.Current_Map.sprites[meng.sprite_edit_selection].position.z < 16)
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z = 16;
+				break;
+
+			case NEDIT_LIGHT:
+				st.game_lightmaps[meng.light_edit_selection].falloff[4] -= 1.0f;
+				if (st.game_lightmaps[meng.light_edit_selection].falloff[4] < 24.0f)
+					st.game_lightmaps[meng.light_edit_selection].falloff[4] = 24.0f;
+				break;
+			}
+		}
 
 		if (nk_tree_push(ctx, NK_TREE_TAB, "Foreground", NK_MINIMIZED))
 		{
@@ -7446,7 +7597,8 @@ void LayerBar()
 
 							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
 							{
-								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								if (nk_select_label(ctx, StringFormat("%s %d", st.Game_Sprites[st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].GameID].name,
+									meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
 								{
 									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
 										meng.layers[i][j] = 1;
@@ -7503,7 +7655,8 @@ void LayerBar()
 
 							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
 							{
-								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								if (nk_select_label(ctx, StringFormat("%s %d", st.Game_Sprites[st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].GameID].name,
+									meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
 								{
 									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
 										meng.layers[i][j] = 1;
@@ -7528,7 +7681,7 @@ void LayerBar()
 									{
 										memset(meng.layers, 0, 57 * 2048 * 2);
 										meng.layers[i][j] = 1;
-										meng.sprite_edit_selection = meng.z_buffer[i][j] - 10000;
+										meng.sector_edit_selection = meng.z_buffer[i][j] - 10000;
 										meng.command2 = EDIT_SECTOR;
 									}
 								}
@@ -7545,7 +7698,7 @@ void LayerBar()
 									{
 										memset(meng.layers, 0, 57 * 2048 * 2);
 										meng.layers[i][j] = 1;
-										meng.sprite_edit_selection = meng.z_buffer[i][j] - 12000;
+										meng.light_edit_selection = meng.z_buffer[i][j] - 12000;
 										meng.command2 = NEDIT_LIGHT;
 									}
 								}
@@ -7586,7 +7739,7 @@ void LayerBar()
 									{
 										memset(meng.layers, 0, 57 * 2048 * 2);
 										meng.layers[i][j] = 1;
-										meng.sprite_edit_selection = meng.z_buffer[i][j];
+										meng.obj_edit_selection = meng.z_buffer[i][j];
 										meng.command2 = EDIT_OBJ;
 									}
 								}
@@ -7595,7 +7748,8 @@ void LayerBar()
 
 							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
 							{
-								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								if (nk_select_label(ctx, StringFormat("%s %d", st.Game_Sprites[st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].GameID].name,
+									meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
 								{
 									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
 										meng.layers[i][j] = 1;
@@ -7643,7 +7797,7 @@ void LayerBar()
 									{
 										memset(meng.layers, 0, 57 * 2048 * 2);
 										meng.layers[i][j] = 1;
-										meng.sprite_edit_selection = meng.z_buffer[i][j];
+										meng.obj_edit_selection = meng.z_buffer[i][j];
 										meng.command2 = EDIT_OBJ;
 									}
 								}
@@ -7652,7 +7806,8 @@ void LayerBar()
 
 							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
 							{
-								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								if (nk_select_label(ctx, StringFormat("%s %d", st.Game_Sprites[st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].GameID].name,
+									meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
 								{
 									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
 										meng.layers[i][j] = 1;
@@ -7700,6 +7855,8 @@ void LayerBar()
 									{
 										memset(meng.layers, 0, 57 * 2048 * 2);
 										meng.layers[i][j] = 1;
+										meng.obj_edit_selection = meng.z_buffer[i][j];
+										meng.command2 = EDIT_OBJ;
 									}
 								}
 
@@ -7707,7 +7864,8 @@ void LayerBar()
 
 							if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000)
 							{
-								if (nk_select_label(ctx, StringFormat("Sprite %d", meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
+								if (nk_select_label(ctx, StringFormat("%s %d", st.Game_Sprites[st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].GameID].name,
+									meng.z_buffer[i][j] - 2000), NK_TEXT_ALIGN_LEFT, meng.layers[i][j] == 1))
 								{
 									if (st.keys[LCTRL_KEY].state || st.keys[RCTRL_KEY].state)
 										meng.layers[i][j] = 1;
@@ -7715,6 +7873,8 @@ void LayerBar()
 									{
 										memset(meng.layers, 0, 57 * 2048 * 2);
 										meng.layers[i][j] = 1;
+										meng.sprite_edit_selection = meng.z_buffer[i][j] - 2000;
+										meng.command2 = EDIT_SPRITE;
 									}
 								}
 
@@ -7871,7 +8031,7 @@ void NewLeftPannel()
 				nk_layout_row_dynamic(ctx, 30, 1);
 				char *layers2[] = { "Foreground", "Midground", "Background 1", "Background 2", "Background 3" };
 
-				nk_label(ctx, "Current layer", NK_TEXT_LB);
+				nk_label(ctx, "Selection layer", NK_TEXT_LB);
 				meng.curlayer = nk_combo(ctx, layers2, 5, meng.curlayer, 25, nk_vec2(110, 200));
 
 				if (meng.command2 == EDIT_SECTOR)
@@ -7891,14 +8051,6 @@ void NewLeftPannel()
 					editcolor.b = st.Current_Map.sprites[meng.sprite_edit_selection].color.b;
 
 					nk_layout_row_dynamic(ctx, 30, 1);
-
-					nk_label(ctx, "Current layer of the sprite", NK_TEXT_LB);
-					meng.spr2.type = nk_combo(ctx, Layers, 5, st.Current_Map.sprites[meng.sprite_edit_selection].type_s, 25, nk_vec2(110, 200));
-
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z = GetZLayer(st.Current_Map.sprites[meng.sprite_edit_selection].position.z,
-						st.Current_Map.sprites[meng.sprite_edit_selection].type_s, meng.spr2.type);
-
-					st.Current_Map.sprites[meng.sprite_edit_selection].type_s = meng.spr2.type;
 
 					editcolor = ColorPicker(editcolor);
 
@@ -7956,6 +8108,14 @@ void NewLeftPannel()
 						}
 					}
 
+					nk_label(ctx, "Current sprite layer", NK_TEXT_LB);
+					meng.spr2.type = nk_combo(ctx, Layers, 5, st.Current_Map.sprites[meng.sprite_edit_selection].type_s, 25, nk_vec2(110, 200));
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].position.z = GetZLayer(st.Current_Map.sprites[meng.sprite_edit_selection].position.z,
+						st.Current_Map.sprites[meng.sprite_edit_selection].type_s, meng.spr2.type);
+
+					st.Current_Map.sprites[meng.sprite_edit_selection].type_s = meng.spr2.type;
+
 					nk_layout_row_dynamic(ctx, 30, 1);
 				}
 
@@ -7967,14 +8127,6 @@ void NewLeftPannel()
 					editcolor.a = st.Current_Map.obj[meng.obj_edit_selection].color.a;
 
 					nk_layout_row_dynamic(ctx, 30, 1);
-
-					nk_label(ctx, "Current layer of the scenario", NK_TEXT_LB);
-					meng.obj2.type = nk_combo(ctx, Layers, 5, st.Current_Map.obj[meng.obj_edit_selection].type, 25, nk_vec2(110, 200));
-
-					st.Current_Map.obj[meng.obj_edit_selection].position.z = GetZLayer(st.Current_Map.obj[meng.obj_edit_selection].position.z,
-						st.Current_Map.obj[meng.obj_edit_selection].type, meng.obj2.type);
-
-					st.Current_Map.obj[meng.obj_edit_selection].type = meng.obj2.type;
 
 					editcolor = ColorPicker(editcolor);
 
@@ -8001,6 +8153,15 @@ void NewLeftPannel()
 								st.Current_Map.obj[meng.obj_edit_selection].flag -= 1;
 						}
 					}
+
+					nk_label(ctx, "Current scenario layer", NK_TEXT_LB);
+					meng.obj2.type = nk_combo(ctx, Layers, 5, st.Current_Map.obj[meng.obj_edit_selection].type, 25, nk_vec2(110, 200));
+
+					st.Current_Map.obj[meng.obj_edit_selection].position.z = GetZLayer(st.Current_Map.obj[meng.obj_edit_selection].position.z,
+						st.Current_Map.obj[meng.obj_edit_selection].type, meng.obj2.type);
+
+					st.Current_Map.obj[meng.obj_edit_selection].type = meng.obj2.type;
+
 					/*
 					if (st.Current_Map.obj[meng.obj_edit_selection].type == MIDGROUND)
 					{
@@ -8182,6 +8343,70 @@ void NewLeftPannel()
 		}
 
 		nk_end(ctx);
+	}
+}
+
+void FixZLayers()
+{
+	uint16 i, j;
+
+	int16 z;
+
+	for (i = 16; i < 57; i++)
+	{
+		if (meng.z_slot[i] > 0)
+		{
+			for (j = 0; j < meng.z_slot[i]; j++)
+			{
+				if (meng.z_buffer[i][j] < 2000 && st.Current_Map.obj[meng.z_buffer[i][j]].position.z != i)
+				{
+					z = st.Current_Map.obj[meng.z_buffer[i][j]].position.z;
+					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
+					meng.z_slot[z]++;
+					meng.z_buffer[i][j] = -1;
+				}
+
+				if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000 && st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].position.z != i)
+				{
+					z = st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].position.z;
+					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
+					meng.z_slot[z]++;
+					meng.z_buffer[i][j] = -1;
+				}
+
+				if (meng.z_buffer[i][j] >= 12000 && st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4] != i)
+				{
+					z = st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4];
+					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
+					meng.z_slot[z]++;
+					meng.z_buffer[i][j] = -1;
+				}
+			}
+		}
+	}
+
+	for (i = 16; i < 57; i++)
+	{
+		if (meng.z_slot[i] > 0)
+		{
+			z = 0;
+			for (j = 0; j < meng.z_slot[i]; j++)
+			{
+				if (meng.z_buffer[i][j] == -1)
+				{
+					meng.z_buffer[i][j] = meng.z_buffer[i][j + 1];
+					if (meng.z_buffer[i][j] != -1)
+						z++;
+
+					meng.z_buffer[i][j + 1] = -1;
+				}
+				else
+					z++;
+			}
+
+			meng.z_slot[i] = z;
+			meng.z_used = i;
+		}
 	}
 }
 
@@ -8565,6 +8790,8 @@ int main(int argc, char *argv[])
 		SwapBuffer(wn);
 
 		nkrendered = 0;
+
+		FixZLayers();
 	}
 
 	StopAllSounds();
