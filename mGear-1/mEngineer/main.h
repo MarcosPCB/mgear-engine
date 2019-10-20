@@ -57,6 +57,8 @@
 #define LOAD_LIGHTMAP2 47
 #define RESIZE_LIGHTMAP 48
 
+#define SCALER_SELECT 100
+
 #define DRAW_SECTOR2 41
 
 #define MAP_PROPERTIES 42
@@ -119,9 +121,9 @@
 #define RIGHT_ICON 101
 #define LEFT_ICON 103
 #define LOADING_ICON 30
-#define LINK_ICON 129
-#define UNLINK_ICON 128
-#define PICKER_ICON 130
+#define LINK_ICON 126
+#define UNLINK_ICON 125
+#define PICKER_ICON 127
 
 struct _mEng
 {
@@ -164,6 +166,8 @@ struct _mEng
 	int16 light_edit_selection;
 
 	int16 editview;
+
+	int8 scaling;
 
 	Pos p;
 	int32 got_it;

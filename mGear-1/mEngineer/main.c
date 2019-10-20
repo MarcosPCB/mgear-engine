@@ -76,6 +76,7 @@ int nk_button_icon_set(uint8 icon)
 	char buf[2];
 
 	buf[0] = icon;
+	buf[1] = 0;
 
 	nk_style_set_font(ctx, &fonts[1]->handle);
 
@@ -4401,7 +4402,7 @@ static void ViewPortCommands()
 	char str[64];
 	const char options[5][16]={"Metal", "Wood", "Plastic", "Concrete", "Organic"};
 	int16 i, j, k, l, m;
-	static Pos p, p2;
+	static Pos p, p2, s, pm;
 	uPos16 p3;
 	float tmp;
 	static int16 temp;
@@ -4834,6 +4835,9 @@ static void ViewPortCommands()
 								if (meng.got_it != -1 && meng.got_it != i + 10000)
 									continue;
 
+								if (meng.command2 != EDIT_SECTOR && meng.sub_com == SCALER_SELECT)
+									continue;
+
 								p=st.mouse; 
 
 								STW(&p.x,&p.y);
@@ -4998,6 +5002,9 @@ static void ViewPortCommands()
 						{
 							if (st.mouse1)
 							{
+								if (meng.command2 != NEDIT_LIGHT && meng.sub_com == SCALER_SELECT)
+									continue;
+
 								memset(meng.layers, 0, 57 * 2048 * 2);
 								meng.layers[l][k] = 1;
 
@@ -5102,7 +5109,7 @@ static void ViewPortCommands()
 
 						if(got_it) break;
 
-						if (st.mouse1 && meng.got_it == i + 2000)
+						if (st.mouse1 && meng.got_it == i + 2000 && meng.scaling == 0)
 						{
 							p = st.mouse;
 
@@ -5121,10 +5128,13 @@ static void ViewPortCommands()
 						}
 
 						if(CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
-							st.Current_Map.sprites[i].angle,st.Current_Map.sprites[i].position.z))
+							st.Current_Map.sprites[i].angle,st.Current_Map.sprites[i].position.z) && meng.scaling == 0)
 						{
 							if(st.mouse1)
 							{
+								if (meng.command2 != EDIT_SPRITE && meng.sub_com == SCALER_SELECT)
+									continue;
+
 								memset(meng.layers, 0, 57 * 2048 * 2);
 								meng.layers[l][k] = 1;
 
@@ -5184,6 +5194,254 @@ static void ViewPortCommands()
 							}
 							//else
 								//meng.got_it=-1;
+						}
+
+						if (meng.sub_com == SCALER_SELECT && meng.command2 == EDIT_SPRITE && meng.sprite_edit_selection == i)
+						{
+							p = st.Current_Map.sprites[i].position;
+							p2 = st.Current_Map.sprites[i].body.size;
+
+							//p.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+							//p.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+							if (st.keys[RETURN_KEY].state)
+							{
+								meng.sub_com = 0;
+								meng.scaling = 0;
+							}
+
+							if (p.z > 31 && p.z < 40)
+							{
+								p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+								p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+							}
+
+							if (p.z > 39 && p.z < 48)
+							{
+								p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+								p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+								p.x += st.Camera.position.x;
+								p.y += st.Camera.position.y;
+							}
+
+							if (p.z > 47)
+							{
+								p.x /= (float)st.Camera.dimension.x;
+								p.y /= (float)st.Camera.dimension.y;
+
+								p.x += st.Camera.position.x;
+								p.y += st.Camera.position.y;
+
+								p2.x /= (float)st.Camera.dimension.x;
+								p2.y /= (float)st.Camera.dimension.y;
+							}
+
+							//UIData(p.x, p.x, p.y + (p2.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 255, 0, 0, 0, 0, 32768, 32768, st.BasicTex, 255, 0);
+
+							if (meng.scaling == 1)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									//p.x -= pm.x;
+									p.y -= pm.y;
+
+									p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.y;
+
+										if (asp < 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+										meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 2)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									//p.x -= pm.x;
+									p.y -= pm.y;
+
+									//p.y *= -1;
+
+									if(st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.y;
+
+										if (asp < 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 3)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									//p.y -= pm.y;
+
+									p.x *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+
+										if (asp < 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 4)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									//p.y -= pm.y;
+
+									//p.x *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+
+										if (asp < 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x, p.y - (p2.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 1;
+
+										asp = (float) st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x, p.y + (p2.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 2;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x - (p2.x / 2) - 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 3;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x + (p2.x / 2) + 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 4;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
 						}
 					}
 				}
@@ -5271,10 +5529,13 @@ static void ViewPortCommands()
 						}
 
 						if(CheckCollisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,st.Current_Map.obj[i].angle,
-							st.Current_Map.obj[i].position.z))
+							st.Current_Map.obj[i].position.z) && meng.scaling == 0)
 						{
 							if(st.mouse1)
 							{
+								if (meng.command2 != EDIT_OBJ && meng.sub_com == SCALER_SELECT)
+									continue;
+
 								memset(meng.layers, 0, 57 * 2048 * 2);
 								meng.layers[l][k] = 1;
 
@@ -5348,6 +5609,254 @@ static void ViewPortCommands()
 							}
 							//else
 								//meng.got_it=-1;
+						}
+
+						if (meng.sub_com == SCALER_SELECT && meng.command2 == EDIT_OBJ && meng.obj_edit_selection == i)
+						{
+							p = st.Current_Map.obj[i].position;
+							p2 = st.Current_Map.obj[i].size;
+
+							//p.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+							//p.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+							if (st.keys[RETURN_KEY].state)
+							{
+								meng.sub_com = 0;
+								meng.scaling = 0;
+							}
+
+							if (p.z > 31 && p.z < 40)
+							{
+								p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+								p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+							}
+
+							if (p.z > 39 && p.z < 48)
+							{
+								p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+								p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+								p.x += st.Camera.position.x;
+								p.y += st.Camera.position.y;
+							}
+
+							if (p.z > 47)
+							{
+								p.x /= (float)st.Camera.dimension.x;
+								p.y /= (float)st.Camera.dimension.y;
+
+								p.x += st.Camera.position.x;
+								p.y += st.Camera.position.y;
+
+								p2.x /= (float)st.Camera.dimension.x;
+								p2.y /= (float)st.Camera.dimension.y;
+							}
+
+							//UIData(p.x, p.x, p.y + (p2.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 255, 0, 0, 0, 0, 32768, 32768, st.BasicTex, 255, 0);
+
+							if (meng.scaling == 1)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									//p.x -= pm.x;
+									p.y -= pm.y;
+
+									p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.y;
+
+										if (asp < 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 2)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									//p.x -= pm.x;
+									p.y -= pm.y;
+
+									//p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.y;
+
+										if (asp < 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 3)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									//p.y -= pm.y;
+
+									p.x *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+
+										if (asp < 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 4)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									//p.y -= pm.y;
+
+									//p.x *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+
+										if (asp < 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+
+										if (asp >= 1)
+											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x, p.y - (p2.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 1;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x, p.y + (p2.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 2;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x - (p2.x / 2) - 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 3;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x + (p2.x / 2) + 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 4;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
 						}
 					}
 				}
@@ -5832,7 +6341,7 @@ static void ENGDrawLight()
 			for (i = 1; i < st.num_lights; i++)
 			{
 				Pos tmp = st.game_lightmaps[i].w_pos;
-				char textI[2] = { 127, 0 };
+				char textI[2] = { 124, 0 };
 
 				//WTSci(&tmp.x, &tmp.y);
 
@@ -5932,6 +6441,21 @@ static void ENGDrawLight()
 				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 				DrawGraphic(p.x - (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 
+				if (meng.sub_com == SCALER_SELECT)
+				{
+					DrawGraphic(p.x + 12 - (s.x / 2) - 96, p.y + 12, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x - (s.x / 2) - 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+					DrawGraphic(p.x + 12 + (s.x / 2) + 96, p.y + 12, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + (s.x / 2) + 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+					DrawGraphic(p.x + 12, p.y + 12 - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x, p.y - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+					DrawGraphic(p.x + 12, p.y + 12 + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x, p.y + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				}
+
 				//Anchor point
 
 				DrawGraphic(p.x + 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
@@ -6019,6 +6543,21 @@ static void ENGDrawLight()
 
 				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 				DrawGraphic(p.x - (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+				if (meng.sub_com == SCALER_SELECT)
+				{
+					DrawGraphic(p.x + 12 - (s.x / 2) - 96, p.y + 12, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x - (s.x / 2) - 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+					DrawGraphic(p.x + 12 + (s.x / 2) + 96, p.y + 12, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + (s.x / 2) + 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+					DrawGraphic(p.x + 12, p.y + 12 - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x, p.y - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+
+					DrawGraphic(p.x + 12, p.y + 12 + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x, p.y + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				}
 
 				//Anchor point
 
@@ -6386,7 +6925,7 @@ void TransformBox(Pos *pos, Pos *size, int16 *ang, Pos *tpan, Pos *tsize)
 					SetThemeBack(ctx, meng.theme);
 				}
 				else
-				if (nk_button_icon_set(UNLINK_ICON)))
+				if (nk_button_icon_set(UNLINK_ICON))
 					chained = 1;
 
 
@@ -8023,7 +8562,7 @@ void NewLeftPannel()
 				meng.light.c = nk_propertyf(ctx, "Cutoff", 0, meng.light.c, 32, 0.1, 0.01);
 				meng.light.l = nk_propertyi(ctx, "Midground Z", 0, meng.light.l, 8, 1, 1);
 
-				nk_button_label(ctx, "Load lightmap");
+				//nk_button_label(ctx, "Load lightmap");
 			}
 
 			if (meng.pannel_choice == SELECT_EDIT)
@@ -8116,6 +8655,19 @@ void NewLeftPannel()
 
 					st.Current_Map.sprites[meng.sprite_edit_selection].type_s = meng.spr2.type;
 
+					if (meng.sub_com == SCALER_SELECT)
+						ctx->style.button.normal = ctx->style.button.hover;
+
+					if (nk_button_label(ctx, "Scaler"))
+					{
+						if (meng.sub_com != SCALER_SELECT)
+							meng.sub_com = SCALER_SELECT;
+						else
+							meng.sub_com = 0;
+					}
+
+					SetThemeBack(ctx);
+
 					nk_layout_row_dynamic(ctx, 30, 1);
 				}
 
@@ -8161,6 +8713,20 @@ void NewLeftPannel()
 						st.Current_Map.obj[meng.obj_edit_selection].type, meng.obj2.type);
 
 					st.Current_Map.obj[meng.obj_edit_selection].type = meng.obj2.type;
+
+					if (meng.sub_com == SCALER_SELECT)
+						ctx->style.button.normal = ctx->style.button.hover;
+
+					if (nk_button_label(ctx, "Scaler"))
+					{
+						if (meng.sub_com != SCALER_SELECT)
+							meng.sub_com = SCALER_SELECT;
+						else
+							meng.sub_com = 0;
+					}
+
+
+					SetThemeBack(ctx);
 
 					/*
 					if (st.Current_Map.obj[meng.obj_edit_selection].type == MIDGROUND)
