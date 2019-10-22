@@ -124,6 +124,7 @@
 #define LINK_ICON 126
 #define UNLINK_ICON 125
 #define PICKER_ICON 127
+#define BIN_ICON 38
 
 struct _mEng
 {

@@ -10245,9 +10245,9 @@ void DrawMap()
 			for(i=0;i<st.Current_Map.num_obj;i++)
 			{
 
-				if((st.viewmode & 1 && st.Current_Map.obj[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.obj[i].position.z>23 && st.Current_Map.obj[i].position.z<32)
+				if(((st.viewmode & 1 && st.Current_Map.obj[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.obj[i].position.z>23 && st.Current_Map.obj[i].position.z<32)
 					 || (st.viewmode & 4 && st.Current_Map.obj[i].position.z>31 && st.Current_Map.obj[i].position.z<40) || (st.viewmode & 8 && st.Current_Map.obj[i].position.z>39 && st.Current_Map.obj[i].position.z<48)
-					  || (st.viewmode & 16 && st.Current_Map.obj[i].position.z>47 && st.Current_Map.obj[i].position.z<57))
+					 || (st.viewmode & 16 && st.Current_Map.obj[i].position.z>47 && st.Current_Map.obj[i].position.z<57)) && (st.Current_Map.obj[i].flag != 1024))
 				{
 					if (st.Current_Map.obj[i].flag & 2)
 					{
@@ -10280,10 +10280,10 @@ void DrawMap()
 
 			for(i=0;i<st.Current_Map.num_sprites;i++)
 			{
-				if((st.viewmode & 1 && st.Current_Map.sprites[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.sprites[i].position.z>23 && st.Current_Map.sprites[i].position.z<32)
+				if(((st.viewmode & 1 && st.Current_Map.sprites[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.sprites[i].position.z>23 && st.Current_Map.sprites[i].position.z<32)
 					 || (st.viewmode & 4 && st.Current_Map.sprites[i].position.z>31 && st.Current_Map.sprites[i].position.z<40)
 					 || (st.viewmode & 8 && st.Current_Map.sprites[i].position.z>39 && st.Current_Map.sprites[i].position.z<48)
-					 || (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z<57))
+					 || (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z<57)) && (st.Current_Map.sprites[i].flags != 1024))
 				{
 					if((st.viewmode & 32 && (~st.Current_Map.sprites[i].flags & 2)) || ((~st.viewmode & 32) && st.Current_Map.sprites[i].flags & 2) || ((~st.viewmode & 32) && (~st.Current_Map.sprites[i].flags & 2)))
 						DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
@@ -10297,7 +10297,7 @@ void DrawMap()
 
 			for (i = 1; i <= st.num_lights; i++)
 			{
-				if (st.viewmode & LIGHT_VIEW || st.viewmode & INGAME_VIEW)
+				if ((st.viewmode & LIGHT_VIEW || st.viewmode & INGAME_VIEW) && st.game_lightmaps[i].obj_id != -2)
 					DrawLight(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, st.game_lightmaps[i].w_pos.z, st.game_lightmaps[i].W_w,
 						st.game_lightmaps[i].ambient_color, st.game_lightmaps[i].falloff[0], st.game_lightmaps[i].falloff[1], st.game_lightmaps[i].falloff[2],
 						st.game_lightmaps[i].ang, i);

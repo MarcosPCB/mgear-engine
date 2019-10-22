@@ -194,6 +194,122 @@ int16 DirFiles(const char *path, char content[512][512])
 	return filenum;
 }
 
+void RedoZBuffers()
+{
+	int16 m = 0;
+
+	memset(meng.z_buffer, 0, 2048 * 57 * 2);
+	memset(meng.z_slot, 0, 57 * 2);
+	meng.z_used = 0;
+
+	for (m = 0; m < st.Current_Map.num_obj; m++)
+	{
+		meng.z_buffer[st.Current_Map.obj[m].position.z][meng.z_slot[st.Current_Map.obj[m].position.z]] = m;
+		meng.z_slot[st.Current_Map.obj[m].position.z]++;
+		if (st.Current_Map.obj[m].position.z>meng.z_used)
+			meng.z_used = st.Current_Map.obj[m].position.z;
+	}
+
+	for (m = 0; m < st.Current_Map.num_sprites; m++)
+	{
+		meng.z_buffer[st.Current_Map.sprites[m].position.z][meng.z_slot[st.Current_Map.sprites[m].position.z]] = m + 2000;
+		meng.z_slot[st.Current_Map.sprites[m].position.z]++;
+		if (st.Current_Map.sprites[m].position.z>meng.z_used)
+			meng.z_used = st.Current_Map.sprites[m].position.z;
+	}
+
+	for (m = 0; m < st.Current_Map.num_sector; m++)
+	{
+		meng.z_buffer[24][meng.z_slot[24]] = m + 10000;
+		meng.z_slot[24]++;
+		if (24>meng.z_used)
+			meng.z_used = 24;
+	}
+
+	for (m = 1; m < st.Current_Map.num_lights; m++)
+	{
+		int8 lz = st.game_lightmaps[m].falloff[4];
+
+		meng.z_buffer[lz][meng.z_slot[lz]] = m + 12000;
+		meng.z_slot[lz]++;
+
+		if (lz>meng.z_used)
+			meng.z_used = lz;
+	}
+}
+
+int8 DeleteScenario(int16 id)
+{
+	if (st.Current_Map.num_obj == id + 1) //Just delete it
+	{
+		st.Current_Map.obj[id].flag = 1024;
+		st.Current_Map.obj[id].type = BLANK;
+		st.Current_Map.num_obj--;
+	}
+	else
+	{
+		st.Current_Map.obj[id].type = BLANK;
+
+		for (uint16 i = id; i < st.Current_Map.num_obj; i++)
+			st.Current_Map.obj[i] = st.Current_Map.obj[i + 1];
+
+		st.Current_Map.num_obj--;
+	}
+}
+
+int8 DeleteSprite(int16 id)
+{
+	if (st.Current_Map.num_sprites == id + 1) //Just delete it
+	{
+		st.Current_Map.sprites[id].flags = 1024;
+		st.Current_Map.sprites[id].stat = 0;
+		st.Current_Map.num_sprites--;
+	}
+	else
+	{
+		st.Current_Map.sprites[id].stat = 0;
+
+		for (uint16 i = id; i < st.Current_Map.num_sprites; i++)
+			st.Current_Map.sprites[i] = st.Current_Map.sprites[i + 1];
+
+		st.Current_Map.num_sprites--;
+	}
+}
+
+int8 DeleteSector(int16 id)
+{
+	if (st.Current_Map.num_sector == id + 1) //Just delete it
+	{
+		st.Current_Map.sector[id].id = -1;
+		st.Current_Map.num_sector--;
+	}
+	else
+	{
+		st.Current_Map.sector[id].id = -1;
+
+		for (uint16 i = id; i < st.Current_Map.num_sector; i++)
+			st.Current_Map.sector[i] = st.Current_Map.sector[i + 1];
+
+		st.Current_Map.num_sector--;
+	}
+}
+
+int8 DeleteLight(int16 id)
+{
+	if (st.Current_Map.num_lights == id + 1) //Just delete it
+	{
+		st.game_lightmaps[id].obj_id = -2;
+		st.Current_Map.num_lights--;
+	}
+	else
+	{
+		for (uint16 i = id; i < st.Current_Map.num_lights; i++)
+			st.game_lightmaps[i] = st.game_lightmaps[i + 1];
+
+		st.Current_Map.num_lights--;
+	}
+}
+
 static void MGGList()
 {
 	uint16 j=0, i;
@@ -551,3806 +667,6 @@ static int16 MGGLoad()
 	return 1;
 }
 
-static void PannelLeft()
-{
-	uint8 mouse=0;
-	char num[32], str[64], options[8][16]={"Foreground", "Midground", "Background1", "Background2", "Background3", "Light view", "Ingame view", "All"}, filen[2048];
-	int32 i=0, j=0, xt, yt, k=0;
-	static float asp;
-	Pos p;
-	PosF p2;
-	static int8 winid[4];
-
-	//UIPannelLeft();
-
-	UIData(8192,128,16384,256,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
-	UIData(455,4608,455*2,st.gamey,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
-
-	UIData(16384-1024,st.gamey-512,2048,1024,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
-
-	sprintf(str,"MX: %d - MY: %d",(st.mouse.x*16384)/st.screenx, (st.mouse.y*st.gamey)/st.screeny);
-	StringUIData(str,16384-1024,st.gamey-512-256,0,0,0,255,255,255,255,ARIAL,1536,1536,0);
-
-	sprintf(str,"X: %d - Y: %d",st.Camera.position.x, st.Camera.position.y);
-	StringUIData(str,16384-1024,st.gamey-512,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
-
-	sprintf(str,"W: %0.2f - H: %0.2f",st.Camera.dimension.x, st.Camera.dimension.y);
-	StringUIData(str,16384-1024,st.gamey-256,0,0,0,255,255,255,255,ARIAL,1536,1536,6);
-
-	if(UIStringButton(8096,128,"Camera Area",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-	{
-		meng.pannel_choice=1;
-		meng.command=CAM_AREA;
-		meng.command2=0;
-		winid[1]=UICreateWindow2(8192,4608,CENTER,6,16,2048,32,ARIAL);
-	}
-
-	if(meng.command==CAM_AREA)
-	{
-		UIWin2_NumberBoxi32(winid[1],0,&st.Current_Map.cam_area.area_pos.x,"Area pos. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[1],1,&st.Current_Map.cam_area.area_pos.y,"Area pos. Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],2,&st.Current_Map.cam_area.area_size.x,"Area size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],3,&st.Current_Map.cam_area.area_size.y,"Area size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-
-		UIWin2_NumberBoxf(winid[1],4,&st.Current_Map.cam_area.max_dim.x,"Max dim. X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[1],5,&st.Current_Map.cam_area.max_dim.y,"Max dim. y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-
-		if(st.Current_Map.cam_area.horiz_lim)
-		{
-			if(UIWin2_MarkBox(winid[1],6,1,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
-				st.Current_Map.cam_area.horiz_lim=0;
-
-			UIWin2_NumberBoxi32(winid[1],7,&st.Current_Map.cam_area.limit[0].x,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-			UIWin2_NumberBoxi32(winid[1],8,&st.Current_Map.cam_area.limit[1].x,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		}
-		else
-		{
-			if(UIWin2_MarkBox(winid[1],6,0,"Limit X mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
-				st.Current_Map.cam_area.horiz_lim=1;
-
-			UIWin2_MarkBox(winid[1],7,2,"Area min X",UI_COL_NORMAL,UI_COL_SELECTED);
-			UIWin2_MarkBox(winid[1],8,2,"Area max X",UI_COL_NORMAL,UI_COL_SELECTED);
-		}
-
-		if(st.Current_Map.cam_area.vert_lim)
-		{
-			if(UIWin2_MarkBox(winid[1],9,1,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==1)
-				st.Current_Map.cam_area.vert_lim=0;
-
-			UIWin2_NumberBoxi32(winid[1],10,&st.Current_Map.cam_area.limit[0].y,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-			UIWin2_NumberBoxi32(winid[1],11,&st.Current_Map.cam_area.limit[1].y,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		}
-		else
-		{
-			if(UIWin2_MarkBox(winid[1],9,0,"Limit Y mov.",UI_COL_NORMAL,UI_COL_SELECTED)==2)
-				st.Current_Map.cam_area.vert_lim=1;
-
-			UIWin2_MarkBox(winid[1],10,2,"Area min Y",UI_COL_NORMAL,UI_COL_SELECTED);
-			UIWin2_MarkBox(winid[1],11,2,"Area max Y",UI_COL_NORMAL,UI_COL_SELECTED);
-		}
-		
-		if(UIWin2_StringButton(winid[1],12,"Edit area",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		{
-			meng.command=CAM_AREA_EDIT;
-			UIDestroyWindow(winid[1]);
-		}
-		
-		if(UIWin2_StringButton(winid[1],13,"Edit limit X",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		{
-			meng.command=CAM_LIM_X;
-			UIDestroyWindow(winid[1]);
-		}
-
-		if(UIWin2_StringButton(winid[1],14,"Edit limit Y",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		{
-			meng.command=CAM_LIM_Y;
-			UIDestroyWindow(winid[1]);
-		}
-
-		if(UIWin2_StringButton(winid[1],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		{
-			meng.command=meng.pannel_choice;
-			meng.command2=0;
-			UIDestroyWindow(winid[1]);
-		}
-		
-	}
-
-	if(UIStringButton(4096,128,"Load MGG",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-	{
-		meng.command=MGG_LOAD;
-		SetDirContent("mgg");
-		meng.command2=0;
-	}
-
-	if(meng.command==MGG_LOAD)
-	{
-		if(UISelectFile(filen))
-		{
-			if(CheckMGGFile(filen))
-			{
-				if(CheckMGGInSystem(filen)<99999)
-				{
-					DrawUI(8192,4608,4096,2048,0,0,0,0,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,0);
-					DrawString2UI("Loading...",8192,4608,1,1,0,255,255,255,255,ARIAL,FONT_SIZE*3,FONT_SIZE*3,0);
-					Renderer(1);
-					LoadMGG(&mgg_map[st.Current_Map.num_mgg],filen);
-
-					j=0;
-					for(i=0;i<st.Current_Map.num_mgg;i++)
-					{
-						if(strcmp(meng.mgg_list[i],mgg_map[st.Current_Map.num_mgg].name)==NULL)
-						{
-							j=1;
-							break;
-						}
-					}
-
-					if(j==1)
-						FreeMGG(&mgg_map[st.Current_Map.num_mgg]);
-					else
-					{
-						strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg],filen);
-						strcpy(meng.mgg_list[st.Current_Map.num_mgg],mgg_map[st.Current_Map.num_mgg].name);
-						meng.num_mgg++;
-						st.Current_Map.num_mgg++;
-						st.num_mgg++;
-						LogApp("MGG %s loaded",filen);
-						meng.command=meng.pannel_choice;
-					}
-				}
-			}
-		}
-	}
-
-	if(UIStringButton(2256,128,"Map Properties",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-	{
-		meng.command=meng.pannel_choice=MAP_PROPERTIES;
-		winid[0]=UICreateWindow2(0,0,CENTER,7,16,2048,32,ARIAL);
-	}
-
-	if(UIStringButton(6096,128,"Viewmode",ARIAL,1536,6,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		meng.command=VIEWMODE_BOX;
-
-	if(meng.command==VIEWMODE_BOX)
-	{
-		switch(UIOptionBox(6096,1024,CUSTOM,options,8,ARIAL,1024,UI_COL_NORMAL,UI_COL_SELECTED))
-		{
-			case UI_SEL:
-				{
-					meng.viewmode=FOREGROUND_MODE;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-			case UI_SEL+1:
-				{
-					meng.viewmode=MIDGROUND_MODE;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-			case UI_SEL+2:
-				{
-					meng.viewmode=BACKGROUND1_MODE;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-			case UI_SEL+3:
-				{
-					meng.viewmode=BACKGROUND2_MODE;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-			case UI_SEL+4:
-				{
-					meng.viewmode=BACKGROUND3_MODE;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-			case UI_SEL+5:
-				{
-					meng.viewmode=LIGHTVIEW_MODE;
-					meng.command=meng.pannel_choice;
-					if(st.viewmode & 64 && meng.pannel_choice!=ADD_LIGHT)
-						st.viewmode-=64;
-					else
-						st.viewmode+=64;
-					break;
-				}
-			case UI_SEL+6:
-				{
-					meng.viewmode=INGAMEVIEW_MODE;
-					st.Camera.dimension=st.Current_Map.cam_area.area_size;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-			case UI_SEL+7:
-				{
-					meng.viewmode=ALLVIEW_MODE;
-					meng.command=meng.pannel_choice;
-					break;
-				}
-
-				meng.command=meng.pannel_choice;
-		}
-
-		if(meng.viewmode==0)
-			st.viewmode=1;
-		else
-		if(meng.viewmode==1)
-			st.viewmode=2;
-		else
-		if(meng.viewmode==2)
-			st.viewmode=4;
-		else
-		if(meng.viewmode==3)
-			st.viewmode=8;
-		else
-		if(meng.viewmode==4)
-			st.viewmode=16;
-		else
-		if(meng.viewmode==5)
-			st.viewmode=31+32;
-		else
-		if(meng.viewmode==7)
-			st.viewmode=31+64;
-	}
-
-	if(meng.pannel_choice==MAP_PROPERTIES)
-	{
-		if(meng.command==MAP_PROPERTIES && meng.command2==TEX_SEL)
-		{
-			st.Current_Map.bcktex_id=meng.tex_ID;
-			st.Current_Map.bcktex_mgg=meng.tex_MGGID;
-			winid[0]=UICreateWindow2(0,0,CENTER,7,16,2048,32,ARIAL);
-			meng.command2=0;
-		}
-
-		if(!st.Current_Map.num_mgg)
-			UIWin2_MarkBox(winid[0],0,2,"Textured Background3",UI_COL_NORMAL,UI_COL_SELECTED);
-		else
-		{
-			if(st.Current_Map.bcktex_id==-1)
-			{
-				if(UIWin2_MarkBox(winid[0],1,0,"Textured Background3",UI_COL_NORMAL,UI_COL_SELECTED)==2)
-				{
-					meng.command=TEX_SEL;
-					meng.command2=TEX_SEL;
-					UIDestroyWindow(winid[0]);
-				}
-			}
-			else
-			if(UIWin2_MarkBox(winid[0],0,1,"Textured Background3",UI_COL_NORMAL,UI_COL_SELECTED)==1)
-			{
-					st.Current_Map.bcktex_id=-1;
-					st.Current_Map.bcktex_mgg=0;
-			}
-		}
-		
-		if(st.Current_Map.bcktex_id>-1)
-		{
-			if(UIWin2_StringButton(winid[0],1,"Background3 texture",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-			{
-				meng.command=meng.command2=TEX_SEL;
-				UIDestroyWindow(winid[0]);
-			}
-		}
-
-
-		UIWin2_NumberBoxf(winid[0],2,&st.Current_Map.bck1_v,"BCK1 parallax vel",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[0],3,&st.Current_Map.bck2_v,"BCK2 parallax vel",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxf(winid[0],4,&st.Current_Map.fr_v,"FR1 parallax vel",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-
-		UIWin2_NumberBoxui8(winid[0],5,&st.Current_Map.amb_color.r,"Ambient Color R:",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxui8(winid[0],6,&st.Current_Map.amb_color.g,"Ambient Color G:",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxui8(winid[0],7,&st.Current_Map.amb_color.b,"Ambient Color B:",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-
-		sprintf(str,"Map name: %s",st.Current_Map.name);
-		UIWin2_TextBox(winid[0],8,str,UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		sscanf(str,"Map name: %s",st.Current_Map.name);
-
-		UIWin2_NumberBoxi32(winid[0],9,&st.Current_Map.bck3_pan.x,"BCK3 pan X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[0],10,&st.Current_Map.bck3_pan.y,"BCK3 pan Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[0],11,&st.Current_Map.bck3_size.x,"BCK3 size X",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-		UIWin2_NumberBoxi32(winid[0],12,&st.Current_Map.bck3_size.y,"BCK3 size Y",UI_COL_NORMAL,UI_COL_SELECTED,UI_COL_CLICKED);
-
-		if(UIWin2_StringButton(winid[0],15,"Done",UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		{
-			meng.command=meng.pannel_choice=1;
-			UIDestroyWindow(winid[0]);
-		}
-
-	}
-
-	if(!CheckCollisionMouse(227,227,455,455,0))
-	{
-		UIData(227,227,455,455,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[0],255,7);
-		//if(st.mouse1) mouse=0;
-	}
-	else
-	{
-		UIData(227,227,445,445,0,255,128,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[0],255,7);
-		//time++;
-		//if((st.time-time)==1000)
-		//{
-		StringUIData("Draw a sector",8192,st.gamey-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
-		//}
-
-			if(st.mouse1 && !meng.current_command)
-			{
-				meng.command=meng.pannel_choice=meng.command2=0;
-				st.mouse1=0;
-			}
-	}
-
-	if(!CheckCollisionMouse(682,227,448,448,0))
-	{
-		UIData(682,227,448,448,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[2],255,7);
-		//if(st.mouse1) mouse=0;
-	}
-	else
-	{
-		UIData(682,227,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[2],255,7);
-		//if((st.time-time)==1000)
-		//{
-		StringUIData("Select and edit",8192,st.gamey-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
-		//}
-
-		if(st.mouse1 && !meng.current_command) meng.command=meng.pannel_choice=meng.command2=2;
-	}
-	
-	if(!CheckCollisionMouse(227,682,448,448,0))
-	{
-		UIData(227,682,448,448,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[1],255,7);
-		//if(st.mouse1) mouse=0;
-	}
-	else
-	{
-		UIData(227,682,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[1],255,7);
-		//if((st.time-time)==1000)
-		//{
-		StringUIData("Add an OBJ",8192,st.gamey-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
-		//}
-
-		if(st.mouse1 && !meng.current_command)
-		{
-			//meng.tex_selection.data=meng.tex2_sel.data;
-			//meng.tex_ID=meng.tex2_ID;
-			//meng.tex_MGGID=meng.tex2_MGGID;
-
-			meng.command=meng.pannel_choice=meng.command2=3;
-		}
-	}
-	
-	if(!CheckCollisionMouse(682,682,448,448,0))
-	{
-		UIData(682,682,448,448,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[3],255,7);
-		//if(st.mouse1) mouse=0;
-	}
-	else
-	{
-		UIData(682,682,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[3],255,7);
-		//if((st.time-time)==1000)
-		//{
-		StringUIData("Add a sprite",8192,st.gamey-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
-		//}
-
-			if(st.mouse1 && !meng.current_command)
-			{		
-				st.mouse1=0;
-				meng.command=meng.pannel_choice=meng.command2=ADD_SPRITE;
-			}
-	}
-
-	if(!CheckCollisionMouse(227,1137,448,488,0))
-	{
-		UIData(227,1137,448,448,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[5],255,7);
-	}
-	else
-	{
-		UIData(227,1137,448,448,0,255,128,32,0,0,32768,32768,mgg_sys[0].frames[5],255,7);
-
-		StringUIData("Add a lightmap",8192,st.gamey-455,1820,455,0,255,128,32,255,ARIAL,0,0,0);
-
-		if(st.mouse1)
-		{
-			st.mouse1=0;
-			meng.command=meng.pannel_choice=meng.command2=ADD_LIGHT;
-			
-			if(st.viewmode<64)
-				st.viewmode+=64;
-		}
-	}
-	
-	if(meng.pannel_choice==ADD_OBJ || meng.pannel_choice==ADD_SPRITE)
-	{
-		if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-			sprintf(str,"Tex. Sel.");
-		else
-			sprintf(str,"Sprite Sel.");
-
-		if(!CheckCollisionMouse(458,st.gamey-2275,490,223,0))
-		{
-			StringUIData(str,458,st.gamey-2275,490,223,0,255,255,255,255,ARIAL,0,0,0);
-		}
-		else
-		{
-			StringUIData(str,458,st.gamey-2275,490,223,0,255,128,32,255,ARIAL,0,0,0);
-
-
-			if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-				StringUIData("Texture Selection",8192,st.gamey-455,2730,455,0,255,128,32,255,ARIAL,0,0,0);
-			else
-				StringUIData("Sprite Selection",8192,st.gamey-455,2730,455,0,255,128,32,255,ARIAL,0,0,0);
-
-
-			if(st.mouse1)
-			{
-				meng.scroll=0;
-
-				if(meng.command!=ADD_SPRITE && meng.command!=SPRITE_TAG)
-					meng.command=TEX_SEL;
-				else
-					meng.command=SPRITE_SELECTION;
-
-				meng.command2=0;
-				st.mouse1=0;
-			}
-		}
-	}
-
-	if(meng.pannel_choice==ADD_OBJ)
-		UIData(455,st.gamey-910,910,910,0,255,255,255,0,0,32768,32768,meng.tex_selection,255,0);
-
-	if(meng.pannel_choice==0)
-		UIData(227,227,455,455,0,128,32,32,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[0],255,0);
-	//else
-	if(meng.pannel_choice==2)
-		UIData(682,227,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[2],255,0);
-	//else
-
-	if(meng.pannel_choice==ADD_LIGHT)
-	{
-		UIData(227,1137,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[5],255,0);
-
-		if(CheckCollisionMouse(455,1900,810,455,0))
-		{
-			StringUIData("Create Lightmap",455,1900,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && !meng.current_command)
-			{
-				st.mouse1=0;
-				meng.command=CREATE_LIGHTMAP;
-			}
-		}
-		else
-			StringUIData("Create Lightmap",455,1900,810,227,0,255,255,255,255,ARIAL,0,0,0);
-		
-		
-		if(CheckCollisionMouse(455,1900+810,810,455,0))
-		{
-			StringUIData("Remove Lightmap",455,1900+810,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && !meng.current_command)
-			{
-				st.mouse1=0;
-				meng.command=REMOVE_LIGHTMAP;
-			}
-		}
-		else
-			StringUIData("Remove Lightmap",455,1900+810,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		
-		if(CheckCollisionMouse(455,2710+810,810,455,0))
-		{
-			StringUIData("Lightmap Res.",455,2710+810,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			StringUIData("Set the lightmap resolution",8192,st.gamey-455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1 && !meng.current_command)
-			{
-				st.mouse1=0;
-				meng.command=LIGHTMAP_RES;
-			}
-		}
-		else
-			StringUIData("Lightmap Res.",455,2710+810,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==LIGHTMAP_RES)
-		{
-			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			sprintf(str,"Res. Width %d",meng.lightmap_res.x);
-
-			if(CheckCollisionMouse(8192,4608-512,810,455,0))
-			{
-				StringUIData(str,8192,4608-512,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-				if(st.mouse1)
-				{
-					st.mouse1=0;
-					StartText();
-					sprintf(st.TextInput,"%d",meng.lightmap_res.x);
-					meng.sub_com=1;
-				}
-			}
-			else
-				StringUIData(str,8192,4608-512,810,227,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			if(meng.sub_com==1)
-			{
-				meng.lightmap_res.x=atoi(st.TextInput);
-
-				StringUIData(str,8192,4608-512,810,227,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"Res. Height %d",meng.lightmap_res.y);
-
-			if(CheckCollisionMouse(8192,4608+512,810,455,0))
-			{
-				StringUIData(str,8192,4608+512,810,227,0,255,128,32,255,ARIAL,2048,2048,0);
-
-				if(st.mouse1)
-				{
-					st.mouse1=0;
-					StartText();
-					sprintf(st.TextInput,"%d",meng.lightmap_res.y);
-					meng.sub_com=2;
-				}
-			}
-			else
-				StringUIData(str,8192,4608+512,810,227,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			if(meng.sub_com==2)
-			{
-				meng.lightmap_res.y=atoi(st.TextInput);
-
-				StringUIData(str,8192,4608+512,810,227,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			if(st.keys[ESC_KEY].state)
-			{
-				meng.command=0;
-				st.keys[ESC_KEY].state=0;
-				meng.sub_com=0;
-			}
-		}
-
-		if(CheckCollisionMouse(455,3520+810,810,455,0))
-		{
-			StringUIData("Edit Lightmap",455,3520+810,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && !meng.current_command)
-			{
-				st.mouse1=0;
-				meng.command=EDIT_LIGHTMAP;
-				meng.got_it=-1;
-			}
-		}
-		else
-			StringUIData("Edit Lightmap",455,3520+810,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command!=MOVE_LIGHTMAP)
-		{
-			if(UIStringButton(455,3520+810+810,"Move lightmap",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-			{
-				meng.command=MOVE_LIGHTMAP;
-				meng.got_it=-1;
-			}
-		}
-		else
-		{
-			if(UIStringButton(455,3520+810+810,"Move lightmap",ARIAL,1024,0,UI_COL_CLICKED,UI_COL_CLICKED)==UI_SEL)
-			{
-				meng.command=meng.pannel_choice;;
-				meng.got_it=-1;
-			}
-		}
-
-		if(UIStringButton(455,3520+810+810+810,"Load lightmap",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-		{
-			meng.command=LOAD_LIGHTMAP;
-			SetDirContent("tga");
-			meng.got_it=-1;
-		}
-	}
-
-	if(meng.pannel_choice==4)
-	{
-		UIData(682,682,455,455,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[3],255,0);
-
-		UIData(455,st.gamey-910,910,910,0,255,255,255,0,0,32768,32768,mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[meng.sprite_frame_selection],255,0);
-
-		if(meng.spr.type==MIDGROUND)
-		{
-			if(CheckCollisionMouse(465,1900,880,220,0))
-			{
-				StringUIData("Midground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=16;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Midground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.spr.type==FOREGROUND)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Foreground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=16;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Foreground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.spr.type==BACKGROUND1)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background1",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=16;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background1",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.spr.type==BACKGROUND2)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background2",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=16;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background2",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.spr.type==BACKGROUND3)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background3",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=16;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background3",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.command==ADD_SPRITE_TYPE)
-		{
-			UIData(1365,1715,910,1210,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
-
-			if(CheckCollisionMouse(1365,1715,810,227,0))
-			{
-				StringUIData("Background1",1365,1715,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					meng.spr.type=BACKGROUND1;
-					//st.Current_Map.obj[meng.com_id].position.z=
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background1",1365,1715,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,1465,810,227,0))
-			{
-				StringUIData("Background2",1365,1465,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-
-					meng.spr.type=BACKGROUND2;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background2",1365,1465,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,1215,810,227,0))
-			{
-				StringUIData("Background3",1365,1215,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					
-
-					meng.spr.type=BACKGROUND3;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background3",1365,1215,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,1920,810,227,0))
-			{
-				StringUIData("Midground",1365,1920,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					
-
-					meng.spr.type=MIDGROUND;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Midground",1365,1920,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,2170,810,227,0))
-			{
-				StringUIData("Foreground",1365,2170,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					
-
-					meng.spr.type=FOREGROUND;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Foreground",1365,2170,810,227,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		sprintf(str,"color");
-
-		if(CheckCollisionMouse(465,2445,810,217,0))
-		{
-			StringUIData(str,465,2445,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1)
-			{
-				meng.command=RGB_SPRITE;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,2445,810,217,0, 255, 255, 255,255,ARIAL,2048,2048,0);
-
-		if(meng.command==RGB_SPRITE)
-		{
-			UIData(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			Sys_ColorPicker(&meng.spr.color.r,&meng.spr.color.g,&meng.spr.color.b);
-
-			StringUIData(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-			sprintf(str,"R %d",meng.spr.color.r);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,2048+455,2048,227,0))
-				{
-					StringUIData(str,8192,2048+455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.spr.color.r);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+455,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,2048+455,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.spr.color.r=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"G %d",meng.spr.color.g);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,2048+810,2048,227,0))
-				{
-					StringUIData(str,8192,2048+810,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.spr.color.g);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+810,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,2048+810,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.spr.color.g=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"B %d",meng.spr.color.b);
-
-			if(meng.sub_com!=3)
-			{
-				if(CheckCollisionMouse(8192,2048+1265,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1265,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.spr.color.b);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=3;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1265,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==3)
-			{
-				StringUIData(str,8192,2048+1265,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.spr.color.b=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"A %d",meng.spr.color.a);
-
-			if(meng.sub_com!=4)
-			{
-				if(CheckCollisionMouse(8192,2048+1720,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1720,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.spr.color.a);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=4;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1720,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==4)
-			{
-				StringUIData(str,8192,2048+1720,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.spr.color.a=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			if(st.keys[RETURN_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[RETURN_KEY].state=0;
-			}
-		}
-
-
-		if(CheckCollisionMouse(455,3135,810,217,0))
-		{
-			StringUIData("Tags",465,3135,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1)
-			{
-				meng.command=SPRITE_TAG;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Tags",465,3135,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-		
-		if(meng.command==SPRITE_TAG)
-		{
-			UIData(8192,4608,8192,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
-
-			for(i=1, yt=4608-2560;(i-1)<st.Game_Sprites[meng.sprite_selection].num_tags;i++, yt+=512)
-			{
-				j=strlen(st.Game_Sprites[meng.sprite_selection].tag_names[i-1]);
-
-				if(st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
-					sprintf(str,"%s %s",st.Game_Sprites[meng.sprite_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_selection].tags_str[i-1]);
-				else
-					sprintf(str,"%s %d",st.Game_Sprites[meng.sprite_selection].tag_names[i-1],st.Game_Sprites[meng.sprite_selection].tags[i-1]);
-
-				if(meng.sub_com!=i && meng.sub_com<100)
-				{
-					if(CheckCollisionMouse(8192,yt,2048,455,0))
-					{
-						StringUIData(str,8192,yt,0,0,0,255,128,32,255,ARIAL,2048,2048,6);
-
-						if(st.mouse1)
-						{
-							if (strcmp(st.Game_Sprites[meng.sprite_selection].tag_names[i - 1], "SNDFX") == NULL)
-							{
-								st.mouse1 = 0;
-								meng.sub_com = i + 200;
-							}
-							else
-							if (strcmp(st.Game_Sprites[meng.sprite_selection].tag_names[i - 1], "MUSFX") == NULL)
-							{
-								st.mouse1 = 0;
-								meng.sub_com = i + 300;
-							}
-							else
-							{
-
-								if (st.Game_Sprites[meng.sprite_selection].tag_names[i - 1][j - 1] == 'S' && st.Game_Sprites[meng.sprite_selection].tag_names[i - 1][j - 2] == '_')
-									sprintf(st.TextInput, "%s", st.Game_Sprites[meng.sprite_selection].tags_str[i - 1]);
-								else
-									sprintf(st.TextInput, "%d", st.Game_Sprites[meng.sprite_selection].tags[i - 1]);
-
-								StartText();
-								st.mouse1 = 0;
-								meng.sub_com = i;
-							}
-						}
-
-						if(st.mouse2 && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && 
-							st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
-						{
-							meng.sub_com=i+100;
-							SetDirContent(NULL);
-							st.mouse2=0;
-						}
-					}
-					else
-						StringUIData(str,8192,yt,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-				}
-				else
-				if(meng.sub_com==i)
-				{
-					StringUIData(str,8192,yt,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-					if(st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-1]=='S' && st.Game_Sprites[meng.sprite_selection].tag_names[i-1][j-2]=='_')
-						strcpy(st.Game_Sprites[meng.sprite_selection].tags_str[i-1],st.TextInput);
-					else
-						st.Game_Sprites[meng.sprite_selection].tags[i-1]=atoi(st.TextInput);
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						StopText();
-						st.keys[RETURN_KEY].state=0;
-						meng.sub_com=0;
-					}
-				}
-				else
-				if(meng.sub_com==i+100)
-				{
-					if(UISelectFile(filen))
-					{
-						strcpy(st.Game_Sprites[meng.sprite_selection].tags_str[i-1],filen);
-						meng.sub_com=0;
-					}
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						st.keys[RETURN_KEY].state=0;
-						meng.sub_com=0;
-					}
-				}
-				else
-				if (meng.sub_com == i + 200)
-				{
-					if ((st.Game_Sprites[meng.sprite_selection].tags[i - 1] = UIMakeList(meng.soundlist, st.num_sounds)) != -1)
-						meng.sub_com = 0;
-
-					if (st.keys[RETURN_KEY].state)
-					{
-						st.keys[RETURN_KEY].state = 0;
-						meng.sub_com = 0;
-					}
-				}
-				else
-				if (meng.sub_com == i + 300)
-				{
-					if ((st.Game_Sprites[meng.sprite_selection].tags[i - 1] = UIMakeList(meng.musiclist, st.num_musics)) != -1)
-						meng.sub_com = 0;
-
-					if (st.keys[RETURN_KEY].state)
-					{
-						st.keys[RETURN_KEY].state = 0;
-						meng.sub_com = 0;
-					}
-				}
-			}
-
-			if(st.keys[ESC_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-
-		sprintf(str,"Health %d",meng.spr.health);
-
-		if(CheckCollisionMouse(465,3435,810,217,0))
-		{
-			StringUIData(str,465,3435,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && !StartText())
-			{
-				meng.command=SPRITE_HEALTH;
-				sprintf(st.TextInput,"%d",meng.spr.health);
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3435,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==SPRITE_HEALTH)
-		{
-			StringUIData(str,465,3435,810,217,0,255,32,32,255,ARIAL,0,0,0);
-			meng.spr.health=atoi(st.TextInput);
-
-			if(st.keys[ESC_KEY].state)
-			{
-				StopText();
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-
-		sprintf(str,"Physics");
-
-		if(CheckCollisionMouse(465,3690,810,217,0))
-		{
-			StringUIData(str,465,3690,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.command=SPRITE_PHY;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3690,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==SPRITE_PHY)
-		{
-			DrawHud(8192, 4608, 2120,4608,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
-
-			sprintf(str,"Physics? %d",meng.spr.body.physics_on);
-
-			if(CheckCollisionMouse(8192, 4608-1420,810,405,0))
-			{
-				StringUIData(str,8192, 4608-1420,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1)
-				{
-					if(meng.spr.body.physics_on==0) meng.spr.body.physics_on=1;
-					else meng.spr.body.physics_on=0;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608-1420,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			sprintf(str,"Mass %.2f",meng.spr.body.mass);
-
-			if(CheckCollisionMouse(8192, 4608-710,810,405,0))
-			{
-				StringUIData(str,8192, 4608-710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1 && !StartText())
-				{
-					if(meng.spr.body.mass==0)
-						sprintf(st.TextInput,"%.0f",meng.spr.body.mass);
-					else
-						sprintf(st.TextInput,"%.2f",meng.spr.body.mass);
-					meng.sub_com=10;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608-710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			if(meng.sub_com==10)
-			{
-				StringUIData(str,8192, 4608-1420,0,0,0,255,32,32,255,ARIAL,512*4,512*4,0);
-				meng.spr.body.mass=atof(st.TextInput);
-				if(st.keys[ESC_KEY].state)
-				{
-					StopText();
-					meng.sub_com=0;
-					st.keys[ESC_KEY].state=0;
-				}
-			}
-
-			sprintf(str,"Flammable? %d",meng.spr.body.flamable);
-
-			if(CheckCollisionMouse(8192, 4608,810,405,0))
-			{
-				StringUIData(str,8192, 4608,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1)
-				{
-					if(meng.spr.body.flamable==0) meng.spr.body.flamable=1;
-					else meng.spr.body.flamable=0;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			sprintf(str,"Explosive? %d",meng.spr.body.explosive);
-
-			if(CheckCollisionMouse(8192, 4608+710,810,405,0))
-			{
-				StringUIData(str,8192, 4608+710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1)
-				{
-					if(meng.spr.body.explosive==0) meng.spr.body.explosive=1;
-					else meng.spr.body.explosive=0;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608+710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			if(st.keys[ESC_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-	}
-
-	//Sprite editing
-
-	if (meng.command2 == EDIT_SPRITE)
-	{
-		p.x = st.Current_Map.sprites[meng.sprite_edit_selection].position.x;
-		p.y = st.Current_Map.sprites[meng.sprite_edit_selection].position.y - (st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y / 2);
-
-		//p.x-=st.Camera.position.x;
-		//p.y-=st.Camera.position.y;
-
-		p2.x = 1024 * st.Camera.dimension.x;
-		p2.y = 1024 * st.Camera.dimension.y;
-
-		sprintf(str, "%d", st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
-		String2Data(str, p.x, p.y - 227, 810, 217, 0, 255, 255, 255, 255, ARIAL, p2.x, p2.y, st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
-
-		p.x = st.Current_Map.sprites[meng.sprite_edit_selection].position.x - (st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x / 2);
-		p.y = st.Current_Map.sprites[meng.sprite_edit_selection].position.y;
-
-		//p.x-=st.Camera.position.x;
-		//p.y-=st.Camera.position.y;
-
-		sprintf(str, "%d", st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
-		String2Data(str, p.x - 455, p.y, 810, 217, 0, 255, 255, 255, 255, ARIAL, p2.x, p2.y, st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
-
-		//if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].name,"SOUNDFX")==NULL)
-		//{
-		for (i = 1; i < st.Current_Map.sprites[meng.sprite_edit_selection].num_tags; i++)
-		{
-			if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "SNDFX") == NULL)
-			{
-				if (UIStringButton(465, 4300, "Play sound", ARIAL, 1536, 0, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
-					PlaySound(st.Current_Map.sprites[meng.sprite_edit_selection].tags[i], 0);
-			}
-			else
-				if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "MUSFX") == NULL)
-				{
-					if (UIStringButton(465, 4300, "Play music", ARIAL, 1536, 0, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
-						PlayMusic(st.Current_Map.sprites[meng.sprite_edit_selection].tags[i], 0);
-				}
-		}
-		//}
-
-		if (UIStringButton(465, 4600, "Stop sound", ARIAL, 1536, 0, UI_COL_NORMAL, UI_COL_SELECTED) == UI_SEL)
-		{
-			StopAllSounds();
-			StopMusic();
-		}
-
-			if(st.keys[DELETE_KEY].state)
-			{
-				st.Current_Map.sprites[meng.sprite_edit_selection].stat=0;
-
-				if(meng.sprite_edit_selection<st.Current_Map.num_sprites-1)
-				{
-					for(j=meng.sprite_edit_selection;j<st.Current_Map.num_sprites-1;j++)
-					{
-						memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
-						memset(&st.Current_Map.sprites[j+1],0,sizeof(_MGMSPRITE));
-
-						st.Current_Map.sprites[j+1].stat=0;
-					}
-				}
-				
-				for(k=0;k<meng.z_slot[st.Current_Map.sprites[meng.sprite_edit_selection].position.z];k++)
-					if(meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k]==st.Current_Map.num_sprites-1+2000)
-						break;
-
-				if(k<meng.z_slot[st.Current_Map.sprites[meng.sprite_edit_selection].position.z]-1)
-				{
-					for(;k<meng.z_slot[st.Current_Map.sprites[meng.sprite_edit_selection].position.z];k++)
-					{
-						meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k]=meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k+1];
-						meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k+1]=0;
-					}
-				}
-				else
-					meng.z_buffer[st.Current_Map.sprites[meng.sprite_edit_selection].position.z][k]=0;
-					
-				meng.z_slot[st.Current_Map.sprites[meng.sprite_edit_selection].position.z]--;
-
-				st.Current_Map.num_sprites--;
-				st.keys[DELETE_KEY].state=0;
-			}
-
-			if(UIStringButton(465,4000,"Edit pos",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-				meng.command=SPRITE_EDIT_BOX;
-
-			if(meng.command==SPRITE_EDIT_BOX)
-			{
-				UIData(8192,4608,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,1);
-
-				sprintf(str,"X %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.x);
-
-				if(CheckCollisionMouse(8192,(4608)-681,1720,455,0) && !meng.sub_com)
-				{
-					StringUIData(str,8192,(4608)-681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1)
-					{
-						meng.sub_com=1;
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].position.x);
-						SDL_StartTextInput();
-						st.Text_Input=1;
-						st.mouse1=0;
-					}
-				}
-				else
-				if(meng.sub_com==1)
-				{
-					StringUIData(str,8192,(4608)-681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.x=atof(st.TextInput);
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-					StringUIData(str,8192,(4608)-681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-				sprintf(str,"Y %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.y);
-
-				if(CheckCollisionMouse(8192,(4608)-227,1720,455,0) && !meng.sub_com)
-				{
-					StringUIData(str,8192,(4608)-227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1)
-					{
-						meng.sub_com=2;
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].position.y);
-						SDL_StartTextInput();
-						st.Text_Input=1;
-						st.mouse1=0;
-					}
-				}
-				else
-				if(meng.sub_com==2)
-				{
-					StringUIData(str,8192,(4608)-227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.y=atof(st.TextInput);
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-					StringUIData(str,8192,(4608)-227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-				sprintf(str,"SX %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
-
-				if(CheckCollisionMouse(8192,(4608)+227,1720,455,0) && !meng.sub_com)
-				{
-					StringUIData(str,8192,(4608)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1 || st.mouse2)
-					{
-						if(st.mouse1)
-							meng.sub_com=3;
-						else
-						if(st.mouse2)
-							meng.sub_com=6;
-
-						asp=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y;
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x);
-						SDL_StartTextInput();
-						st.Text_Input=1;
-						st.mouse1=0;
-					}
-				}
-				else
-				if(meng.sub_com==3)
-				{
-					StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=atof(st.TextInput);
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-				if(meng.sub_com==6)
-				{
-					StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-
-					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=atof(st.TextInput);
-					
-					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/asp;
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-					StringUIData(str,8192,(4608)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-				sprintf(str,"SY %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
-
-				if(CheckCollisionMouse(8192,(4608)+681,1720,455,0) && !meng.sub_com)
-				{
-					StringUIData(str,8192,(4608)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1 || st.mouse2)
-					{
-						if(st.mouse1)
-							meng.sub_com=4;
-						else
-						if(st.mouse2)
-							meng.sub_com=7;
-
-						asp=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x/st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y;
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y);
-						SDL_StartTextInput();
-						st.Text_Input=1;
-						st.mouse1=0;
-					}
-				}
-				else
-				if(meng.sub_com==4)
-				{
-					StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-				if(meng.sub_com==7)
-				{
-					StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-
-					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y=atof(st.TextInput);
-					
-					st.Current_Map.sprites[meng.sprite_edit_selection].body.size.x=(float) st.Current_Map.sprites[meng.sprite_edit_selection].body.size.y*asp;
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-					StringUIData(str,8192,(4608)+681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-				sprintf(str,"Z %d",st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
-
-				if(CheckCollisionMouse(8192,(4608)+1137,1720,455,0) && !meng.sub_com)
-				{
-					StringUIData(str,8192,(4608)+1137,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-					if(st.mouse1)
-					{
-						meng.sub_com=5;
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].position.z);
-						SDL_StartTextInput();
-						st.Text_Input=1;
-						st.mouse1=0;
-					}
-				}
-				else
-				if(meng.sub_com==5)
-				{
-					StringUIData(str,8192,(4608)+1137,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=atoi(st.TextInput);
-					if(st.Current_Map.sprites[meng.sprite_edit_selection].position.z>56) st.Current_Map.sprites[meng.sprite_edit_selection].position.z=56;
-					if(st.keys[RETURN_KEY].state)
-					{
-						SDL_StopTextInput();
-						st.Text_Input=0;
-						meng.sub_com=0;
-						st.keys[RETURN_KEY].state=0;
-					}
-				}
-				else
-					StringUIData(str,8192,(4608)+1137,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-				if(st.keys[ESC_KEY].state && !meng.sub_com)
-				{
-					meng.command=meng.pannel_choice;
-					st.keys[ESC_KEY].state=0;
-				}
-			}
-
-
-		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==MIDGROUND)
-		{
-			if(CheckCollisionMouse(465,1900,880,220,0))
-			{
-				StringUIData("Midground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=26;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Midground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==FOREGROUND)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Foreground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=26;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Foreground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==BACKGROUND1)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background1",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=26;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background1",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==BACKGROUND2)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background2",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=26;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background2",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(st.Current_Map.sprites[meng.sprite_edit_selection].type_s==BACKGROUND3)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background3",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=26;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background3",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.command==EDIT_SPRITE_TYPE_S)
-		{
-			UIData(1365,1715,910,1210,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
-
-			if(CheckCollisionMouse(1365,1715,810,227,0))
-			{
-				StringUIData("Background1",1365,1715,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=BACKGROUND1;
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=32;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background1",1365,1715,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,1465,810,227,0))
-			{
-				StringUIData("Background2",1365,1465,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-
-					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=BACKGROUND2;
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=40;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background2",1365,1465,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,1215,810,227,0))
-			{
-				StringUIData("Background3",1365,1215,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=BACKGROUND3;
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=48;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background3",1365,1215,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,1920,810,227,0))
-			{
-				StringUIData("Midground",1365,1920,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=MIDGROUND;
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=24;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Midground",1365,1920,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-			if(CheckCollisionMouse(1365,2170,810,227,0))
-			{
-				StringUIData("Foreground",1365,2170,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-				if(st.mouse1)
-				{
-					st.Current_Map.sprites[meng.sprite_edit_selection].type_s=FOREGROUND;
-					st.Current_Map.sprites[meng.sprite_edit_selection].position.z=16;
-					meng.command=meng.pannel_choice;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Foreground",1365,2170,810,227,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		sprintf(str,"color");
-
-		if(CheckCollisionMouse(465,2445,810,217,0))
-		{
-			StringUIData(str,465,2445,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1)
-			{
-				meng.command=RGB_SPRITE;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,2445,810,217,0, 255, 255, 255,255,ARIAL,2048,2048,0);
-
-		if(meng.command==RGB_SPRITE)
-		{
-			UIData(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			Sys_ColorPicker(&st.Current_Map.sprites[meng.sprite_edit_selection].color.r,&st.Current_Map.sprites[meng.sprite_edit_selection].color.g,&st.Current_Map.sprites[meng.sprite_edit_selection].color.b);
-
-			StringUIData(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-			sprintf(str,"R %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.r);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,2048+455,2048,227,0))
-				{
-					StringUIData(str,8192,2048+455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.r);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+455,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,2048+455,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				st.Current_Map.sprites[meng.sprite_edit_selection].color.r=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"G %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.g);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,2048+810,2048,227,0))
-				{
-					StringUIData(str,8192,2048+810,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.g);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+810,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,2048+810,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				st.Current_Map.sprites[meng.sprite_edit_selection].color.g=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"B %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.b);
-
-			if(meng.sub_com!=3)
-			{
-				if(CheckCollisionMouse(8192,2048+1265,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1265,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.b);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=3;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1265,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==3)
-			{
-				StringUIData(str,8192,2048+1265,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				st.Current_Map.sprites[meng.sprite_edit_selection].color.b=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"A %d",st.Current_Map.sprites[meng.sprite_edit_selection].color.a);
-
-			if(meng.sub_com!=4)
-			{
-				if(CheckCollisionMouse(8192,2048+1720,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1720,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].color.a);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=4;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1720,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==4)
-			{
-				StringUIData(str,8192,2048+1720,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				st.Current_Map.sprites[meng.sprite_edit_selection].color.a=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			if(st.keys[RETURN_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[RETURN_KEY].state=0;
-			}
-		}
-
-
-		if(CheckCollisionMouse(455,3135,810,217,0))
-		{
-			StringUIData("Tags",465,3135,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1)
-			{
-				meng.command=SPRITE_TAG;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Tags",465,3135,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-		
-		if(meng.command==SPRITE_TAG)
-		{
-
-			UIData(8192,4608,st.gamey,6144,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,7);
-
-			for(i=1, yt=4608-2560;(i-1)<st.Current_Map.sprites[meng.sprite_edit_selection].num_tags;i++, yt+=512)
-			{
-				j=strlen(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1]);
-
-				if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
-					sprintf(str,"%s %s",st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1]);
-				else
-					sprintf(str,"%s %d",st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
-
-				if(meng.sub_com!=i && meng.sub_com<100)
-				{
-					if(CheckCollisionMouse(8192,yt,2048,455,0))
-					{
-						StringUIData(str,8192,yt,0,0,0,255,128,32,255,ARIAL,2048,2048,6);
-
-						if(st.mouse1)
-						{
-							if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1],"SNDFX")==NULL)
-							{
-								st.mouse1=0;
-								meng.sub_com=i+200;
-							}
-							else
-							if(strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i - 1], "MUSFX") == NULL)
-							{
-								st.mouse1 = 0;
-								meng.sub_com = i + 300;
-							}
-							else
-							{
-								if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && 
-									st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
-									sprintf(st.TextInput,"%s",st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1]);
-								else
-									sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]);
-
-								StartText();
-								st.mouse1=0;
-								meng.sub_com=i;
-							}
-						}
-
-						if(st.mouse2 && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && 
-							st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
-						{
-							meng.sub_com=i+100;
-							SetDirContent(NULL);
-							st.mouse2=0;
-						}
-					}
-					else
-						StringUIData(str,8192,yt,0,0,0,255,255,255,255,ARIAL,2048,2048,6);
-				}
-				else
-				if(meng.sub_com==i)
-				{
-					StringUIData(str,8192,yt,0,0,0,255,32,32,255,ARIAL,2048,2048,6);
-
-					if(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-1]=='S' && st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i-1][j-2]=='_')
-						strcpy(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1],st.TextInput);
-					else
-						st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]=atoi(st.TextInput);
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						StopText();
-						st.keys[RETURN_KEY].state=0;
-						meng.sub_com=0;
-					}
-				}
-				else
-				if(meng.sub_com==i+100)
-				{
-					if(UISelectFile(filen))
-					{
-						strcpy(st.Current_Map.sprites[meng.sprite_edit_selection].tags_str[i-1],filen);
-						meng.sub_com=0;
-					}
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						st.keys[RETURN_KEY].state=0;
-						meng.sub_com=0;
-					}
-				}
-				else
-				if(meng.sub_com==i+200)
-				{
-					if((st.Current_Map.sprites[meng.sprite_edit_selection].tags[i-1]=UIMakeList(meng.soundlist,st.num_sounds))!=-1)
-						meng.sub_com=0;
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						st.keys[RETURN_KEY].state=0;
-						meng.sub_com=0;
-					}
-				}
-				else
-				if(meng.sub_com == i + 300)
-				{
-					if((st.Current_Map.sprites[meng.sprite_edit_selection].tags[i - 1] = UIMakeList(meng.musiclist, st.num_musics)) != -1)
-						meng.sub_com = 0;
-
-					if(st.keys[RETURN_KEY].state)
-					{
-						st.keys[RETURN_KEY].state = 0;
-						meng.sub_com = 0;
-					}
-				}
-			}
-
-			if(st.keys[ESC_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-
-		sprintf(str,"Health %d",st.Current_Map.sprites[meng.sprite_edit_selection].health);
-
-		if(CheckCollisionMouse(465,3435,810,217,0))
-		{
-			StringUIData(str,465,3435,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && !StartText())
-			{
-				meng.command=SPRITE_HEALTH;
-				sprintf(st.TextInput,"%d",st.Current_Map.sprites[meng.sprite_edit_selection].health);
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3435,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==SPRITE_HEALTH)
-		{
-			StringUIData(str,465,3435,810,217,0,255,32,32,255,ARIAL,0,0,0);
-			st.Current_Map.sprites[meng.sprite_edit_selection].health=atoi(st.TextInput);
-
-			if(st.keys[ESC_KEY].state)
-			{
-				StopText();
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-
-
-
-		sprintf(str,"Physics");
-
-		if(CheckCollisionMouse(465,3690,810,217,0))
-		{
-			StringUIData(str,465,3690,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.command=SPRITE_PHY;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3690,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==SPRITE_PHY)
-		{
-			DrawHud(8192, 4608, 2120,4608,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,7);
-
-			sprintf(str,"Physics? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on);
-
-			if(CheckCollisionMouse(8192, 4608-1420,810,405,0))
-			{
-				StringUIData(str,8192, 4608-1420,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1)
-				{
-					if(meng.spr.body.physics_on==0) st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on=1;
-					else st.Current_Map.sprites[meng.sprite_edit_selection].body.physics_on=0;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608-1420,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			sprintf(str,"Mass %.2f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
-
-			if(CheckCollisionMouse(8192, 4608-710,810,405,0))
-			{
-				StringUIData(str,8192, 4608-710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1 && !StartText())
-				{
-					if(meng.spr.body.mass==0)
-						sprintf(st.TextInput,"%.0f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
-					else
-						sprintf(st.TextInput,"%.2f",st.Current_Map.sprites[meng.sprite_edit_selection].body.mass);
-					meng.sub_com=10;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608-710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			if(meng.sub_com==10)
-			{
-				StringUIData(str,8192, 4608-1420,0,0,0,255,32,32,255,ARIAL,512*4,512*4,0);
-				st.Current_Map.sprites[meng.sprite_edit_selection].body.mass=atof(st.TextInput);
-				if(st.keys[ESC_KEY].state)
-				{
-					StopText();
-					meng.sub_com=0;
-					st.keys[ESC_KEY].state=0;
-				}
-			}
-
-			sprintf(str,"Flammable? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable);
-
-			if(CheckCollisionMouse(8192, 4608,810,405,0))
-			{
-				StringUIData(str,8192, 4608,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1)
-				{
-					if(meng.spr.body.flamable==0) st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable=1;
-					else st.Current_Map.sprites[meng.sprite_edit_selection].body.flamable=0;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			sprintf(str,"Explosive? %d",st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive);
-
-			if(CheckCollisionMouse(8192, 4608+710,810,405,0))
-			{
-				StringUIData(str,8192, 4608+710,0,0,0,255,128,32,255,ARIAL,512*4,512*4,0);
-
-				if(st.mouse1)
-				{
-					if(meng.spr.body.explosive==0) st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive=1;
-					else st.Current_Map.sprites[meng.sprite_edit_selection].body.explosive=0;
-
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData(str,8192, 4608+710,0,0,0,255,255,255,255,ARIAL,512*4,512*4,0);
-
-			if(st.keys[ESC_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-	}
-
-	//OBJ editing
-
-	if(meng.command2==EDIT_OBJ)
-	{
-		i=meng.com_id;
-		meng.obj2.amblight=st.Current_Map.obj[i].amblight;
-		meng.obj2.texpan=st.Current_Map.obj[i].texpan;
-		meng.obj2.texsize=st.Current_Map.obj[i].texsize;
-		meng.obj2.type=st.Current_Map.obj[i].type;
-		meng.obj2.color=st.Current_Map.obj[i].color;
-		meng.obj2.flag=st.Current_Map.obj[i].flag;
-
-		p.x=st.Current_Map.obj[i].position.x;
-		p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
-		//WTS(&p.x,&p.y);
-
-		//p.x-=st.Camera.position.x;
-		//p.y-=st.Camera.position.y;
-
-		//p.x*=st.Camera.dimension.x;
-		//p.y*=st.Camera.dimension.y;
-
-		p2.x=1024*st.Camera.dimension.x;
-		p2.y=1024*st.Camera.dimension.y;
-
-		sprintf(str,"%d",st.Current_Map.obj[i].size.x);
-		String2Data(str,p.x,p.y-227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.obj[i].position.z);
-
-		p.x=st.Current_Map.obj[i].position.x-(st.Current_Map.obj[i].size.x/2);
-		p.y=st.Current_Map.obj[i].position.y;
-
-		//p.x-=st.Camera.position.x;
-		//p.y-=st.Camera.position.y;
-
-		//p.x*=st.Camera.dimension.x;
-		//p.y*=st.Camera.dimension.y;
-
-		sprintf(str,"%d",st.Current_Map.obj[i].size.y);
-
-		if(meng.obj2.flag & 1)
-			String2Data(str,st.Current_Map.obj[i].position.x,p.y+(st.Current_Map.obj[i].size.y/2)+227,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.obj[i].position.z);
-		else
-			String2Data(str,p.x-455,p.y,810,217,0,255,255,255,255,ARIAL,p2.x,p2.y,st.Current_Map.obj[i].position.z);
-
-		if(UIStringButton(465,4000,"Edit pos.",ARIAL,1536,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-			meng.command=OBJ_EDIT_BOX;
-		
-
-		if(st.keys[DELETE_KEY].state)
-		{
-			st.Current_Map.obj[i].type=BLANK;
-
-			if(i<st.Current_Map.num_obj-1)
-			{
-				for(j=i;j<st.Current_Map.num_obj-1;j++)
-				{
-					memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
-					st.Current_Map.obj[j+1].type=BLANK;
-				}
-			}
-
-			for(k=0;k<meng.z_slot[st.Current_Map.obj[i].position.z];k++)
-				if(meng.z_buffer[st.Current_Map.obj[i].position.z][k]==st.Current_Map.num_obj-1)
-					break;
-
-			if(k<meng.z_slot[st.Current_Map.obj[i].position.z]-1)
-			{
-				for(;k<meng.z_slot[st.Current_Map.obj[i].position.z];k++)
-				{
-					meng.z_buffer[st.Current_Map.obj[i].position.z][k]=meng.z_buffer[st.Current_Map.obj[i].position.z][k+1];
-					meng.z_buffer[st.Current_Map.obj[i].position.z][k+1]=0;
-				}
-			}
-			else
-				meng.z_buffer[st.Current_Map.obj[i].position.z][k]=0;
-
-			meng.z_slot[st.Current_Map.obj[i].position.z]--;
-			
-			meng.obj2.amblight=st.Current_Map.obj[i].amblight;
-			meng.obj2.texpan=st.Current_Map.obj[i].texpan;
-			meng.obj2.texsize=st.Current_Map.obj[i].texsize;
-			meng.obj2.type=st.Current_Map.obj[i].type;
-			meng.obj2.color=st.Current_Map.obj[i].color;
-			meng.obj2.flag=st.Current_Map.obj[i].flag;
-			
-			st.Current_Map.num_obj--;
-
-			if(!st.Current_Map.num_obj)
-				meng.command2=0;
-
-			st.keys[DELETE_KEY].state=0;
-		}
-
-		if(meng.obj2.type==BACKGROUND1 || meng.obj2.type==BACKGROUND2 || meng.obj2.type==FOREGROUND)
-		{
-			if(!(meng.obj2.flag & 1))
-			{
-				if(UIStringButton(465,3640+315+315,"Tex. Mov [ ]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					st.Current_Map.obj[i].flag |=1;
-			}
-			else
-			if(meng.obj2.flag & 1)
-			{
-				if(UIStringButton(465,3640+315+315,"Tex. Mov [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					st.Current_Map.obj[i].flag-=1;
-			}
-		}
-
-		if(meng.obj2.type==MIDGROUND)
-		{
-			if(!(meng.obj2.flag & OBJF_ANIMATED_TEXTURE_MOV_CAM))
-			{
-				if(UIStringButton(465,3640+315+315+315,"ATMC [ ]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					st.Current_Map.obj[i].flag |=2;
-			}
-			else
-			if(meng.obj2.flag & OBJF_ANIMATED_TEXTURE_MOV_CAM)
-			{
-				if(UIStringButton(465,3640+315+315+315,"ATMC [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					st.Current_Map.obj[i].flag-=2;
-			}
-		}
-
-		if(meng.command==OBJ_EDIT_BOX)
-		{
-			UIData(8192,4608,1820,2730,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
-
-			sprintf(str,"X %d",st.Current_Map.obj[i].position.x);
-
-			if(CheckCollisionMouse(8192,(4608)-681,1720,455,0) && !meng.sub_com)
-			{
-				StringUIData(str,8192,(4608)-681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1)
-				{
-					meng.sub_com=1;
-					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].position.x);
-					SDL_StartTextInput();
-					st.Text_Input=1;
-					st.mouse1=0;
-				}
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,(4608)-681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-				st.Current_Map.obj[i].position.x=atof(st.TextInput);
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-				StringUIData(str,8192,(4608)-681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			sprintf(str,"Y %d",st.Current_Map.obj[i].position.y);
-
-			if(CheckCollisionMouse(8192,(4608)-227,1720,455,0) && !meng.sub_com)
-			{
-				StringUIData(str,8192,(4608)-227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1)
-				{
-					meng.sub_com=2;
-					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].position.y);
-					SDL_StartTextInput();
-					st.Text_Input=1;
-					st.mouse1=0;
-				}
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,(4608)-227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-				st.Current_Map.obj[i].position.y=atof(st.TextInput);
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-				StringUIData(str,8192,(4608)-227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			sprintf(str,"SX %d",st.Current_Map.obj[i].size.x);
-
-			if(CheckCollisionMouse(8192,(4608)+227,1720,455,0) && !meng.sub_com)
-			{
-				StringUIData(str,8192,(4608)+227,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1 || st.mouse2)
-				{
-					if(st.mouse1)
-						meng.sub_com=3;
-					else
-					if(st.mouse2)
-						meng.sub_com=6;
-
-					asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
-
-					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].size.x);
-					SDL_StartTextInput();
-					st.Text_Input=1;
-					st.mouse1=0;
-				}
-			}
-			else
-			if(meng.sub_com==3)
-			{
-				StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-				st.Current_Map.obj[i].size.x=atof(st.TextInput);
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-			if(meng.sub_com==6)
-			{
-				StringUIData(str,8192,(4608)+227,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				st.Current_Map.obj[i].size.x=atof(st.TextInput);
-				//asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
-				st.Current_Map.obj[i].size.y=(float) st.Current_Map.obj[i].size.x/asp;
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-				StringUIData(str,8192,(4608)+227,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			sprintf(str,"SY %d",st.Current_Map.obj[i].size.y);
-
-			if(CheckCollisionMouse(8192,(4608)+681,1720,455,0) && !meng.sub_com)
-			{
-				StringUIData(str,8192,(4608)+681,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1 || st.mouse2)
-				{
-					if(st.mouse1)
-						meng.sub_com=4;
-					else
-					if(st.mouse2)
-						meng.sub_com=7;
-
-					asp=(float) st.Current_Map.obj[i].size.x/st.Current_Map.obj[i].size.y;
-
-					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].size.y);
-					SDL_StartTextInput();
-					st.Text_Input=1;
-					st.mouse1=0;
-				}
-			}
-			else
-			if(meng.sub_com==4)
-			{
-				StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-				st.Current_Map.obj[i].size.y=atof(st.TextInput);
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-			if(meng.sub_com==7)
-			{
-				StringUIData(str,8192,(4608)+681,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				st.Current_Map.obj[i].size.y=atof(st.TextInput);
-
-				st.Current_Map.obj[i].size.x=(float) st.Current_Map.obj[i].size.y*asp;
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-				StringUIData(str,8192,(4608)+681,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			sprintf(str,"Z %d",st.Current_Map.obj[i].position.z);
-
-			if(CheckCollisionMouse(8192,(4608)+1137,1720,455,0) && !meng.sub_com)
-			{
-				StringUIData(str,8192,(4608)+1137,1720,455,0,255,128,32,255,ARIAL,2048,2048,0);
-				if(st.mouse1)
-				{
-					meng.sub_com=5;
-					sprintf(st.TextInput,"%d",st.Current_Map.obj[i].position.z);
-					SDL_StartTextInput();
-					st.Text_Input=1;
-					st.mouse1=0;
-				}
-			}
-			else
-			if(meng.sub_com==5)
-			{
-				StringUIData(str,8192,(4608)+1137,1720,455,0,255,32,32,255,ARIAL,2048,2048,0);
-				st.Current_Map.obj[i].position.z=atoi(st.TextInput);
-				if(st.Current_Map.obj[i].position.z>56) st.Current_Map.obj[i].position.z=56;
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					meng.sub_com=0;
-					st.keys[RETURN_KEY].state=0;
-				}
-			}
-			else
-				StringUIData(str,8192,(4608)+1137,1720,455,0,255,255,255,255,ARIAL,2048,2048,0);
-
-			if(st.keys[ESC_KEY].state && !meng.sub_com)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[ESC_KEY].state=0;
-			}
-		}
-
-		if(meng.obj2.type==MIDGROUND)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Midground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=14;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Midground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj2.type==FOREGROUND)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Foreground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=14;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Foreground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj2.type==BACKGROUND1)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background1",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=14;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background1",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj2.type==BACKGROUND2)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background2",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=14;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background2",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj2.type==BACKGROUND3)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background3",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=14;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background3",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		sprintf(str,"color");
-
-		if(CheckCollisionMouse(465,2445,810,217,0))
-		{
-			StringUIData(str,465,2445,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1)
-			{
-				meng.command=RGB_OBJ;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,2445,810,217,0, 255, 255, 255,255,ARIAL,2048,2048,0);
-
-		if(meng.command==RGB_OBJ)
-		{
-			UIData(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			StringUIData(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-			Sys_ColorPicker(&meng.obj2.color.r,&meng.obj2.color.g,&meng.obj2.color.b);
-
-			sprintf(str,"R %d",meng.obj2.color.r);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,2048+455,2048,227,0))
-				{
-					StringUIData(str,8192,2048+455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj2.color.r);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+455,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,2048+455,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.color.r=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"G %d",meng.obj2.color.g);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,2048+810,2048,227,0))
-				{
-					StringUIData(str,8192,2048+810,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj2.color.g);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+810,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,2048+810,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.color.g=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"B %d",meng.obj2.color.b);
-
-			if(meng.sub_com!=3)
-			{
-				if(CheckCollisionMouse(8192,2048+1265,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1265,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj2.color.b);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=3;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1265,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==3)
-			{
-				StringUIData(str,8192,2048+1265,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.color.b=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"A %d",meng.obj2.color.a);
-
-			if(meng.sub_com!=4)
-			{
-				if(CheckCollisionMouse(8192,2048+1720,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1720,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj2.color.a);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=4;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1720,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==4)
-			{
-				StringUIData(str,8192,2048+1720,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.color.a=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			if(st.keys[RETURN_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[RETURN_KEY].state=0;
-			}
-		}
-
-		sprintf(str,"Light %.2f",meng.obj2.amblight);
-
-		if(CheckCollisionMouse(465,2887,810,217,0))
-		{
-			StringUIData(str,465,2887,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.command=OBJ_AMBL;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,2887,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==OBJ_AMBL)
-		{
-			StringUIData(str,465,2887,810,217,0,255,32,32,255,ARIAL,0,0,0);
-
-			if(st.keys[RIGHT_KEY].state)
-			{
-				meng.obj2.amblight+=0.01;
-				st.keys[RIGHT_KEY].state=0;
-			}
-
-			if(st.keys[LEFT_KEY].state)
-			{
-				meng.obj2.amblight-=0.01;
-				st.keys[LEFT_KEY].state=0;
-			}
-
-			if(!CheckCollisionMouse(465,2887,810,217,0) && st.mouse1)
-			{
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-
-		sprintf(str,"Tex.Size");
-
-		if(CheckCollisionMouse(465,3315,810,217,0))
-		{
-			StringUIData(str,465,3315,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && meng.command!=TEX_PAN_OBJ)
-			{
-				meng.command=TEX_SIZE_OBJ;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3315,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==TEX_SIZE_OBJ)
-		{
-			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			sprintf(str,"X %d",meng.obj2.texsize.x);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,3641,2048,910,0))
-				{
-					StringUIData(str,8192,3641,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj2.texsize.x);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,3641,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,3641,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.texsize.x=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"Y %d",meng.obj2.texsize.y);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,4551,2048,910,0))
-				{
-					StringUIData(str,8192,4551,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj2.texsize.y);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,4551,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,4551,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.texsize.y=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-			
-
-			if(st.keys[UP_KEY].state)
-			{
-				meng.obj2.texsize.y+=128;
-				st.keys[UP_KEY].state=0;
-			}
-
-			if(st.keys[DOWN_KEY].state)
-			{
-				meng.obj2.texsize.y-=128;
-				st.keys[DOWN_KEY].state=0;
-			}
-
-			if(st.keys[RIGHT_KEY].state)
-			{
-				meng.obj2.texsize.x+=128;
-				st.keys[RIGHT_KEY].state=0;
-			}
-
-			if(st.keys[LEFT_KEY].state)
-			{
-				meng.obj2.texsize.x-=128;
-				st.keys[LEFT_KEY].state=0;
-			}
-
-			if(!CheckCollisionMouse(465,3315,810,217,0) && st.mouse1 && meng.sub_com==0)
-			{
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-
-		sprintf(str,"Tex.Pan");
-
-		if(CheckCollisionMouse(465,3640,810,217,0))
-		{
-			StringUIData(str,465,3640,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && meng.command!=TEX_SIZE_OBJ)
-			{
-				meng.command=TEX_PAN_OBJ;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3640,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==TEX_PAN_OBJ)
-		{
-			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			sprintf(str,"X %d",meng.obj2.texpan.x);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,3641,2048,910,0))
-				{
-					StringUIData(str,8192,3641,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj2.texpan.x);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,3641,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,3641,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.texpan.x=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"Y %d",meng.obj2.texpan.y);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,4551,2048,910,0))
-				{
-					StringUIData(str,8192,4551,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj2.texpan.y);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,4551,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,4551,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj2.texpan.y=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-			
-
-			if(st.keys[UP_KEY].state)
-			{
-				meng.obj2.texpan.y+=128;
-				st.keys[UP_KEY].state=0;
-			}
-
-			if(st.keys[DOWN_KEY].state)
-			{
-				meng.obj2.texpan.y-=128;
-				st.keys[DOWN_KEY].state=0;
-			}
-
-			if(st.keys[RIGHT_KEY].state)
-			{
-				meng.obj2.texpan.x+=128;
-				st.keys[RIGHT_KEY].state=0;
-			}
-
-			if(st.keys[LEFT_KEY].state)
-			{
-				meng.obj2.texpan.x-=128;
-				st.keys[LEFT_KEY].state=0;
-			}
-
-			if(!CheckCollisionMouse(465,3315,810,217,0) && st.mouse1 && meng.sub_com==0)
-			{
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-
-		if(meng.command!=TEX_SIZE_OBJ && meng.command!=TEX_PAN_OBJ && meng.command!=OBJ_AMBL && meng.command!=RGB_OBJ && meng.command!=OBJ_EDIT_BOX)
-		{
-							if(st.keys[UP_KEY].state)
-							{
-								st.Current_Map.obj[meng.com_id].size.y+=1165;
-								st.keys[UP_KEY].state=0;
-							}
-
-							if(st.keys[DOWN_KEY].state)
-							{
-								st.Current_Map.obj[meng.com_id].size.y-=1165;
-								st.keys[DOWN_KEY].state=0;
-							}
-
-							if(st.keys[RIGHT_KEY].state)
-							{
-								st.Current_Map.obj[meng.com_id].size.x+=1165;
-								st.keys[RIGHT_KEY].state=0;
-							}
-
-							if(st.keys[LEFT_KEY].state)
-							{
-								st.Current_Map.obj[meng.com_id].size.x-=1165;
-								st.keys[LEFT_KEY].state=0;
-							}
-
-							if(st.mouse_wheel>0 && st.mouse2)
-							{
-								st.Current_Map.obj[meng.com_id].size.x+=2330;
-								st.Current_Map.obj[meng.com_id].size.y+=2330;
-								st.mouse_wheel=0;
-							}
-
-							if(st.mouse_wheel<0 && st.mouse2)
-							{
-								st.Current_Map.obj[meng.com_id].size.x-=2330;
-								st.Current_Map.obj[meng.com_id].size.y-=2330;
-								st.mouse_wheel=0;
-							}
-		}
-
-		if(st.Current_Map.obj[i].type!=BLANK)
-		{
-			st.Current_Map.obj[i].amblight=meng.obj2.amblight;
-			st.Current_Map.obj[i].texpan=meng.obj2.texpan;
-			st.Current_Map.obj[i].texsize=meng.obj2.texsize;
-			st.Current_Map.obj[i].color=meng.obj2.color;
-			st.Current_Map.obj[i].type=meng.obj2.type;
-		}
-	}
-
-	if(meng.pannel_choice==ADD_OBJ)
-	{
-		UIData(247,681,435,435,0,128,32,32,0,0,32768,32768,mgg_sys[0].frames[1],255,0);
-
-		if(meng.obj.type==MIDGROUND)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Midground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=8;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Midground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj.type==FOREGROUND)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Foreground",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=8;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Foreground",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj.type==BACKGROUND1)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background1",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=8;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background1",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj.type==BACKGROUND2)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background2",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=8;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background2",465,2010,810,217,0,255,255,255,255,ARIAL,0,0,0);
-		}
-
-		if(meng.obj.type==BACKGROUND3)
-		{
-			if(CheckCollisionMouse(465,2010,810,217,0))
-			{
-				StringUIData("Background3",465,2010,810,217,0,255,128,32,255,ARIAL,0,0,0);
-				if(st.mouse1)
-				{
-					meng.command=8;
-					st.mouse1=0;
-				}
-			}
-			else
-				StringUIData("Background3",465,2010,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-		}
-
-		sprintf(str,"color");
-
-		if(CheckCollisionMouse(465,2445,810,217,0))
-		{
-			StringUIData(str,465,2445,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-			if(st.mouse1)
-			{
-				meng.command=RGB_OBJ;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,2445,810,217,0, 255, 255, 255,255,ARIAL,2048,2048,0);
-
-		if(meng.command==RGB_OBJ)
-		{
-			UIData(8192,3072,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			StringUIData(str,465,2445,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-			Sys_ColorPicker(&meng.obj.color.r,&meng.obj.color.g,&meng.obj.color.b);
-
-			sprintf(str,"R %d",meng.obj.color.r);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,2048+455,2048,227,0))
-				{
-					StringUIData(str,8192,2048+455,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj.color.r);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+455,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,2048+455,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.color.r=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"G %d",meng.obj.color.g);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,2048+810,2048,227,0))
-				{
-					StringUIData(str,8192,2048+810,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj.color.g);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+810,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,2048+810,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.color.g=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"B %d",meng.obj.color.b);
-
-			if(meng.sub_com!=3)
-			{
-				if(CheckCollisionMouse(8192,2048+1265,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1265,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj.color.b);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=3;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1265,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==3)
-			{
-				StringUIData(str,8192,2048+1265,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.color.b=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"A %d",meng.obj.color.a);
-
-			if(meng.sub_com!=4)
-			{
-				if(CheckCollisionMouse(8192,2048+1720,2048,455,0))
-				{
-					StringUIData(str,8192,2048+1720,0,0,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						sprintf(st.TextInput,"%d",meng.obj.color.a);
-						StartText();
-						st.mouse1=0;
-						meng.sub_com=4;
-					}
-				}
-				else
-					StringUIData(str,8192,2048+1720,0,0,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==4)
-			{
-				StringUIData(str,8192,2048+1720,0,0,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.color.a=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					StopText();
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			if(st.keys[RETURN_KEY].state)
-			{
-				meng.command=meng.pannel_choice;
-				st.keys[RETURN_KEY].state=0;
-			}
-		}
-
-		sprintf(str,"Light %.2f",meng.obj.amblight);
-
-		if(CheckCollisionMouse(465,2887,810,217,0))
-		{
-			StringUIData(str,465,2887,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.command=OBJ_AMBL;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,2887,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==OBJ_AMBL)
-		{
-			StringUIData(str,465,2887,810,217,0,255,32,32,255,ARIAL,0,0,0);
-
-			if(st.keys[RIGHT_KEY].state)
-			{
-				meng.obj.amblight+=0.01;
-				st.keys[RIGHT_KEY].state=0;
-			}
-
-			if(st.keys[LEFT_KEY].state)
-			{
-				meng.obj.amblight-=0.01;
-				st.keys[LEFT_KEY].state=0;
-			}
-
-			if(!CheckCollisionMouse(465,2887,810,217,0) && st.mouse1)
-			{
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-
-		sprintf(str,"Tex.Size");
-
-		if(CheckCollisionMouse(465,3315,810,217,0))
-		{
-			StringUIData(str,465,3315,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && meng.command!=TEX_PAN_OBJ)
-			{
-				meng.command=TEX_SIZE_OBJ;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3315,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.obj.type==BACKGROUND1 || meng.obj.type==BACKGROUND2 || meng.obj.type==FOREGROUND)
-		{
-			if(!(meng.obj.flag & 1))
-			{
-				if(UIStringButton(465,3640+315,"Tex. Mov [ ]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					meng.obj.flag |=1;
-			}
-			else
-			if(meng.obj.flag & 1)
-			{
-				if(UIStringButton(465,3640+315,"Tex. Mov [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					meng.obj.flag-=1;
-			}
-		}
-
-		if(meng.obj.type==MIDGROUND)
-		{
-			if(!(meng.obj.flag & 2))
-			{
-				if(UIStringButton(465,3640+315+315,"ATMC [ ]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					meng.obj.flag |=2;
-			}
-			else
-			if(meng.obj.flag & 2)
-			{
-				if(UIStringButton(465,3640+315+315,"ATMC [X]",ARIAL,1024,0,UI_COL_NORMAL,UI_COL_SELECTED)==UI_SEL)
-					meng.obj.flag-=2;
-			}
-		}
-			
-			
-		if(meng.command==TEX_SIZE_OBJ)
-		{
-			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			sprintf(str,"X %d",meng.obj.texsize.x);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,3641,2048,910,0))
-				{
-					StringUIData(str,8192,3641,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj.texsize.x);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,3641,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,3641,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.texsize.x=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"Y %d",meng.obj.texsize.y);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,4551,2048,910,0))
-				{
-					StringUIData(str,8192,4551,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj.texsize.y);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,4551,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,4551,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.texsize.y=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-			
-
-			if(st.keys[UP_KEY].state)
-			{
-				meng.obj2.texsize.y+=128;
-				st.keys[UP_KEY].state=0;
-			}
-
-			if(st.keys[DOWN_KEY].state)
-			{
-				meng.obj2.texsize.y-=128;
-				st.keys[DOWN_KEY].state=0;
-			}
-
-			if(st.keys[RIGHT_KEY].state)
-			{
-				meng.obj2.texsize.x+=128;
-				st.keys[RIGHT_KEY].state=0;
-			}
-
-			if(st.keys[LEFT_KEY].state)
-			{
-				meng.obj2.texsize.x-=128;
-				st.keys[LEFT_KEY].state=0;
-			}
-
-			if(!CheckCollisionMouse(465,3315,810,217,0) && st.mouse1 && meng.sub_com==0)
-			{
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-
-		sprintf(str,"Tex.Pan");
-
-		if(CheckCollisionMouse(465,3640,810,217,0))
-		{
-			StringUIData(str,465,3640,810,217,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1 && meng.command!=TEX_SIZE_OBJ)
-			{
-				meng.command=TEX_PAN_OBJ;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData(str,465,3640,810,217,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(meng.command==TEX_PAN_OBJ)
-		{
-			UIData(8192,4608,2048,2048,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[0].frames[4],255,6);
-
-			sprintf(str,"X %d",meng.obj.texpan.x);
-
-			if(meng.sub_com!=1)
-			{
-				if(CheckCollisionMouse(8192,3641,2048,910,0))
-				{
-					StringUIData(str,8192,3641,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj.texpan.x);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=1;
-					}
-				}
-				else
-					StringUIData(str,8192,3641,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==1)
-			{
-				StringUIData(str,8192,3641,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.texpan.x=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-
-			sprintf(str,"Y %d",meng.obj.texpan.y);
-
-			if(meng.sub_com!=2)
-			{
-				if(CheckCollisionMouse(8192,4551,2048,910,0))
-				{
-					StringUIData(str,8192,4551,810,217,0,255,128,32,255,ARIAL,2048,2048,0);
-
-					if(st.mouse1)
-					{
-						st.mouse1=0;
-						sprintf(st.TextInput,"%d",meng.obj.texpan.y);
-						st.Text_Input=1;
-						SDL_StartTextInput();
-						meng.sub_com=2;
-					}
-				}
-				else
-					StringUIData(str,8192,4551,810,217,0,255,255,255,255,ARIAL,2048,2048,0);
-			}
-			else
-			if(meng.sub_com==2)
-			{
-				StringUIData(str,8192,4551,810,217,0,255,32,32,255,ARIAL,2048,2048,0);
-
-				meng.obj.texpan.y=atoi(st.TextInput);
-
-				if(st.keys[RETURN_KEY].state)
-				{
-					SDL_StopTextInput();
-					st.Text_Input=0;
-					st.keys[RETURN_KEY].state=0;
-					meng.sub_com=0;
-				}
-			}
-			
-
-			if(st.keys[UP_KEY].state)
-			{
-				meng.obj.texpan.y+=128;
-				st.keys[UP_KEY].state=0;
-			}
-
-			if(st.keys[DOWN_KEY].state)
-			{
-				meng.obj.texpan.y-=128;
-				st.keys[DOWN_KEY].state=0;
-			}
-
-			if(st.keys[RIGHT_KEY].state)
-			{
-				meng.obj.texpan.x+=128;
-				st.keys[RIGHT_KEY].state=0;
-			}
-
-			if(st.keys[LEFT_KEY].state)
-			{
-				meng.obj.texpan.x-=128;
-				st.keys[LEFT_KEY].state=0;
-			}
-
-			if(!CheckCollisionMouse(465,3315,810,217,0) && st.mouse1 && meng.sub_com==0)
-			{
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-
-	}
-
-	if(meng.command==ADD_OBJ_TYPE)
-	{
-		UIData(1365,1715,910,1185,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
-
-		if(CheckCollisionMouse(1365,1715,810,227,0))
-		{
-			StringUIData("Background1",1365,1715,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.obj.type=BACKGROUND1;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Background1",1365,1715,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,1465,810,227,0))
-		{
-			StringUIData("Background2",1365,1465,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.obj.type=BACKGROUND2;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Background2",1365,1465,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,1215,810,227,0))
-		{
-			StringUIData("Background3",1365,1215,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.obj.type=BACKGROUND3;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Background3",1365,1215,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,1920,810,227,0))
-		{
-			StringUIData("Midground",1365,1920,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.obj.type=MIDGROUND;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Midground",1365,1920,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,2170,810,227,0))
-		{
-			StringUIData("Foreground",1365,2170,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				meng.obj.type=FOREGROUND;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Foreground",1365,2170,810,227,0,255,255,255,255,ARIAL,0,0,0);
-	}
-
-	if(meng.command==EDIT_OBJ_TYPE)
-	{
-		UIData(1365,1715,910,1210,0,255,255,255,0,0,32768,32768,mgg_sys[0].frames[4],255,0);
-
-		if(CheckCollisionMouse(1365,1715,810,227,0))
-		{
-			StringUIData("Background1",1365,1715,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND3)
-					st.Current_Map.obj[meng.com_id].position.z-=16;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND2)
-					st.Current_Map.obj[meng.com_id].position.z-=8;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==MIDGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=8;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==FOREGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=16;
-
-				st.Current_Map.obj[meng.com_id].type=BACKGROUND1;
-				//st.Current_Map.obj[meng.com_id].position.z=
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Background1",1365,1715,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,1465,810,227,0))
-		{
-			StringUIData("Background2",1365,1465,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND3)
-					st.Current_Map.obj[meng.com_id].position.z-=8;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND1)
-					st.Current_Map.obj[meng.com_id].position.z+=8;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==MIDGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=16;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==FOREGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=32;
-
-				st.Current_Map.obj[meng.com_id].type=BACKGROUND2;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Background2",1365,1465,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,1215,810,227,0))
-		{
-			StringUIData("Background3",1365,1215,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND1)
-					st.Current_Map.obj[meng.com_id].position.z+=16;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND2)
-					st.Current_Map.obj[meng.com_id].position.z+=8;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==MIDGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=32;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==FOREGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=40;
-
-				st.Current_Map.obj[meng.com_id].type=BACKGROUND3;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Background3",1365,1215,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,1920,810,227,0))
-		{
-			StringUIData("Midground",1365,1920,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND3)
-					st.Current_Map.obj[meng.com_id].position.z-=32;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND2)
-					st.Current_Map.obj[meng.com_id].position.z-=16;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND1)
-					st.Current_Map.obj[meng.com_id].position.z-=8;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==FOREGROUND)
-					st.Current_Map.obj[meng.com_id].position.z+=8;
-
-				st.Current_Map.obj[meng.com_id].type=MIDGROUND;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Midground",1365,1920,810,227,0,255,255,255,255,ARIAL,0,0,0);
-
-		if(CheckCollisionMouse(1365,2170,810,227,0))
-		{
-			StringUIData("Foreground",1365,2170,810,227,0,255,128,32,255,ARIAL,0,0,0);
-
-			if(st.mouse1)
-			{
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND3)
-					st.Current_Map.obj[meng.com_id].position.z-=40;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND2)
-					st.Current_Map.obj[meng.com_id].position.z-=32;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==BACKGROUND1)
-					st.Current_Map.obj[meng.com_id].position.z-=16;
-				else
-				if(st.Current_Map.obj[meng.com_id].type==MIDGROUND)
-					st.Current_Map.obj[meng.com_id].position.z-=8;
-
-				st.Current_Map.obj[meng.com_id].type=FOREGROUND;
-				meng.command=meng.pannel_choice;
-				st.mouse1=0;
-			}
-		}
-		else
-			StringUIData("Foreground",1365,2170,810,227,0,255,255,255,255,ARIAL,0,0,0);
-	}
-
-}
-
 void LightingMisc()
 {
 	_GAME_LIGHTMAPS *gl = st.game_lightmaps;
@@ -4539,59 +855,6 @@ static void ViewPortCommands()
 				LogApp("First Sector vertex added");
 				st.mouse1=0;
 			}
-			
-			if(st.mouse2)
-			{
-				if(st.Current_Map.num_sector<MAX_SECTORS)
-				{
-					//i=st.Current_Map.num_sector;
-					for(l=meng.z_slot[24]-1;l>-1;l--)
-					{
-						i=meng.z_buffer[24][l];
-
-						if(i<10000) continue;
-
-						i-=10000;
-
-						if(st.Current_Map.sector[i].id!=-1 && CheckCollisionMouseWorld(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,0,0,0))
-						{
-							st.Current_Map.sector[i].id=-1;
-
-							if(i<st.Current_Map.num_sector-1)
-							{
-								for(j=i;j<st.Current_Map.num_sector-1;j++)
-								{
-									memcpy(&st.Current_Map.sector[j],&st.Current_Map.sector[j+1],sizeof(_SECTOR));
-									st.Current_Map.sector[j+1].id=-1;
-								}
-							}
-
-							for(k=l;k<meng.z_slot[24];k++)
-								if(meng.z_buffer[24][k]==st.Current_Map.num_sector-1+10000)
-									break;
-
-							if(k<meng.z_slot[24]-1)
-							{
-								for(;k<meng.z_slot[24];k++)
-								{
-									meng.z_buffer[24][k]=meng.z_buffer[24][k+1];
-									meng.z_buffer[24][k+1]=0;
-								}
-							}
-							else
-								meng.z_buffer[24][k]=0;
-
-							meng.z_slot[24]--;
-
-							st.Current_Map.num_sector--;
-
-							break;
-						}
-					}
-				}
-				LogApp("Sector Removed");
-				st.mouse2=0;
-			}
 		}
 		else
 		if(meng.command==DRAW_SECTOR2)
@@ -4631,36 +894,6 @@ static void ViewPortCommands()
 					meng.current_command=0;
 
 					LogApp("Sector Added");
-				}
-			}
-			
-			if(st.mouse2)
-			{
-				if(meng.sub_com)
-				{
-					st.Current_Map.sector[i].num_vertexadded--;
-
-					if(meng.sub_com==1)
-					{
-						st.Current_Map.sector[i].id=-1;
-
-						LogApp("Sector removed");
-
-						meng.sub_com=0;
-						meng.com_id=0;
-						meng.command=DRAW_SECTOR;
-
-					}
-					else
-					{
-						LogApp("Sector vertex %d removed",meng.sub_com);
-
-						meng.sub_com--;
-
-						meng.current_command=0;
-					}
-
-					st.mouse2=0;
 				}
 			}
 		}
@@ -5170,25 +1403,6 @@ static void ViewPortCommands()
 								p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
 								p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
 
-								//sprintf(str,"%d",st.Current_Map.sprites[i].angle);
-								//String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.sprites[i].position.z);
-
-								/*
-								if(st.mouse_wheel>0 && !st.mouse2)
-								{
-									if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle+=1;
-									else st.Current_Map.sprites[i].angle+=100;
-									st.mouse_wheel=0;
-								}
-
-								if(st.mouse_wheel<0 && !st.mouse2)
-								{
-									if(st.keys[RSHIFT_KEY].state) st.Current_Map.sprites[i].angle-=1;
-									else st.Current_Map.sprites[i].angle-=100;
-									st.mouse_wheel=0;
-								}
-								*/
-
 								got_it = 1;
 								break;
 							}
@@ -5258,11 +1472,7 @@ static void ViewPortCommands()
 									{
 										st.Current_Map.sprites[i].body.size.x += p.y;
 
-										if (asp < 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
-
-										if (asp >= 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5293,11 +1503,7 @@ static void ViewPortCommands()
 									{
 										st.Current_Map.sprites[i].body.size.x += p.y;
 
-										if (asp < 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
-
-										if (asp >= 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5328,11 +1534,7 @@ static void ViewPortCommands()
 									{
 										st.Current_Map.sprites[i].body.size.x += p.x;
 
-										if (asp < 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
-
-										if (asp >= 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5363,11 +1565,144 @@ static void ViewPortCommands()
 									{
 										st.Current_Map.sprites[i].body.size.x += p.x;
 
-										if (asp < 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
 
-										if (asp >= 1)
-											st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x * asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 5)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									p.x *= -1;
+									p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+										st.Current_Map.sprites[i].body.size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 6)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									//p.x *= -1;
+									p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+										st.Current_Map.sprites[i].body.size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 7)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									//p.x *= -1;
+									//p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+										st.Current_Map.sprites[i].body.size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 8)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									p.x *= -1;
+									//p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+										st.Current_Map.sprites[i].body.size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.sprites[i].body.size.x += p.x;
+
+										st.Current_Map.sprites[i].body.size.y = (float)st.Current_Map.sprites[i].body.size.x / asp;
+
 									}
 
 									pm = st.mouse;
@@ -5442,6 +1777,70 @@ static void ViewPortCommands()
 									}
 								}
 							}
+
+							if (CheckCollisionMouseWorld(p.x - (p2.x / 2) - 96, p.y - (p2.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 5;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x + (p2.x / 2) + 96, p.y - (p2.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 6;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x + (p2.x / 2) + 96, p.y + (p2.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 7;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x - (p2.x / 2) - 96, p.y + (p2.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 8;
+
+										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+									}
+								}
+							}
 						}
 					}
 				}
@@ -5495,12 +1894,6 @@ static void ViewPortCommands()
 						i=meng.z_buffer[l][k];
 
 						if(i>1099) continue;
-						/*
-						if(meng.command2==EDIT_OBJ && meng.got_it==i)
-							if(Sys_ResizeController(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,&st.Current_Map.obj[i].size.x,&st.Current_Map.obj[i].size.y,0,st.Current_Map.obj[i].angle,
-								st.Current_Map.obj[i].position.z))
-								break;
-								*/
 
 						if(got_it) break;
 
@@ -5517,13 +1910,7 @@ static void ViewPortCommands()
 
 							st.Current_Map.obj[i].position.x -= meng.p.x;
 							st.Current_Map.obj[i].position.y -= meng.p.y;
-							/*
-							if(st.Current_Map.obj[i].lightmapid!=-1)
-							{
-							st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
-							st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
-							}
-							*/
+						
 							p.x = st.Current_Map.obj[i].position.x + (st.Current_Map.obj[i].size.x / 2);
 							p.y = st.Current_Map.obj[i].position.y - (st.Current_Map.obj[i].size.y / 2);
 						}
@@ -5568,41 +1955,10 @@ static void ViewPortCommands()
 
 									st.Current_Map.obj[i].position.x-=meng.p.x;
 									st.Current_Map.obj[i].position.y-=meng.p.y;
-									/*
-									if(st.Current_Map.obj[i].lightmapid!=-1)
-									{
-										st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.x=st.Current_Map.obj[i].position.x;
-										st.game_lightmaps[st.Current_Map.obj[i].lightmapid].w_pos.y=st.Current_Map.obj[i].position.y;
-									}
-									*/
+									
 									p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
 									p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
 
-									//sprintf(str,"%d",st.Current_Map.obj[i].angle);
-									//String2Data(str,p.x+227,p.y-227,405,217,0,255,255,255,255,ARIAL,1024,1024,st.Current_Map.obj[i].position.z);
-									/*
-									if(st.mouse_wheel>0 && !st.mouse2)
-									{
-										if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle+=1;
-										else st.Current_Map.obj[i].angle+=100;
-
-										if(st.Current_Map.obj[i].lightmapid!=-1)
-											st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
-
-										st.mouse_wheel=0;
-									}
-
-									if(st.mouse_wheel<0 && !st.mouse2)
-									{
-										if(st.keys[RSHIFT_KEY].state) st.Current_Map.obj[i].angle-=1;
-										else st.Current_Map.obj[i].angle-=100;
-
-										if(st.Current_Map.obj[i].lightmapid!=-1)
-											st.game_lightmaps[st.Current_Map.obj[i].lightmapid].ang=st.Current_Map.obj[i].angle;
-
-										st.mouse_wheel=0;
-									}
-									*/
 									got_it=1;
 									break;
 								
@@ -5672,12 +2028,7 @@ static void ViewPortCommands()
 									else
 									{
 										st.Current_Map.obj[i].size.x += p.y;
-
-										if (asp < 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
-
-										if (asp >= 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+										st.Current_Map.obj[i].size.y = (float) st.Current_Map.obj[i].size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5707,12 +2058,7 @@ static void ViewPortCommands()
 									else
 									{
 										st.Current_Map.obj[i].size.x += p.y;
-
-										if (asp < 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
-
-										if (asp >= 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5742,12 +2088,7 @@ static void ViewPortCommands()
 									else
 									{
 										st.Current_Map.obj[i].size.x += p.x;
-
-										if (asp < 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
-
-										if (asp >= 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5777,12 +2118,135 @@ static void ViewPortCommands()
 									else
 									{
 										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+									}
 
-										if (asp < 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
 
-										if (asp >= 1)
-											st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x * asp;
+							if (meng.scaling == 5)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									p.x *= -1;
+									p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 6)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									//p.x *= -1;
+									p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 7)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									//p.x *= -1;
+									//p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
+									}
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.scaling = 0;
+								}
+							}
+
+							if (meng.scaling == 8)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									p.x -= pm.x;
+									p.y -= pm.y;
+
+									p.x *= -1;
+									//p.y *= -1;
+
+									if (st.keys[LSHIFT_KEY].state)
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y += p.y;
+									}
+									else
+									{
+										st.Current_Map.obj[i].size.x += p.x;
+										st.Current_Map.obj[i].size.y = (float)st.Current_Map.obj[i].size.x / asp;
 									}
 
 									pm = st.mouse;
@@ -5852,6 +2316,70 @@ static void ViewPortCommands()
 										STW(&pm.x, &pm.y);
 
 										meng.scaling = 4;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x - (p2.x / 2) - 96, p.y - (p2.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 5;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x + (p2.x / 2) + 96, p.y - (p2.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 6;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x + (p2.x / 2) + 96, p.y + (p2.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 7;
+
+										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+									}
+								}
+							}
+
+							if (CheckCollisionMouseWorld(p.x - (p2.x / 2) - 96, p.y + (p2.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0))
+							{
+								if (st.mouse1)
+								{
+									if (meng.scaling == 0)
+									{
+										pm = st.mouse;
+										STW(&pm.x, &pm.y);
+
+										meng.scaling = 8;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
 									}
@@ -5956,75 +2484,6 @@ static void ViewPortCommands()
 
 				LogApp("Object added");
 				st.mouse1=0;
-			}
-			
-			if(st.mouse2)
-			{
-				if(st.Current_Map.num_obj<MAX_OBJS)
-				{
-					for(l=16;l<57;l++)
-					{
-						for(k=meng.z_slot[l];k>-1;k--)
-						{
-							if (meng.curlayer == 0 && l>23)
-								break;
-
-							if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
-								break;
-
-							if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
-								break;
-
-							if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
-								break;
-
-							if (meng.curlayer == 4 && l<48)
-								break;
-
-							i=meng.z_buffer[l][k];
-
-							if(i>1099) continue;
-
-							if(st.Current_Map.obj[i].type!=BLANK && CheckCollisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,
-								st.Current_Map.obj[i].angle,st.Current_Map.obj[i].position.z))
-							{
-								st.Current_Map.obj[i].type=BLANK;
-
-								if(i<st.Current_Map.num_obj-1)
-								{
-									for(j=i;j<st.Current_Map.num_obj-1;j++)
-									{
-										memcpy(&st.Current_Map.obj[j],&st.Current_Map.obj[j+1],sizeof(_MGMOBJ));
-										st.Current_Map.obj[j+1].type=BLANK;
-									}
-								}
-
-								for(m=k;m<meng.z_slot[st.Current_Map.obj[i].position.z];m++)
-									if(meng.z_buffer[st.Current_Map.obj[i].position.z][m]==st.Current_Map.num_obj-1)
-										break;
-
-								if(m<meng.z_slot[st.Current_Map.obj[i].position.z]-1)
-								{
-									for(;m<meng.z_slot[st.Current_Map.obj[i].position.z];m++)
-									{
-										meng.z_buffer[st.Current_Map.obj[i].position.z][m]=meng.z_buffer[st.Current_Map.obj[i].position.z][m+1];
-										meng.z_buffer[st.Current_Map.obj[i].position.z][m+1]=0;
-									}
-								}
-								else
-									meng.z_buffer[st.Current_Map.obj[i].position.z][m]=0;
-
-								meng.z_slot[l]--;
-
-								st.Current_Map.num_obj--;
-								break;
-							}
-						}
-					}
-				}
-
-				LogApp("Object removed");
-				st.mouse2=0;
 			}
 		}
 		else
@@ -6136,78 +2595,6 @@ static void ViewPortCommands()
 							//break;
 						}
 					//}
-				}
-			}
-			
-			if(st.mouse2)
-			{
-				if(st.Current_Map.num_sprites<MAX_SPRITES)
-				{
-					for(l=16;l<57;l++)
-					{
-						for(k=meng.z_slot[l];k>-1;k--)
-						{
-							if (meng.curlayer == 0 && l>23)
-								break;
-
-							if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
-								break;
-
-							if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
-								break;
-
-							if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
-								break;
-
-							if (meng.curlayer == 4 && l<48)
-								break;
-
-							i=meng.z_buffer[l][k];
-
-							if(i<2000 || i>3000) continue;
-
-							i-=2000;
-
-							if(st.Current_Map.sprites[i].stat!=0 && CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,
-								st.Current_Map.sprites[i].body.ang,st.Current_Map.sprites[i].position.z))
-							{
-								st.Current_Map.sprites[i].stat=0;
-
-								if(i<st.Current_Map.num_sprites-1)
-								{
-									for(j=i;j<st.Current_Map.num_sprites-1;j++)
-									{
-										memcpy(&st.Current_Map.sprites[j],&st.Current_Map.sprites[j+1],sizeof(_MGMSPRITE));
-										st.Current_Map.sprites[j+1].stat=0;
-									}
-								}
-
-								for(m=k;m<meng.z_slot[l];m++)
-									if(meng.z_buffer[l][m]==st.Current_Map.num_sprites-1+2000)
-										break;
-
-								if(m<meng.z_slot[l]-1)
-								{
-									for(;m<meng.z_slot[l];m++)
-									{
-										meng.z_buffer[l][m]=meng.z_buffer[l][m+1];
-										meng.z_buffer[l][m+1]=0;
-									}
-								}
-								else
-									meng.z_buffer[l][m]=0;
-
-								meng.z_slot[l]--;
-
-								st.Current_Map.num_sprites--;
-
-								LogApp("Sprite removed");
-								st.mouse2=0;
-
-								break;
-							}
-						}
-					}
 				}
 			}
 		}
@@ -6336,9 +2723,9 @@ static void ENGDrawLight()
 				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
 		}
 
-		if (st.num_lights > 0)
+		if (st.Current_Map.num_lights > 0)
 		{
-			for (i = 1; i < st.num_lights; i++)
+			for (i = 1; i < st.Current_Map.num_lights; i++)
 			{
 				Pos tmp = st.game_lightmaps[i].w_pos;
 				char textI[2] = { 124, 0 };
@@ -6361,8 +2748,18 @@ static void ENGDrawLight()
 		switch (meng.command2)
 		{
 			case EDIT_OBJ:
-				p = st.Current_Map.obj[meng.obj_edit_selection].position;
-				s = st.Current_Map.obj[meng.obj_edit_selection].size;
+			case EDIT_SPRITE:
+
+				if (meng.command2 == EDIT_OBJ)
+				{
+					p = st.Current_Map.obj[meng.obj_edit_selection].position;
+					s = st.Current_Map.obj[meng.obj_edit_selection].size;
+				}
+				else
+				{
+					p = st.Current_Map.sprites[meng.sprite_edit_selection].position;
+					s = st.Current_Map.sprites[meng.sprite_edit_selection].body.size;
+				}
 
 				if (p.z < 24)
 				{
@@ -6375,8 +2772,8 @@ static void ENGDrawLight()
 
 				if (p.z > 31 && p.z < 40)
 				{
-					p.x -= (float) st.Camera.position.x*st.Current_Map.bck1_v;
-					p.y -= (float) st.Camera.position.y*st.Current_Map.bck1_v;
+					p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+					p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
 
 					p.x += st.Camera.position.x;
 					p.y += st.Camera.position.y;
@@ -6390,8 +2787,8 @@ static void ENGDrawLight()
 
 				if (p.z > 39 && p.z < 48)
 				{
-					p.x -= (float) st.Camera.position.x * st.Current_Map.bck2_v;
-					p.y -= (float) st.Camera.position.y * st.Current_Map.bck2_v;
+					p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+					p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
 
 					p.x += st.Camera.position.x;
 					p.y += st.Camera.position.y;
@@ -6454,109 +2851,18 @@ static void ENGDrawLight()
 
 					DrawGraphic(p.x + 12, p.y + 12 + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 					DrawGraphic(p.x, p.y + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				}
 
-				//Anchor point
+					DrawGraphic(p.x + 12 - (s.x / 2) - 96, p.y + 12 - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x - (s.x / 2) - 96, p.y - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 
-				DrawGraphic(p.x + 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x + 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + 12 + (s.x / 2) + 96, p.y + 12 - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + (s.x / 2) + 96, p.y - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 
-				DrawGraphic(p.x - 96 + 12, p.y + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x - 96, p.y, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + 12 + (s.x / 2) + 96, p.y + 12 + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + (s.x / 2) + 96, p.y + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 
-				DrawGraphic(p.x + 12, p.y + 96 + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x, p.y + 96, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-				DrawGraphic(p.x + 12, p.y - 96 + 12, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x, p.y - 96, 96.0f / st.Camera.dimension.x, 96.0f / st.Camera.dimension.x, 450, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-				break;
-
-			case EDIT_SPRITE:
-				p = st.Current_Map.sprites[meng.sprite_edit_selection].position;
-				s = st.Current_Map.sprites[meng.sprite_edit_selection].body.size;
-
-				if (p.z > 31 && p.z < 40)
-				{
-					p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
-					p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
-
-					//p.x -= st.Camera.position.x;
-					//p.y -= st.Camera.position.y;
-
-					//p.x *= st.Camera.dimension.x;
-					//p.y *= st.Camera.dimension.y;
-
-					//s.x *= st.Camera.dimension.x;
-					//s.y *= st.Camera.dimension.y;
-				}
-
-				if (p.z > 39 && p.z < 48)
-				{
-					p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
-					p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
-
-					p.x += st.Camera.position.x;
-					p.y += st.Camera.position.y;
-
-					//p.x *= (float) st.Camera.dimension.x;
-					//p.y *= (float) st.Camera.dimension.y;
-
-					//s.x *= (float) st.Camera.dimension.x;
-					//s.y *= (float) st.Camera.dimension.y;
-				}
-
-				if (p.z > 47)
-				{
-					p.x /= (float) st.Camera.dimension.x;
-					p.y /= (float) st.Camera.dimension.y;
-
-					p.x += st.Camera.position.x;
-					p.y += st.Camera.position.y;
-
-					s.x /= (float) st.Camera.dimension.x;
-					s.y /= (float) st.Camera.dimension.y;
-				}
-
-				DrawLine(p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
-				DrawLine(p.x - (s.x / 2), p.y - (s.y / 2), p.x + (s.x / 2), p.y - (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
-
-				DrawLine(p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
-				DrawLine(p.x + (s.x / 2), p.y - (s.y / 2), p.x + (s.x / 2), p.y + (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
-
-				DrawLine(p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
-				DrawLine(p.x + (s.x / 2), p.y + (s.y / 2), p.x - (s.x / 2), p.y + (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
-
-				DrawLine(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), 0, 0, 0, 255, 16.0f / st.Camera.dimension.x, 16);
-				DrawLine(p.x - (s.x / 2), p.y + (s.y / 2), p.x - (s.x / 2), p.y - (s.y / 2), 9, 132, 237, 255, 16.0f / st.Camera.dimension.x, 16);
-
-				//Vertices
-
-				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x - (s.x / 2), p.y - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-				DrawGraphic(p.x + 12 + (s.x / 2), p.y + 12 - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x + (s.x / 2), p.y - (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-				DrawGraphic(p.x + 12 + (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x + (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-				DrawGraphic(p.x + 12 - (s.x / 2), p.y + 12 + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-				DrawGraphic(p.x - (s.x / 2), p.y + (s.y / 2), 64.0f / st.Camera.dimension.x, 64.0f / st.Camera.dimension.x, 0, 9, 132, 237, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-				if (meng.sub_com == SCALER_SELECT)
-				{
-					DrawGraphic(p.x + 12 - (s.x / 2) - 96, p.y + 12, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-					DrawGraphic(p.x - (s.x / 2) - 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-					DrawGraphic(p.x + 12 + (s.x / 2) + 96, p.y + 12, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-					DrawGraphic(p.x + (s.x / 2) + 96, p.y, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-					DrawGraphic(p.x + 12, p.y + 12 - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-					DrawGraphic(p.x, p.y - (s.y / 2) - 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-
-					DrawGraphic(p.x + 12, p.y + 12 + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
-					DrawGraphic(p.x, p.y + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x + 12 - (s.x / 2) - 96, p.y + 12 + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 0, 0, 0, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+					DrawGraphic(p.x - (s.x / 2) - 96, p.y + (s.y / 2) + 96, 128.0f / st.Camera.dimension.x, 128.0f / st.Camera.dimension.x, 0, 214, 48, 49, st.BasicTex, 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 				}
 
 				//Anchor point
@@ -8103,6 +4409,90 @@ void LayerBar()
 			}
 		}
 
+		nk_layout_row_dynamic(ctx, 20, 1);
+
+		if (meng.command2 != EDIT_OBJ && meng.command2 != EDIT_SPRITE && meng.command2 != EDIT_SECTOR && meng.command2 != NEDIT_LIGHT)
+			ctx->style.button.active = ctx->style.button.hover;
+
+		if (nk_button_icon_set(BIN_ICON) && (meng.command2 == EDIT_OBJ || meng.command2 == EDIT_SPRITE || meng.command2 == EDIT_SECTOR || meng.command2 == NEDIT_LIGHT))
+		{
+			switch (meng.command2)
+			{
+				case EDIT_OBJ:
+					i = st.Current_Map.obj[meng.obj_edit_selection].position.z;
+
+					for (j = 0; j < meng.z_slot[i]; j++)
+					{
+						if (meng.z_buffer[i][j] == meng.obj_edit_selection)
+						{
+							meng.z_buffer[i][j] = -1;
+							DeleteScenario(meng.obj_edit_selection);
+							meng.obj_edit_selection = -1;
+							meng.command2 = 0;
+							//st.Current_Map.num_obj--;
+							break;
+						}
+					}
+
+					break;
+
+				case EDIT_SPRITE:
+					i = st.Current_Map.sprites[meng.sprite_edit_selection].position.z;
+
+					for (j = 0; j < meng.z_slot[i]; j++)
+					{
+						if (meng.z_buffer[i][j] == meng.sprite_edit_selection + 2000)
+						{
+							meng.z_buffer[i][j] = -1;
+							DeleteSprite(meng.sprite_edit_selection);
+							meng.sprite_edit_selection = -1;
+							meng.command2 = 0;
+							break;
+						}
+					}
+
+					break;
+
+				case EDIT_SECTOR:
+					i = 24;
+
+					for (j = 0; j < meng.z_slot[i]; j++)
+					{
+						if (meng.z_buffer[i][j] == meng.sector_edit_selection + 10000)
+						{
+							meng.z_buffer[i][j] = -1;
+							DeleteSector(meng.sector_edit_selection);
+							meng.sector_edit_selection = -1;
+							meng.command2 = 0;
+							break;
+						}
+					}
+
+					break;
+
+				case NEDIT_LIGHT:
+					i = st.game_lightmaps[meng.light_edit_selection].falloff[4];
+
+					for (j = 0; j < meng.z_slot[i]; j++)
+					{
+						if (meng.z_buffer[i][j] == meng.light_edit_selection + 12000)
+						{
+							meng.z_buffer[i][j] = -1;
+							DeleteLight(meng.light_edit_selection);
+							meng.light_edit_selection = -1;
+							meng.command2 = 0;
+							break;
+						}
+					}
+
+					break;
+			}
+
+			RedoZBuffers();
+		}
+
+		SetThemeBack(ctx);
+
 		if (nk_tree_push(ctx, NK_TREE_TAB, "Foreground", NK_MINIMIZED))
 		{
 			//nk_layout_row_dynamic(ctx, 15, 1);
@@ -8706,6 +5096,9 @@ void NewLeftPannel()
 						}
 					}
 
+					if (nk_button_label(ctx, "Transform"))
+						meng.command = TRANSFORM_BOX;
+
 					nk_label(ctx, "Current scenario layer", NK_TEXT_LB);
 					meng.obj2.type = nk_combo(ctx, Layers, 5, st.Current_Map.obj[meng.obj_edit_selection].type, 25, nk_vec2(110, 200));
 
@@ -8743,9 +5136,6 @@ void NewLeftPannel()
 						}
 					}
 					*/
-
-					if (nk_button_label(ctx, "Transform"))
-						meng.command = TRANSFORM_BOX;
 				}
 
 				if (meng.command2 == NEDIT_LIGHT)
@@ -8924,7 +5314,7 @@ void FixZLayers()
 		{
 			for (j = 0; j < meng.z_slot[i]; j++)
 			{
-				if (meng.z_buffer[i][j] < 2000 && st.Current_Map.obj[meng.z_buffer[i][j]].position.z != i)
+				if (meng.z_buffer[i][j] < 2000 && st.Current_Map.obj[meng.z_buffer[i][j]].position.z != i && meng.z_buffer[i][j] != -1)
 				{
 					z = st.Current_Map.obj[meng.z_buffer[i][j]].position.z;
 					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
@@ -8932,7 +5322,7 @@ void FixZLayers()
 					meng.z_buffer[i][j] = -1;
 				}
 
-				if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000 && st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].position.z != i)
+				if (meng.z_buffer[i][j] >= 2000 && meng.z_buffer[i][j] < 10000 && st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].position.z != i && meng.z_buffer[i][j] != -1)
 				{
 					z = st.Current_Map.sprites[meng.z_buffer[i][j] - 2000].position.z;
 					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
@@ -8940,7 +5330,7 @@ void FixZLayers()
 					meng.z_buffer[i][j] = -1;
 				}
 
-				if (meng.z_buffer[i][j] >= 12000 && st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4] != i)
+				if (meng.z_buffer[i][j] >= 12000 && st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4] != i && meng.z_buffer[i][j] != -1)
 				{
 					z = st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4];
 					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
@@ -9138,6 +5528,9 @@ int main(int argc, char *argv[])
 		loops=0;
 		while(GetTicks() > curr_tic && loops < 10)
 		{
+			if (meng.scaling == 1 && meng.sub_com != SCALER_SELECT)
+				meng.scaling = 0;
+
 			//nk_clear(ctx);
 			Finish();
 
