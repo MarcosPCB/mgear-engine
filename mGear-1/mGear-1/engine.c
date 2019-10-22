@@ -10211,19 +10211,20 @@ void FreeMap()
 		free(st.Current_Map.obj);
 		free(st.Current_Map.sprites);
 		free(st.Current_Map.sector);
+		
 
-		for(i=0;i<st.Current_Map.num_lights;i++)
+		for (i = 0; i < st.Current_Map.num_lights; i++)
 		{
 			free(st.game_lightmaps[i].data);
-			st.game_lightmaps[i].obj_id=-1;
-			st.game_lightmaps[i].stat=0;
+			st.game_lightmaps[i].obj_id = -1;
+			st.game_lightmaps[i].stat = 0;
 		}
 
-		for(i=0;i<st.Current_Map.num_mgg;i++)
+		for (i = 0; i < st.Current_Map.num_mgg; i++)
 			FreeMGG(&mgg_map[i]);
 
-		memset(&st.Current_Map,0,sizeof(_MGM));
-		st.Current_Map.bcktex_id=-1;
+		memset(&st.Current_Map, 0, sizeof(_MGM));
+		st.Current_Map.bcktex_id = -1;
 	}
 }
 
@@ -10328,33 +10329,33 @@ void DrawMap()
 	*/
 	if(st.Developer_Mode && (~st.viewmode & 32))
 	{
-		for(i=0;i<st.Current_Map.num_sector;i++)
+		for (i = 0; i<st.Current_Map.num_sector; i++)
 		{
-			if(st.Current_Map.sector[i].id>-1 && st.Current_Map.sector[i].num_vertexadded==1)
+			if (st.Current_Map.sector[i].id > -1 && st.Current_Map.sector[i].num_vertexadded == 1)
 			{
-				if(st.keys[LSHIFT_KEY].state)
+				if (st.keys[LSHIFT_KEY].state)
 				{
-					tmp=st.mouse;
-					STW(&tmp.x,&tmp.y);
+					tmp = st.mouse;
+					STW(&tmp.x, &tmp.y);
 				}
 				else
 				{
-					tmp.x=st.mouse.x;
-					STW(&tmp.x,&tmp.y);
+					tmp.x = st.mouse.x;
+					STW(&tmp.x, &tmp.y);
 
-					tmp.y=st.Current_Map.sector[i].vertex[0].y;
+					tmp.y = st.Current_Map.sector[i].vertex[0].y;
 				}
 
-				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,tmp.x,tmp.y,255,0,0,255,64,16);
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,0,0,mgg_sys[0].frames[4],255,0,0,32768,32768,16,2);
-				DrawGraphic(tmp.x,tmp.y,256,256,0,255,0,0,mgg_sys[0].frames[4],255,0,0,32768,32768,16,2);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, tmp.x, tmp.y, 214, 48, 49, 255, 64, 16);
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, 255, 118, 117, 255, 0, 0, mgg_sys[0].frames[4], 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(tmp.x, tmp.y, 256, 256, 0, 255, 118, 117, mgg_sys[0].frames[4], 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 			}
 			else
-			if(st.Current_Map.sector[i].id>-1 && st.Current_Map.sector[i].num_vertexadded==2)
+			if (st.Current_Map.sector[i].id > -1 && st.Current_Map.sector[i].num_vertexadded == 2)
 			{
-				DrawLine(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,255,0,0,255,64,16);
-				DrawGraphic(st.Current_Map.sector[i].vertex[0].x,st.Current_Map.sector[i].vertex[0].y,256,256,0,255,0,0,mgg_sys[0].frames[4],255,0,0,32768,32768,16,2);
-				DrawGraphic(st.Current_Map.sector[i].vertex[1].x,st.Current_Map.sector[i].vertex[1].y,256,256,0,255,0,0,mgg_sys[0].frames[4],255,0,0,32768,32768,16,2);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x, st.Current_Map.sector[i].vertex[1].y, 21, 48, 49, 255, 64, 16);
+				DrawGraphic(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, 256, 256, 0, 255, 118, 117, mgg_sys[0].frames[4], 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
+				DrawGraphic(st.Current_Map.sector[i].vertex[1].x, st.Current_Map.sector[i].vertex[1].y, 256, 256, 0, 255, 118, 117, mgg_sys[0].frames[4], 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 			}
 		}
 	}
@@ -10374,9 +10375,9 @@ void DrawSys()
 		switch(st.renderer.ppline[i].type)
 		{	
 #ifndef MGEAR_CLEAN_VERSION
-			case GRAPHICS_CALL: DrawGraphic(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
-									st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].data,st.renderer.ppline[i].color.a,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,
-									st.renderer.ppline[i].tex_sizex,st.renderer.ppline[i].tex_sizey,st.renderer.ppline[i].pos.z,0); break;
+			case GRAPHICS_CALL: DrawGraphic(st.renderer.ppline[i].pos.x, st.renderer.ppline[i].pos.y, st.renderer.ppline[i].size.x, st.renderer.ppline[i].size.y, st.renderer.ppline[i].ang, st.renderer.ppline[i].color.r,
+				st.renderer.ppline[i].color.g, st.renderer.ppline[i].color.b, st.renderer.ppline[i].data, st.renderer.ppline[i].color.a, st.renderer.ppline[i].tex_panx, st.renderer.ppline[i].tex_pany,
+				st.renderer.ppline[i].tex_sizex, st.renderer.ppline[i].tex_sizey, st.renderer.ppline[i].pos.z, 0); break;
 
 			case HUD_CALL: DrawHud(st.renderer.ppline[i].pos.x,st.renderer.ppline[i].pos.y,st.renderer.ppline[i].size.x,st.renderer.ppline[i].size.y,st.renderer.ppline[i].ang,st.renderer.ppline[i].color.r,
 							  st.renderer.ppline[i].color.g,st.renderer.ppline[i].color.b,st.renderer.ppline[i].tex_panx,st.renderer.ppline[i].tex_pany,st.renderer.ppline[i].tex_sizex,

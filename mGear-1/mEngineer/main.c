@@ -226,7 +226,7 @@ void RedoZBuffers()
 			meng.z_used = 24;
 	}
 
-	for (m = 1; m < st.Current_Map.num_lights; m++)
+	for (m = 1; m < st.num_lights; m++)
 	{
 		int8 lz = st.game_lightmaps[m].falloff[4];
 
@@ -296,17 +296,17 @@ int8 DeleteSector(int16 id)
 
 int8 DeleteLight(int16 id)
 {
-	if (st.Current_Map.num_lights == id + 1) //Just delete it
+	if (st.num_lights == id + 1) //Just delete it
 	{
 		st.game_lightmaps[id].obj_id = -2;
-		st.Current_Map.num_lights--;
+		st.num_lights--;
 	}
 	else
 	{
-		for (uint16 i = id; i < st.Current_Map.num_lights; i++)
+		for (uint16 i = id; i < st.num_lights; i++)
 			st.game_lightmaps[i] = st.game_lightmaps[i + 1];
 
-		st.Current_Map.num_lights--;
+		st.num_lights--;
 	}
 }
 
@@ -2723,9 +2723,9 @@ static void ENGDrawLight()
 				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
 		}
 
-		if (st.Current_Map.num_lights > 0)
+		if (st.num_lights > 0)
 		{
-			for (i = 1; i < st.Current_Map.num_lights; i++)
+			for (i = 1; i < st.num_lights; i++)
 			{
 				Pos tmp = st.game_lightmaps[i].w_pos;
 				char textI[2] = { 124, 0 };
@@ -3562,7 +3562,7 @@ void MenuBar()
 					st.Current_Map.num_sector = 0;
 					st.Current_Map.num_obj = 0;
 					st.Current_Map.num_sprites = 0;
-					st.Current_Map.num_lights = 0;
+					st.num_lights = 0;
 
 					st.num_lights = 0;
 
@@ -3967,7 +3967,7 @@ void MenuBar()
 						meng.z_used = 24;
 				}
 
-				for (m = 1; m < st.Current_Map.num_lights; m++)
+				for (m = 1; m < st.num_lights; m++)
 				{
 					int8 lz = st.game_lightmaps[m].falloff[4];
 

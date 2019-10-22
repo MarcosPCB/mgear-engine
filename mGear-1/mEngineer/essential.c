@@ -40,9 +40,9 @@ void NewMap()
 	st.Current_Map.num_sector = 0;
 	st.Current_Map.num_obj = 0;
 	st.Current_Map.num_sprites = 0;
-	st.Current_Map.num_lights = 0;
-
 	st.num_lights = 0;
+
+	//st.num_lights = 0;
 
 	for (i = 0; i<MAX_SECTORS; i++)
 	{
@@ -71,8 +71,8 @@ void NewMap()
 	}
 
 	memset(st.Current_Map.MGG_FILES, 0, 32 * 256);
-	meng.num_mgg -= st.Current_Map.num_mgg;
-	st.Current_Map.num_mgg = 0;
+	meng.num_mgg = st.Current_Map.num_mgg = 0;
+	//st.Current_Map.num_mgg = 0;
 
 	memset(meng.mgg_list, 0, 64 * 256);
 
