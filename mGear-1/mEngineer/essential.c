@@ -127,6 +127,11 @@ void NewMap()
 
 	memset(meng.layers, 0, 2048 * 57 * sizeof(int16));
 
+	meng.picking_tag = 0;
+
+	//memset(meng.used_names, 0, 2048);
+	memset(st.Current_Map.activator_table, 0, 2048);
+
 	st.Current_Map.cam_area.area_pos.x = st.Current_Map.cam_area.area_pos.y = 0;
 	st.Current_Map.cam_area.area_size.x = 1.0;
 	st.Current_Map.cam_area.area_size.y = 1.0;

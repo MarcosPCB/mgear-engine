@@ -226,7 +226,7 @@ void RedoZBuffers()
 			meng.z_used = 24;
 	}
 
-	for (m = 1; m < st.num_lights; m++)
+	for (m = 1; m <= st.num_lights; m++)
 	{
 		int8 lz = st.game_lightmaps[m].falloff[4];
 
@@ -296,14 +296,16 @@ int8 DeleteSector(int16 id)
 
 int8 DeleteLight(int16 id)
 {
-	if (st.num_lights == id + 1) //Just delete it
+	if (st.num_lights == id) //Just delete it
 	{
-		st.game_lightmaps[id].obj_id = -2;
+		st.game_lightmaps[id].stat = 0;
 		st.num_lights--;
 	}
 	else
 	{
-		for (uint16 i = id; i < st.num_lights; i++)
+		st.game_lightmaps[id].stat = 0;
+
+		for (uint16 i = id; i <= st.num_lights; i++)
 			st.game_lightmaps[i] = st.game_lightmaps[i + 1];
 
 		st.num_lights--;
@@ -735,7 +737,8 @@ static void ViewPortCommands()
 		meng.current_command=0;
 	}	
 
-	if (!CheckCollisionMouse(2470 / 2, 4885, 2470, 8939, 0) && meng.command != MGG_SEL && !CheckCollisionMouse(8192, 128, 16384, 256, 0) && !CheckCollisionMouse(16384 - 1024, st.gamey / 2, 2048, st.gamey, 0))
+	if (!CheckCollisionMouse(2470 / 2, 4885, 2470, 8939, 0) && meng.command != MGG_SEL && !CheckCollisionMouse(8192, 128, 16384, 256, 0)
+		&& !CheckCollisionMouse(16384 - 1024, st.gamey / 2, 2048, st.gamey, 0))
 	{
 		if(meng.command==CAM_LIM_X)
 		{
@@ -821,6 +824,124 @@ static void ViewPortCommands()
 		else
 		if (meng.command == NADD_LIGHT)
 			LightingMisc();
+		else
+		if (meng.command == PICK_TAG)
+		{
+			if (st.Current_Map.num_sprites > 0)
+			{
+				for (l = 16; l<57; l++)
+				{
+					if (meng.viewmode == 0 && l>23)
+						break;
+					else
+					if (meng.viewmode == 1 && l<24)
+						continue;
+					else
+					if (meng.viewmode == 1 && l>31)
+						break;
+					else
+					if (meng.viewmode == 2 && l<32)
+						continue;
+					else
+					if (meng.viewmode == 2 && l>39)
+						break;
+					else
+					if (meng.viewmode == 3 && l<40)
+						continue;
+					else
+					if (meng.viewmode == 3 && l>47)
+						break;
+					else
+					if (meng.viewmode == 4 && l<48)
+						continue;
+
+					for (k = meng.z_slot[l] - 1; k>-1; k--)
+					{
+						if (meng.curlayer == 0 && l > 23)
+							break;
+
+						if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
+							break;
+
+						if (meng.curlayer == 2 && l<32 || meng.curlayer == 2 && l>39)
+							break;
+
+						if (meng.curlayer == 3 && l<40 || meng.curlayer == 3 && l>47)
+							break;
+
+						if (meng.curlayer == 4 && l < 48)
+							break;
+
+						i = meng.z_buffer[l][k];
+
+						if (i<2000 || i>9999) continue;
+
+						i -= 2000;
+
+						if (CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x, st.Current_Map.sprites[i].position.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y,
+							st.Current_Map.sprites[i].angle, st.Current_Map.sprites[i].position.z) && meng.scaling == 0)
+						{
+							if (st.mouse1)
+							{
+								for (j = 0; j < st.Game_Sprites[st.Current_Map.sprites[i].GameID].num_tags; j++)
+								{
+									if (!strcmp(st.Game_Sprites[st.Current_Map.sprites[i].GameID].tag_names[j], "INPUT") && meng.picking_tag == 1)
+									{
+										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
+										meng.command = SPRITE_TAG;
+										meng.picking_tag = 0;
+										break;
+									}
+
+									if (!strcmp(st.Game_Sprites[st.Current_Map.sprites[i].GameID].tag_names[j], "OUTPUT") && meng.picking_tag == 2)
+									{
+										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
+										meng.command = SPRITE_TAG;
+										meng.picking_tag = 0;
+										break;
+									}
+
+									if (!strcmp(st.Game_Sprites[st.Current_Map.sprites[i].GameID].tag_names[j],
+										st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[meng.sub_com]) && meng.picking_tag == 3)
+									{
+										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
+										meng.command = SPRITE_TAG;
+										meng.picking_tag = 0;
+										break;
+									}
+								}
+
+								break;
+							}
+							
+							if (st.mouse2)
+							{
+								for (j = 0; j < st.Game_Sprites[st.Current_Map.sprites[i].GameID].num_tags; j++)
+								{
+									if (!strcmp(st.Game_Sprites[st.Current_Map.sprites[i].GameID].tag_names[j], "INPUT") && meng.picking_tag == 2)
+									{
+										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
+										meng.command = SPRITE_TAG;
+										meng.picking_tag = 0;
+										break;
+									}
+
+									if (!strcmp(st.Game_Sprites[st.Current_Map.sprites[i].GameID].tag_names[j], "OUTPUT") && meng.picking_tag == 1)
+									{
+										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
+										meng.command = SPRITE_TAG;
+										meng.picking_tag = 0;
+										break;
+									}
+								}
+
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
 		else
 		if(meng.command==DRAW_SECTOR)
 		{
@@ -2725,7 +2846,7 @@ static void ENGDrawLight()
 
 		if (st.num_lights > 0)
 		{
-			for (i = 1; i < st.num_lights; i++)
+			for (i = 1; i <= st.num_lights; i++)
 			{
 				Pos tmp = st.game_lightmaps[i].w_pos;
 				char textI[2] = { 124, 0 };
@@ -4224,6 +4345,7 @@ void TagBox(int16 game_sprite, int32 map_sprite)
 	char str[1024];
 	register int i, j;
 	static int state = 0, len, lenstr;
+	int16 l = 0, m = -1, n = -1;
 
 	if (nk_begin(ctx, "Tags", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 128, 512, 300), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
 	{
@@ -4314,8 +4436,46 @@ void TagBox(int16 game_sprite, int32 map_sprite)
 					nk_edit_string(ctx, NK_EDIT_SIMPLE, st.Current_Map.sprites[map_sprite].tags_str[i], &lenstr, 256, nk_filter_default);
 					continue;
 				}
+				
+				if (!strcmp(st.Game_Sprites[game_sprite].tag_names[i], "INPUT") || !strcmp(st.Game_Sprites[game_sprite].tag_names[i], "OUTPUT"))
+				{
+					nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
 
-				nk_layout_row_dynamic(ctx, 30, 1);
+					nk_layout_row_push(ctx, 0.9);
+					st.Current_Map.sprites[map_sprite].tags[i] = nk_propertyi(ctx, st.Game_Sprites[game_sprite].tag_names[i], -32768,
+						st.Current_Map.sprites[map_sprite].tags[i], 32768, 1, 5);
+									
+
+					nk_layout_row_push(ctx, 0.1);
+
+					if (meng.picking_tag == 1)
+						ctx->style.button.normal = ctx->style.button.hover;
+
+					if (nk_button_icon_set(PICKER_ICON))
+					{
+						if (meng.picking_tag == 0)
+						{
+							meng.command = PICK_TAG;
+							meng.sub_com = i;
+
+							if(!strcmp(st.Game_Sprites[game_sprite].tag_names[i], "INPUT"))
+								meng.picking_tag = 2;
+							else
+								meng.picking_tag = 1;
+
+						}
+						else
+							meng.picking_tag = 0;
+					}
+
+					SetThemeBack(ctx);
+
+					nk_layout_row_end(ctx);
+
+					continue;
+				}
+				
+				nk_layout_row_dynamic(ctx, 30, 2);
 				st.Current_Map.sprites[map_sprite].tags[i] = nk_propertyi(ctx, st.Game_Sprites[game_sprite].tag_names[i], -32768,
 					st.Current_Map.sprites[map_sprite].tags[i], 32768, 1, 5);
 

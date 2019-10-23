@@ -57,8 +57,6 @@
 #define LOAD_LIGHTMAP2 47
 #define RESIZE_LIGHTMAP 48
 
-#define SCALER_SELECT 100
-
 #define DRAW_SECTOR2 41
 
 #define MAP_PROPERTIES 42
@@ -94,6 +92,9 @@
 #define NEDIT_LIGHTMAP 106
 #define NLIGHTMAP_PANNEL 107
 
+#define SCALER_SELECT 108
+#define PICK_TAG 109
+
 //Font icons
 #define DEBUG_ICON 37
 #define PLAY_ICON 66
@@ -123,7 +124,7 @@
 #define LOADING_ICON 30
 #define LINK_ICON 126
 #define UNLINK_ICON 125
-#define PICKER_ICON 127
+#define PICKER_ICON 119
 #define BIN_ICON 38
 
 struct _mEng
@@ -169,6 +170,8 @@ struct _mEng
 	int16 editview;
 
 	int8 scaling;
+
+	int8 picking_tag;
 
 	Pos p;
 	int32 got_it;

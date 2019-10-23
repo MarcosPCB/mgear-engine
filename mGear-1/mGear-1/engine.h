@@ -59,7 +59,7 @@
 #define MAX_FONTS 16
 #define MAX_SECTORS 512
 #define MAX_LIGHTS 16
-#define MAX_LIGHTMAPS 128
+#define MAX_LIGHTMAPS 256
 #define MAX_MAPMGG 32
 #define MAX_STRINGS 512
 
@@ -676,6 +676,8 @@ struct _MGM_
 
 	Pos bck3_pan;
 	Pos bck3_size;
+
+	char activator_table[2048];
 };
 
 typedef struct _MGM_ _MGM;

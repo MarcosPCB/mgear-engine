@@ -10137,8 +10137,11 @@ uint32 LoadMap(const char *name)
 		st.Current_Map.sprites[i].stat=0;
 
 	fread(st.Current_Map.obj,sizeof(_MGMOBJ),st.Current_Map.num_obj,file);
+
 	fread(st.Current_Map.sprites,sizeof(_MGMSPRITE),st.Current_Map.num_sprites,file);
+
 	fread(st.Current_Map.sector,sizeof(_SECTOR),st.Current_Map.num_sector,file);
+
 	fread(lights,sizeof(_MGMLIGHT),st.Current_Map.num_lights,file);
 	
 	
@@ -10353,7 +10356,7 @@ void DrawMap()
 			else
 			if (st.Current_Map.sector[i].id > -1 && st.Current_Map.sector[i].num_vertexadded == 2)
 			{
-				DrawLine(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x, st.Current_Map.sector[i].vertex[1].y, 21, 48, 49, 255, 64, 16);
+				DrawLine(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, st.Current_Map.sector[i].vertex[1].x, st.Current_Map.sector[i].vertex[1].y, 214, 48, 49, 255, 64, 16);
 				DrawGraphic(st.Current_Map.sector[i].vertex[0].x, st.Current_Map.sector[i].vertex[0].y, 256, 256, 0, 255, 118, 117, mgg_sys[0].frames[4], 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 				DrawGraphic(st.Current_Map.sector[i].vertex[1].x, st.Current_Map.sector[i].vertex[1].y, 256, 256, 0, 255, 118, 117, mgg_sys[0].frames[4], 255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
 			}
