@@ -192,6 +192,16 @@ void UILoadSystem(char *filename)
 	UI_Sys.sys_freeze=0;
 
 	UI_Sys.textinput=0;
+
+	UI_Sys.cursor[0] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+	UI_Sys.cursor[1] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+	UI_Sys.cursor[2] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+	UI_Sys.cursor[3] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
+	UI_Sys.cursor[5] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+	UI_Sys.cursor[4] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
+	UI_Sys.cursor[6] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+	UI_Sys.cursor[7] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+	UI_Sys.cursor[8] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
 }
 
 int16 UIMessageBox(int32 x, int32 y, UI_POS bpos, const char *text, uint8 num_options, uint8 font, size_t font_size, uint32 colorN, uint32 colorS, uint32 colorT)
@@ -472,7 +482,7 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 
 	if(CheckCollisionMouse(x,y,text_size,gsize,0))
 	{
-		StringUIData(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
+		StringUIvData(text,x,y,text_size,gsize,0,rs,gs,bs,255,font,font_size,font_size,layer);
 
 		if(st.mouse1)
 		{
@@ -481,7 +491,7 @@ int8 UIStringButton(int32 x, int32 y,char *text, int8 font, int16 font_size, int
 		}
 	}
 	else
-		StringUIData(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
+		StringUIvData(text,x,y,text_size,gsize,0,rn,gn,bn,255,font,font_size,font_size,layer);
 
 	return UI_NULLOP;
 }
@@ -1340,29 +1350,27 @@ void UIMain_DrawSystem()
 			st.Text_Input=UI_Sys.textinput=0;
 	}
 
-	if(st.cursor_type!=0)
-	{
-		SDL_ShowCursor(SDL_DISABLE);
-		
-		p=st.mouse;
+		//SDL_ShowCursor(SDL_DISABLE);
 
-		p.x=(p.x*GAME_WIDTH)/st.screenx;
-		p.y=(p.y*9216)/st.screeny;
+		//p=st.mouse;
 
+		//p.x=(p.x*GAME_WIDTH)/st.screenx;
+		//p.y=(p.y*st.gamey)/st.screeny;
+		/*
 		if(st.cursor_type==1)
-			DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		DrawUI(p.x,p.y,512,512,0,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==2)
-			DrawUI(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		DrawUI(p.x,p.y,512,512,900,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==3)
-			DrawUI(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		DrawUI(p.x,p.y,512,512,450,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
 		else
 		if(st.cursor_type==4)
-			DrawUI(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
-	}
-	else
-		SDL_ShowCursor(SDL_ENABLE);
+		DrawUI(p.x,p.y,512,512,1350,255,255,255,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,mgg_sys[UI_Sys.mgg_id].frames[UI_Sys.resize_cursor],255,0);
+		*/
+
+	SDL_SetCursor(UI_Sys.cursor[st.cursor_type]);
 
 	if(!st.mouse1)
 		UI_Sys.mouse_flag=0;
@@ -1696,7 +1704,7 @@ void SetDirContent(const char *extension)
 
 	UI_Sys.num_files=0;
 
-	num_files=NumDirFile(UI_Sys.current_path,UI_Sys.files);
+	//num_files=NumDirFile(UI_Sys.current_path,UI_Sys.files);
 
 	if(extension)
 	{

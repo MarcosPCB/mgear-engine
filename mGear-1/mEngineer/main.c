@@ -878,6 +878,13 @@ static void ViewPortCommands()
 
 						i -= 2000;
 
+						if (st.keys[ESC_KEY].state)
+						{
+							meng.command = SPRITE_TAG;
+							meng.picking_tag = 0;
+							st.cursor_type = CURSOR_DEFAULT;
+						}
+
 						if (CheckCollisionMouseWorld(st.Current_Map.sprites[i].position.x, st.Current_Map.sprites[i].position.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y,
 							st.Current_Map.sprites[i].angle, st.Current_Map.sprites[i].position.z) && meng.scaling == 0)
 						{
@@ -890,6 +897,7 @@ static void ViewPortCommands()
 										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
 										meng.command = SPRITE_TAG;
 										meng.picking_tag = 0;
+										st.cursor_type = CURSOR_DEFAULT;
 										break;
 									}
 
@@ -897,7 +905,7 @@ static void ViewPortCommands()
 									{
 										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
 										meng.command = SPRITE_TAG;
-										meng.picking_tag = 0;
+										st.cursor_type = CURSOR_DEFAULT;
 										break;
 									}
 
@@ -906,7 +914,7 @@ static void ViewPortCommands()
 									{
 										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
 										meng.command = SPRITE_TAG;
-										meng.picking_tag = 0;
+										st.cursor_type = CURSOR_DEFAULT;
 										break;
 									}
 								}
@@ -923,6 +931,7 @@ static void ViewPortCommands()
 										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
 										meng.command = SPRITE_TAG;
 										meng.picking_tag = 0;
+										st.cursor_type = CURSOR_DEFAULT;
 										break;
 									}
 
@@ -931,6 +940,7 @@ static void ViewPortCommands()
 										st.Current_Map.sprites[meng.sprite_edit_selection].tags[meng.sub_com] = st.Current_Map.sprites[i].tags[j];
 										meng.command = SPRITE_TAG;
 										meng.picking_tag = 0;
+										st.cursor_type = CURSOR_DEFAULT;
 										break;
 									}
 								}
@@ -1601,7 +1611,8 @@ static void ViewPortCommands()
 								}
 								else
 								{
-										meng.scaling = 0;
+									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1633,6 +1644,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1664,6 +1676,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1696,6 +1709,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1730,6 +1744,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1764,6 +1779,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1798,6 +1814,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1832,6 +1849,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -1847,6 +1865,8 @@ static void ViewPortCommands()
 										meng.scaling = 1;
 
 										asp = (float) st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_UD;
 									}
 								}
 							}
@@ -1863,6 +1883,8 @@ static void ViewPortCommands()
 										meng.scaling = 2;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_UD;
 									}
 								}
 							}
@@ -1879,6 +1901,8 @@ static void ViewPortCommands()
 										meng.scaling = 3;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_LR;
 									}
 								}
 							}
@@ -1895,6 +1919,8 @@ static void ViewPortCommands()
 										meng.scaling = 4;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_LR;
 									}
 								}
 							}
@@ -1911,6 +1937,8 @@ static void ViewPortCommands()
 										meng.scaling = 5;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_C_LR;
 									}
 								}
 							}
@@ -1927,6 +1955,8 @@ static void ViewPortCommands()
 										meng.scaling = 6;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_C_RL;
 									}
 								}
 							}
@@ -1943,6 +1973,8 @@ static void ViewPortCommands()
 										meng.scaling = 7;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_C_LR;
 									}
 								}
 							}
@@ -1959,6 +1991,8 @@ static void ViewPortCommands()
 										meng.scaling = 8;
 
 										asp = (float)st.Current_Map.sprites[i].body.size.x / st.Current_Map.sprites[i].body.size.y;
+
+										st.cursor_type = CURSOR_S_C_RL;
 									}
 								}
 							}
@@ -2158,6 +2192,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2188,6 +2223,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2218,6 +2254,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2248,6 +2285,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2280,6 +2318,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2312,6 +2351,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2344,6 +2384,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2376,6 +2417,7 @@ static void ViewPortCommands()
 								else
 								{
 									meng.scaling = 0;
+									st.cursor_type = CURSOR_DEFAULT;
 								}
 							}
 
@@ -2391,6 +2433,8 @@ static void ViewPortCommands()
 										meng.scaling = 1;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_UD;
 									}
 								}
 							}
@@ -2407,6 +2451,8 @@ static void ViewPortCommands()
 										meng.scaling = 2;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_UD;
 									}
 								}
 							}
@@ -2423,6 +2469,8 @@ static void ViewPortCommands()
 										meng.scaling = 3;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_LR;
 									}
 								}
 							}
@@ -2439,6 +2487,8 @@ static void ViewPortCommands()
 										meng.scaling = 4;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_LR;
 									}
 								}
 							}
@@ -2455,6 +2505,8 @@ static void ViewPortCommands()
 										meng.scaling = 5;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_C_LR;
 									}
 								}
 							}
@@ -2471,6 +2523,8 @@ static void ViewPortCommands()
 										meng.scaling = 6;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_C_RL;
 									}
 								}
 							}
@@ -2487,6 +2541,8 @@ static void ViewPortCommands()
 										meng.scaling = 7;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_C_LR;
 									}
 								}
 							}
@@ -2503,6 +2559,8 @@ static void ViewPortCommands()
 										meng.scaling = 8;
 
 										asp = (float)st.Current_Map.obj[i].size.x / st.Current_Map.obj[i].size.y;
+
+										st.cursor_type = CURSOR_S_C_RL;
 									}
 								}
 							}
@@ -3868,7 +3926,7 @@ void MenuBar()
 			}
 
 			nk_layout_row_push(ctx, 45);
-			if (nk_menu_begin_label(ctx, "Map", NK_TEXT_LEFT, nk_vec2(150, 200)))
+			if (nk_menu_begin_label(ctx, "Map", NK_TEXT_LEFT, nk_vec2(150, 250)))
 			{
 				meng.command = meng.pannel_choice = NONE_MODE;
 				nk_layout_row_dynamic(ctx, 30, 1);
@@ -3914,6 +3972,9 @@ void MenuBar()
 
 				if (nk_menu_item_label(ctx, "Map properties", NK_TEXT_LEFT))
 					state = 10;
+
+				if (nk_menu_item_label(ctx, "Node events", NK_TEXT_LEFT))
+					state = 11;
 
 				nk_menu_end(ctx);
 			}
@@ -4458,6 +4519,8 @@ void TagBox(int16 game_sprite, int32 map_sprite)
 							meng.command = PICK_TAG;
 							meng.sub_com = i;
 
+							st.cursor_type = CURSOR_TARGET;
+
 							if(!strcmp(st.Game_Sprites[game_sprite].tag_names[i], "INPUT"))
 								meng.picking_tag = 2;
 							else
@@ -4465,7 +4528,10 @@ void TagBox(int16 game_sprite, int32 map_sprite)
 
 						}
 						else
+						{
 							meng.picking_tag = 0;
+							st.cursor_type = CURSOR_DEFAULT;
+						}
 					}
 
 					SetThemeBack(ctx);
@@ -5176,6 +5242,8 @@ void NewLeftPannel()
 								StopMusic();
 								StopAllSounds();
 							}
+
+							nk_layout_row_dynamic(ctx, 30, 1);
 						}
 
 						if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "SNDFX") == NULL)
@@ -5194,6 +5262,8 @@ void NewLeftPannel()
 								StopMusic();
 								StopAllSounds();
 							}
+
+							nk_layout_row_dynamic(ctx, 30, 1);
 						}
 					}
 
@@ -5689,7 +5759,10 @@ int main(int argc, char *argv[])
 		while(GetTicks() > curr_tic && loops < 10)
 		{
 			if (meng.scaling == 1 && meng.sub_com != SCALER_SELECT)
+			{
 				meng.scaling = 0;
+				st.cursor_type = CURSOR_DEFAULT;
+			}
 
 			//nk_clear(ctx);
 			Finish();

@@ -29,6 +29,16 @@
 
 #define UI_BASICPANNELFRAME 4 //equivalent to mgg_sys[0].frames[4], used in the Window type 2
 
+#define CURSOR_DEFAULT 0
+#define CURSOR_HAND 1
+#define CURSOR_S_UD 2
+#define CURSOR_S_LR 3
+#define CURSOR_S_C_RL 4
+#define CURSOR_S_C_LR 5
+#define CURSOR_MOVE 6
+#define CURSOR_TARGET 7
+#define CURSOR_WAIT 8
+
 enum _UI_POS
 {
 	CENTER,
@@ -173,6 +183,8 @@ struct _UI_SYSTEM
 	int16 num_files;
 	char extension[32];
 	char extension2[16];
+
+	SDL_Cursor *cursor[10];
 };
 
 typedef struct _UI_SYSTEM UI_SYSTEM;
