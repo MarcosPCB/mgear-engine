@@ -1097,6 +1097,7 @@ int8 SavePrjFile(char *filepath)
 		{
 			if (mtex.mgg.an[i] < 1024)
 			{
+				mtex.mgg.mga[mtex.mgg.an[i]].num_frames = mtex.mgg.mga[mtex.mgg.an[i]].endID - mtex.mgg.mga[mtex.mgg.an[i]].startID + 1;
 				fprintf(f, "BEGIN\nANIM %d\nNAME %s\nFRAMESA %d\nSTARTF %d\nENDF %d\nSPEED %d\nENDA\n", j, mtex.mgg.mga[mtex.mgg.an[i]].name,
 					mtex.mgg.mga[mtex.mgg.an[i]].num_frames, mtex.mgg.mga[mtex.mgg.an[i]].startID, mtex.mgg.mga[mtex.mgg.an[i]].endID, mtex.mgg.mga[mtex.mgg.an[i]].speed);
 				j++;
@@ -2057,7 +2058,7 @@ char *LoadPrjFile(const char *filepath)
 				MessageBox(NULL, buf2, "Error", MB_OK);
 			}
 
-			mtex.mgg.ftime[i] =*GetFileLastModification(mtex.mgg.files[i]);
+		//	mtex.mgg.ftime_n[i] =*GetFileLastModification(mtex.mgg.files_n[i]);
 
 			if (mtex.mgg.fnn[i] != -1 && mtex.mgg.fnn[i] < 1024)
 			{
@@ -2067,7 +2068,7 @@ char *LoadPrjFile(const char *filepath)
 					MessageBox(NULL, buf2, "Error", MB_OK);
 				}
 
-				mtex.mgg.ftime_n[i] = *GetFileLastModification(mtex.mgg.files_n[i]);
+				//mtex.mgg.ftime_n[i] = *GetFileLastModification(mtex.mgg.files_n[i]);
 			}
 		}
 	}
@@ -2587,7 +2588,7 @@ int NewMGGBox(const char path[MAX_PATH])
 								continue;
 							}
 
-							mtex.mgg.ftime[j] = *GetFileLastModification(mtex.mgg.files[j]);
+						//	mtex.mgg.ftime[j] = *GetFileLastModification(mtex.mgg.files[j]);
 
 							j++;
 						}
@@ -2627,7 +2628,7 @@ int NewMGGBox(const char path[MAX_PATH])
 								continue;
 							}
 
-							mtex.mgg.ftime_n[j] = *GetFileLastModification(mtex.mgg.files_n[j]);
+							//mtex.mgg.ftime_n[j] = *GetFileLastModification(mtex.mgg.files_n[j]);
 
 							if (size.x != mtex.size[j].x || size.y != mtex.size[j].y)
 							{
@@ -2961,6 +2962,8 @@ void MenuBar()
 	//{
 		if (nk_begin(ctx, "MenuBar", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
 		{
+			ctx->current->flags = NK_WINDOW_NO_SCROLLBAR;
+
 			nk_menubar_begin(ctx);
 			nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
 
@@ -3489,7 +3492,7 @@ void LeftPannel()
 												break;
 											}
 
-											mtex.mgg.ftime[mtex.mgg.num_frames] = *GetFileLastModification(path2);
+											//mtex.mgg.ftime[mtex.mgg.num_frames] = *GetFileLastModification(path2);
 
 											mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 											mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
@@ -3554,7 +3557,7 @@ void LeftPannel()
 													goto FINALIZE_LOOP;
 												}
 
-												mtex.mgg.ftime_n[mtex.mgg.num_frames - 1] =*GetFileLastModification(path2);
+											//	mtex.mgg.ftime_n[mtex.mgg.num_frames - 1] =*GetFileLastModification(path2);
 
 												if (size.x != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].y)
 												{
@@ -3624,7 +3627,7 @@ void LeftPannel()
 											break;
 										}
 
-										mtex.mgg.ftime[mtex.mgg.num_frames] = *GetFileLastModification(path2);
+										//mtex.mgg.ftime[mtex.mgg.num_frames] = *GetFileLastModification(path2);
 
 										mtex.textures = realloc(mtex.textures, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
 										mtex.textures_n = realloc(mtex.textures_n, (mtex.mgg.num_frames + 1) * sizeof(GLuint));
@@ -3677,7 +3680,7 @@ void LeftPannel()
 												goto CONTINUE_LOOP;
 											}
 
-											mtex.mgg.ftime[mtex.mgg.num_frames - 1] = *GetFileLastModification(path2);
+										//	mtex.mgg.ftime[mtex.mgg.num_frames - 1] = *GetFileLastModification(path2);
 
 											if (size.x != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.mgg.num_frames - 1]].y)
 											{
@@ -3757,7 +3760,7 @@ void LeftPannel()
 												break;
 											}
 
-											mtex.mgg.ftime_n[mtex.selected] = *GetFileLastModification(mtex.mgg.fn[mtex.selected]);
+										//	mtex.mgg.ftime_n[mtex.selected] = *GetFileLastModification(mtex.mgg.fn[mtex.selected]);
 
 											if (size.x != mtex.size[mtex.mgg.fn[mtex.selected]].x || size.y != mtex.size[mtex.mgg.fn[mtex.selected]].y)
 											{
@@ -3825,7 +3828,7 @@ void LeftPannel()
 											break;
 										}
 
-										mtex.mgg.ftime_n[mtex.selected + i - 1] =*GetFileLastModification(path2);
+										//mtex.mgg.ftime_n[mtex.selected + i - 1] =*GetFileLastModification(path2);
 
 										if (size.x != mtex.size[mtex.mgg.fn[mtex.selected + i - 1]].x || size.y != mtex.size[mtex.mgg.fn[mtex.selected + i - 1]].y)
 										{
@@ -4659,7 +4662,7 @@ void LeftPannel()
 						mtex.mgg.mga[mtex.anim_selected].endID, mtex.mgg.num_frames - 1, 1, 1);
 					nk_layout_row_dynamic(ctx, 25, 1);
 					mtex.mgg.mga[mtex.anim_selected].speed = nk_propertyi(ctx, "Speed", -127, mtex.mgg.mga[mtex.anim_selected].speed, 127, 1, 1);
-
+					
 					if (nk_button_label(ctx, "Move animation"))
 					{
 						mtex.command = MOV_ANIM;
@@ -5774,7 +5777,7 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	DisplaySplashScreen();
+	//DisplaySplashScreen();
 
 	strcpy(st.WindowTitle,"Tex");
 
@@ -5861,7 +5864,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	InitEngineWindow();
+	//InitEngineWindow();
 
 BACKLOOP:
 
@@ -6009,8 +6012,8 @@ BACKLOOP:
 			SetTimerM(1);
 		}
 
-		if (curr_tic % 120 == 0) 
-			UpdateFiles();
+		//if (curr_tic % 120 == 0) 
+			//UpdateFiles();
 
 		DrawSys();
 

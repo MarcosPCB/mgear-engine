@@ -3197,7 +3197,7 @@ int MGVCompiler()
 						//strcpy(path2, path);
 						PathRemoveFileSpec(directory);
 
-						sprintf(args, "-i \"%s\" -r %d \"Tools\\FFmpeg\\MGV\\frame%%05d.jpg\"", file, fps);
+						sprintf(args, "-i \"%s\" -r %d -q:v 1 \"Tools\\FFmpeg\\MGV\\frame%%05d.jpg\"", file, fps);
 
 						ZeroMemory(&info, sizeof(info));
 						info.cbSize = sizeof(info);
@@ -3352,8 +3352,32 @@ void MenuBar()
 
 	//if (nkrendered==0)
 	//{
+	if (state == 1)
+	{
+		temp = NewProject();
+
+		if (temp == 1 || temp == -1)
+			state = 0;
+	}
+
+	if (state == 10)
+	{
+		if (Preferences())
+			state = 0;
+	}
+
+	if (state == 6)
+	{
+		temp = ExportProject();
+
+		if (temp == -1 || temp == 1)
+			state = 0;
+	}
+
 		if (nk_begin(ctx, "Menu", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
 		{
+			ctx->current->flags = NK_WINDOW_NO_SCROLLBAR;
+
 			nk_menubar_begin(ctx);
 			nk_layout_row_begin(ctx, NK_STATIC, 25, 3);
 
@@ -3463,27 +3487,7 @@ void MenuBar()
 
 		nk_end(ctx);
 
-		if (state == 1)
-		{
-			temp = NewProject();
-
-			if (temp == 1 || temp == -1)
-				state = 0;
-		}
-
-		if (state == 10)
-		{
-			if (Preferences())
-				state = 0;
-		}
-
-		if (state == 6)
-		{
-			temp = ExportProject();
-
-			if (temp == -1 || temp == 1)
-				state = 0;
-		}
+		
 	//}
 }
 
@@ -3604,7 +3608,7 @@ void Pannel()
 			
 			ctx->style.window.fixed_background = nk_style_item_color(nk_rgb(16, 16, 16));
 
-			if (nk_group_begin(ctx, "Apps", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+			if (nk_group_begin(ctx, "Apps", NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_NO_SCROLLBAR))
 			{
 				//nk_layout_row_dynamic(ctx, 25, 1);
 				//nk_button_label(ctx, "Play");
@@ -4093,8 +4097,8 @@ void Pannel()
 						info.lpFile = exepath;
 						if (msdk.app[pannel_state].selected > 0)
 						{
-							sprintf(args, "-o \"%s/%s\"", msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected]].path,
-								msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected]].file);
+							sprintf(args, "-o \"%s/%s\"", msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected - 1]].path,
+								msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected - 1]].file);
 							info.lpParameters = args;
 						}
 
@@ -4176,7 +4180,7 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	DisplaySplashScreen();
+	//DisplaySplashScreen();
 	
 	curl_global_init(CURL_GLOBAL_ALL);
 
@@ -4295,7 +4299,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	InitEngineWindow();
+	//InitEngineWindow();
 
 	while(!st.quit)
 	{
@@ -4331,6 +4335,7 @@ int main(int argc, char *argv[])
 
 		if (msdk.update == 0 || msdk.update == -1)
 		{
+
 			if (msdk.prj.loaded == 1)
 				Pannel();
 

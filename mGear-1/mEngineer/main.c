@@ -2924,6 +2924,228 @@ static void ENGDrawLight()
 			}
 		}
 
+		if (st.Current_Map.num_sprites > 0)
+		{
+			for (i = 0; i < st.Current_Map.num_sprites; i++)
+			{
+				if (st.Current_Map.sprites[i].num_tags > 0)
+				{
+					j = st.Current_Map.sprites[i].GameID;
+
+					for (int16 k = 0; k < st.Game_Sprites[j].num_tags; k++)
+					{
+						if (!strcmp(st.Game_Sprites[j].tag_names[k], "INPUT"))
+						{
+							int16 l = st.Current_Map.sprites[i].tags[k];
+
+							if (l != 0)
+							{
+								for (int16 m = 0; m < st.Current_Map.num_sprites; m++)
+								{
+									if (m == i)
+										continue;
+
+									if (st.Current_Map.sprites[m].num_tags > 0)
+									{
+										int16 n = st.Current_Map.sprites[m].GameID;
+
+										for (int16 o = 0; o < st.Current_Map.sprites[m].num_tags; o++)
+										{
+											if (!strcmp(st.Game_Sprites[n].tag_names[o], "OUTPUT") && st.Current_Map.sprites[m].tags[o] == l)
+											{
+												p = st.Current_Map.sprites[i].position;
+												s = st.Current_Map.sprites[m].position;
+
+												if (p.z < 24)
+												{
+													p.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+													p.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (p.z > 31 && p.z < 40)
+												{
+													p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+													p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (p.z > 39 && p.z < 48)
+												{
+													p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+													p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (p.z > 47)
+												{
+													p.x /= (float)st.Camera.dimension.x;
+													p.y /= (float)st.Camera.dimension.y;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (s.z < 24)
+												{
+													s.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+													s.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												if (s.z > 31 && s.z < 40)
+												{
+													s.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+													s.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												if (s.z > 39 && s.z < 48)
+												{
+													s.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+													s.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												if (s.z > 47)
+												{
+													s.x /= (float)st.Camera.dimension.x;
+													s.y /= (float)st.Camera.dimension.y;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												DrawLine(p.x, p.y, s.x, s.y, 253, 203, 110, 255, 16.0f / st.Camera.dimension.x, 16);
+
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+
+						if (!strcmp(st.Game_Sprites[j].tag_names[k], "OUTPUT"))
+						{
+							int16 l = st.Current_Map.sprites[i].tags[k];
+
+							if (l != 0)
+							{
+								for (int16 m = 0; m < st.Current_Map.num_sprites; m++)
+								{
+									if (m == i)
+										continue;
+
+									if (st.Current_Map.sprites[m].num_tags > 0)
+									{
+										int16 n = st.Current_Map.sprites[m].GameID;
+
+										for (int16 o = 0; o < st.Current_Map.sprites[m].num_tags; o++)
+										{
+											if (!strcmp(st.Game_Sprites[n].tag_names[o], "INPUT") && st.Current_Map.sprites[m].tags[o] == l)
+											{
+												p = st.Current_Map.sprites[i].position;
+												s = st.Current_Map.sprites[m].position;
+
+												if (p.z < 24)
+												{
+													p.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+													p.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (p.z > 31 && p.z < 40)
+												{
+													p.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+													p.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (p.z > 39 && p.z < 48)
+												{
+													p.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+													p.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (p.z > 47)
+												{
+													p.x /= (float)st.Camera.dimension.x;
+													p.y /= (float)st.Camera.dimension.y;
+
+													p.x += st.Camera.position.x;
+													p.y += st.Camera.position.y;
+												}
+
+												if (s.z < 24)
+												{
+													s.x -= (float)st.Camera.position.x*st.Current_Map.fr_v;
+													s.y -= (float)st.Camera.position.y*st.Current_Map.fr_v;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												if (s.z > 31 && s.z < 40)
+												{
+													s.x -= (float)st.Camera.position.x*st.Current_Map.bck1_v;
+													s.y -= (float)st.Camera.position.y*st.Current_Map.bck1_v;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												if (s.z > 39 && s.z < 48)
+												{
+													s.x -= (float)st.Camera.position.x * st.Current_Map.bck2_v;
+													s.y -= (float)st.Camera.position.y * st.Current_Map.bck2_v;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												if (s.z > 47)
+												{
+													s.x /= (float)st.Camera.dimension.x;
+													s.y /= (float)st.Camera.dimension.y;
+
+													s.x += st.Camera.position.x;
+													s.y += st.Camera.position.y;
+												}
+
+												DrawLine(p.x, p.y, s.x, s.y, 253, 203, 110, 255, 16.0f / st.Camera.dimension.x, 16);
+
+												break;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		switch (meng.command2)
 		{
 			case EDIT_OBJ:
@@ -3972,9 +4194,6 @@ void MenuBar()
 
 				if (nk_menu_item_label(ctx, "Map properties", NK_TEXT_LEFT))
 					state = 10;
-
-				if (nk_menu_item_label(ctx, "Node events", NK_TEXT_LEFT))
-					state = 11;
 
 				nk_menu_end(ctx);
 			}
@@ -5600,7 +5819,7 @@ int main(int argc, char *argv[])
 {
 	int16 i=0, test=0, ch, ch2, ch3;
 	int16 testa = 0;
-	char options[8][16]={"Test 1", "Option 2", "vagina 3", "mGear 4"}, str[64];
+	char str[64];
 
 	uint8 t1;
 
