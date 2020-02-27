@@ -623,6 +623,7 @@ void Pannel()
 	int temp, px, py, sx, sy, tmp;
 	struct nk_image texid;
 	MSG msg;
+	char buf[256];
 
 	DWORD error;
 
@@ -647,7 +648,58 @@ void Pannel()
 	if (nk_begin(ctx, "Properties", nk_rect(st.screenx * 0.15, 30, st.screenx * 0.55, st.screeny * 0.6 - 30), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_TITLE
 		| NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE))
 	{
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
 
+		nk_layout_row_push(ctx, 0.05);
+		nk_label(ctx, "Name:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+		nk_layout_row_push(ctx, 0.30);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, st.Game_Sprites[i].name, 64, nk_filter_ascii);
+		nk_layout_row_end(ctx);
+
+
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+		nk_layout_row_push(ctx, 0.05);
+		nk_label(ctx, "MGG: ", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+		nk_layout_row_push(ctx, 0.50);
+		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, mgg_game[st.Game_Sprites[i].MGG_ID].name, 32, nk_filter_ascii);
+
+		nk_layout_row_push(ctx, 0.10);
+		nk_button_label(ctx, "Browse");
+		nk_layout_row_end(ctx);
+
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
+		nk_layout_row_push(ctx, 0.25);
+		st.Game_Sprites[i].num_frames = nk_propertyd(ctx, "Number of frames:", 1, st.Game_Sprites[i].num_frames, 16384, 1, 1);
+
+		nk_layout_row_push(ctx, 0.01);
+		nk_spacing(ctx, 1);
+
+		nk_layout_row_push(ctx, 0.12);
+		nk_button_label(ctx, "Select frames");
+
+		nk_layout_row_push(ctx, 0.01);
+		nk_spacing(ctx, 1);
+
+		nk_layout_row_push(ctx, 0.30);
+		strcpy(buf, "Starting frames: ");
+		if (st.Game_Sprites[i].frame)
+		{
+			for (j = 0; j < st.Game_Sprites[i].num_start_frames; j++)
+			{
+				if (st.Game_Sprites[i].frame[j] > -1)
+					strcat(buf, StringFormat("%d, ", st.Game_Sprites[i].frame[j]));
+			}
+		}
+
+		nk_label(ctx, buf, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+		nk_layout_row_end(ctx);
+
+		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
+
+		nk_layout_row_end(ctx);
 	}
 
 	nk_end(ctx);
