@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 	uint16 *posx, *posy, *sizex, *sizey, num_img_in_atlas = 0, *dimx, *dimy, numfiles = 0;
 	uint8 sequence = 0, *c_tmp, *c_atlas[32], *c_atlas_normal[32], *atlas_frames, ca_normal[32];
 	int8 *imgatlas;
-	uint32 frameoffset[MAX_FRAMES];
+	int32 frameoffset[MAX_FRAMES];
 	uint32 framesize[MAX_FRAMES];
 	uint8 normals[MAX_FRAMES], c_a_normals[32];
 	uint32 normalsize[MAX_FRAMES];

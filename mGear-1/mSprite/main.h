@@ -47,6 +47,16 @@
 #define UNDO_ICON 26
 #define REDO_ICON 27
 #define ROTATE_ICON 31
+#define UP_ICON 100
+#define DOWN_ICON 102
+#define RIGHT_ICON 101
+#define LEFT_ICON 103
+#define LOADING_ICON 30
+#define LINK_ICON 126
+#define UNLINK_ICON 125
+#define PICKER_ICON 119
+#define BIN_ICON 38
+#define SWITCH_ICON 83
 
 struct _mSprite
 {
@@ -66,6 +76,12 @@ struct _mSprite
 	int32 num_prj_files;
 
 	int selected_spr;
+
+	uint8 play;
+	int16 state_selected;
+
+	int16 anim_frame;
+	int16 curframe;
 };
 
 typedef struct _mSprite mSpr;

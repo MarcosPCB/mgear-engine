@@ -412,11 +412,11 @@ typedef struct _TEXTURES_ _TEXTURES;
 
 enum _SPRITE_G_
 {
-	GAME_LOGICAL,
-	ENEMY,
-	FRIEND,
-	NORMAL,
-	dead
+	GAME_LOGICAL = 0,
+	ENEMY = 1,
+	FRIEND = 2,
+	NORMAL = 3,
+	dead = 4
 };
 
 typedef enum _SPRITE_G_ _SPRITE_G;
@@ -468,6 +468,22 @@ enum _OBJTYPE_
 
 typedef enum _OBJTYPE_ _OBJTYPE;
 
+struct _AISTATE
+{
+	char name[32];
+
+	uint16 in_transition, out_transition; //transition animations
+	uint16 main_anim; //main animation
+
+	uint8 in, out; //enable or disable in/out transitions
+
+	int16 inputs[64], outputs[64]; //input and output nodes
+
+	uint8 used;
+	uint8 loop;
+};
+
+typedef struct _AISTATE AISTATE;
 
 //Structure for the sprites in the game
 //When you create a sprite in the source code
@@ -493,6 +509,8 @@ struct _SPRITES_
 	Pos size_a;
 	Pos size_m;
 	Body body;
+	AISTATE states[64];
+	uint8 num_states;
 };
 
 typedef struct _SPRITES_ _SPRITES;
@@ -642,7 +660,6 @@ struct _MGMSPRITE_
 
 typedef struct _MGMSPRITE_ _MGMSPRITE;
 
-
 //MGM -> MGear Map
 struct _MGM_
 {
@@ -678,6 +695,8 @@ struct _MGM_
 	Pos bck3_size;
 
 	char activator_table[2048];
+
+	uint8 num_global_states;
 };
 
 typedef struct _MGM_ _MGM;
@@ -1143,7 +1162,7 @@ void _inline STW(int32 *x, int32 *y);
 
 void _inline STWci(int32 *x, int32 *y); //No camera position in calculation
 
-void _inline STWf(float *x, float *y);
+void _fastcall STWf(float *x, float *y);
 
 void _inline STWcf(float *x, float *y); //No camera position in calculation
 

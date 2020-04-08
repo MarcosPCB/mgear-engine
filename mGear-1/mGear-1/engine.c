@@ -260,7 +260,7 @@ void _inline STWci(int32 *x, int32 *y)
 	*y=((((*y*st.gamey)/st.screeny)));
 }
 
-void _inline STWf(float *x, float *y)
+void _fastcall STWf(float *x, float *y)
 {
 	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
 	*y=(float) ((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
@@ -2755,7 +2755,20 @@ SHADER_CREATION:
 
 #ifndef MGEAR_CLEAN_VERSION
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
-	memset(&st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
+	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
+
+	for (int i = 0; i < MAX_SPRITES; i++)
+	{
+		for (int j = 0; j < 64; j++)
+		{
+			memset(st.Game_Sprites[i].states[j].inputs, -1, sizeof(int16) * 64);
+			memset(st.Game_Sprites[i].states[j].outputs, -1, sizeof(int16) * 64);
+
+			st.Game_Sprites[i].states[j].inputs[0] = j;
+			st.Game_Sprites[i].states[j].outputs[0] = j;
+		}
+	}
+
 #endif
 
 	memset(&st.strings,0,MAX_STRINGS*sizeof(StringsE));
@@ -3304,10 +3317,12 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	_MGGFORMAT mggf;
 	char header[21];
 	 uint16 i=0, j=0, k=0, l=0, m=0, n=0, o=0;
-	uint32 framesize[MAX_FRAMES], frameoffset[MAX_FRAMES], *framealone;
+	uint32 framesize[MAX_FRAMES], *framealone;
+	int32 frameoffset[MAX_FRAMES];
 	uint16 *posx, *posy, *sizex, *sizey, *dimx, *dimy, channel2;
 	int8 *imgatlas;
-	uint16 *w, *h, *currh, *offx, *offy;
+	uint16 *w, *h, *currh;
+	int16 *offx, *offy;
 	int width, height, channel;
 	unsigned char *imgdata;
 	uint8 normals[MAX_FRAMES];
@@ -3331,7 +3346,7 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	if(checkmgg>0)
 	//{
 		//LogApp("This MGG is already loaded
-		return 0;
+		return checkmgg - 10000;
 	//}
 
 	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
@@ -3402,7 +3417,7 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	rewind(file);
 	fseek(file,mggf.framesize_offset,SEEK_CUR);
 	fread(framesize,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
-	fread(frameoffset,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
+	fread(frameoffset,sizeof(int32),mggf.num_singletex+mggf.num_atlas,file);
 	fread(normals,sizeof(uint8),mggf.num_frames+mggf.num_atlas,file);
 	fread(normalsize,sizeof(uint32),mggf.num_singletex+mggf.num_atlas,file);
 
@@ -9413,6 +9428,15 @@ int32 LoadSpriteCFG(char *filename, int id)
 	}
 
 	memset(&st.Game_Sprites[id], 0, sizeof(st.Game_Sprites[id]));
+
+	for (int j = 0; j < 64; j++)
+	{
+		memset(st.Game_Sprites[id].states[j].inputs, -1, sizeof(int16) * 64);
+		memset(st.Game_Sprites[id].states[j].outputs, -1, sizeof(int16) * 64);
+
+		st.Game_Sprites[id].states[j].inputs[0] = j;
+		st.Game_Sprites[id].states[j].outputs[0] = j;
+	}
 
 	while(!feof(file))
 	{
