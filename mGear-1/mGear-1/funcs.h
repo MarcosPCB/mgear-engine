@@ -53,8 +53,6 @@ extern void Quit();
 #define GETFILESIZE(file, size) { fseek(file, 0, SEEK_END); size = ftell(file); rewind(file); }
 #define getfilesize GETFILESIZE
 
-#define mem_assert(expr) assert(expr && "memory not valid");
-
 #define LOWERSTRING(string) { for(int LOWERSTRINGINT = 0; LOWERSTRINGINT < strlen(string); LOWERSTRINGINT++) tolower(string[LOWERSTRINGINT]); }
 #define lowerstring LOWERSTRING
 
@@ -69,5 +67,9 @@ cdecl uint32 POT(uint32 value);
 cdecl int8 mchalloc(void *data); //Checks if the pointer is valid, if not, gives an error message and returns (CHERROR) -1
 
 cdecl int8 mchalloc_ab(void *data); //Checks if the pointer is valid, if not, gives an error message and exits the program
+
+cdecl char *GetFileNameOnly(const char *path);
+
+#define mem_assert(expr) assert(expr && "memory not valid");
 
 #endif

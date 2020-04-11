@@ -30,6 +30,10 @@
 
 #include <stb_image.h>
 
+//#include "leak_detector_c.h"
+
+//#define  free(mem_ref) 		  	 	xfree(mem_ref)
+
 //#ifndef ENGINEER
 	
 //#endif
@@ -2755,10 +2759,12 @@ SHADER_CREATION:
 
 #ifndef MGEAR_CLEAN_VERSION
 	memset(&lmp,0,MAX_LIGHTMAPS*sizeof(_ENTITIES));
+#endif
 	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
 
 	for (int i = 0; i < MAX_SPRITES; i++)
 	{
+		st.Game_Sprites[i].MGG_ID = -1;
 		for (int j = 0; j < 64; j++)
 		{
 			memset(st.Game_Sprites[i].states[j].inputs, -1, sizeof(int16) * 64);
@@ -2768,8 +2774,6 @@ SHADER_CREATION:
 			st.Game_Sprites[i].states[j].outputs[0] = j;
 		}
 	}
-
-#endif
 
 	memset(&st.strings,0,MAX_STRINGS*sizeof(StringsE));
 
@@ -3337,17 +3341,6 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	uint16 imgw, imgh;
 
 	size_t mgisize;
-
-	checkmgg=CheckMGGInSystem(name);
-
-	if(checkmgg==-2)
-		return 0;
-	else
-	if(checkmgg>0)
-	//{
-		//LogApp("This MGG is already loaded
-		return checkmgg - 10000;
-	//}
 
 	memset(&normals,0,MAX_FRAMES*sizeof(uint8));
 
@@ -4339,6 +4332,8 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	mgg->type = MGG_USED;
 
 	fclose(file);
+
+	strcpy(mgg->path, GetFileNameOnly(name));
 
 	return 1;
 		
@@ -9427,7 +9422,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 		return 0;
 	}
 
-	memset(&st.Game_Sprites[id], 0, sizeof(st.Game_Sprites[id]));
+	memset(&st.Game_Sprites[id], 0, sizeof(_SPRITES));
+	st.Game_Sprites[id].MGG_ID = -1;
 
 	for (int j = 0; j < 64; j++)
 	{
@@ -9501,16 +9497,20 @@ int32 LoadSpriteCFG(char *filename, int id)
 				else
 				if(value==-1)
 				{
-					if(!_LoadMGG(&mgg_game[id2], mggpath, shadow))
+					uint32 temp = _LoadMGG(&mgg_game[id2], mggpath, shadow);
+
+					if(temp == 0 || temp == -2)
 					{
 						//fclose(file);
 						//return 0;
 						LogApp("Error: failed to load sprite's MGG");
 						st.Game_Sprites[id].MGG_ID = -1;
 					}
-
-					st.num_mgg++;
-					st.Game_Sprites[id].MGG_ID=id2;
+					else
+					{
+						st.num_mgg++;
+						st.Game_Sprites[id].MGG_ID = id2;
+					}
 				}
 				else
 				if(value==-2)

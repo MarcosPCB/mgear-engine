@@ -342,6 +342,8 @@ struct _MGG_
 	//Pos *sizefix;
 	uint32 num_anims;
 	_MGGANIM *anim;
+
+	char path[MAX_PATH];
 };
 
 typedef struct _MGG_ _MGG;
@@ -481,6 +483,7 @@ struct _AISTATE
 
 	uint8 used;
 	uint8 loop;
+	uint8 animation;
 };
 
 typedef struct _AISTATE AISTATE;
@@ -511,6 +514,7 @@ struct _SPRITES_
 	Body body;
 	AISTATE states[64];
 	uint8 num_states;
+	uint8 shadow;
 };
 
 typedef struct _SPRITES_ _SPRITES;

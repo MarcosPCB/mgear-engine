@@ -107,3 +107,25 @@ int8 mchalloc_ab(void *data)
 		return NULL;
 }
 
+char *GetFileNameOnly(const char *path)
+{
+	int16 i = 0, j = 0, len;
+	char filename[MAX_PATH];
+
+	mem_assert(path);
+
+	if (!path)
+		return NULL;
+
+	len = strlen(path);
+
+	for (i = len; i > 0; i--)
+	{
+		if (path[i] == '/' || path[i] == '\\')
+			break;
+	}
+
+	strcpy(filename, path + i + 1);
+
+	return filename;
+}

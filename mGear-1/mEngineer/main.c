@@ -32,6 +32,11 @@
 
 #define NK_TEXT_LB NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_BOTTOM
 
+#define MAX_NK_VERTEX_BUFFER 512 * 1024
+#define MAX_NK_ELEMENT_BUFFER 128 * 1024
+#define MAX_NK_COMMAND_BUFFER 5000000
+#define MAX_NK_BUFFER 16000000
+
 //extern _MGG mgg_sys[3];
 
 mEng meng, nmeng;
@@ -5933,7 +5938,7 @@ int main(int argc, char *argv[])
 
 	SetCurrentDirectory(st.CurrPath);
 
-	ctx = nk_sdl_init(wn);
+	ctx = nk_sdl_init(wn, MAX_NK_BUFFER, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER);
 
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
@@ -6196,7 +6201,7 @@ int main(int argc, char *argv[])
 		//if (nkrendered == 0)
 			//printf("porra\n");
 
-		nk_sdl_render(NK_ANTI_ALIASING_OFF, 512 * 1024, 128 * 1024);
+		nk_sdl_render(NK_ANTI_ALIASING_OFF, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER, MAX_NK_COMMAND_BUFFER);
 
 		SwapBuffer(wn);
 

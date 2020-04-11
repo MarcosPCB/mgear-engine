@@ -14,6 +14,8 @@
 #include "funcs.h"
 #include <SDL_syswm.h>
 
+//#include "leak_detector_c.h"
+
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
@@ -27,6 +29,11 @@
 #include "nuklear_sdl_gl3.h"
 #define _NKUI_SKINS
 #include "skins.h"
+
+#define MAX_NK_VERTEX_BUFFER 512 * 1024
+#define MAX_NK_ELEMENT_BUFFER 128 * 1024
+#define MAX_NK_COMMAND_BUFFER 5000000
+#define MAX_NK_BUFFER 16000000
 
 int nkrendered = 0;
 
@@ -52,7 +59,7 @@ int16 LoadIntApps()
 
 	while (!feof(f))
 	{
-		fgets(buf, sizeof(buf), f);
+		fgets(buf, 2048, f);
 		sscanf(buf, "%s = %d", str);
 		if (strcmp(str, "PS") == NULL)
 		{
@@ -4747,6 +4754,7 @@ void ViewerBox()
 
 		vec4 = nk_layout_space_bounds(ctx);
 
+		
 		//Grid
 		for (i = 0; i < vec4.w; i += 32)
 			nk_stroke_line(nk_window_get_canvas(ctx), i + vec4.x, vec4.y, i + vec4.x, vec4.y + vec4.h, 1.0f, nk_rgb(128, 128, 128));
@@ -4755,7 +4763,7 @@ void ViewerBox()
 
 		nk_stroke_line(nk_window_get_canvas(ctx), vec4.x + (vec4.w / 2), vec4.y, vec4.x + (vec4.w / 2), vec4.y + vec4.h, 3.0f, nk_rgb(255, 0, 0));
 		nk_stroke_line(nk_window_get_canvas(ctx), vec4.x, vec4.y + (vec4.h / 2), vec4.x + vec4.w, vec4.y + (vec4.h / 2), 3.0f, nk_rgb(255, 0, 0));
-
+		
 		if (mtex.anim_selected != -1)
 			mtex.selected = mtex.anim_frame;
 		
@@ -5761,6 +5769,8 @@ int main(int argc, char *argv[])
 
 	struct nk_color background;
 
+	//atexit(report_mem_leak);
+
 	PreInit("mtex",argc,argv);
 
 	//_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_CHECK_ALWAYS_DF);
@@ -5803,7 +5813,7 @@ int main(int argc, char *argv[])
 
 	curr_tic=GetTicks();
 
-	ctx = nk_sdl_init(wn);
+	ctx = nk_sdl_init(wn, MAX_NK_BUFFER, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER);
 
 	struct nk_font_atlas *atlas;
 	struct nk_font_config cfg = nk_font_config(0);
@@ -6015,7 +6025,7 @@ BACKLOOP:
 		//if (curr_tic % 120 == 0) 
 			//UpdateFiles();
 
-		DrawSys();
+		//DrawSys();
 
 		if (mtex.mgg.num_frames > 0)
 		{
@@ -6027,14 +6037,14 @@ BACKLOOP:
 
 		MenuBar();
 
-		UIMain_DrawSystem();
+		//UIMain_DrawSystem();
 		//MainSound();
 		Renderer(0);
 
 		float bg[4];
 		nk_color_fv(bg, background);
 
-		nk_sdl_render(NK_ANTI_ALIASING_OFF, 512 * 1024, 128 * 1024);
+		nk_sdl_render(NK_ANTI_ALIASING_OFF, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER, MAX_NK_COMMAND_BUFFER);
 
 		SwapBuffer(wn);
 
@@ -6061,5 +6071,6 @@ BACKLOOP:
 	UnloadmTexMGG();
 
 	Quit();
+
 	return 1;
 }

@@ -25,6 +25,11 @@
 #define _NKUI_SKINS
 #include "skins.h"
 
+#define MAX_NK_VERTEX_BUFFER 512 * 1024
+#define MAX_NK_ELEMENT_BUFFER 128 * 1024
+#define MAX_NK_COMMAND_BUFFER 5000000
+#define MAX_NK_BUFFER 16000000
+
 int nkrendered = 0;
 
 struct nk_context *ctx;
@@ -309,60 +314,201 @@ uint16 LoadCFG()
 
 }
 
-int SavePrjFile(const char *filename)
+void CheckForChanges()
 {
-	FILE *f;
-	char header[21] = { "mGear Project V1.0" };
-
-
-	if ((f = fopen(filename, "wb")) == NULL)
+	if (memcmp(mspr.sprbck, st.Game_Sprites, sizeof(_SPRITES) * MAX_SPRITES) != NULL)
 	{
-		GetError;
-		return 0;
+		mspr.changes_detected = 1;
+		sprintf(st.WindowTitle, "Sprite *%s", mspr.filepath);
 	}
-
-	fwrite(header, 21, 1, f);
-	
-
-	fclose(f);
-
-	return 1;
 }
 
-int LoadPrjFile(const char *filename)
+int SavePrjFile(const char *path)
 {
 	FILE *f;
-	char header[21];
+	int16 i, j, k, l, error = 0;
+	char str[2048], str2[2048], buf[2048];
+	DIR *d;
 
-	if (filename == NULL)
+	if (st.num_sprites == 0)
 	{
-		MessageBoxRes("Error", MB_OK, "Invalid file NULL");
-		return -1;
+		MessageBoxRes("Error", MB_OK, "Error: no sprites on the list");
+		return NULL;
 	}
-	
-	if ((f = fopen(filename, "rb")) == NULL)
+
+	SetCurrentDirectory(path);
+
+	strcpy(str, path);
+	strcat(str, "/Sprites");
+
+	if ((d = opendir(str)) == NULL)
+		system("md Sprites");
+	else
+		closedir(d);
+
+	for (i = 0; i < st.num_sprites; i++)
+	{
+		strcpy(str2, str);
+		strcat(str2, StringFormat("/#%d - %s.cfg", i, st.Game_Sprites[i].name));
+
+		if ((f = fopen(str2, "w")) == NULL)
+		{
+			GetError;
+			error = 1;
+			goto SVPRJERROR;
+		}
+
+		fprintf(f, "NAME %s\n", st.Game_Sprites[i].name);
+		fprintf(f, "MGG %s PART\n", mgg_game[st.Game_Sprites[i].MGG_ID].path);
+		fprintf(f, "NUM_FRAMES %d\n", st.Game_Sprites[i].num_frames);
+
+		ZeroMemory(buf, 2048);
+		for (j = 0; j < st.Game_Sprites[i].num_start_frames; j++)
+			strcat(buf, StringFormat("%d ", st.Game_Sprites[i].frame[j]));
+
+		fprintf(f, "FRAMES %s\n", buf);
+		fprintf(f, "HEALTH %d\n", st.Game_Sprites[i].health);
+		fprintf(f, "MASS %d\n", st.Game_Sprites[i].body.mass);
+		
+		switch (st.Game_Sprites[i].body.material)
+		{
+			case METAL:
+				fprintf(f, "MATERIAL METAL\n");
+				break;
+
+			case WOOD:
+				fprintf(f, "MATERIAL WOOD\n");
+				break;
+				
+			case ORGANIC:
+				fprintf(f, "MATERIAL ORGANIC\n");
+				break;
+
+			case CONCRETE:
+				fprintf(f, "MATERIAL CONCRETE\n");
+				break;
+
+			case PLASTIC:
+				fprintf(f, "MATERIAL PLASTIC\n");
+				break;
+
+			case MATERIAL_END:
+				fprintf(f, "MATERIAL NONE\n");
+				break;
+		}
+
+		switch (st.Game_Sprites[i].type)
+		{
+			case ENEMY:
+				fprintf(f, "TYPE ENEMY\n");
+				break;
+
+			case FRIEND:
+				fprintf(f, "TYPE FRIEND\n");
+				break;
+
+			case GAME_LOGICAL:
+				fprintf(f, "TYPE LOGICAL\n");
+				break;
+
+			case NORMAL:
+				fprintf(f, "TYPE NORMAL\n");
+				break;
+		}
+
+		if (st.Game_Sprites[i].flags & 4)
+			fprintf(f, "ORIGINAL_SIZE\n");
+		else
+			fprintf(f, "SIZE %d %d\n", st.Game_Sprites[i].body.size.x, st.Game_Sprites[i].body.size.y);
+
+		if (st.Game_Sprites[i].size_m.x != 0 || st.Game_Sprites[i].size_m.y != 0)
+			fprintf(f, "SIZE_MUL %d %d\n", st.Game_Sprites[i].size_m.x == 0 ? 1 : st.Game_Sprites[i].size_m.x, st.Game_Sprites[i].size_m.y == 0 ? 1 : st.Game_Sprites[i].size_m.y);
+
+		if (st.Game_Sprites[i].size_a.x != 0 || st.Game_Sprites[i].size_a.y != 0)
+			fprintf(f, "SIZE_ADD %d %d\n", st.Game_Sprites[i].size_a.x, st.Game_Sprites[i].size_a.y);
+
+		if (st.Game_Sprites[i].flags & 1)
+			fprintf(f, "RESIZEABLE\n");
+
+		if (st.Game_Sprites[i].flags & 2)
+			fprintf(f, "HIDDEN\n");
+
+		if (st.Game_Sprites[i].shadow == 1)
+			fprintf(f, "SHADOW\n");
+
+		fprintf(f, "FLAMABLE %d\n", st.Game_Sprites[i].body.flamable);
+		fprintf(f, "EXPLOSIVE %d\n", st.Game_Sprites[i].body.explosive);
+
+		if (st.Game_Sprites[i].num_states > 0)
+		{
+			for (j = 0; j < st.Game_Sprites[i].num_states; j++)
+			{
+				if (st.Game_Sprites[i].states[j].used == 1)
+				{
+					fprintf(f, "STATE %d - \"%s\" %s %s %d %s %d %s %d\n", j, st.Game_Sprites[i].states[j].name, st.Game_Sprites[i].states[j].loop == 1 ? "LOOP" : "NOLOOP",
+						st.Game_Sprites[i].states[j].animation == 1 ? "ANIMATED" : "STILL", st.Game_Sprites[i].states[j].main_anim,
+						st.Game_Sprites[i].states[j].in == 1 ? "IN" : "NOIN", st.Game_Sprites[i].states[j].in_transition, st.Game_Sprites[i].states[j].out == 1 ? "OUT" : "NOOUT",
+						st.Game_Sprites[i].states[j].out_transition);
+
+					ZeroMemory(buf, 2048);
+
+					strcpy(buf, StringFormat("STATE_OUTPUTS %d - ", j));
+
+					for (k = 0; k < 64; k++)
+					{
+						if (st.Game_Sprites[i].states[j].outputs[k] != -1)
+							strcat(buf, StringFormat("%d %d : ", k, st.Game_Sprites[i].states[j].outputs[k]));
+					}
+
+					fprintf(f, "%s\n", buf);
+				}
+			}
+		}
+
+		LogApp("Saved Sprite CFG \"%s\"", str2);
+
+		fclose(f);
+	}
+
+	if ((f = fopen("sprite.slist", "w")) == NULL)
 	{
 		GetError;
-		return 0;
+		error = 2;
+		goto SVPRJERROR;
 	}
 
-	fread(header, 21, 1, f);
-
-	if (strcmp(header, "mGear Project V1.0") != NULL)
+	for (i = 0; i < st.num_sprites; i++)
 	{
-		fclose(f);
-		return -1;
+		fprintf(f, "SPRITE %s %d sprites/%s.cfg %d", st.Game_Sprites[i].name, i, st.Game_Sprites[i].name, st.Game_Sprites[i].num_tags);
+
+		for (j = 0; j < st.Game_Sprites[i].num_tags; j++)
+			fprintf(f, " %s ", st.Game_Sprites[i].tag_names[j]);
+
+		fprintf(f, "\n");
 	}
 
-	
+	LogApp("Saved Sprite List at \"%s\"", path);
 
 	fclose(f);
 
-	//LoadTDL();
-	//LoadBaseLog();
+	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+	strcpy(mspr.filepath, StringFormat("%s/sprite.slist", path));
+	
+SVPRJERROR:
 
-	//if (mspr.prj.curr_rev > 0)
-	//	LoadRevLog();
+	if (error == 1)
+	{
+		SetCurrentDirectory(mspr.program_path);
+		MessageBoxRes("Error", MB_OK, StringFormat("Error: could not write the sprite file \"%s\"", str2));
+		return NULL;
+	}
+
+	if (error == 2)
+	{
+		SetCurrentDirectory(mspr.program_path);
+		MessageBoxRes("Error", MB_OK, StringFormat("Error: could not write the sprite list \"%s\"", str2));
+		return NULL;
+	}
 
 	return 1;
 }
@@ -381,6 +527,7 @@ int NewProject()
 
 	for (int i = 0; i < st.num_sprites; i++)
 	{
+		st.Game_Sprites[i].MGG_ID = -1;
 		for (int j = 0; j < 64; j++)
 		{
 			memset(st.Game_Sprites[i].states[j].inputs, -1, sizeof(int16)* 64);
@@ -494,7 +641,7 @@ int Preferences()
 
 	SetCurrentDirectory(mspr.program_path);
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 380), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 150), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -565,7 +712,7 @@ int Preferences()
 	return NULL;
 }
 
-int FrameListSelection()
+int FrameListSelection(uint8 mode)
 {
 	register int i, j, k, l = 0, m;
 	TEX_DATA data;
@@ -575,7 +722,10 @@ int FrameListSelection()
 	static int16 sel1 = 0, sel2 = 0, msel[32], msel_num = 0, mggl = -1, state = 0;
 
 	_SPRITES *spr = &st.Game_Sprites[mspr.selected_spr];
-	_MGG mgg = mgg_game[spr->MGG_ID];
+	_MGG mgg;
+
+	if (mode == 1)
+		state = 10;
 
 	if (mggl != spr->MGG_ID)
 	{
@@ -607,21 +757,13 @@ int FrameListSelection()
 
 	if (spr->MGG_ID == -1)
 	{
-		if (nk_begin(ctx, "Error", nk_rect(st.screenx / 2 - 128, st.screeny / 2 - 43, 256, 86), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_NO_SCROLLBAR))
-		{
-			nk_layout_row_dynamic(ctx, 30, 1);
-			nk_label(ctx, "Error: No MGG loaded", NK_TEXT_ALIGN_CENTERED);
-			nk_layout_row_dynamic(ctx, 30, 3);
-			nk_spacing(ctx, 1);
-			if (nk_button_label(ctx, "Ok"))
-				return 1;
-		}
-
-		st.mouse1 = 0;
-		nk_end(ctx);
+		MessageBoxRes("Error", MB_OK, "Error: no MGG loaded");
+		return 1;
 	}
 	else
 	{
+		mgg = mgg_game[spr->MGG_ID];
+
 		char wnstr[32];
 
 		if (state == 0)
@@ -632,6 +774,9 @@ int FrameListSelection()
 
 		if (state == 2)
 			strcpy(wnstr, "Select the sprite starters");
+
+		if (state == 10)
+			strcpy(wnstr, "Select the state frame");
 
 		if (nk_begin(ctx, wnstr, nk_rect(st.screenx / 2 - 300, st.screeny / 2 - 300, 600, 600),
 			NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_SCALABLE))
@@ -664,6 +809,12 @@ int FrameListSelection()
 					j = sel1;
 				}
 
+				if (state == 10)
+				{
+					j = spr->frame[0];
+					l = spr->frame[0] + spr->num_frames;
+				}
+
 				for (; j < l; j++)
 				{
 						data = mgg.frames[j];
@@ -692,6 +843,14 @@ int FrameListSelection()
 								if (msel[i] == j)
 									temp = 1;
 							}
+						}
+
+						if (state == 10)
+						{
+							if (sel1 == j)
+								temp = 1;
+							else
+								temp = 0;
 						}
 
 						if (data.vb_id != -1)
@@ -754,6 +913,9 @@ int FrameListSelection()
 									}
 								}
 							}
+
+							if (state == 10)
+								sel1 = j;
 						}
 					}
 
@@ -767,13 +929,27 @@ int FrameListSelection()
 
 			if (nk_button_label(ctx, "Select"))
 			{
-				state++;
+				if (sel1 == mgg.num_frames - 1 && state == 0)
+				{
+					switch (MessageBoxRes("Warning", MB_YESNOCANCEL, "You have selected the last frame of the MGG,\nmeaning that, this sprite has only one possible frame.\nDo you wish to proceed?"))
+					{
+					case IDYES:
+						sel2 = sel1;
+						msel_num = 1;
+						state = 5;
+						break;
+
+					case IDCANCEL:
+						state = 6;
+						break;
+					}
+				}
+				else
+					state++;
 			}
 
 			if (nk_button_label(ctx, "Cancel"))
-			{
 				state = 6;
-			}
 		}
 
 		st.mouse1 = 0;
@@ -796,9 +972,16 @@ int FrameListSelection()
 	if (state == 5)
 	{
 		spr->num_frames = sel2 - sel1 + 1;
-		spr->num_start_frames = msel_num;
+
+		if (spr->num_start_frames > 0)
+		{
+			free(spr->frame);
+		}
 
 		spr->frame = malloc(sizeof(int32)* msel_num);
+
+		spr->num_start_frames = msel_num;
+
 		for (i = 0, k = 0; i < 32; i++)
 		{
 			if (msel[i] == -1) continue;
@@ -829,6 +1012,15 @@ int FrameListSelection()
 		return 1;
 	}
 
+	if (state == 11)
+	{
+		spr->states[mspr.state_selected].main_anim = sel1;
+		state = 0;
+		mggl = -1;
+
+		return 1;
+	}
+
 	return NULL;
 }
 
@@ -837,7 +1029,8 @@ void MenuBar()
 	register int i, a, m;
 	char mapname[2048], str[128], filename[2048];
 	int id = 0, id2 = 0, check, temp;
-	static int state = 0, mggid, path[MAX_PATH];
+	static int state = 0, mggid;
+	static char path[MAX_PATH];
 
 	//if (nkrendered==0)
 	//{
@@ -906,7 +1099,8 @@ void MenuBar()
 
 						if (temp == 1)
 						{
-							
+							strcpy(mspr.filepath, path);
+							memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 						}
 					}
 
@@ -915,12 +1109,49 @@ void MenuBar()
 				
 				if (nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT))
 				{
-					SavePrjFile(mspr.filepath);
+					strcpy(path, mspr.filepath);
 
-					
+					for (i = strlen(path); i > 0; i--)
+					{
+						if (path[i] == '\\' || path[i] == '/')
+							break;
+						
+						path[i] = '\0';
+					}
+
+					SavePrjFile(path);
 				}
 
-				nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT);
+				if (nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT))
+				{
+					ZeroMemory(&path, sizeof(path));
+
+					OPENFILENAME ofn;
+
+					ZeroMemory(&ofn, sizeof(ofn));
+					ofn.lStructSize = sizeof(ofn);
+					ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
+					ofn.lpstrFilter = "Sprite list File\0*.slist\0";
+					ofn.nMaxFile = MAX_PATH;
+					ofn.lpstrFile = path;
+					ofn.lpstrTitle = "Save the sprite list file";
+					//ofn.hInstance = OFN_EXPLORER;
+					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+					if (GetSaveFileName(&ofn) && path)
+					{
+						for (i = strlen(path); i > 0; i--)
+						{
+							if (path[i] == '\\' || path[i] == '/')
+								break;
+							
+							path[i] = '\0';
+						}
+
+						SavePrjFile(path);
+					}
+				}
+
 				//nk_menu_item_label(ctx, "Import", NK_TEXT_LEFT);
 				//if (nk_menu_item_label(ctx, "Export", NK_TEXT_LEFT))
 				//	state = 6;
@@ -1091,7 +1322,14 @@ void Pannel()
 			
 			if (state != 2 && state != 3)
 			{
-				if (nk_select_label(ctx, st.Game_Sprites[i].name, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE, mspr.selected_spr == i))
+				char name_temp[64];
+
+				if (strlen(st.Game_Sprites[i].name) == 0)
+					name_temp[0] = ' ';
+				else
+					strcpy(name_temp, st.Game_Sprites[i].name);
+
+				if (nk_select_label(ctx, name_temp, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE, mspr.selected_spr == i))
 				{
 					if (mspr.selected_spr != i)
 					{
@@ -1112,424 +1350,568 @@ void Pannel()
 
 	if (nk_begin(ctx, "Properties", nk_rect(st.screenx * 0.15, 30, st.screenx * 0.55, st.screeny * 0.4 - 30), NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
-		if (nk_input_mouse_clicked(&ctx->input, NK_BUTTON_LEFT, nk_window_get_content_region(ctx)))
-			mspr.state_selected = -1;
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
-
-		nk_layout_row_push(ctx, 0.05);
-		nk_label(ctx, "Name:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
-
-		nk_layout_row_push(ctx, 0.30);
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, st.Game_Sprites[i].name, 64, nk_filter_ascii);
-		nk_layout_row_end(ctx);
-
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
-		nk_layout_row_push(ctx, 0.05);
-		nk_label(ctx, "MGG: ", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
-
-		nk_layout_row_push(ctx, 0.50);
-		nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, mgg_game[st.Game_Sprites[i].MGG_ID].name, 32, nk_filter_ascii);
-
-		nk_layout_row_push(ctx, 0.10);
-		if (nk_button_label(ctx, "Browse"))
+		if (mspr.selected_spr != -1)
 		{
-			for (i = 0; i < MAX_GAME_MGG; i++)
+			if (nk_input_mouse_clicked(&ctx->input, NK_BUTTON_LEFT, nk_window_get_content_region(ctx)) && state == 0)
+				mspr.state_selected = -1;
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
+
+			nk_layout_row_push(ctx, 0.05);
+			nk_label(ctx, "Name:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+			nk_layout_row_push(ctx, 0.30);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].name, 64, nk_filter_ascii);
+			nk_layout_row_end(ctx);
+
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 3);
+			nk_layout_row_push(ctx, 0.05);
+			nk_label(ctx, "MGG: ", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+			nk_layout_row_push(ctx, 0.50);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, mgg_game[st.Game_Sprites[i].MGG_ID].name, 32, nk_filter_ascii);
+
+			nk_layout_row_push(ctx, 0.10);
+			if (nk_button_label(ctx, "Browse"))
 			{
-				if (i == MAX_GAME_MGG - 1 && mgg_game[i].type != NONE)
+				for (i = 0; i < MAX_GAME_MGG; i++)
 				{
-					LogApp("Cannot load MGG, reached max number of game MGGs loaded");
-					break;
-				}
-
-				if (mgg_game[i].type == 1)
-				{
-					st.Game_Sprites[mspr.selected_spr].MGG_ID = i;
-					OPENFILENAME ofn;
-					char path[MAX_PATH];
-					ZeroMemory(&path, sizeof(path));
-					ZeroMemory(&ofn, sizeof(ofn));
-					ofn.lStructSize = sizeof(ofn);
-					ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
-					ofn.lpstrFilter = "MGG files\0*.mgg\0";
-					ofn.nMaxFile = MAX_PATH;
-					ofn.lpstrFile = path;
-					ofn.lpstrTitle = "Select the MGG file";
-					//ofn.hInstance = OFN_EXPLORER;
-					ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
-
-					if (GetOpenFileName(&ofn))
+					if (i == MAX_GAME_MGG - 1 && mgg_game[i].type != NONE)
 					{
-						strcpy(filename, path);
-						int32 lm = LoadMGG(&mgg_game[i], filename);
-						st.num_mgg++;
-
-						if (lm > 9999)
-						{
-							LogApp("MGG already loaded in system");
-							st.Game_Sprites[mspr.selected_spr].MGG_ID = lm;
-						}
+						LogApp("Cannot load MGG, reached max number of game MGGs loaded");
+						break;
 					}
-					break;
+
+					if (mgg_game[i].type == 1)
+					{
+						st.Game_Sprites[mspr.selected_spr].MGG_ID = i;
+						OPENFILENAME ofn;
+						char path[MAX_PATH];
+						ZeroMemory(&path, sizeof(path));
+						ZeroMemory(&ofn, sizeof(ofn));
+						ofn.lStructSize = sizeof(ofn);
+						ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
+						ofn.lpstrFilter = "MGG files\0*.mgg\0";
+						ofn.nMaxFile = MAX_PATH;
+						ofn.lpstrFile = path;
+						ofn.lpstrTitle = "Select the MGG file";
+						//ofn.hInstance = OFN_EXPLORER;
+						ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
+
+						if (GetOpenFileName(&ofn))
+						{
+							strcpy(filename, path);
+
+							int32 lm = CheckMGGInSystem(filename), lm2;
+
+							if (lm > 999 && lm < 1003)
+							{
+								LogApp("MGG already loaded in system");
+								st.Game_Sprites[mspr.selected_spr].MGG_ID = lm - 1000;
+							}
+							
+							if (lm > 9999)
+							{
+								LogApp("MGG already loaded in system");
+								st.Game_Sprites[mspr.selected_spr].MGG_ID = lm - 10000;
+							}
+
+							if (lm == -2)
+								MessageBoxRes("Error", MB_OK, StringFormat("Error: could not load MGG file - %s\nCheck mspr.log for more information", filename));
+
+							if (lm == -1)
+							{
+								lm2 = LoadMGG(&mgg_game[i], filename);
+
+								if (lm2 == -2 || lm2 == 0)
+								{
+									MessageBoxRes("Error", MB_OK, StringFormat("Error: could not load MGG file - %s\nCheck mspr.log for more information", filename));
+								}
+								else
+									st.num_mgg++;
+							}
+						}
+						break;
+					}
 				}
 			}
-		}
 
-		nk_layout_row_end(ctx);
+			nk_layout_row_end(ctx);
 
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
-		nk_layout_row_push(ctx, 0.25);
-		st.Game_Sprites[i].num_frames = nk_propertyd(ctx, "Number of frames:", 1, st.Game_Sprites[i].num_frames, 16384, 1, 1);
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
+			nk_layout_row_push(ctx, 0.25);
+			st.Game_Sprites[i].num_frames = nk_propertyd(ctx, "Number of frames:", 1, st.Game_Sprites[i].num_frames, 16384, 1, 1);
 
-		nk_layout_row_push(ctx, 0.01);
-		nk_spacing(ctx, 1);
+			nk_layout_row_push(ctx, 0.01);
+			nk_spacing(ctx, 1);
 
-		nk_layout_row_push(ctx, 0.12);
-		if (nk_button_label(ctx, "Select frames"))
-		{
-			state = 1;
-		}
-
-		nk_layout_row_push(ctx, 0.01);
-		nk_spacing(ctx, 1);
-
-		nk_layout_row_push(ctx, 0.30);
-		strcpy(buf, "Starting frames: ");
-		if (st.Game_Sprites[i].frame)
-		{
-			for (j = 0; j < st.Game_Sprites[i].num_start_frames; j++)
+			nk_layout_row_push(ctx, 0.12);
+			if (nk_button_label(ctx, "Select frames"))
 			{
-				if (st.Game_Sprites[i].frame[j] > -1)
-					strcat(buf, StringFormat("%d, ", st.Game_Sprites[i].frame[j]));
+				state = 1;
 			}
-		}
 
-		nk_label(ctx, buf, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+			nk_layout_row_push(ctx, 0.01);
+			nk_spacing(ctx, 1);
 
-		nk_layout_row_end(ctx);
+			nk_layout_row_push(ctx, 0.30);
+			strcpy(buf, "Starting frames: ");
+			if (st.Game_Sprites[i].frame)
+			{
+				for (j = 0; j < st.Game_Sprites[i].num_start_frames; j++)
+				{
+					if (st.Game_Sprites[i].frame[j] > -1)
+						strcat(buf, StringFormat("%d, ", st.Game_Sprites[i].frame[j]));
+				}
+			}
 
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
-		nk_layout_row_push(ctx, 0.15);
-		st.Game_Sprites[i].health = nk_propertyd(ctx, "Health:", -16384, st.Game_Sprites[i].health, 16384, 32, 4);
+			nk_label(ctx, buf, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
 
-		nk_layout_row_push(ctx, 0.02);
-		nk_spacing(ctx, 1);
+			nk_layout_row_push(ctx, 0.20);
+			st.Game_Sprites[i].shadow = nk_check_label(ctx, "Soft shadow texture", st.Game_Sprites[i].shadow == 1) ? 1 : 0;
 
-		nk_layout_row_push(ctx, 0.04);
-		nk_label(ctx, "Type:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+			nk_layout_row_end(ctx);
 
-		nk_layout_row_push(ctx, 0.10);
-		st.Game_Sprites[i].type = nk_option_label(ctx, "Logical", st.Game_Sprites[i].type == 0) ? 0 : st.Game_Sprites[i].type;
-		st.Game_Sprites[i].type = nk_option_label(ctx, "Enemy", st.Game_Sprites[i].type == 1) ? 1 : st.Game_Sprites[i].type;
-		st.Game_Sprites[i].type = nk_option_label(ctx, "Friend", st.Game_Sprites[i].type == 2) ? 2 : st.Game_Sprites[i].type;
-		st.Game_Sprites[i].type = nk_option_label(ctx, "Normal", st.Game_Sprites[i].type == 3) ? 3 : st.Game_Sprites[i].type;
-
-		nk_layout_row_end(ctx);
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
-		nk_layout_row_push(ctx, 0.30);
-		st.Game_Sprites[i].body.mass = nk_propertyd(ctx, "Mass:", 0, st.Game_Sprites[i].body.mass, 65535, 10, 1);
-
-		nk_layout_row_end(ctx);
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 7);
-		nk_layout_row_push(ctx, 0.07);
-		nk_label(ctx, "Material:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
-
-		nk_layout_row_push(ctx, 0.10);
-		st.Game_Sprites[i].body.material = nk_option_label(ctx, "Metal", st.Game_Sprites[i].body.material == 0) ? 0 : st.Game_Sprites[i].body.material;
-		st.Game_Sprites[i].body.material = nk_option_label(ctx, "Wood", st.Game_Sprites[i].body.material == 1) ? 1 : st.Game_Sprites[i].body.material;
-		st.Game_Sprites[i].body.material = nk_option_label(ctx, "Plastic", st.Game_Sprites[i].body.material == 2) ? 2 : st.Game_Sprites[i].body.material;
-		st.Game_Sprites[i].body.material = nk_option_label(ctx, "Concrete", st.Game_Sprites[i].body.material == 3) ? 3 : st.Game_Sprites[i].body.material;
-		st.Game_Sprites[i].body.material = nk_option_label(ctx, "Organic", st.Game_Sprites[i].body.material == 4) ? 4 : st.Game_Sprites[i].body.material;
-		st.Game_Sprites[i].body.material = nk_option_label(ctx, "None", st.Game_Sprites[i].body.material == 5) ? 5 : st.Game_Sprites[i].body.material;
-
-		nk_layout_row_end(ctx);
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
-
-		if (!(st.Game_Sprites[i].flags & 4))
-		{
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
 			nk_layout_row_push(ctx, 0.15);
-			st.Game_Sprites[i].body.size.x = nk_propertyd(ctx, "Size X:", 0, st.Game_Sprites[i].body.size.x, 32768, 64, 8);
-			st.Game_Sprites[i].body.size.y = nk_propertyd(ctx, "Size Y:", 0, st.Game_Sprites[i].body.size.y, 32768, 64, 8);
+			st.Game_Sprites[i].health = nk_propertyd(ctx, "Health:", -16384, st.Game_Sprites[i].health, 16384, 32, 4);
 
 			nk_layout_row_push(ctx, 0.02);
-			nk_label(ctx, "-", NK_TEXT_ALIGN_CENTERED | NK_TEXT_ALIGN_MIDDLE);
+			nk_spacing(ctx, 1);
+
+			nk_layout_row_push(ctx, 0.04);
+			nk_label(ctx, "Type:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+			nk_layout_row_push(ctx, 0.10);
+			st.Game_Sprites[i].type = nk_option_label(ctx, "Logical", st.Game_Sprites[i].type == 0) ? 0 : st.Game_Sprites[i].type;
+			st.Game_Sprites[i].type = nk_option_label(ctx, "Enemy", st.Game_Sprites[i].type == 1) ? 1 : st.Game_Sprites[i].type;
+			st.Game_Sprites[i].type = nk_option_label(ctx, "Friend", st.Game_Sprites[i].type == 2) ? 2 : st.Game_Sprites[i].type;
+			st.Game_Sprites[i].type = nk_option_label(ctx, "Normal", st.Game_Sprites[i].type == 3) ? 3 : st.Game_Sprites[i].type;
+
+			nk_layout_row_end(ctx);
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 2);
+			nk_layout_row_push(ctx, 0.30);
+			st.Game_Sprites[i].body.mass = nk_propertyd(ctx, "Mass:", 0, st.Game_Sprites[i].body.mass, 65535, 10, 1);
+
+			nk_layout_row_end(ctx);
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 7);
+			nk_layout_row_push(ctx, 0.07);
+			nk_label(ctx, "Material:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+			nk_layout_row_push(ctx, 0.10);
+			st.Game_Sprites[i].body.material = nk_option_label(ctx, "Metal", st.Game_Sprites[i].body.material == 0) ? 0 : st.Game_Sprites[i].body.material;
+			st.Game_Sprites[i].body.material = nk_option_label(ctx, "Wood", st.Game_Sprites[i].body.material == 1) ? 1 : st.Game_Sprites[i].body.material;
+			st.Game_Sprites[i].body.material = nk_option_label(ctx, "Plastic", st.Game_Sprites[i].body.material == 2) ? 2 : st.Game_Sprites[i].body.material;
+			st.Game_Sprites[i].body.material = nk_option_label(ctx, "Concrete", st.Game_Sprites[i].body.material == 3) ? 3 : st.Game_Sprites[i].body.material;
+			st.Game_Sprites[i].body.material = nk_option_label(ctx, "Organic", st.Game_Sprites[i].body.material == 4) ? 4 : st.Game_Sprites[i].body.material;
+			st.Game_Sprites[i].body.material = nk_option_label(ctx, "None", st.Game_Sprites[i].body.material == 5) ? 5 : st.Game_Sprites[i].body.material;
+
+			nk_layout_row_end(ctx);
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
+
+			if (!(st.Game_Sprites[i].flags & 4))
+			{
+				nk_layout_row_push(ctx, 0.15);
+				st.Game_Sprites[i].body.size.x = nk_propertyd(ctx, "Size X:", 0, st.Game_Sprites[i].body.size.x, 32768, 64, 8);
+				st.Game_Sprites[i].body.size.y = nk_propertyd(ctx, "Size Y:", 0, st.Game_Sprites[i].body.size.y, 32768, 64, 8);
+
+				nk_layout_row_push(ctx, 0.02);
+				nk_label(ctx, "-", NK_TEXT_ALIGN_CENTERED | NK_TEXT_ALIGN_MIDDLE);
+			}
+
+			nk_layout_row_push(ctx, 0.15);
+			st.Game_Sprites[i].size_m.x = nk_propertyd(ctx, "Mul X:", 0, st.Game_Sprites[i].size_m.x, 256, 1, 1);
+			st.Game_Sprites[i].size_m.y = nk_propertyd(ctx, "Mul Y:", 0, st.Game_Sprites[i].size_m.y, 256, 1, 1);
+			st.Game_Sprites[i].size_a.x = nk_propertyd(ctx, "Add X:", 0, st.Game_Sprites[i].size_a.x, 16384, 32, 4);
+			st.Game_Sprites[i].size_a.y = nk_propertyd(ctx, "Add Y:", 0, st.Game_Sprites[i].size_a.y, 16384, 32, 4);
+
+			nk_layout_row_end(ctx);
+
+			nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
+			nk_layout_row_push(ctx, 0.04);
+			nk_label(ctx, "Flags:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
+
+
+			nk_layout_row_push(ctx, 0.10);
+			st.Game_Sprites[i].flags = nk_check_flags_label(ctx, "Resizable", st.Game_Sprites[i].flags, 1);
+			st.Game_Sprites[i].flags = nk_check_flags_label(ctx, "Hidden", st.Game_Sprites[i].flags, 2);
+			st.Game_Sprites[i].flags = nk_check_flags_label(ctx, "Original size", st.Game_Sprites[i].flags, 4);
+
+			nk_layout_row_push(ctx, 0.02);
+			nk_spacing(ctx, 1);
+
+			nk_layout_row_push(ctx, 0.20);
+			if (nk_combo_begin_label(ctx, "Tag list", nk_vec2(150, 400)))
+			{
+				for (j = 0; j < st.Game_Sprites[i].num_tags + 2; j++)
+				{
+					if ((j == st.Game_Sprites[i].num_tags || j == st.Game_Sprites[i].num_tags + 1) && st.Game_Sprites[i].num_tags < 8)
+					{
+						if (j == st.Game_Sprites[i].num_tags)
+						{
+							nk_layout_row_dynamic(ctx, 25, 1);
+							if (nk_button_label(ctx, "Add Tag", NK_TEXT_ALIGN_CENTERED | NK_TEXT_ALIGN_MIDDLE))
+								st.Game_Sprites[i].num_tags++;
+						}
+						else
+						{
+							nk_layout_row_dynamic(ctx, 25, 1);
+							if (nk_button_label(ctx, "Add Default Tags", NK_TEXT_ALIGN_CENTERED | NK_TEXT_ALIGN_MIDDLE))
+							{
+								strcpy(st.Game_Sprites[i].tag_names[st.Game_Sprites[i].num_tags], "INPUT");
+								st.Game_Sprites[i].num_tags++;
+
+								strcpy(st.Game_Sprites[i].tag_names[st.Game_Sprites[i].num_tags], "OUTPUT");
+								st.Game_Sprites[i].num_tags++;
+							}
+						}
+					}
+					else
+					{
+						nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+						nk_layout_row_push(ctx, 0.85);
+						nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].tag_names[j], 16, nk_filter_ascii);
+
+						nk_layout_row_push(ctx, 0.15);
+						if (nk_button_icon_set(BIN_ICON))
+						{
+							ZeroMemory(st.Game_Sprites[i].tag_names[j], 16);
+							
+							if (j < st.Game_Sprites[i].num_tags)
+							{
+								for (k = j + 1; k < st.Game_Sprites[i].num_tags; k++)
+								{
+									strcpy(st.Game_Sprites[i].tag_names[k - 1], st.Game_Sprites[i].tag_names[k]);
+									ZeroMemory(st.Game_Sprites[i].tag_names[k], 16);
+								}
+							}
+							
+							st.Game_Sprites[i].num_tags--;
+						}
+
+					}
+				}
+
+				nk_combo_end(ctx);
+			}
+
+			nk_layout_row_end(ctx);
 		}
-
-		nk_layout_row_push(ctx, 0.15);
-		st.Game_Sprites[i].size_m.x = nk_propertyd(ctx, "Mul X:", 0, st.Game_Sprites[i].size_m.x, 256, 1, 1);
-		st.Game_Sprites[i].size_m.y = nk_propertyd(ctx, "Mul Y:", 0, st.Game_Sprites[i].size_m.y, 256, 1, 1);
-		st.Game_Sprites[i].size_a.x = nk_propertyd(ctx, "Add X:", 0, st.Game_Sprites[i].size_a.x, 16384, 32, 4);
-		st.Game_Sprites[i].size_a.y = nk_propertyd(ctx, "Add Y:", 0, st.Game_Sprites[i].size_a.y, 16384, 32, 4);
-
-		nk_layout_row_end(ctx);
-
-		nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 4);
-		nk_layout_row_push(ctx, 0.04);
-		nk_label(ctx, "Flags:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
-
-
-		nk_layout_row_push(ctx, 0.10);
-		st.Game_Sprites[i].flags = nk_check_flags_label(ctx, "Resizable", st.Game_Sprites[i].flags, 1);
-		st.Game_Sprites[i].flags = nk_check_flags_label(ctx, "Hidden", st.Game_Sprites[i].flags, 2);
-		st.Game_Sprites[i].flags = nk_check_flags_label(ctx, "Original size", st.Game_Sprites[i].flags, 4);
-
-		nk_layout_row_end(ctx);
-
 	}
 
 	nk_end(ctx);
 
 	if (nk_begin(ctx, "AI states", nk_rect(st.screenx * 0.15, st.screeny * 0.4, st.screenx * 0.85, st.screeny * 0.6), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 	{
-		struct nk_command_buffer *canvas;
-		struct nk_rect total_space, group_pos;
-
-		canvas = nk_window_get_canvas(ctx);
-		total_space = nk_window_get_content_region(ctx);
-
-		nk_menubar_begin(ctx);
-		nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
-
-		nk_layout_row_push(ctx, 90);
-		if (nk_button_label(ctx, "New state"))
+		if (mspr.selected_spr != -1)
 		{
-			st.Game_Sprites[i].num_states++;
-			st.Game_Sprites[i].states[st.Game_Sprites[i].num_states - 1].used = 1;
-		}
-		
-		nk_layout_row_end(ctx);
+			struct nk_command_buffer *canvas;
+			struct nk_rect total_space, group_pos;
 
-		nk_menubar_end(ctx);
+			canvas = nk_window_get_canvas(ctx);
+			total_space = nk_window_get_content_region(ctx);
 
-		nk_layout_space_begin(ctx, NK_STATIC, total_space.h * (64 / 5), 64);
-		{
-			struct nk_rect size = nk_layout_space_bounds(ctx);
+			nk_menubar_begin(ctx);
+			nk_layout_row_begin(ctx, NK_STATIC, 30, 3);
 
-			for (j = 0; j < st.Game_Sprites[i].num_states; j++)
+			nk_layout_row_push(ctx, 90);
+			if (nk_button_label(ctx, "New state"))
 			{
-				nk_layout_space_push(ctx, nk_rect(20 + ((j % 5) * 350), (int) ((j / 5) * 300) + 20, 300, 250));
-				if (nk_group_begin(ctx, StringFormat("#%d - %s", j, st.Game_Sprites[i].states[j].name), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
+				st.Game_Sprites[i].num_states++;
+				st.Game_Sprites[i].states[st.Game_Sprites[i].num_states - 1].used = 1;
+			}
+
+			nk_layout_row_end(ctx);
+
+			nk_menubar_end(ctx);
+
+			nk_layout_space_begin(ctx, NK_STATIC, total_space.h * (64 / 5), 64);
+			{
+				struct nk_rect size = nk_layout_space_bounds(ctx);
+
+				for (j = 0; j < st.Game_Sprites[i].num_states; j++)
 				{
-					struct nk_rect gpos = nk_window_get_content_region(ctx);
-					gpos.y -= 40;
-					gpos.h += 50;
-
-					if (nk_input_mouse_clicked(&ctx->input, NK_BUTTON_LEFT, gpos))
-						mspr.state_selected = j;
-
-					nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
-					nk_layout_row_push(ctx, 0.8);
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].states[j].name, 32, nk_filter_ascii);
-
-					nk_layout_row_push(ctx, 0.1);
-					if (nk_button_icon_set(BIN_ICON))
+					nk_layout_space_push(ctx, nk_rect(20 + ((j % 5) * 350), (int)((j / 5) * 300) + 20, 300, 250));
+					if (nk_group_begin(ctx, StringFormat("#%d - %s", j, st.Game_Sprites[i].states[j].name), NK_WINDOW_BORDER | NK_WINDOW_TITLE))
 					{
-						st.Game_Sprites[i].states[j].used = 0;
-						for (k = j + 1; k < st.Game_Sprites[i].num_states; k++)
+						struct nk_rect gpos = nk_window_get_content_region(ctx);
+						gpos.y -= 40;
+						gpos.h += 50;
+
+						if (nk_input_mouse_clicked(&ctx->input, NK_BUTTON_LEFT, gpos) && state == 0)
 						{
-							if (st.Game_Sprites[i].states[k].used == 1)
-							{
-								strcpy(st.Game_Sprites[i].states[k - 1].name, st.Game_Sprites[i].states[k].name);
-								st.Game_Sprites[i].states[k - 1].main_anim = st.Game_Sprites[i].states[k].main_anim;
-								st.Game_Sprites[i].states[k - 1].in_transition = st.Game_Sprites[i].states[k].in_transition;
-								st.Game_Sprites[i].states[k - 1].out_transition = st.Game_Sprites[i].states[k].out_transition;
-								st.Game_Sprites[i].states[k - 1].in = st.Game_Sprites[i].states[k].in;
-								st.Game_Sprites[i].states[k - 1].out = st.Game_Sprites[i].states[k].out;
-								memcpy(st.Game_Sprites[i].states[k - 1].inputs, st.Game_Sprites[i].states[k].inputs, sizeof(int16)* 8);
-								memcpy(st.Game_Sprites[i].states[k - 1].outputs, st.Game_Sprites[i].states[k].outputs, sizeof(int16)* 8);
+							mspr.state_selected = j;
 
-								for (int l = 0; l < 8; l++)
-								{
-									if (st.Game_Sprites[i].states[k - 1].inputs[l] != -1)
-										st.Game_Sprites[i].states[k - 1].inputs[l] -= 1;
+							if (st.Game_Sprites[i].MGG_ID != -1 && mgg_game[st.Game_Sprites[i].MGG_ID].num_anims > 0)
+								mspr.anim_frame = mgg_game[st.Game_Sprites[i].MGG_ID].anim[st.Game_Sprites[i].states[j].main_anim].startID;
 
-									if (st.Game_Sprites[i].states[k - 1].outputs[l] != -1)
-										st.Game_Sprites[i].states[k - 1].outputs[l] -= 1;
-								}
-
-								st.Game_Sprites[i].states[k - 1].used = 1;
-								st.Game_Sprites[i].states[k].used = 0;
-
-								memset(&st.Game_Sprites[i].states[k], 0, sizeof(AISTATE));
-								memset(st.Game_Sprites[i].states[k].inputs, -1, sizeof(int16)* 8);
-								memset(st.Game_Sprites[i].states[k].outputs, -1, sizeof(int16)* 8);
-
-								st.Game_Sprites[i].states[k].inputs[0] = k;
-								st.Game_Sprites[i].states[k].outputs[0] = k;
-							}
+							if (st.Game_Sprites[i].MGG_ID != -1 && mgg_game[st.Game_Sprites[i].MGG_ID].num_anims == 0)
+								mspr.curframe = st.Game_Sprites[i].states[j].main_anim;
 						}
 
-						st.Game_Sprites[i].num_states--;
-					}
+						nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
+						nk_layout_row_push(ctx, 0.8);
+						nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].states[j].name, 32, nk_filter_ascii);
 
-					nk_layout_row_end(ctx);
-
-					nk_layout_row_dynamic(ctx, 25, 1);
-					st.Game_Sprites[i].states[j].loop = nk_check_label(ctx, "Loop state?", st.Game_Sprites[i].states[j].loop == 1) ? 1 : 0;
-
-					char combobox_str[1024];
-					memset(combobox_str, 0, 1024);
-					if (st.Game_Sprites[i].MGG_ID != -1)
-					{
-						uint16 bufseek = 0;
-						for (k = 0; k < mgg_game[st.Game_Sprites[i].MGG_ID].num_anims; k++)
+						nk_layout_row_push(ctx, 0.1);
+						if (nk_button_icon_set(BIN_ICON))
 						{
-							strcpy(combobox_str + bufseek, mgg_game[st.Game_Sprites[i].MGG_ID].anim[k].name);
-							bufseek += strlen(mgg_game[st.Game_Sprites[i].MGG_ID].anim[k].name) + 1;
-						}
-					}
-
-					if (mgg_game[st.Game_Sprites[i].MGG_ID].num_anims != 0)
-					{
-						st.Game_Sprites[i].states[j].main_anim = nk_combo_string(ctx, combobox_str, st.Game_Sprites[i].states[j].main_anim,
-							mgg_game[st.Game_Sprites[i].MGG_ID].num_anims, 15, nk_vec2(100, mgg_game[st.Game_Sprites[i].MGG_ID].num_anims * 30));
-
-						nk_layout_row_dynamic(ctx, 25, 2);
-
-						st.Game_Sprites[i].states[j].in = nk_check_label(ctx, "In transition", st.Game_Sprites[i].states[j].in == 1) ? 1 : 0;
-
-						st.Game_Sprites[i].states[j].in_transition = nk_combo_string(ctx, combobox_str, st.Game_Sprites[i].states[j].in_transition,
-							mgg_game[st.Game_Sprites[i].MGG_ID].num_anims, 15, nk_vec2(100, mgg_game[st.Game_Sprites[i].MGG_ID].num_anims * 30));
-
-						st.Game_Sprites[i].states[j].out = nk_check_label(ctx, "Out transition", st.Game_Sprites[i].states[j].out == 1) ? 1 : 0;
-
-						st.Game_Sprites[i].states[j].out_transition = nk_combo_string(ctx, combobox_str, st.Game_Sprites[i].states[j].out_transition,
-							mgg_game[st.Game_Sprites[i].MGG_ID].num_anims, 15, nk_vec2(100, mgg_game[st.Game_Sprites[i].MGG_ID].num_anims * 30));
-					}
-					else
-						nk_layout_row_dynamic(ctx, 25, 2);
-
-					for (k = 0; k < 65; k++)
-					{
-						if (k > 0 && st.Game_Sprites[i].states[j].outputs[k] == -1) continue;
-
-						if (k == 64)
-						{
-							if (nk_button_label(ctx, "Add output"))
+							st.Game_Sprites[i].states[j].used = 0;
+							for (k = j + 1; k < st.Game_Sprites[i].num_states; k++)
 							{
-								for (uint8 l = 1; l < 64; l++)
+								if (st.Game_Sprites[i].states[k].used == 1)
 								{
-									if (st.Game_Sprites[i].states[j].outputs[l] == -1)
+									strcpy(st.Game_Sprites[i].states[k - 1].name, st.Game_Sprites[i].states[k].name);
+									st.Game_Sprites[i].states[k - 1].main_anim = st.Game_Sprites[i].states[k].main_anim;
+									st.Game_Sprites[i].states[k - 1].in_transition = st.Game_Sprites[i].states[k].in_transition;
+									st.Game_Sprites[i].states[k - 1].out_transition = st.Game_Sprites[i].states[k].out_transition;
+									st.Game_Sprites[i].states[k - 1].in = st.Game_Sprites[i].states[k].in;
+									st.Game_Sprites[i].states[k - 1].out = st.Game_Sprites[i].states[k].out;
+									memcpy(st.Game_Sprites[i].states[k - 1].inputs, st.Game_Sprites[i].states[k].inputs, sizeof(int16)* 64);
+									memcpy(st.Game_Sprites[i].states[k - 1].outputs, st.Game_Sprites[i].states[k].outputs, sizeof(int16)* 64);
+
+									for (int l = 0; l < 64; l++)
 									{
-										st.Game_Sprites[i].states[j].outputs[l] = j;
-										break;
+										if (st.Game_Sprites[i].states[k - 1].inputs[l] != -1)
+											st.Game_Sprites[i].states[k - 1].inputs[l] -= 1;
+
+										if (st.Game_Sprites[i].states[k - 1].outputs[l] != -1)
+											st.Game_Sprites[i].states[k - 1].outputs[l] -= 1;
 									}
+
+									st.Game_Sprites[i].states[k - 1].used = 1;
+									st.Game_Sprites[i].states[k].used = 0;
+
+									memset(&st.Game_Sprites[i].states[k], 0, sizeof(AISTATE));
+									memset(st.Game_Sprites[i].states[k].inputs, -1, sizeof(int16)* 64);
+									memset(st.Game_Sprites[i].states[k].outputs, -1, sizeof(int16)* 64);
+
+									st.Game_Sprites[i].states[k].inputs[0] = k;
+									st.Game_Sprites[i].states[k].outputs[0] = k;
 								}
 							}
+
+							st.Game_Sprites[i].num_states--;
+						}
+
+						nk_layout_row_end(ctx);
+
+						nk_layout_row_dynamic(ctx, 25, 2);
+						st.Game_Sprites[i].states[j].loop = nk_check_label(ctx, "Loop state?", st.Game_Sprites[i].states[j].loop == 1) ? 1 : 0;
+
+						if (mgg_game[st.Game_Sprites[i].MGG_ID].num_anims != 0)
+						{
+							temp = st.Game_Sprites[i].states[j].animation;
+							st.Game_Sprites[i].states[j].animation = nk_check_label(ctx, "Animation?", st.Game_Sprites[i].states[j].animation == 1) ? 1 : 0;
+
+							if (temp != st.Game_Sprites[i].states[j].animation)
+								st.Game_Sprites[i].states[j].main_anim = st.Game_Sprites[i].states[j].animation;
+						}
+						else
 							nk_spacing(ctx, 1);
+
+						char combobox_str[1024];
+						memset(combobox_str, 0, 1024);
+						if (st.Game_Sprites[i].MGG_ID != -1)
+						{
+							uint16 bufseek = 0;
+							for (k = 0; k < mgg_game[st.Game_Sprites[i].MGG_ID].num_anims; k++)
+							{
+								strcpy(combobox_str + bufseek, mgg_game[st.Game_Sprites[i].MGG_ID].anim[k].name);
+								bufseek += strlen(mgg_game[st.Game_Sprites[i].MGG_ID].anim[k].name) + 1;
+							}
+						}
+
+						if (mgg_game[st.Game_Sprites[i].MGG_ID].num_anims != 0)
+						{
+							nk_layout_row_dynamic(ctx, 25, 1);
+
+							if (st.Game_Sprites[i].states[j].animation == 1)
+								st.Game_Sprites[i].states[j].main_anim = nk_combo_string(ctx, combobox_str, st.Game_Sprites[i].states[j].main_anim,
+									mgg_game[st.Game_Sprites[i].MGG_ID].num_anims, 15, nk_vec2(100, mgg_game[st.Game_Sprites[i].MGG_ID].num_anims * 30));
+							else
+							{
+								if (nk_button_label(ctx, StringFormat("Frame : %d", st.Game_Sprites[i].states[j].main_anim)))
+								{
+									mspr.state_selected = j;
+									state = 4;
+								}
+							}
+
+							if (st.Game_Sprites[i].states[j].in == 1)
+							{
+								nk_layout_row_dynamic(ctx, 25, 2);
+								st.Game_Sprites[i].states[j].in = nk_check_label(ctx, "In transition", st.Game_Sprites[i].states[j].in == 1) ? 1 : 0;
+
+								st.Game_Sprites[i].states[j].in_transition = nk_combo_string(ctx, combobox_str, st.Game_Sprites[i].states[j].in_transition,
+									mgg_game[st.Game_Sprites[i].MGG_ID].num_anims, 15, nk_vec2(100, mgg_game[st.Game_Sprites[i].MGG_ID].num_anims * 30));
+							}
+							else
+							{
+								nk_layout_row_dynamic(ctx, 25, 1);
+								st.Game_Sprites[i].states[j].in = nk_check_label(ctx, "In transition", st.Game_Sprites[i].states[j].in == 1) ? 1 : 0;
+							}
+
+							if (st.Game_Sprites[i].states[j].out == 1)
+							{
+								nk_layout_row_dynamic(ctx, 25, 2);
+								st.Game_Sprites[i].states[j].out = nk_check_label(ctx, "Out transition", st.Game_Sprites[i].states[j].out == 1) ? 1 : 0;
+
+								st.Game_Sprites[i].states[j].out_transition = nk_combo_string(ctx, combobox_str, st.Game_Sprites[i].states[j].out_transition,
+									mgg_game[st.Game_Sprites[i].MGG_ID].num_anims, 15, nk_vec2(100, mgg_game[st.Game_Sprites[i].MGG_ID].num_anims * 30));
+							}
+							else
+							{
+								nk_layout_row_dynamic(ctx, 25, 1);
+								st.Game_Sprites[i].states[j].out = nk_check_label(ctx, "Out transition", st.Game_Sprites[i].states[j].out == 1) ? 1 : 0;
+							}
+
+							nk_layout_row_dynamic(ctx, 25, 2);
 						}
 						else
 						{
-							st.Game_Sprites[i].states[j].outputs[k] = nk_propertyd(ctx, StringFormat("Output #%d:", k), -1, st.Game_Sprites[i].states[j].outputs[k],
-								st.Game_Sprites[i].num_states - 1, 1, 1);
-
-							if (st.Game_Sprites[i].states[j].outputs[k] > -1)
+							nk_layout_row_dynamic(ctx, 25, 1);
+							if (nk_button_label(ctx, StringFormat("Frame : %d", st.Game_Sprites[i].states[j].main_anim)))
 							{
-								char output_str[2048 + 64];
-								memset(output_str, 0, 2048 + 64);
-								for (uint16 l = 0, bufseek = 0; l < st.Game_Sprites[i].num_states; l++)
+								mspr.state_selected = j;
+								state = 4;
+							}
+
+							nk_layout_row_dynamic(ctx, 25, 2);
+						}
+
+						for (k = 0; k < 65; k++)
+						{
+							if (k > 0 && st.Game_Sprites[i].states[j].outputs[k] == -1) continue;
+
+							if (k == 64)
+							{
+								if (nk_button_label(ctx, "Add output"))
 								{
-									strcpy(output_str + bufseek, st.Game_Sprites[i].states[l].name);
-
-									bufseek += strlen(st.Game_Sprites[i].states[l].name) + 1;
+									for (uint8 l = 1; l < 64; l++)
+									{
+										if (st.Game_Sprites[i].states[j].outputs[l] == -1)
+										{
+											st.Game_Sprites[i].states[j].outputs[l] = j;
+											break;
+										}
+									}
 								}
+								nk_spacing(ctx, 1);
+							}
+							else
+							{
+								st.Game_Sprites[i].states[j].outputs[k] = nk_propertyd(ctx, StringFormat("#Output #%d:", k), -1, st.Game_Sprites[i].states[j].outputs[k],
+									st.Game_Sprites[i].num_states - 1, 1, 1);
 
-								st.Game_Sprites[i].states[j].outputs[k] = nk_combo_string(ctx, output_str, st.Game_Sprites[i].states[j].outputs[k],
-									st.Game_Sprites[i].num_states, 15, nk_vec2(200, st.Game_Sprites[i].num_states * 30));
+								if (st.Game_Sprites[i].states[j].outputs[k] > -1)
+								{
+									char output_str[2048 + 64];
+									memset(output_str, 0, 2048 + 64);
+									for (uint16 l = 0, bufseek = 0; l < st.Game_Sprites[i].num_states; l++)
+									{
+										strcpy(output_str + bufseek, st.Game_Sprites[i].states[l].name);
+
+										bufseek += strlen(st.Game_Sprites[i].states[l].name) + 1;
+									}
+
+									st.Game_Sprites[i].states[j].outputs[k] = nk_combo_string(ctx, output_str, st.Game_Sprites[i].states[j].outputs[k],
+										st.Game_Sprites[i].num_states, 15, nk_vec2(200, st.Game_Sprites[i].num_states * 30));
+								}
 							}
 						}
+
+						nk_group_end(ctx);
 					}
 
-					nk_group_end(ctx);
-				}
+					//uint8 l = 0;
 
-				//uint8 l = 0;
+					struct nk_color col;
 
-				struct nk_color col;
+					if (mspr.state_selected == j)
+						col = nk_rgb(255, 128, 32);
+					else
+						col = nk_rgb(100, 100, 100);
 
-				if (mspr.state_selected == j)
-					col = nk_rgb(255, 128, 32);
-				else
-					col = nk_rgb(100, 100, 100);
-
-				for (k = 0; k < 8; k++)
-				{
-					if (st.Game_Sprites[i].states[j].outputs[k] != -1 && st.Game_Sprites[i].states[j].outputs[k] != j)
+					for (k = 0; k < 64; k++)
 					{
-						//l++;
-						struct nk_vec2 s1, s2;
-
-						s2.x = 20 + (350 * (st.Game_Sprites[i].states[j].outputs[k] % 5)) + 150;
-
-						if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
+						if (st.Game_Sprites[i].states[j].outputs[k] != -1 && st.Game_Sprites[i].states[j].outputs[k] != j)
 						{
-							s1.x = 20 + ((j % 5) * 350);
-							s1.y = 20 + ((j / 5) * 300) + 4 + 250;
-							s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4 + 250;
+							//l++;
+							struct nk_vec2 s1, s2;
+
+							s2.x = 20 + (350 * (st.Game_Sprites[i].states[j].outputs[k] % 5)) + 150;
+
+							if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
+							{
+								s1.x = 20 + ((j % 5) * 350);
+								s1.y = 20 + ((j / 5) * 300) + 4 + 250;
+								s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4 + 250;
+							}
+
+							if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
+							{
+								s1.x = 20 + ((j % 5) * 350) + 300;
+								s1.y = 20 + ((j / 5) * 300) + 4;
+								s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4;
+							}
+
+							if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) < (j / 5))
+							{
+								s1.x = 20 + ((j % 5) * 350) + 300;
+								s1.y = 20 + ((j / 5) * 300) + 4;
+								s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4 + 250;
+							}
+
+							if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) > (j / 5))
+							{
+								s1.x = 20 + ((j % 5) * 350);
+								s1.y = 20 + ((j / 5) * 300) + 4 + 250;
+								s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4;
+							}
+
+							struct nk_rect b = nk_layout_space_rect_to_screen(ctx, nk_rect(s1.x, s1.y, 0, 0));
+							struct nk_rect c = nk_layout_space_rect_to_screen(ctx, nk_rect(s2.x, s2.y, 0, 0));
+
+							if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
+								nk_stroke_curve(canvas, b.x, b.y, b.x, b.y + 25, c.x, c.y + 25, c.x, c.y, 1.0f, col);
+
+							if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
+								nk_stroke_curve(canvas, b.x, b.y, b.x, b.y - 25, c.x, c.y - 25, c.x, c.y, 1.0f, col);
+
+							if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) < (j / 5))
+								nk_stroke_curve(canvas, b.x, b.y, b.x, b.y - 25, c.x, c.y + 25, c.x, c.y, 1.0f, col);
+
+							if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) > (j / 5))
+								nk_stroke_curve(canvas, b.x, b.y, b.x, b.y + 25, c.x, c.y - 25, c.x, c.y, 1.0f, col);
 						}
-						
-						if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
-						{
-							s1.x = 20 + ((j % 5) * 350) + 300;
-							s1.y = 20 + ((j / 5) * 300) + 4;
-							s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4;
-						}
-
-						if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) < (j / 5))
-						{
-							s1.x = 20 + ((j % 5) * 350) + 300;
-							s1.y = 20 + ((j / 5) * 300) + 4;
-							s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4 + 250;
-						}
-
-						if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) > (j / 5))
-						{
-							s1.x = 20 + ((j % 5) * 350);
-							s1.y = 20 + ((j / 5) * 300) + 4 + 250;
-							s2.y = 20 + ((int)(st.Game_Sprites[i].states[j].outputs[k] / 5) * 300) + 4;
-						}
-
-						struct nk_rect b = nk_layout_space_rect_to_screen(ctx, nk_rect(s1.x, s1.y, 0, 0 ));
-						struct nk_rect c = nk_layout_space_rect_to_screen(ctx, nk_rect(s2.x, s2.y, 0, 0));
-
-						if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
-							nk_stroke_curve(canvas, b.x, b.y, b.x, b.y + 25, c.x, c.y + 25, c.x, c.y, 1.0f, col);
-						
-						if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) == (j / 5))
-							nk_stroke_curve(canvas, b.x, b.y, b.x, b.y - 25 , c.x, c.y - 25, c.x, c.y , 1.0f, col);
-
-						if (st.Game_Sprites[i].states[j].outputs[k] < j && (st.Game_Sprites[i].states[j].outputs[k] / 5) < (j / 5))
-							nk_stroke_curve(canvas, b.x, b.y, b.x, b.y - 25, c.x, c.y + 25, c.x, c.y, 1.0f, col);
-
-						if (st.Game_Sprites[i].states[j].outputs[k] > j && (st.Game_Sprites[i].states[j].outputs[k] / 5) > (j / 5))
-							nk_stroke_curve(canvas, b.x, b.y, b.x, b.y + 25, c.x, c.y - 25, c.x, c.y, 1.0f, col);
 					}
+
+					struct nk_vec2 s1, s2;
+
+					s1.x = 20 + ((j % 5) * 350) + 300 - 4;
+					s1.y = 20 + ((int)(j / 5) * 300) - 4;
+
+					s2.x = 20 + ((int)(j % 5) * 350) + 150 - 4;
+					s2.y = 20 + +((int)(j / 5) * 300) + 250 - 4;
+
+					struct nk_rect b = nk_layout_space_rect_to_screen(ctx, nk_rect(s1.x, s1.y, 0, 0));
+					struct nk_rect c = nk_layout_space_rect_to_screen(ctx, nk_rect(s2.x, s2.y, 0, 0));
+					struct nk_rect d = nk_layout_space_rect_to_screen(ctx, nk_rect(20 + ((j % 5) * 350) - 4, 0, 0, 0));
+
+					nk_fill_circle(canvas, nk_rect(b.x, b.y, 8, 8), col);
+					nk_fill_circle(canvas, nk_rect(c.x, c.y, 8, 8), col);
+
+					nk_fill_circle(canvas, nk_rect(c.x, b.y, 8, 8), col);
+					nk_fill_circle(canvas, nk_rect(d.x, c.y, 8, 8), col);
 				}
-
-				struct nk_vec2 s1, s2;
-
-				s1.x = 20 + ((j % 5) * 350) + 300 - 4;
-				s1.y = 20 + ((int) (j / 5) * 300) - 4;
-
-				s2.x = 20 + ((int)(j % 5) * 350) + 150 - 4;
-				s2.y = 20 + +((int)(j / 5) * 300) + 250 - 4;
-
-				struct nk_rect b = nk_layout_space_rect_to_screen(ctx, nk_rect(s1.x, s1.y, 0, 0));
-				struct nk_rect c = nk_layout_space_rect_to_screen(ctx, nk_rect(s2.x, s2.y, 0, 0));
-				struct nk_rect d = nk_layout_space_rect_to_screen(ctx, nk_rect(20 + ((j % 5) * 350) - 4, 0, 0, 0));
-
-				nk_fill_circle(canvas, nk_rect(b.x, b.y, 8, 8), col);
-				nk_fill_circle(canvas, nk_rect(c.x, c.y, 8, 8), col);
-
-				nk_fill_circle(canvas, nk_rect(c.x, b.y, 8, 8), col);
-				nk_fill_circle(canvas, nk_rect(d.x, c.y, 8, 8), col);
 			}
+			nk_layout_space_end(ctx);
 		}
-		nk_layout_space_end(ctx);
 	}
 
 	nk_end(ctx);
@@ -1561,7 +1943,12 @@ void Pannel()
 		if (mgg.type == MGG_USED)
 		{
 			if (mspr.state_selected != -1)
-				mspr.curframe = mspr.anim_frame;
+			{
+				if (st.Game_Sprites[i].states[mspr.state_selected].animation == 1)
+					mspr.curframe = mspr.anim_frame;
+				else
+					mspr.curframe = st.Game_Sprites[i].states[mspr.state_selected].main_anim;
+			}
 
 			x = mgg.frames[mspr.curframe].x_offset;
 			y = mgg.frames[mspr.curframe].y_offset;
@@ -1577,8 +1964,10 @@ void Pannel()
 			if (st.Game_Sprites[i].flags & 4)
 			{
 				float ax, ay;
-				ax = ((float)mgg.frames[mspr.curframe].sizex / 32768.0f) * mgg.frames[mspr.curframe].w;
-				ay = ((float)mgg.frames[mspr.curframe].sizey / 32768.0f) * mgg.frames[mspr.curframe].h;
+				ax = ((float)(mgg.frames[mspr.curframe].sizex * (st.Game_Sprites[i].size_m.x == 0 ? 1 : st.Game_Sprites[i].size_m.x)
+					+ st.Game_Sprites[i].size_a.x) / 32768.0f) * mgg.frames[mspr.curframe].w;
+				ay = ((float)(mgg.frames[mspr.curframe].sizey * (st.Game_Sprites[i].size_m.y == 0 ? 1 : st.Game_Sprites[i].size_m.y)
+					+ st.Game_Sprites[i].size_a.y) / 32768.0f) * mgg.frames[mspr.curframe].h;
 
 				STWf(&ax, &ay);
 
@@ -1587,8 +1976,10 @@ void Pannel()
 			}
 			else
 			{
-				x3 = (st.Game_Sprites[i].body.size.x * zoom * 0.06f) / vec4.w;
-				y3 = (st.Game_Sprites[i].body.size.y * zoom * 0.06f) / vec4.h;
+				x3 = ((st.Game_Sprites[i].body.size.x * (st.Game_Sprites[i].size_m.x == 0 ? 1 : st.Game_Sprites[i].size_m.x)
+					+ st.Game_Sprites[i].size_a.x) * zoom * 0.06f) / vec4.w;
+				y3 = ((st.Game_Sprites[i].body.size.y * (st.Game_Sprites[i].size_m.y == 0 ? 1 : st.Game_Sprites[i].size_m.y)
+					+ st.Game_Sprites[i].size_a.y) * zoom * 0.06f) / vec4.h;
 			}
 
 			x4 = (x * zoom * 0.06f) / vec4.w;
@@ -1632,7 +2023,7 @@ void Pannel()
 			if (zoom < 0.05f)
 				zoom = 0.05f;
 
-			if (mspr.state_selected != -1 && mgg.num_anims > 0)
+			if (mspr.state_selected != -1 && mgg.num_anims > 0 && st.Game_Sprites[i].states[mspr.state_selected].animation == 1)
 			{
 				nk_layout_row_begin(ctx, NK_DYNAMIC, 30, 5);
 				nk_style_set_font(ctx, &fonts[1]->handle);
@@ -1720,7 +2111,13 @@ void Pannel()
 
 	if (state == 1)
 	{
-		if (FrameListSelection() == 1)
+		if (FrameListSelection(NULL) == 1)
+			state = 0;
+	}
+
+	if (state == 4)
+	{
+		if (FrameListSelection(1) == 1)
 			state = 0;
 	}
 }
@@ -1746,7 +2143,7 @@ int main(int argc, char *argv[])
 
 	//DisplaySplashScreen();
 
-	strcpy(st.WindowTitle, "mSprite");
+	strcpy(st.WindowTitle, "Sprite");
 
 	//OpenFont("font/Roboto-Regular.ttf","arial",0,128);
 	//OpenFont("font/Roboto-Bold.ttf","arial bold",1,128);
@@ -1769,7 +2166,7 @@ int main(int argc, char *argv[])
 
 	curr_tic=GetTicks();
 
-	ctx = nk_sdl_init(wn);
+	ctx = nk_sdl_init(wn, MAX_NK_BUFFER, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER);
 	
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
@@ -1791,6 +2188,22 @@ int main(int argc, char *argv[])
 	//InitEngineWindow();
 
 	mspr.anim_frame = mspr.selected_spr = mspr.state_selected = mspr.curframe = -1;
+
+	memset(st.Game_Sprites, 0, MAX_SPRITES*sizeof(_SPRITES));
+
+	for (int i = 0; i < MAX_SPRITES; i++)
+	{
+		for (int j = 0; j < 64; j++)
+		{
+			memset(st.Game_Sprites[i].states[j].inputs, -1, sizeof(int16)* 64);
+			memset(st.Game_Sprites[i].states[j].outputs, -1, sizeof(int16)* 64);
+
+			st.Game_Sprites[i].states[j].inputs[0] = j;
+			st.Game_Sprites[i].states[j].outputs[0] = j;
+		}
+	}
+
+	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
 	while(!st.quit)
 	{
@@ -1815,7 +2228,7 @@ int main(int argc, char *argv[])
 			//nk_clear(ctx);
 			Finish();
 
-			if (mspr.play == 1 && mspr.state_selected != -1)
+			if (mspr.play == 1 && mspr.state_selected != -1 && st.Game_Sprites[mspr.selected_spr].states[mspr.state_selected].animation == 1)
 			{
 				_MGGANIM *mga = &mgg_game[st.Game_Sprites[mspr.selected_spr].MGG_ID].anim[st.Game_Sprites[mspr.selected_spr].states[mspr.state_selected].main_anim];
 				if (mga->speed > 0)
@@ -1850,27 +2263,28 @@ int main(int argc, char *argv[])
 			SetTimerM(1);
 		}
 
-		DrawSys();
-		
+		//DrawSys();
 
-		//if (mspr.prj.loaded == 1)
 		Pannel();
 
 
 		MenuBar();
 
-		UIMain_DrawSystem();
+		//UIMain_DrawSystem();
 		//MainSound();
 		Renderer(0);
 
 		float bg[4];
 		nk_color_fv(bg, background);
 
-		nk_sdl_render(NK_ANTI_ALIASING_OFF, 512 * 1024, 128 * 1024);
+		nk_sdl_render(NK_ANTI_ALIASING_OFF, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER, MAX_NK_COMMAND_BUFFER);
 
 		SwapBuffer(wn);
 
 		nkrendered = 0;
+
+		if (mspr.changes_detected == 0)
+			CheckForChanges();
 	}
 
 	Quit();
