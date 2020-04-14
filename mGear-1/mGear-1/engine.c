@@ -154,7 +154,7 @@ void StartTimer()
 }
 */
 
-void _ProcessError(const char *funcname, int8 silent)
+void _ProcessError(const char *funcname, int line, int8 silent)
 {
 	DWORD err = GetLastError();
 	int errn = errno;
@@ -172,7 +172,7 @@ void _ProcessError(const char *funcname, int8 silent)
 			LogApp("Error code %d - %s", err, errormsg);
 
 		if (funcname)
-			LogApp("Error at: %s with code %d - %s", funcname, err, errormsg);
+			LogApp("Error at: %s - %d - with code %d - %s", funcname, line, err, errormsg);
 	}
 
 	if (errn != NULL)
@@ -183,7 +183,7 @@ void _ProcessError(const char *funcname, int8 silent)
 			LogApp("Standard error code %d - %s", err, strerror(errn));
 
 		if (funcname)
-			LogApp("Error at: %s with code %d - %s", funcname, errn, strerror(errn));
+			LogApp("Error at: %s - %d - with code %d - %s", funcname, line, errn, strerror(errn));
 	}
 }
 
@@ -233,6 +233,8 @@ void SignalError(int signum)
 		LogApp("%i: %s - 0x%0X\n", i, sym.Name, sym.Address);
 		i++;
 	}
+	
+	SymCleanup(&sym);
 
 	//free(sym);
 
@@ -9434,15 +9436,16 @@ int32 LoadSpriteCFG(char *filename, int id)
 		}
 	}
 
-	if((file=fopen(filename,"r"))==NULL)
+	if((file = fopen(filename,"r")) == NULL)
 	{
-		LogApp("error reading sprite cfg file: %s",filename);
+		GetError;
+		LogApp("Error reading sprite cfg file: %s",filename);
 		return 0;
 	}
-
+	/*
 	memset(&st.Game_Sprites[id], 0, sizeof(_SPRITES));
 	st.Game_Sprites[id].MGG_ID = -1;
-
+	
 	for (int j = 0; j < 64; j++)
 	{
 		memset(st.Game_Sprites[id].states[j].inputs, -1, sizeof(int16) * 64);
@@ -9451,7 +9454,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 		st.Game_Sprites[id].states[j].inputs[0] = j;
 		st.Game_Sprites[id].states[j].outputs[0] = j;
 	}
-
+	*/
 	while(!feof(file))
 	{
 		memset(str,0,16);
@@ -9471,6 +9474,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 		
 		if (strcmp(str, "SHADOW") == NULL)
 		{
+			st.Game_Sprites[id].shadow = 1;
 			shadow = 1;
 			continue;
 		}
@@ -9606,10 +9610,10 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			if(skip==3)
 			{
-				st.Game_Sprites[id].frame=(int32*) malloc(num_frames*sizeof(int32));
+				st.Game_Sprites[id].frame = malloc(num_frames*sizeof(int32));
 				tok=strtok(buf," ");
 
-				for(i=0;i<num_frames;i++)
+				for(i = 0; i < num_frames; i++)
 				{
 					tok=strtok(NULL," ");
 
@@ -9617,6 +9621,10 @@ int32 LoadSpriteCFG(char *filename, int id)
 
 					st.Game_Sprites[id].frame[i]=atoi(tok);
 				}
+
+				st.Game_Sprites[id].num_start_frames = i;
+
+				st.Game_Sprites[id].frame = realloc(st.Game_Sprites[id].frame, st.Game_Sprites[id].num_start_frames * sizeof(int32));
 
 				skip=4;
 
@@ -9762,6 +9770,9 @@ int32 LoadSpriteCFG(char *filename, int id)
 			if(strcmp(str2,"GAME_LOGICAL")==NULL)
 				st.Game_Sprites[id].type=GAME_LOGICAL;
 			else
+			if (strcmp(str2, "LOGICAL") == NULL)
+				st.Game_Sprites[id].type = GAME_LOGICAL;
+			else
 			if(strcmp(str2,"ENEMY")==NULL)
 				st.Game_Sprites[id].type=ENEMY;
 			else
@@ -9788,8 +9799,8 @@ int32 LoadSpriteCFG(char *filename, int id)
 			ZeroMemory(c4, 32);
 			ZeroMemory(c5, 32);
 
-			if (sscanf(buf, "STATE %d - \"%s\" %s %s %d %s %d %s %d", &a, c1, c2, c3, &b, c4, &c, c5, &d) < 9)
-			{
+			sscanf(buf, "STATE %d - %s %s %s %d %s %d %s %d", &a, c1, c2, c3, &b, c4, &c, c5, &d);
+			//{
 				if (a < 0 || a > 64)
 				{
 					LogApp("Error: STATE declaration with invalid state ID - %d", a);
@@ -9873,35 +9884,46 @@ int32 LoadSpriteCFG(char *filename, int id)
 						st.Game_Sprites[id].states[a].out = 0;
 
 					st.Game_Sprites[id].states[a].out_transition = d;
+
+					st.Game_Sprites[id].num_states++;
+
+					st.Game_Sprites[id].states[a].used = 1;
 				}
-			}
+			//}
 		}
 		else
 		if (strcmp(str, "STATE_OUTPUTS") == NULL)
 		{
-			char args[2000];
-			uint8 a = -1;
+			//char args[2000];
+			int a = -1;
 
-			ZeroMemory(args, 2000);
+			//ZeroMemory(args, 2000);
 
-			sscanf(buf, "STATE_OUTPUTS %d - %s", &a, args);
+			sscanf(buf, "STATE_OUTPUTS %d", &a);
 
 			if (a == -1 || a > 64)
 			{
 				LogApp("Error: invalid state ID in STATE_OUTPUTS");
 				error++;
 			}
-
+			/*
 			if (args[0] == 0)
 			{
 				LogApp("Error: invalid output in STATE_OUTPUTS");
 				error++;
 			}
-
+			*/
 			if (error == 0)
 			{
 				int b = -1;
-				tok = strtok(args, " ");
+
+				for (i = 0; i < strlen(buf); i++)
+				{
+					if (buf[i] == '-')
+						break;
+				}
+
+				tok = strtok(buf + i + 1, " ");
 
 				if (tok != NULL)
 					b = atoi(tok);
@@ -9915,17 +9937,17 @@ int32 LoadSpriteCFG(char *filename, int id)
 					continue;
 				}
 
-				tok = strtok(args, " ");
+				tok = strtok(NULL, " ");
 
 				if (tok != NULL)
-					st.Game_Sprites[i].states[a].outputs[b] = atoi(tok);
+					st.Game_Sprites[id].states[a].outputs[b] = atoi(tok);
 				else
 				{
 					LogApp("Warning: no output detected at OUTPUT: %d at STATE_OUTPUT %d", b, a);
 					continue;
 				}
 
-				if (st.Game_Sprites[i].states[a].outputs[b] == -1 || st.Game_Sprites[i].states[a].outputs[b] > 64)
+				if (st.Game_Sprites[id].states[a].outputs[b] == -1 || st.Game_Sprites[id].states[a].outputs[b] > 64)
 				{
 					LogApp("Error: invalid output at OUTPUT: %d at STATE_OUTPUTS %d", b, a);
 					error++;
@@ -9938,6 +9960,9 @@ int32 LoadSpriteCFG(char *filename, int id)
 				{
 					while ((tok = strtok(NULL, " ")) != NULL)
 					{
+						if (tok[0] == '\n')
+							break;
+
 						b = atoi(tok);
 
 						if (b == -1 || b > 64)
@@ -9947,17 +9972,17 @@ int32 LoadSpriteCFG(char *filename, int id)
 							break;
 						}
 
-						tok = strtok(args, " ");
+						tok = strtok(NULL, " ");
 
 						if (tok != NULL)
-							st.Game_Sprites[i].states[a].outputs[b] = atoi(tok);
+							st.Game_Sprites[id].states[a].outputs[b] = atoi(tok);
 						else
-						{
-							LogApp("Warning: no output detected at OUTPUT: %d at STATE_OUTPUT %d", b, a);
+						//{
+							//LogApp("Warning: no output detected at OUTPUT: %d at STATE_OUTPUT %d", b, a);
 							break;
-						}
+						//}
 
-						if (st.Game_Sprites[i].states[a].outputs[b] == -1 || st.Game_Sprites[i].states[a].outputs[b] > 64)
+						if (st.Game_Sprites[id].states[a].outputs[b] == -1 || st.Game_Sprites[id].states[a].outputs[b] > 64)
 						{
 							LogApp("Error: invalid output at OUTPUT: %d at STATE_OUTPUTS %d", b, a);
 							error++;
@@ -10074,23 +10099,27 @@ int32 LoadSpriteList(char *filename)
 {
 	FILE *file;
 	int value, value2, value3;
-	int16 i, j, k, l;
+	int16 i, j, k, l, line = -1, id = -1, major_error = 0;
 	int lenght;
-	char buf[1024], str[32], str2[32], str3[64], str4[8][16], *tok;
+	char buf[2048], str[32], str2[32], str3[64], str4[8][16], *tok;
 
 	if((file=fopen(filename,"r"))==NULL)
 	{
-		LogApp("error reading sprite list file: %s",filename);
+		LogApp("Error reading sprite list file: %s",filename);
 		return 0;
 	}
 
 	while(!feof(file))
 	{
+		line++;
+
+		value = 0;
+		id = -1;
 		memset(str,0,16);
-		memset(buf,0,1024);
-		memset(str2,0,32);
-		memset(str3,0,64);
-		memset(str4,0,8*16);
+		memset(buf,0,2048);
+		//memset(str2,0,32);
+		//memset(str3,0,64);
+		//memset(str4,0,8*16);
 
 		fgets(buf,1024,file);
 
@@ -10100,41 +10129,129 @@ int32 LoadSpriteList(char *filename)
 		if(buf[0]=='/' && buf[1]=='/')
 			continue;
 
-		sscanf(buf,"%s %s %d %s %d %s %s %s %s %s %s %s %s",str, str2, &value, str3, &value2, str4[0], str4[1], str4[2], str4[3], str4[4], str4[5], str4[6], str4[7]);
+		//sscanf(buf,"%s %s %d %s %d %s %s %s %s %s %s %s %s",str, str2, &value, str3, &value2, str4[0], str4[1], str4[2], str4[3], str4[4], str4[5], str4[6], str4[7]);
 
-		if(strcmp(str,"\0")==NULL)
+		tok = strtok(buf, ", \"");
+
+		//if(strcmp(tok,"\0")==NULL)
+		if (tok == NULL)
 			continue;
 
-		if(strcmp(str,"SPRITE")==NULL)
+		if(strcmp(tok,"SPRITE")==NULL)
 		{
-			strcpy(st.Game_Sprites[value].name,str2);
-
-			if(strcmp(str3,"NONE")!=NULL)
+			if ((tok = strtok(NULL, ", \"")) == NULL)
 			{
-				if(!LoadSpriteCFG(str3,value))
-				{
-					LogApp("failed loading sprite cfg: %s",str3);
+				LogApp("Error: missing SPRITE name at line: %d", line);
+				continue;
+			}
 
-					//st.num_sprites++;
+			strcpy(str, tok);
+
+			if ((tok = strtok(NULL, ", \"")) == NULL)
+			{
+				LogApp("Error: missing SPRITE ID number at line: %d", line);
+				continue;
+			}
+
+			id = atoi(tok);
+
+			if (id == -1 || id > MAX_SPRITES)
+			{
+				LogApp("Error: invalid SPRITE ID number at line: %d", line);
+				continue;
+			}
+
+			strcpy(st.Game_Sprites[id].name, str);
+
+			if ((tok = strtok(NULL, "\"")) == NULL)
+			{
+				LogApp("Error: missing SPRITE CFG file at line: %d", line);
+				continue;
+			}
+
+			strcpy(str, tok);
+
+			if ((tok = strtok(NULL, ", \"")) == NULL)
+			{
+				LogApp("Warning: missing SPRITE tag number at line: %d", line);
+				continue;
+			}
+
+			value = atoi(tok);
+
+			if(value > 0 && value < 8)
+			{
+				st.Game_Sprites[id].num_tags = value;
+
+				for (i = 0; i < value; i++)
+				{
+					if ((tok = strtok(NULL, ", \"")) == NULL)
+					{
+						LogApp("Error: missing SPRITE %s tag: %d", st.Game_Sprites[id].name, i);
+						break;
+					}
+
+					strcpy(st.Game_Sprites[id].tag_names[i], tok);
+				}
+
+				if (i < value)
+				{
+					LogApp("Error detected while loading sprite's tags, unloading sprite %d - %s", id, st.Game_Sprites[id].name);
+
+					memset(&st.Game_Sprites[id], 0, sizeof(_SPRITES));
+					st.Game_Sprites[id].MGG_ID = -1;
+
+					for (j = 0; j < 64; j++)
+					{
+						memset(st.Game_Sprites[id].states[j].inputs, -1, sizeof(int16)* 64);
+						memset(st.Game_Sprites[id].states[j].outputs, -1, sizeof(int16)* 64);
+
+						st.Game_Sprites[id].states[j].inputs[0] = j;
+						st.Game_Sprites[id].states[j].outputs[0] = j;
+					}
 
 					continue;
 				}
 			}
 
-			if(value2>0)
-			{
-				st.Game_Sprites[value].num_tags=value2;
+			if (value > 8)
+				LogApp("Warning: SPRITE %s tag number is out of bounds", st.Game_Sprites[id].name);
 
-				for(i=0;i<value2;i++)
-					strcpy(st.Game_Sprites[value].tag_names[i], str4[i]);
+			if (strcmp(str, "NONE") != NULL)
+			{
+				if (!LoadSpriteCFG(str, id))
+				{
+					LogApp("Error: failed loading sprite cfg: %s", str);
+					major_error++;
+
+					if (st.Developer_Mode == 1)
+					{
+						memset(&st.Game_Sprites[id], 0, sizeof(_SPRITES));
+						st.Game_Sprites[id].MGG_ID = -1;
+
+						for (j = 0; j < 64; j++)
+						{
+							memset(st.Game_Sprites[id].states[j].inputs, -1, sizeof(int16)* 64);
+							memset(st.Game_Sprites[id].states[j].outputs, -1, sizeof(int16)* 64);
+
+							st.Game_Sprites[id].states[j].inputs[0] = j;
+							st.Game_Sprites[id].states[j].outputs[0] = j;
+						}
+
+						st.num_sprites++;
+					}
+
+					continue;
+				}
 			}
+
 
 			continue;
 		}
 		else
-		if(strcmp(str,"SPRITE_S_TAG")==NULL)
+		if(strcmp(tok,"SPRITE_S_TAG")==NULL)
 		{
-			tok=strtok(buf,", \"");
+			//tok=strtok(buf,", \"");
 			tok=strtok(NULL,", \"");
 
 			j=atoi(tok);
@@ -10164,9 +10281,9 @@ int32 LoadSpriteList(char *filename)
 			}
 		}
 		else
-		if(strcmp(str,"SPRITE_TAG_LIST")==NULL)
+		if(strcmp(tok,"SPRITE_TAG_LIST")==NULL)
 		{
-			tok=strtok(buf," ");
+			//tok=strtok(buf," ");
 			tok=strtok(NULL," ");
 
 			j=atoi(tok);
@@ -10199,11 +10316,19 @@ int32 LoadSpriteList(char *filename)
 
 	fclose(file);
 
-	memset(str,0,16);
-	memset(buf,0,1024);
-	memset(str2,0,32);
-	memset(str3,0,64);
-	memset(str4,0,8*16);
+	if (major_error > 0)
+	{
+		MessageBoxRes("Sprite list parsing error", MB_OK, "Fatal error: failed loading sprites CFGs, check %s for more information.", st.LogName);
+
+		if (st.Developer_Mode == 0)
+			st.quit = 1;
+	}
+
+	//memset(str,0,16);
+	//memset(buf,0,1024);
+	//memset(str2,0,32);
+	//memset(str3,0,64);
+	//memset(str4,0,8*16);
 
 	return 1;
 }

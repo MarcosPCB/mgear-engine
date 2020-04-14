@@ -1104,9 +1104,9 @@ extern const char WindowTitle[32];
 
 void _ProcessError(const char* funcname, int8 silent);
 
-#define GetError _ProcessError(__FUNCTION__, NULL)
-#define GetErrorS _ProcessError(__FUNCTION__, 1)
-#define ProcessError(function_caller) _ProcessError(function_caller, NULL)
+#define GetError _ProcessError(__FUNCTION__, __LINE__, NULL)
+#define GetErrorS _ProcessError(__FUNCTION__, __LINE__, 1)
+#define ProcessError(function_caller, line) _ProcessError(function_caller, line, NULL)
 
 void PreInit(const char AppName[4], int argc, char *argv[]);
 

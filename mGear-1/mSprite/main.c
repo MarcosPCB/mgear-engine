@@ -330,6 +330,9 @@ void CheckForChanges()
 
 void PushUndo(_SPRITES *s, uint8 i)
 {
+	if (mspr.num_undo_states == 32)
+		mspr.num_undo_states = 32;
+
 	if (mspr.num_undo_states > 0)
 	{
 		for (uint16 j = mspr.num_undo_states; j > 0; j--)
@@ -395,9 +398,18 @@ int SavePrjFile(const char *path)
 		return NULL;
 	}
 
-	SetCurrentDirectory(path);
-
 	strcpy(str, path);
+
+	for (i = strlen(str); i > 0; i--)
+	{
+		if (path[i] == '\\' || path[i] == '/')
+		break;
+
+		str[i] = '\0';
+	}
+	
+	SetCurrentDirectory(str);
+
 	strcat(str, "/Sprites");
 
 	if ((d = opendir(str)) == NULL)
@@ -504,7 +516,7 @@ int SavePrjFile(const char *path)
 			{
 				if (st.Game_Sprites[i].states[j].used == 1)
 				{
-					fprintf(f, "STATE %d - \"%s\" %s %s %d %s %d %s %d\n", j, st.Game_Sprites[i].states[j].name, st.Game_Sprites[i].states[j].loop == 1 ? "LOOP" : "NOLOOP",
+					fprintf(f, "STATE %d - %s %s %s %d %s %d %s %d\n", j, st.Game_Sprites[i].states[j].name, st.Game_Sprites[i].states[j].loop == 1 ? "LOOP" : "NOLOOP",
 						st.Game_Sprites[i].states[j].animation == 1 ? "ANIMATED" : "STILL", st.Game_Sprites[i].states[j].main_anim,
 						st.Game_Sprites[i].states[j].in == 1 ? "IN" : "NOIN", st.Game_Sprites[i].states[j].in_transition, st.Game_Sprites[i].states[j].out == 1 ? "OUT" : "NOOUT",
 						st.Game_Sprites[i].states[j].out_transition);
@@ -529,7 +541,7 @@ int SavePrjFile(const char *path)
 		fclose(f);
 	}
 
-	if ((f = fopen("sprite.slist", "w")) == NULL)
+	if ((f = fopen(path, "w")) == NULL)
 	{
 		GetError;
 		error = 2;
@@ -538,7 +550,7 @@ int SavePrjFile(const char *path)
 
 	for (i = 0; i < st.num_sprites; i++)
 	{
-		fprintf(f, "SPRITE %s %d sprites/%s.cfg %d", st.Game_Sprites[i].name, i, st.Game_Sprites[i].name, st.Game_Sprites[i].num_tags);
+		fprintf(f, "SPRITE %s %d \"sprites/#%d - %s.cfg\" %d", st.Game_Sprites[i].name, i, i, st.Game_Sprites[i].name, st.Game_Sprites[i].num_tags);
 
 		for (j = 0; j < st.Game_Sprites[i].num_tags; j++)
 			fprintf(f, " %s ", st.Game_Sprites[i].tag_names[j]);
@@ -602,6 +614,14 @@ int NewProject()
 
 	for (int i = 0; i < st.num_mgg; i++)
 		FreeMGG(&mgg_game[i]);
+
+	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+
+	memset(mspr.undostates, 0, mspr.max_undo_states + 1 * sizeof(uint16));
+
+	memset(mspr.sprunstate, 0, mspr.max_undo_states + 1, sizeof(_SPRITES));
+
+	memcpy(mspr.sprunstate, st.Game_Sprites, mspr.max_undo_states + 1 * sizeof(_SPRITES));
 
 	return 1;
 }
@@ -688,7 +708,7 @@ int Preferences()
 	register int i;
 	static FILE *f;
 	static int state = 0;
-	int temp, temp2;
+	static int temp, temp2;
 	nk_size size;
 
 	if (mspr.theme == THEME_WHITE) strcpy(str, "White skin");
@@ -700,7 +720,7 @@ int Preferences()
 
 	SetCurrentDirectory(mspr.program_path);
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 150), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 200), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -757,6 +777,19 @@ int Preferences()
 
 		nk_layout_row_dynamic(ctx, 25, 1);
 		st.FPSYes = nk_check_label(ctx, "FPS counter", st.FPSYes == 1);
+
+		temp = mspr.max_undo_states;
+
+		mspr.max_undo_states = nk_propertyd(ctx, "Max. undo states:", 8, mspr.max_undo_states, 254, 8, 2);
+
+		if (temp != mspr.max_undo_states + 1)
+		{
+			mspr.undostates = realloc(mspr.undostates, mspr.max_undo_states + 1 * sizeof(uint16));
+			mspr.sprunstate = realloc(mspr.sprunstate, mspr.max_undo_states + 1 * sizeof(_SPRITES));
+
+			if (mspr.num_undo_states > temp)
+				mspr.num_undo_states = temp;
+		}
 
 		if (nk_button_label(ctx, "Ok"))
 		{
@@ -1148,6 +1181,7 @@ void MenuBar()
 
 					if (GetOpenFileName(&ofn))
 					{
+						NewProject();
 						temp = LoadSpriteList(path);
 
 						if (temp == 0)
@@ -1160,6 +1194,8 @@ void MenuBar()
 						{
 							strcpy(mspr.filepath, path);
 							memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+
+							sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
 						}
 					}
 
@@ -1179,6 +1215,11 @@ void MenuBar()
 					}
 
 					SavePrjFile(path);
+
+					//strcpy(mspr.filepath, path);
+					//memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+
+					sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
 				}
 
 				if (nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT))
@@ -1199,15 +1240,12 @@ void MenuBar()
 
 					if (GetSaveFileName(&ofn) && path)
 					{
-						for (i = strlen(path); i > 0; i--)
-						{
-							if (path[i] == '\\' || path[i] == '/')
-								break;
-							
-							path[i] = '\0';
-						}
-
 						SavePrjFile(path);
+
+						strcpy(mspr.filepath, path);
+						memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+
+						sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
 					}
 				}
 
@@ -2274,11 +2312,11 @@ int main(int argc, char *argv[])
 
 	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
-	mspr.undostates = calloc(mspr.max_undo_states, 1);
+	mspr.undostates = calloc(mspr.max_undo_states + 1, 1);
 
-	mspr.sprunstate = calloc(mspr.max_undo_states, sizeof(_SPRITES));
+	mspr.sprunstate = calloc(mspr.max_undo_states + 1, sizeof(_SPRITES));
 
-	memcpy(mspr.sprunstate, st.Game_Sprites, mspr.max_undo_states * sizeof(_SPRITES));
+	memcpy(mspr.sprunstate, st.Game_Sprites, mspr.max_undo_states + 1 * sizeof(_SPRITES));
 
 	while(!st.quit)
 	{
@@ -2295,7 +2333,7 @@ int main(int argc, char *argv[])
 
 		nk_input_end(ctx);
 
-		BASICBKD(255,255,255);
+		BASICBKD(255, 255, 255);
 		
 		loops=0;
 		while(GetTicks() > curr_tic && loops < 10)
