@@ -189,10 +189,12 @@ void _ProcessError(const char *funcname, int8 silent)
 
 void SignalError(int signum)
 {
-	HANDLE process;
-	SYMBOL_INFO *sym;
+	//HANDLE process;
+	IMAGEHLP_SYMBOL sym;
 	void *stack[100];
 	uint16 frames;
+	CONTEXT context;
+	STACKFRAME stackf;
 
 	if (signum == SIGSEGV)
 		LogApp("SIGSEGV Error:");
@@ -203,23 +205,36 @@ void SignalError(int signum)
 	if (signum == SIGFPE)
 		LogApp("SIGFPE Error:");
 
-	process = GetCurrentProcess();
+	//process = GetCurrentProcess();
 
-	SymInitialize(process, NULL, TRUE);
+	RtlCaptureContext(&context);
+	memset(&stackf, 0, sizeof(STACKFRAME));
 
-	frames = CaptureStackBackTrace(NULL, 100, stack, NULL);
+	stackf.AddrPC.Offset = context.Eip;
+	stackf.AddrPC.Mode = AddrModeFlat;
+	stackf.AddrStack.Offset = context.Esp;
+	stackf.AddrStack.Mode = AddrModeFlat;
+	stackf.AddrFrame.Offset = context.Ebp;
+	stackf.AddrFrame.Mode = AddrModeFlat;
 
-	sym = calloc(sizeof(SYMBOL_INFO)+256 * sizeof(char), 1);
-	sym->MaxNameLen = 255;
-	sym->SizeOfStruct = sizeof(SYMBOL_INFO);
+	SymInitialize(st.process, NULL, TRUE);
 
-	for (int i = 0; i < frames; i++)
+	//frames = CaptureStackBackTrace(NULL, 100, stack, NULL);
+
+	//sym = calloc(sizeof(SYMBOL_INFO)+256 * sizeof(char), 1);
+	sym.SizeOfStruct = sizeof(IMAGEHLP_SYMBOL64);
+	sym.MaxNameLength = 255;
+
+	//for (int i = 0; i < frames; i++)
+	int i = 0;
+	while (StackWalk(IMAGE_FILE_MACHINE_I386, st.process, st.thread, &stackf, &context, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL))
 	{
-		SymFromAddr(process, (DWORD64)(stack[i]), 0, sym);
-		LogApp("%i: %s - 0x%0X\n", frames - i - 1, sym->Name, sym->Address);
+		SymGetSymFromAddr(st.process, (ULONG64)stackf.AddrPC.Offset, NULL, &sym);
+		LogApp("%i: %s - 0x%0X\n", i, sym.Name, sym.Address);
+		i++;
 	}
 
-	free(sym);
+	//free(sym);
 
 	MessageBoxRes("Critical error", MB_ICONERROR | MB_OK, "Critical error detected. Check %s for more information", st.LogName);
 }
@@ -2854,6 +2869,8 @@ SHADER_CREATION:
 	st.BasicTex.channel = 3;
 	st.BasicTex.vb_id = -1;
 	
+	st.process = GetCurrentProcess();
+	st.thread = GetCurrentThread();
 }
 
 #ifdef HAS_SPLASHSCREEN
@@ -9393,13 +9410,14 @@ uint32 SaveMap(const char *name)
 }
 
 #endif
+#endif
 
 int32 LoadSpriteCFG(char *filename, int id)
 {
 	FILE *file;
-	int value, value2, value3;
+	int value, value2, value3, error = 0;
 	uint16 i, id2, skip, num_frames, gameid, sizedefined = 0;
-	char buf[1024], str[16], str2[16], str3[16], str4[8][16], *tok, shadow = 0;
+	char buf[2048], str[16], str2[16], str3[16], str4[8][16], *tok, shadow = 0;
 
 	for (i = 0; i < MAX_GAME_MGG; i++)
 	{
@@ -9438,7 +9456,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 	{
 		memset(str,0,16);
 		memset(buf,0,1024);
-		fgets(buf,1024,file);
+		fgets(buf,2048,file);
 
 		sscanf(buf,"%s %s",str, str2);
 
@@ -9577,7 +9595,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 				LogApp("Error: number of start frames not declared: %s", filename);
 				//FreeMGG(&mgg_game[id2]);
 				//st.num_mgg--;
-				return 0;
+				error++;
 			}
 			else
 			if(skip==4)
@@ -9707,7 +9725,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			{
 				LogApp("Error: MATERIAL declaration undefined: %s", filename);
-				return 0;
+				error++;
 			}
 
 			continue;
@@ -9755,12 +9773,229 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			{
 				LogApp("Error: TYPE declaration undefined: %s", filename);
-				return 0;
+				error++;
+			}
+		}
+		else
+		if (strcmp(str, "STATE") == NULL)
+		{
+			int a = -1, b = -1, c = -1, d = -1;
+			char c1[32], c2[32], c3[32], c4[32], c5[32];
+
+			ZeroMemory(c1, 32);
+			ZeroMemory(c2, 32);
+			ZeroMemory(c3, 32);
+			ZeroMemory(c4, 32);
+			ZeroMemory(c5, 32);
+
+			if (sscanf(buf, "STATE %d - \"%s\" %s %s %d %s %d %s %d", &a, c1, c2, c3, &b, c4, &c, c5, &d) < 9)
+			{
+				if (a < 0 || a > 64)
+				{
+					LogApp("Error: STATE declaration with invalid state ID - %d", a);
+					error++;
+				}
+				
+				if (c1[0] == 0)
+				{
+					LogApp("Error: STATE declaration with invalid state name");
+					error++;
+				}
+
+				if (strcmp(c2, "LOOP") != NULL && strcmp(c2, "NOLOOP") != NULL)
+				{
+					LogApp("Error: STATE declaration with invalid loop statement");
+					error++;
+				}
+
+				if (strcmp(c3, "ANIMATED") != NULL && strcmp(c3, "STILL") != NULL)
+				{
+					LogApp("Error: STATE declaration with invalid animated statement");
+					error++;
+				}
+
+				if (strcmp(c4, "IN") != NULL && strcmp(c4, "NOIN") != NULL)
+				{
+					LogApp("Error: STATE declaration with invalid in transition statement");
+					error++;
+				}
+
+				if (strcmp(c5, "OUT") != NULL && strcmp(c5, "NOOUT") != NULL)
+				{
+					LogApp("Error: STATE declaration with invalid out transition statement");
+					error++;
+				}
+
+				if (b < 0)
+				{
+					LogApp("Error: STATE declaration with invalid frame or animation - %d", b);
+					error++;
+				}
+
+				if (c < 0)
+				{
+					LogApp("Error: STATE declaration with wrong In Trasition animation - %d", c);
+					error++;
+				}
+
+				if (d < 0)
+				{
+					LogApp("Error: STATE declaration with wrong Out Trasition animation - %d", d);
+					error++;
+				}
+
+				if (error == 0)
+				{
+					strcpy(st.Game_Sprites[id].states[a].name, c1);
+
+					if (strcmp(c2, "LOOP") == NULL)
+						st.Game_Sprites[id].states[a].loop = 1;
+					else
+						st.Game_Sprites[id].states[a].loop = 0;
+
+					if (strcmp(c3, "ANIMATED") == NULL)
+						st.Game_Sprites[id].states[a].animation = 1;
+					else
+						st.Game_Sprites[id].states[a].animation = 0;
+
+					st.Game_Sprites[id].states[a].main_anim = b;
+
+					if (strcmp(c4, "IN") == NULL)
+						st.Game_Sprites[id].states[a].in = 1;
+					else
+						st.Game_Sprites[id].states[a].in = 0;
+
+					st.Game_Sprites[id].states[a].in_transition = c;
+
+					if (strcmp(c5, "OUT") == NULL)
+						st.Game_Sprites[id].states[a].out = 1;
+					else
+						st.Game_Sprites[id].states[a].out = 0;
+
+					st.Game_Sprites[id].states[a].out_transition = d;
+				}
+			}
+		}
+		else
+		if (strcmp(str, "STATE_OUTPUTS") == NULL)
+		{
+			char args[2000];
+			uint8 a = -1;
+
+			ZeroMemory(args, 2000);
+
+			sscanf(buf, "STATE_OUTPUTS %d - %s", &a, args);
+
+			if (a == -1 || a > 64)
+			{
+				LogApp("Error: invalid state ID in STATE_OUTPUTS");
+				error++;
+			}
+
+			if (args[0] == 0)
+			{
+				LogApp("Error: invalid output in STATE_OUTPUTS");
+				error++;
+			}
+
+			if (error == 0)
+			{
+				int b = -1;
+				tok = strtok(args, " ");
+
+				if (tok != NULL)
+					b = atoi(tok);
+				else
+					continue;
+
+				if (b == -1 || b > 64)
+				{
+					LogApp("Error: invalid output id: %d in STATE_OUTPUTS %d", b, a);
+					error++;
+					continue;
+				}
+
+				tok = strtok(args, " ");
+
+				if (tok != NULL)
+					st.Game_Sprites[i].states[a].outputs[b] = atoi(tok);
+				else
+				{
+					LogApp("Warning: no output detected at OUTPUT: %d at STATE_OUTPUT %d", b, a);
+					continue;
+				}
+
+				if (st.Game_Sprites[i].states[a].outputs[b] == -1 || st.Game_Sprites[i].states[a].outputs[b] > 64)
+				{
+					LogApp("Error: invalid output at OUTPUT: %d at STATE_OUTPUTS %d", b, a);
+					error++;
+					continue;
+				}
+
+				tok = strtok(NULL, " ");
+
+				if (tok != NULL && tok[0] == ':')
+				{
+					while ((tok = strtok(NULL, " ")) != NULL)
+					{
+						b = atoi(tok);
+
+						if (b == -1 || b > 64)
+						{
+							LogApp("Error: invalid output id: %d in STATE_OUTPUTS %d", b, a);
+							error++;
+							break;
+						}
+
+						tok = strtok(args, " ");
+
+						if (tok != NULL)
+							st.Game_Sprites[i].states[a].outputs[b] = atoi(tok);
+						else
+						{
+							LogApp("Warning: no output detected at OUTPUT: %d at STATE_OUTPUT %d", b, a);
+							break;
+						}
+
+						if (st.Game_Sprites[i].states[a].outputs[b] == -1 || st.Game_Sprites[i].states[a].outputs[b] > 64)
+						{
+							LogApp("Error: invalid output at OUTPUT: %d at STATE_OUTPUTS %d", b, a);
+							error++;
+							break;
+						}
+
+						tok = strtok(NULL, " ");
+
+						if (tok != NULL && tok[0] == ':')
+							continue;
+						else
+							break;
+
+					}
+				}
 			}
 		}
 	}
 
 	fclose(file);
+
+	if (error > 0)
+	{
+		LogApp("Errors found in: %s", filename);
+		memset(&st.Game_Sprites[id], 0, sizeof(_SPRITES));
+		st.Game_Sprites[id].MGG_ID = -1;
+
+		for (int j = 0; j < 64; j++)
+		{
+			memset(st.Game_Sprites[id].states[j].inputs, -1, sizeof(int16)* 64);
+			memset(st.Game_Sprites[id].states[j].outputs, -1, sizeof(int16)* 64);
+
+			st.Game_Sprites[id].states[j].inputs[0] = j;
+			st.Game_Sprites[id].states[j].outputs[0] = j;
+		}
+
+		return 0;
+	}
 
 	gameid=id;
 
@@ -9972,6 +10207,8 @@ int32 LoadSpriteList(char *filename)
 
 	return 1;
 }
+
+#if (defined MGEAR_CLEAN_VERSION && defined MGEAR_VIDEO_PLAYER) || !defined MGEAR_CLEAN_VERSION
 
 uint8 LoadMGGList(const char *file)
 {

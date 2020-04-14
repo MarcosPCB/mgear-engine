@@ -84,8 +84,12 @@ struct _mSprite
 	int16 curframe;
 
 	_SPRITES sprbck[MAX_SPRITES];
-
 	uint8 changes_detected;
+
+	_SPRITES *sprunstate;
+	uint16 *undostates;
+	uint8 num_undo_states;
+	uint8 max_undo_states;
 };
 
 typedef struct _mSprite mSpr;

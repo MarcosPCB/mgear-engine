@@ -1075,6 +1075,9 @@ struct _SETTINGS_
 	char LogName[32];
 
 	TEX_DATA BasicTex;
+
+	HANDLE process;
+	HANDLE thread;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;

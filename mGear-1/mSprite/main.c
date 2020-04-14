@@ -206,6 +206,8 @@ uint16 WriteCFG()
 	st.audioc=2;
 	st.vsync=0;
 
+	mspr.max_undo_states = 32;
+
 	fprintf(file,"ScreenX = %d\n",st.screenx);
 	fprintf(file,"ScreenY = %d\n",st.screeny);
 	fprintf(file,"FullScreen = %d\n",st.fullscreen);
@@ -215,6 +217,7 @@ uint16 WriteCFG()
 	fprintf(file,"VSync = %d\n",st.vsync);
 	fprintf(file, "Theme = %d\n", mspr.theme);
 	fprintf(file, "FPS = 1\n");
+	fprintf(file, "Undo = %d\n", mspr.max_undo_states);
 
 	fclose(file);
 
@@ -237,6 +240,7 @@ uint16 SaveCFG()
 	fprintf(file, "VSync = %d\n", st.vsync);
 	fprintf(file, "Theme = %d\n", mspr.theme);
 	fprintf(file, "FPS = %d\n", st.FPSYes);
+	fprintf(file, "Undo = %d\n", mspr.max_undo_states);
 
 	fclose(file);
 
@@ -291,6 +295,7 @@ uint16 LoadCFG()
 		if(strcmp(str,"VSync")==NULL) st.vsync=value;
 		if (strcmp(str, "Theme") == NULL) mspr.theme = value;
 		if (strcmp(str, "FPS") == NULL) st.FPSYes = value;
+		if (strcmp(str, "Undo") == NULL) mspr.max_undo_states = value;
 		if (strcmp(str, "CurrentPath") == NULL)
 		{
 			memcpy(buf3, buf, 2048);
@@ -319,7 +324,61 @@ void CheckForChanges()
 	if (memcmp(mspr.sprbck, st.Game_Sprites, sizeof(_SPRITES) * MAX_SPRITES) != NULL)
 	{
 		mspr.changes_detected = 1;
-		sprintf(st.WindowTitle, "Sprite *%s", mspr.filepath);
+		sprintf(st.WindowTitle, "Sprite *%s", GetFileNameOnly(mspr.filepath));
+	}
+}
+
+void PushUndo(_SPRITES *s, uint8 i)
+{
+	if (mspr.num_undo_states > 0)
+	{
+		for (uint16 j = mspr.num_undo_states; j > 0; j--)
+		{
+			mspr.undostates[j] = mspr.undostates[j - 1];
+			mspr.undostates[j - 1] = 0;
+
+			mspr.sprunstate[j] = mspr.sprunstate[j - 1];
+			memset(&mspr.sprunstate[j - 1], 0, sizeof(_SPRITES));
+		}
+	}
+
+	mspr.undostates[0] = i;
+	memcpy(&mspr.sprunstate[0], s, sizeof(_SPRITES));
+}
+
+uint8 PopUndo(_SPRITES *s)
+{
+	uint8 i = mspr.undostates[0];
+	memcpy(s, &mspr.sprunstate[0], sizeof(_SPRITES));
+
+	for (uint16 j = 1; j < mspr.num_undo_states; j++)
+	{
+		mspr.undostates[j - 1] = mspr.undostates[j];
+		mspr.undostates[j] = 0;
+
+		mspr.sprunstate[j - 1] = mspr.sprunstate[j];
+		memset(&mspr.sprunstate[j], 0, sizeof(_SPRITES));
+	}
+
+	mspr.num_undo_states--;
+
+	return i;
+}
+
+void UndoState()
+{
+	for (int i = 0; i < st.num_sprites; i++)
+	{
+		if (memcmp(&mspr.sprbck[i], &st.Game_Sprites[i], sizeof(_SPRITES)) != NULL)
+		{
+			PushUndo(&mspr.sprbck[i], i);
+			memcpy(&mspr.sprbck[i], &st.Game_Sprites[i], sizeof(_SPRITES));
+
+			if (mspr.num_undo_states < mspr.max_undo_states)
+				mspr.num_undo_states++;
+
+			break;
+		}
 	}
 }
 
@@ -1164,6 +1223,16 @@ void MenuBar()
 			if (nk_menu_begin_label(ctx, "Edit", NK_TEXT_LEFT, nk_vec2(120, 200)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
+
+				if (nk_menu_item_label(ctx, "Undo", NK_TEXT_LEFT) && mspr.num_undo_states > 0)
+				{
+					_SPRITES s;
+					uint8 undo_n = PopUndo(&s);
+
+					memcpy(&st.Game_Sprites[undo_n], &s, sizeof(_SPRITES));
+					memcpy(&mspr.sprbck[undo_n], &st.Game_Sprites[undo_n], sizeof(_SPRITES));
+				}
+
 				if (nk_menu_item_label(ctx, "Preferences", NK_TEXT_LEFT))
 					state = 10;
 
@@ -2205,6 +2274,12 @@ int main(int argc, char *argv[])
 
 	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
+	mspr.undostates = calloc(mspr.max_undo_states, 1);
+
+	mspr.sprunstate = calloc(mspr.max_undo_states, sizeof(_SPRITES));
+
+	memcpy(mspr.sprunstate, st.Game_Sprites, mspr.max_undo_states * sizeof(_SPRITES));
+
 	while(!st.quit)
 	{
 		//if(st.FPSYes)
@@ -2285,6 +2360,8 @@ int main(int argc, char *argv[])
 
 		if (mspr.changes_detected == 0)
 			CheckForChanges();
+
+		UndoState();
 	}
 
 	Quit();
