@@ -1363,7 +1363,7 @@ void Pannel()
 				nk_layout_row_dynamic(ctx, 30, 1);
 				if (nk_button_symbol(ctx, NK_SYMBOL_PLUS))
 				{
-					strcpy(st.Game_Sprites[st.num_sprites].name, StringFormat("Sprites #%d", st.num_sprites));
+					strcpy(st.Game_Sprites[st.num_sprites].name, StringFormat("Sprites_#%d", st.num_sprites));
 					st.num_sprites++;
 				}
 
@@ -1468,7 +1468,7 @@ void Pannel()
 			nk_label(ctx, "Name:", NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
 
 			nk_layout_row_push(ctx, 0.30);
-			nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].name, 64, nk_filter_ascii);
+			nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].name, 64, nk_filter_ascii_r);
 			nk_layout_row_end(ctx);
 
 
@@ -1681,7 +1681,7 @@ void Pannel()
 					{
 						nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
 						nk_layout_row_push(ctx, 0.85);
-						nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].tag_names[j], 16, nk_filter_ascii);
+						nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].tag_names[j], 16, nk_filter_ascii_r);
 
 						nk_layout_row_push(ctx, 0.15);
 						if (nk_button_icon_set(BIN_ICON))
@@ -1730,6 +1730,7 @@ void Pannel()
 			{
 				st.Game_Sprites[i].num_states++;
 				st.Game_Sprites[i].states[st.Game_Sprites[i].num_states - 1].used = 1;
+				strcpy(st.Game_Sprites[i].states[st.Game_Sprites[i].num_states - 1].name, StringFormat("State_#%d", st.Game_Sprites[i].num_states - 1));
 			}
 
 			nk_layout_row_end(ctx);
@@ -1762,7 +1763,7 @@ void Pannel()
 
 						nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
 						nk_layout_row_push(ctx, 0.8);
-						nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].states[j].name, 32, nk_filter_ascii);
+						nk_edit_string_zero_terminated(ctx, NK_EDIT_SIMPLE, st.Game_Sprites[i].states[j].name, 32, nk_filter_ascii_r);
 
 						nk_layout_row_push(ctx, 0.1);
 						if (nk_button_icon_set(BIN_ICON))

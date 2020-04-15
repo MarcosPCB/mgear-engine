@@ -4306,6 +4306,8 @@ NK_API int nk_filter_hex(const struct nk_text_edit*, nk_rune unicode);
 NK_API int nk_filter_oct(const struct nk_text_edit*, nk_rune unicode);
 NK_API int nk_filter_binary(const struct nk_text_edit*, nk_rune unicode);
 
+NK_API int nk_filter_ascii_r(const struct nk_text_edit*, nk_rune unicode); //restricted ASCII - without space
+
 /* text editor */
 #ifdef NK_INCLUDE_DEFAULT_ALLOCATOR
 NK_API void nk_textedit_init_default(struct nk_text_edit*);
@@ -26380,6 +26382,14 @@ nk_filter_ascii(const struct nk_text_edit *box, nk_rune unicode)
     NK_UNUSED(box);
     if (unicode > 128) return nk_false;
     else return nk_true;
+}
+NK_API int
+nk_filter_ascii_r(const struct nk_text_edit *box, nk_rune unicode)
+{
+	NK_UNUSED(box);
+	if (unicode > 128 || (unicode >= 32 && unicode <= 34) || (unicode >= 36 && unicode <= 47) || (unicode >= 58 && unicode <= 64) || (unicode >= 91 && unicode <= 94)
+		|| unicode == 96 ||(unicode >= 123 && unicode <= 126)) return nk_false;
+	else return nk_true;
 }
 NK_API int
 nk_filter_float(const struct nk_text_edit *box, nk_rune unicode)
