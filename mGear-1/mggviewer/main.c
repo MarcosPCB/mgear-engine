@@ -21,6 +21,11 @@
 #include "nuklear.h"
 #include "nuklear_sdl_gl3.h"
 
+#define MAX_NK_VERTEX_BUFFER 512 * 1024
+#define MAX_NK_ELEMENT_BUFFER 128 * 1024
+#define MAX_NK_COMMAND_BUFFER 5000000
+#define MAX_NK_BUFFER 16000000
+
 int nkrendered = 0;
 
 struct nk_context *ctx;
@@ -127,6 +132,8 @@ void MenuBar()
 	{
 		if (nk_begin(ctx, "Menu", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
 		{
+			ctx->current->flags = NK_WINDOW_NO_SCROLLBAR;
+
 			nk_menubar_begin(ctx);
 			nk_layout_row_begin(ctx, NK_STATIC, 25, 2);
 
@@ -341,7 +348,7 @@ int main(int argc, char *argv[])
 
 	curr_tic=GetTicks();
 
-	ctx = nk_sdl_init(wn);
+	ctx = nk_sdl_init(wn, MAX_NK_BUFFER, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER);
 
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
@@ -366,8 +373,8 @@ int main(int argc, char *argv[])
 
 	while(!st.quit)
 	{
-		if(st.FPSYes)
-			FPSCounter();
+		//if(st.FPSYes)
+		FPSCounter();
 
 		nk_input_begin(ctx);
 
@@ -450,7 +457,7 @@ int main(int argc, char *argv[])
 		float bg[4];
 		nk_color_fv(bg, background);
 
-		nk_sdl_render(NK_ANTI_ALIASING_OFF, 512 * 1024, 128 * 1024);
+		nk_sdl_render(NK_ANTI_ALIASING_OFF, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER, MAX_NK_COMMAND_BUFFER);
 
 		SwapBuffer(wn);
 
@@ -459,6 +466,8 @@ int main(int argc, char *argv[])
 
 	if (mggv.mgg.num_frames)
 		FreeMGG(&mggv.mgg);
+
+	nk_sdl_shutdown();
 
 	Quit();
 	return 1;

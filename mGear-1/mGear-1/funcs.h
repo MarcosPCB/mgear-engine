@@ -22,6 +22,33 @@ extern void Quit();
 #define BREAK_CMD { break; }
 #define ABORT_CMD { abort(); }
 
+#ifdef ENG_DIAGNOSTICS
+
+struct MEM_INFO
+{
+	char func[64];
+	uint16 line;
+	uint8 free;
+	void *addr;
+	size_t size;
+};
+
+cdecl void *xmalloc(const char *func, int line, size_t size);
+cdecl void *xrealloc(const char *func, int line, void *memory, size_t size);
+cdecl void *xcalloc(const char *func, int line, size_t count, size_t size);
+cdecl void xfree(const char *func, int line, void *memory);
+cdecl void *xmemcpy(const char *func, int line, void *dest, const void* src, size_t size);
+
+#define malloc(size)				xmalloc(__FUNCTION__, __LINE__, size)
+#define calloc(count, size)			xcalloc(__FUNCTION__, __LINE__, count, size)
+#define free(mem)					xfree(__FUNCTION__, __LINE__, mem)
+#define memcpy(dest, src, size)		xmemcpy(__FUNCTION__, __LINE__, dest, src, size)
+#define realloc(mem, size)			xrealloc(__FUNCTION__, __LINE__, mem, size)
+
+cdecl void print_diag();
+
+#endif
+
 //Defined expressions
 #define CHECKMEM(expr) { if(mchalloc(expr) == CHERROR) return ERROR_RETURN; }
 #define check_mem CHECKMEM
@@ -55,6 +82,8 @@ extern void Quit();
 
 #define LOWERSTRING(string) { for(int LOWERSTRINGINT = 0; LOWERSTRINGINT < strlen(string); LOWERSTRINGINT++) tolower(string[LOWERSTRINGINT]); }
 #define lowerstring LOWERSTRING
+
+#define ZeroMem(memory, size) memset(memory, 0, size)
 
 cdecl int16 NumDirFile(const char *path, char content[][32]);
 

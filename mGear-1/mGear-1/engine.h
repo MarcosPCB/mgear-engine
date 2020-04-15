@@ -497,7 +497,7 @@ struct _SPRITES_
 	int16 MGG_ID;
 	int16 num_frames;
 	int16 num_start_frames;
-	int32 *frame;
+	int16 frame[8];
 	int8 num_tags;
 	int16 tags[8];
 	char tag_names[8][16];
@@ -1102,11 +1102,11 @@ extern SDL_Window *wn;
 
 extern const char WindowTitle[32];
 
-void _ProcessError(const char* funcname, int8 silent);
+void _ProcessError(const char* funcname, int line, int8 silent);
 
 #define GetError _ProcessError(__FUNCTION__, __LINE__, NULL)
 #define GetErrorS _ProcessError(__FUNCTION__, __LINE__, 1)
-#define ProcessError(function_caller, line) _ProcessError(function_caller, line, NULL)
+#define ProcessError(silent) _ProcessError(__FUNCTION__, __LINE__, silent)
 
 void PreInit(const char AppName[4], int argc, char *argv[]);
 
@@ -1133,8 +1133,12 @@ void InitMGG(); //Inits all MGG structs
 	uint32 SaveMap(const char *name);
 #endif
 
+#endif
+
 int32 LoadSpriteCFG(char *filename, int id);
 int32 LoadSpriteList(char *filename);
+
+#ifndef MGEAR_CLEAN_VERSION
 
 uint8 LoadMGGList(const char *file);
 

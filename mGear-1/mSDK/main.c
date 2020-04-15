@@ -29,6 +29,11 @@
 #define _NKUI_SKINS
 #include "skins.h"
 
+#define MAX_NK_VERTEX_BUFFER 512 * 1024
+#define MAX_NK_ELEMENT_BUFFER 128 * 1024
+#define MAX_NK_COMMAND_BUFFER 5000000
+#define MAX_NK_BUFFER 16000000
+
 int nkrendered = 0;
 
 struct nk_context *ctx;
@@ -3648,7 +3653,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mAudio");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nEdit and create sound and music lists for your project");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Edit and create sound and music lists for your project");
 				nk_layout_space_end(ctx);
 				
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3659,7 +3665,7 @@ void Pannel()
 					pannel_state = CODEAPP;
 				}
 
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.01f + ((vec4.w * 0.15f) / vec4.h) * 1, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.01f + ((vec4.w * 0.15f) / vec4.h) * 1, 0.80f, (vec4.w * 0.15f) / vec4.h));
 
 				vec4s = nk_widget_bounds(ctx);
 
@@ -3672,7 +3678,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mCode");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nThe IDE used for coding your game.\nCan be the the one installed on your computer as such Visual Studio or the default one for coding in MGL");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.01f + ((vec4.w * 0.15f) / vec4.h) * 1 + 0.025f, 0.80f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "The IDE used for coding your game.Can be the the one installed on your computer as such Visual Studio or the default one for coding in MGL");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3698,7 +3705,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mEngineer");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nCreate and edit maps for your game");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.02f + ((vec4.w * 0.15f) / vec4.h) * 2 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Create and edit maps for your game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3724,7 +3732,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mInterface");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nCreate interfaces such as menus and HUD for your game");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.03f + ((vec4.w * 0.15f) / vec4.h) * 3 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Create interfaces such as menus and HUD for your game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3750,7 +3759,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "MGG Viewer");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nVisualize MGG files with their textures and animations");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 4 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Visualize MGG files with their textures and animations");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3776,7 +3786,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "MGV Compiler");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nCompile videos for your game");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 5 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Compile videos for your game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3802,7 +3813,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mTex");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nImport your textures and animate them to be used in the game");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 6 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Import your textures and animate them to be used in the game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -3828,7 +3840,8 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mSprite");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_label_wrap(ctx, "\n\nCreate sprites and define AIs for your game");
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 7 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_label_wrap(ctx, "Create sprites and define AI States for your game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
@@ -4208,7 +4221,7 @@ int main(int argc, char *argv[])
 
 	curr_tic=GetTicks();
 
-	ctx = nk_sdl_init(wn);
+	ctx = nk_sdl_init(wn, MAX_NK_BUFFER, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER);
 	
 	struct nk_font_atlas *atlas;
 	nk_sdl_font_stash_begin(&atlas);
@@ -4259,7 +4272,9 @@ int main(int argc, char *argv[])
 	msdk.app[TEXAPP].icon = LoadTexture("data/icon_tex.png", 0, &msdk.app[TEXAPP].icon_size);
 	msdk.app[MGVAPP].icon = LoadTexture("data/icon_mgv.png", 0, &msdk.app[MGVAPP].icon_size);
 	
+#ifndef _DEBUG
 	msdk.update = CheckForUpdate();
+#endif
 
 	if (argc > 0 && msdk.update == 0)
 	{
@@ -4353,12 +4368,16 @@ int main(int argc, char *argv[])
 		float bg[4];
 		nk_color_fv(bg, background);
 
-		nk_sdl_render(NK_ANTI_ALIASING_OFF, 512 * 1024, 128 * 1024);
+		nk_sdl_render(NK_ANTI_ALIASING_OFF, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER, MAX_NK_COMMAND_BUFFER);
 
 		SwapBuffer(wn);
 
 		nkrendered = 0;
 	}
+
+	free(msdk.prj_files);
+
+	nk_sdl_shutdown();
 
 	Quit();
 	return 1;

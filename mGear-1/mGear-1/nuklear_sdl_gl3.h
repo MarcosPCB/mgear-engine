@@ -20,14 +20,14 @@
 
 //#define  free(mem_ref) 		  	 	xfree(mem_ref)
 
-NK_API struct nk_context*   nk_sdl_init(SDL_Window *win);
+NK_API struct nk_context*   nk_sdl_init(SDL_Window *win, size_t buffer_size, int max_vertex_buffer, int max_element_buffer);
 NK_API void                 nk_sdl_font_stash_begin(struct nk_font_atlas **atlas);
 NK_API void                 nk_sdl_font_stash_end(void);
 NK_API int                  nk_sdl_handle_event(SDL_Event *evt);
-NK_API void                 nk_sdl_render(enum nk_anti_aliasing , int max_vertex_buffer, int max_element_buffer);
+NK_API void                 nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_buffer, size_t buffer_size);
 NK_API void                 nk_sdl_shutdown(void);
 NK_API void                 nk_sdl_device_destroy(void);
-NK_API void                 nk_sdl_device_create(void);
+NK_API void                 nk_sdl_device_create(int max_vertex_buffer, int max_element_buffer);
 
 #endif
 
@@ -75,6 +75,9 @@ static struct nk_sdl {
 #else
   #define NK_SHADER_VERSION "#version 300 es\n"
 #endif
+
+void *nk_buf_init;
+
 NK_API void
 nk_sdl_device_create(int max_vertex_buffer, int max_element_buffer)
 {
@@ -105,11 +108,6 @@ nk_sdl_device_create(int max_vertex_buffer, int max_element_buffer)
 
     struct nk_sdl_device *dev = &sdl.ogl;
     nk_buffer_init_default(&dev->cmds);
-
-	struct nk_allocator a;
-	a.userdata.ptr = 0;
-	a.alloc = malloc;
-	a.free = free;
 
 	//nk_buffer_init(&dev->cmds, &a, 4 * 1024);
     dev->prog = glCreateProgram();
@@ -348,7 +346,9 @@ nk_sdl_init(SDL_Window *win, size_t buffer_size, int max_vertex_buffer, int max_
     sdl.win = win;
     //nk_init_default(&sdl.ctx, 0);
 
-	nk_init_fixed(&sdl.ctx, malloc(buffer_size), buffer_size, 0);
+	nk_buf_init = malloc(buffer_size);
+
+	nk_init_fixed(&sdl.ctx, nk_buf_init, buffer_size, 0);
     sdl.ctx.clip.copy = nk_sdl_clipboard_copy;
     sdl.ctx.clip.paste = nk_sdl_clipboard_paste;
     sdl.ctx.clip.userdata = nk_handle_ptr(0);
@@ -474,6 +474,7 @@ void nk_sdl_shutdown(void)
     nk_font_atlas_clear(&sdl.atlas);
     nk_free(&sdl.ctx);
     nk_sdl_device_destroy();
+	free(nk_buf_init);
     memset(&sdl, 0, sizeof(sdl));
 }
 

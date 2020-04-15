@@ -488,7 +488,7 @@ typedef void(*nk_plugin_copy)(nk_handle, const char*, int len);
 struct nk_allocator {
     nk_handle userdata;
     nk_plugin_alloc alloc;
-    nk_plugin_free free;
+    nk_plugin_free fre;
 };
 enum nk_symbol_type {
     NK_SYMBOL_NONE,
@@ -8041,7 +8041,7 @@ nk_buffer_init_default(struct nk_buffer *buffer)
     struct nk_allocator alloc;
     alloc.userdata.ptr = 0;
     alloc.alloc = nk_malloc;
-    alloc.free = nk_mfree;
+    alloc.fre = nk_mfree;
     nk_buffer_init(buffer, &alloc, NK_BUFFER_DEFAULT_INITIAL_SIZE);
 }
 #endif
@@ -8115,7 +8115,7 @@ nk_buffer_realloc(struct nk_buffer *b, nk_size capacity, nk_size *size)
 
     NK_ASSERT(b);
     NK_ASSERT(size);
-    if (!b || !size || !b->pool.alloc || !b->pool.free)
+    if (!b || !size || !b->pool.alloc || !b->pool.fre)
         return 0;
 
     buffer_size = b->memory.size;
@@ -8126,7 +8126,7 @@ nk_buffer_realloc(struct nk_buffer *b, nk_size capacity, nk_size *size)
     *size = capacity;
     if (temp != b->memory.ptr) {
         NK_MEMCPY(temp, b->memory.ptr, buffer_size);
-        b->pool.free(b->pool.userdata, b->memory.ptr);
+        b->pool.fre(b->pool.userdata, b->memory.ptr);
     }
 
     if (b->size == buffer_size) {
@@ -8174,8 +8174,8 @@ nk_buffer_alloc(struct nk_buffer *b, enum nk_buffer_allocation_type type,
         nk_size capacity;
         if (b->type != NK_BUFFER_DYNAMIC)
             return 0;
-        NK_ASSERT(b->pool.alloc && b->pool.free);
-        if (b->type != NK_BUFFER_DYNAMIC || !b->pool.alloc || !b->pool.free)
+        NK_ASSERT(b->pool.alloc && b->pool.fre);
+        if (b->type != NK_BUFFER_DYNAMIC || !b->pool.alloc || !b->pool.fre)
             return 0;
 
         /* buffer is full so allocate bigger buffer if dynamic */
@@ -8252,9 +8252,9 @@ nk_buffer_free(struct nk_buffer *b)
     NK_ASSERT(b);
     if (!b || !b->memory.ptr) return;
     if (b->type == NK_BUFFER_FIXED) return;
-    if (!b->pool.free) return;
-    NK_ASSERT(b->pool.free);
-    b->pool.free(b->pool.userdata, b->memory.ptr);
+    if (!b->pool.fre) return;
+    NK_ASSERT(b->pool.fre);
+    b->pool.fre(b->pool.userdata, b->memory.ptr);
 }
 NK_API void
 nk_buffer_info(struct nk_memory_status *s, struct nk_buffer *b)
@@ -8306,7 +8306,7 @@ nk_str_init_default(struct nk_str *str)
     struct nk_allocator alloc;
     alloc.userdata.ptr = 0;
     alloc.alloc = nk_malloc;
-    alloc.free = nk_mfree;
+    alloc.fre = nk_mfree;
     nk_buffer_init(&str->buffer, &alloc, 32);
     str->len = 0;
 }
@@ -17088,10 +17088,10 @@ nk_font_atlas_init_default(struct nk_font_atlas *atlas)
     nk_zero_struct(*atlas);
     atlas->temporary.userdata.ptr = 0;
     atlas->temporary.alloc = nk_malloc;
-    atlas->temporary.free = nk_mfree;
+    atlas->temporary.fre = nk_mfree;
     atlas->permanent.userdata.ptr = 0;
     atlas->permanent.alloc = nk_malloc;
-    atlas->permanent.free = nk_mfree;
+    atlas->permanent.fre = nk_mfree;
 }
 #endif
 NK_API void
@@ -17120,16 +17120,16 @@ NK_API void
 nk_font_atlas_begin(struct nk_font_atlas *atlas)
 {
     NK_ASSERT(atlas);
-    NK_ASSERT(atlas->temporary.alloc && atlas->temporary.free);
-    NK_ASSERT(atlas->permanent.alloc && atlas->permanent.free);
-    if (!atlas || !atlas->permanent.alloc || !atlas->permanent.free ||
-        !atlas->temporary.alloc || !atlas->temporary.free) return;
+    NK_ASSERT(atlas->temporary.alloc && atlas->temporary.fre);
+    NK_ASSERT(atlas->permanent.alloc && atlas->permanent.fre);
+    if (!atlas || !atlas->permanent.alloc || !atlas->permanent.fre ||
+        !atlas->temporary.alloc || !atlas->temporary.fre) return;
     if (atlas->glyphs) {
-        atlas->permanent.free(atlas->permanent.userdata, atlas->glyphs);
+        atlas->permanent.fre(atlas->permanent.userdata, atlas->glyphs);
         atlas->glyphs = 0;
     }
     if (atlas->pixel) {
-        atlas->permanent.free(atlas->permanent.userdata, atlas->pixel);
+        atlas->permanent.fre(atlas->permanent.userdata, atlas->pixel);
         atlas->pixel = 0;
     }
 }
@@ -17141,9 +17141,9 @@ nk_font_atlas_add(struct nk_font_atlas *atlas, const struct nk_font_config *conf
 
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
+    NK_ASSERT(atlas->permanent.fre);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
 
     NK_ASSERT(config);
     NK_ASSERT(config->ttf_blob);
@@ -17151,8 +17151,8 @@ nk_font_atlas_add(struct nk_font_atlas *atlas, const struct nk_font_config *conf
     NK_ASSERT(config->size > 0.0f);
 
     if (!atlas || !config || !config->ttf_blob || !config->ttf_size || config->size <= 0.0f||
-        !atlas->permanent.alloc || !atlas->permanent.free ||
-        !atlas->temporary.alloc || !atlas->temporary.free)
+        !atlas->permanent.alloc || !atlas->permanent.fre ||
+        !atlas->temporary.alloc || !atlas->temporary.fre)
         return 0;
 
     /* allocate font config  */
@@ -17230,11 +17230,11 @@ nk_font_atlas_add_from_memory(struct nk_font_atlas *atlas, void *memory,
 
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
-    if (!atlas || !atlas->temporary.alloc || !atlas->temporary.free || !memory || !size ||
-        !atlas->permanent.alloc || !atlas->permanent.free)
+    NK_ASSERT(atlas->permanent.fre);
+    if (!atlas || !atlas->temporary.alloc || !atlas->temporary.fre || !memory || !size ||
+        !atlas->permanent.alloc || !atlas->permanent.fre)
         return 0;
 
     cfg = (config) ? *config: nk_font_config(height);
@@ -17255,9 +17255,9 @@ nk_font_atlas_add_from_file(struct nk_font_atlas *atlas, const char *file_path,
 
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
+    NK_ASSERT(atlas->permanent.fre);
 
     if (!atlas || !file_path) return 0;
     memory = nk_file_load(file_path, &size, &atlas->permanent);
@@ -17282,14 +17282,14 @@ nk_font_atlas_add_compressed(struct nk_font_atlas *atlas,
 
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
+    NK_ASSERT(atlas->permanent.fre);
 
     NK_ASSERT(compressed_data);
     NK_ASSERT(compressed_size);
-    if (!atlas || !compressed_data || !atlas->temporary.alloc || !atlas->temporary.free ||
-        !atlas->permanent.alloc || !atlas->permanent.free)
+    if (!atlas || !compressed_data || !atlas->temporary.alloc || !atlas->temporary.fre ||
+        !atlas->permanent.alloc || !atlas->permanent.fre)
         return 0;
 
     decompressed_size = nk_decompress_length((unsigned char*)compressed_data);
@@ -17316,13 +17316,13 @@ nk_font_atlas_add_compressed_base85(struct nk_font_atlas *atlas,
 
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
+    NK_ASSERT(atlas->permanent.fre);
 
     NK_ASSERT(data_base85);
-    if (!atlas || !data_base85 || !atlas->temporary.alloc || !atlas->temporary.free ||
-        !atlas->permanent.alloc || !atlas->permanent.free)
+    if (!atlas || !data_base85 || !atlas->temporary.alloc || !atlas->temporary.fre ||
+        !atlas->permanent.alloc || !atlas->permanent.fre)
         return 0;
 
     compressed_size = (((int)nk_strlen(data_base85) + 4) / 5) * 4;
@@ -17332,7 +17332,7 @@ nk_font_atlas_add_compressed_base85(struct nk_font_atlas *atlas,
     nk_decode_85((unsigned char*)compressed_data, (const unsigned char*)data_base85);
     font = nk_font_atlas_add_compressed(atlas, compressed_data,
                     (nk_size)compressed_size, height, config);
-    atlas->temporary.free(atlas->temporary.userdata, compressed_data);
+    atlas->temporary.fre(atlas->temporary.userdata, compressed_data);
     return font;
 }
 
@@ -17343,9 +17343,9 @@ nk_font_atlas_add_default(struct nk_font_atlas *atlas,
 {
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
+    NK_ASSERT(atlas->permanent.fre);
     return nk_font_atlas_add_compressed_base85(atlas,
         nk_proggy_clean_ttf_compressed_data_base85, pixel_height, config);
 }
@@ -17362,15 +17362,15 @@ nk_font_atlas_bake(struct nk_font_atlas *atlas, int *width, int *height,
 
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
+    NK_ASSERT(atlas->permanent.fre);
 
     NK_ASSERT(width);
     NK_ASSERT(height);
     if (!atlas || !width || !height ||
-        !atlas->temporary.alloc || !atlas->temporary.free ||
-        !atlas->permanent.alloc || !atlas->permanent.free)
+        !atlas->temporary.alloc || !atlas->temporary.fre ||
+        !atlas->permanent.alloc || !atlas->permanent.fre)
         return 0;
 
 #ifdef NK_INCLUDE_DEFAULT_FONT
@@ -17422,7 +17422,7 @@ nk_font_atlas_bake(struct nk_font_atlas *atlas, int *width, int *height,
         NK_ASSERT(img_rgba);
         if (!img_rgba) goto failed;
         nk_font_bake_convert(img_rgba, *width, *height, atlas->pixel);
-        atlas->temporary.free(atlas->temporary.userdata, atlas->pixel);
+        atlas->temporary.fre(atlas->temporary.userdata, atlas->pixel);
         atlas->pixel = img_rgba;
     }
     atlas->tex_width = *width;
@@ -17459,18 +17459,18 @@ nk_font_atlas_bake(struct nk_font_atlas *atlas, int *width, int *height,
         cursor->offset = nk_cursor_data[i][2];
     }}
     /* free temporary memory */
-    atlas->temporary.free(atlas->temporary.userdata, tmp);
+    atlas->temporary.fre(atlas->temporary.userdata, tmp);
     return atlas->pixel;
 
 failed:
     /* error so cleanup all memory */
-    if (tmp) atlas->temporary.free(atlas->temporary.userdata, tmp);
+    if (tmp) atlas->temporary.fre(atlas->temporary.userdata, tmp);
     if (atlas->glyphs) {
-        atlas->permanent.free(atlas->permanent.userdata, atlas->glyphs);
+        atlas->permanent.fre(atlas->permanent.userdata, atlas->glyphs);
         atlas->glyphs = 0;
     }
     if (atlas->pixel) {
-        atlas->temporary.free(atlas->temporary.userdata, atlas->pixel);
+        atlas->temporary.fre(atlas->temporary.userdata, atlas->pixel);
         atlas->pixel = 0;
     }
     return 0;
@@ -17501,7 +17501,7 @@ nk_font_atlas_end(struct nk_font_atlas *atlas, nk_handle texture,
     for (i = 0; i < NK_CURSOR_COUNT; ++i)
         atlas->cursors[i].img.handle = texture;
 
-    atlas->temporary.free(atlas->temporary.userdata, atlas->pixel);
+    atlas->temporary.fre(atlas->temporary.userdata, atlas->pixel);
     atlas->pixel = 0;
     atlas->tex_width = 0;
     atlas->tex_height = 0;
@@ -17515,19 +17515,19 @@ nk_font_atlas_cleanup(struct nk_font_atlas *atlas)
 {
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
-    if (!atlas || !atlas->permanent.alloc || !atlas->permanent.free) return;
+    NK_ASSERT(atlas->permanent.fre);
+    if (!atlas || !atlas->permanent.alloc || !atlas->permanent.fre) return;
     if (atlas->config) {
         struct nk_font_config *iter;
         for (iter = atlas->config; iter; iter = iter->next) {
             struct nk_font_config *i;
             for (i = iter->n; i != iter; i = i->n) {
-                atlas->permanent.free(atlas->permanent.userdata, i->ttf_blob);
+                atlas->permanent.fre(atlas->permanent.userdata, i->ttf_blob);
                 i->ttf_blob = 0;
             }
-            atlas->permanent.free(atlas->permanent.userdata, iter->ttf_blob);
+            atlas->permanent.fre(atlas->permanent.userdata, iter->ttf_blob);
             iter->ttf_blob = 0;
         }
     }
@@ -17537,10 +17537,10 @@ nk_font_atlas_clear(struct nk_font_atlas *atlas)
 {
     NK_ASSERT(atlas);
     NK_ASSERT(atlas->temporary.alloc);
-    NK_ASSERT(atlas->temporary.free);
+    NK_ASSERT(atlas->temporary.fre);
     NK_ASSERT(atlas->permanent.alloc);
-    NK_ASSERT(atlas->permanent.free);
-    if (!atlas || !atlas->permanent.alloc || !atlas->permanent.free) return;
+    NK_ASSERT(atlas->permanent.fre);
+    if (!atlas || !atlas->permanent.alloc || !atlas->permanent.fre) return;
 
     if (atlas->config) {
         struct nk_font_config *iter, *next;
@@ -17549,13 +17549,13 @@ nk_font_atlas_clear(struct nk_font_atlas *atlas)
             for (i = iter->n; i != iter; i = n) {
                 n = i->n;
                 if (i->ttf_blob)
-                    atlas->permanent.free(atlas->permanent.userdata, i->ttf_blob);
-                atlas->permanent.free(atlas->permanent.userdata, i);
+                    atlas->permanent.fre(atlas->permanent.userdata, i->ttf_blob);
+                atlas->permanent.fre(atlas->permanent.userdata, i);
             }
             next = iter->next;
             if (i->ttf_blob)
-                atlas->permanent.free(atlas->permanent.userdata, iter->ttf_blob);
-            atlas->permanent.free(atlas->permanent.userdata, iter);
+                atlas->permanent.fre(atlas->permanent.userdata, iter->ttf_blob);
+            atlas->permanent.fre(atlas->permanent.userdata, iter);
         }
         atlas->config = 0;
     }
@@ -17563,12 +17563,12 @@ nk_font_atlas_clear(struct nk_font_atlas *atlas)
         struct nk_font *iter, *next;
         for (iter = atlas->fonts; iter; iter = next) {
             next = iter->next;
-            atlas->permanent.free(atlas->permanent.userdata, iter);
+            atlas->permanent.fre(atlas->permanent.userdata, iter);
         }
         atlas->fonts = 0;
     }
     if (atlas->glyphs)
-        atlas->permanent.free(atlas->permanent.userdata, atlas->glyphs);
+        atlas->permanent.fre(atlas->permanent.userdata, atlas->glyphs);
     nk_zero_struct(*atlas);
 }
 #endif
@@ -18626,7 +18626,7 @@ nk_init_default(struct nk_context *ctx, const struct nk_user_font *font)
     struct nk_allocator alloc;
     alloc.userdata.ptr = 0;
     alloc.alloc = nk_malloc;
-    alloc.free = nk_mfree;
+    alloc.fre = nk_mfree;
     return nk_init(ctx, &alloc, font);
 }
 #endif
@@ -18969,7 +18969,7 @@ nk_pool_free(struct nk_pool *pool)
     if (pool->type == NK_BUFFER_FIXED) return;
     while (iter) {
         struct nk_page *next = iter->next;
-        pool->alloc.free(pool->alloc.userdata, iter);
+        pool->alloc.fre(pool->alloc.userdata, iter);
         iter = next;
     }
 }

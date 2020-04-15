@@ -6210,6 +6210,8 @@ int main(int argc, char *argv[])
 		FixZLayers();
 	}
 
+	nk_sdl_shutdown();
+
 	StopAllSounds();
 	Quit();
 	return 1;

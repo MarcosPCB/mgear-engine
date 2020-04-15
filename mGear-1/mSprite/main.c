@@ -351,7 +351,7 @@ void PushUndo(_SPRITES *s, uint8 i)
 
 uint8 PopUndo(_SPRITES *s)
 {
-	uint8 i = mspr.undostates[0];
+	uint16 i = mspr.undostates[0];
 	memcpy(s, &mspr.sprunstate[0], sizeof(_SPRITES));
 
 	for (uint16 j = 1; j < mspr.num_undo_states; j++)
@@ -433,7 +433,7 @@ int SavePrjFile(const char *path)
 		fprintf(f, "MGG %s PART\n", mgg_game[st.Game_Sprites[i].MGG_ID].path);
 		fprintf(f, "NUM_FRAMES %d\n", st.Game_Sprites[i].num_frames);
 
-		ZeroMemory(buf, 2048);
+		ZeroMem(buf, 2048);
 		for (j = 0; j < st.Game_Sprites[i].num_start_frames; j++)
 			strcat(buf, StringFormat("%d ", st.Game_Sprites[i].frame[j]));
 
@@ -521,7 +521,7 @@ int SavePrjFile(const char *path)
 						st.Game_Sprites[i].states[j].in == 1 ? "IN" : "NOIN", st.Game_Sprites[i].states[j].in_transition, st.Game_Sprites[i].states[j].out == 1 ? "OUT" : "NOOUT",
 						st.Game_Sprites[i].states[j].out_transition);
 
-					ZeroMemory(buf, 2048);
+					ZeroMem(buf, 2048);
 
 					strcpy(buf, StringFormat("STATE_OUTPUTS %d - ", j));
 
@@ -586,12 +586,15 @@ SVPRJERROR:
 
 int NewProject()
 {
+	/*
 	for (int i = 0; i < st.num_sprites; i++)
 	{
-		if (st.Game_Sprites[i].num_start_frames > 0)
-			free(st.Game_Sprites[i].frame);
+		///if (st.Game_Sprites[i].num_start_frames > 0)
+			//free(st.Game_Sprites[i].frame);
 	}
+	*/
 
+	//memset(st.Game_Sprites)
 	memset(st.Game_Sprites, 0, sizeof(_SPRITES)* st.num_sprites);
 
 	st.num_sprites = 0;
@@ -619,7 +622,7 @@ int NewProject()
 
 	memset(mspr.undostates, 0, mspr.max_undo_states + 1 * sizeof(uint16));
 
-	memset(mspr.sprunstate, 0, mspr.max_undo_states + 1, sizeof(_SPRITES));
+	memset(mspr.sprunstate, 0, mspr.max_undo_states + 1 * sizeof(_SPRITES));
 
 	memcpy(mspr.sprunstate, st.Game_Sprites, mspr.max_undo_states + 1 * sizeof(_SPRITES));
 
@@ -811,7 +814,7 @@ int FrameListSelection(uint8 mode)
 	int temp;
 	float px, py, sx, sy;
 	struct nk_image texid;
-	static int16 sel1 = 0, sel2 = 0, msel[32], msel_num = 0, mggl = -1, state = 0;
+	static int16 sel1 = 0, sel2 = 0, msel[8], msel_num = 0, mggl = -1, state = 0;
 
 	_SPRITES *spr = &st.Game_Sprites[mspr.selected_spr];
 	_MGG mgg;
@@ -837,7 +840,7 @@ int FrameListSelection(uint8 mode)
 
 			msel_num = spr->num_start_frames;
 
-			memset(msel, -1, sizeof(int16)* 32);
+			memset(msel, -1, sizeof(int16) * 8);
 
 			for (i = 0; i < spr->num_start_frames; i++)
 				msel[i] = spr->frame[i];
@@ -930,7 +933,7 @@ int FrameListSelection(uint8 mode)
 						if (state == 4)
 						{
 							temp = 0;
-							for (i = 0; i < 32; i++)
+							for (i = 0; i < 8; i++)
 							{
 								if (msel[i] == j)
 									temp = 1;
@@ -981,7 +984,7 @@ int FrameListSelection(uint8 mode)
 							if (state == 4)
 							{
 								k = 0;
-								for (i = 0; i < 32; i++)
+								for (i = 0; i < 8; i++)
 								{
 									if (msel[i] == j)
 									{
@@ -994,7 +997,7 @@ int FrameListSelection(uint8 mode)
 
 								if (k == 0)
 								{
-									for (i = 0; i < 32; i++)
+									for (i = 0; i < 8; i++)
 									{
 										if (msel[i] == -1)
 										{
@@ -1065,16 +1068,17 @@ int FrameListSelection(uint8 mode)
 	{
 		spr->num_frames = sel2 - sel1 + 1;
 
-		if (spr->num_start_frames > 0)
-		{
-			free(spr->frame);
-		}
+		//if (spr->num_start_frames > 0)
+		//{
+			//free(spr->frame);
+		//}
 
-		spr->frame = malloc(sizeof(int32)* msel_num);
+		//if (spr->num_start_frames == 0)
+			//spr->frame = malloc(sizeof(int32) * spr->num_frames);
 
 		spr->num_start_frames = msel_num;
 
-		for (i = 0, k = 0; i < 32; i++)
+		for (i = 0, k = 0; i < 8; i++)
 		{
 			if (msel[i] == -1) continue;
 
@@ -1138,14 +1142,6 @@ void MenuBar()
 			state = 0;
 	}
 
-	if (state == 6)
-	{
-		//temp = ExportProject();
-
-		if (temp == -1 || temp == 1)
-			state = 0;
-	}
-
 		if (nk_begin(ctx, "Menu", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
 		{
 			ctx->current->flags = NK_WINDOW_NO_SCROLLBAR;
@@ -1168,8 +1164,8 @@ void MenuBar()
 					//UnloadPrj();
 
 					OPENFILENAME ofn;
-					ZeroMemory(&path, sizeof(path));
-					ZeroMemory(&ofn, sizeof(ofn));
+					ZeroMem(&path, sizeof(path));
+					ZeroMem(&ofn, sizeof(ofn));
 					ofn.lStructSize = sizeof(ofn);
 					ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
 					ofn.lpstrFilter = "Sprite List Files\0*.slist\0";
@@ -1224,11 +1220,11 @@ void MenuBar()
 
 				if (nk_menu_item_label(ctx, "Save as...", NK_TEXT_LEFT))
 				{
-					ZeroMemory(&path, sizeof(path));
+					ZeroMem(&path, sizeof(path));
 
 					OPENFILENAME ofn;
 
-					ZeroMemory(&ofn, sizeof(ofn));
+					ZeroMem(&ofn, sizeof(ofn));
 					ofn.lStructSize = sizeof(ofn);
 					ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
 					ofn.lpstrFilter = "Sprite list File\0*.slist\0";
@@ -1258,11 +1254,11 @@ void MenuBar()
 			}
 
 			nk_layout_row_push(ctx, 45);
-			if (nk_menu_begin_label(ctx, "Edit", NK_TEXT_LEFT, nk_vec2(120, 200)))
+			if (nk_menu_begin_label(ctx, "Edit", NK_TEXT_LEFT, nk_vec2(150, 200)))
 			{
 				nk_layout_row_dynamic(ctx, 30, 1);
 
-				if (nk_menu_item_label(ctx, "Undo", NK_TEXT_LEFT) && mspr.num_undo_states > 0)
+				if (nk_menu_item_label(ctx, "Undo	Ctrl+z", NK_TEXT_LEFT) && mspr.num_undo_states > 0)
 				{
 					_SPRITES s;
 					uint8 undo_n = PopUndo(&s);
@@ -1327,9 +1323,10 @@ void Pannel()
 			{
 				i = mspr.selected_spr;
 
-				if (st.Game_Sprites[i].num_start_frames > 0)
-					free(st.Game_Sprites[i].frame);
+				//if (st.Game_Sprites[i].num_start_frames > 0)
+					//free(st.Game_Sprites[i].frame);
 
+				ZeroMem(st.Game_Sprites[i].frame, sizeof(int16)* 8);
 				memset(&st.Game_Sprites[i], 0, sizeof(_SPRITES));
 
 				for (j = i + 1; j < st.num_sprites; j++)
@@ -1495,8 +1492,8 @@ void Pannel()
 						st.Game_Sprites[mspr.selected_spr].MGG_ID = i;
 						OPENFILENAME ofn;
 						char path[MAX_PATH];
-						ZeroMemory(&path, sizeof(path));
-						ZeroMemory(&ofn, sizeof(ofn));
+						ZeroMem(&path, sizeof(path));
+						ZeroMem(&ofn, sizeof(ofn));
 						ofn.lStructSize = sizeof(ofn);
 						ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
 						ofn.lpstrFilter = "MGG files\0*.mgg\0";
@@ -1564,14 +1561,14 @@ void Pannel()
 
 			nk_layout_row_push(ctx, 0.30);
 			strcpy(buf, "Starting frames: ");
-			if (st.Game_Sprites[i].frame)
-			{
+			//if (st.Game_Sprites[i].frame)
+			//{
 				for (j = 0; j < st.Game_Sprites[i].num_start_frames; j++)
 				{
 					if (st.Game_Sprites[i].frame[j] > -1)
 						strcat(buf, StringFormat("%d, ", st.Game_Sprites[i].frame[j]));
 				}
-			}
+			//}
 
 			nk_label(ctx, buf, NK_TEXT_ALIGN_LEFT | NK_TEXT_ALIGN_MIDDLE);
 
@@ -1661,13 +1658,13 @@ void Pannel()
 						if (j == st.Game_Sprites[i].num_tags)
 						{
 							nk_layout_row_dynamic(ctx, 25, 1);
-							if (nk_button_label(ctx, "Add Tag", NK_TEXT_ALIGN_CENTERED | NK_TEXT_ALIGN_MIDDLE))
+							if (nk_button_label(ctx, "Add Tag"))
 								st.Game_Sprites[i].num_tags++;
 						}
 						else
 						{
 							nk_layout_row_dynamic(ctx, 25, 1);
-							if (nk_button_label(ctx, "Add Default Tags", NK_TEXT_ALIGN_CENTERED | NK_TEXT_ALIGN_MIDDLE))
+							if (nk_button_label(ctx, "Add Default Tags"))
 							{
 								strcpy(st.Game_Sprites[i].tag_names[st.Game_Sprites[i].num_tags], "INPUT");
 								st.Game_Sprites[i].num_tags++;
@@ -1686,14 +1683,14 @@ void Pannel()
 						nk_layout_row_push(ctx, 0.15);
 						if (nk_button_icon_set(BIN_ICON))
 						{
-							ZeroMemory(st.Game_Sprites[i].tag_names[j], 16);
+							ZeroMem(st.Game_Sprites[i].tag_names[j], 16);
 							
 							if (j < st.Game_Sprites[i].num_tags)
 							{
 								for (k = j + 1; k < st.Game_Sprites[i].num_tags; k++)
 								{
 									strcpy(st.Game_Sprites[i].tag_names[k - 1], st.Game_Sprites[i].tag_names[k]);
-									ZeroMemory(st.Game_Sprites[i].tag_names[k], 16);
+									ZeroMem(st.Game_Sprites[i].tag_names[k], 16);
 								}
 							}
 							
@@ -2313,7 +2310,7 @@ int main(int argc, char *argv[])
 
 	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
-	mspr.undostates = calloc(mspr.max_undo_states + 1, 1);
+	mspr.undostates = calloc(mspr.max_undo_states + 1, sizeof(uint16));
 
 	mspr.sprunstate = calloc(mspr.max_undo_states + 1, sizeof(_SPRITES));
 
@@ -2402,6 +2399,10 @@ int main(int argc, char *argv[])
 
 		UndoState();
 	}
+
+	free(mspr.undostates);
+	free(mspr.sprunstate);
+	nk_sdl_shutdown();
 
 	Quit();
 	return 1;

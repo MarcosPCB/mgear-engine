@@ -72,7 +72,7 @@ extern void UINKRender();
 
 #if defined (_VAO_RENDER) || defined (_VBO_RENDER) || defined (_VA_RENDER)
 	VB_DATAT vbd;
-	VB_DATAT *vbdt;
+	VB_DATAT *vbdt = NULL;
 	uint16 vbdt_num=0;
 	uint16 texone_num=0;
 	uint16 texone_ids[MAX_GRAPHICS];
@@ -237,6 +237,10 @@ void SignalError(int signum)
 	SymCleanup(&sym);
 
 	//free(sym);
+
+#ifdef ENG_DIAGNOSTICS
+	print_diag();
+#endif
 
 	MessageBoxRes("Critical error", MB_ICONERROR | MB_OK, "Critical error detected. Check %s for more information", st.LogName);
 }
@@ -748,6 +752,14 @@ void Quit()
 	char files[256][32];
 	int16 num;
 
+	for (int i = 0; i < st.num_mgg; i++)
+		FreeMGG(&mgg_game[i]);
+
+	for (int i = 0; i < st.num_mgg_basic; i++)
+		FreeMGG(&mgg_sys[i]);
+
+	//FreeMap();
+
 	//ResetVB();
 #ifdef HAS_IA_COMM
 	CloseHandle(EventHand);
@@ -777,13 +789,21 @@ void Quit()
 			if (GetLastError() == ERROR_SUCCESS)
 			{
 				if(remove(StringFormat("%s.cbaf", files[i])) == -1)
-					ProcessError(NULL);
+					ProcessError(__FUNCTION__, __LINE__, NULL);
 			}
 
 			CloseHandle(EventHand);
 		}
 	}
 #endif
+
+	if (vbdt != NULL)
+		free(vbdt);
+
+
+#ifdef ENG_DIAGNOSTICS
+	print_diag();
+#endif;
 
 	InputClose();
 	SDL_DestroyWindow(wn);
@@ -4341,6 +4361,8 @@ uint32 _LoadMGG(_MGG *mgg, const char *name, uint8 shadowtex)
 	free(posy);
 	free(sizex);
 	free(sizey);
+	free(offx);
+	free(offy);
 	
 	//if(imgatlas!=0)
 		free(imgatlas);
@@ -4373,13 +4395,25 @@ void FreeMGG(_MGG *file)
 		file->size[i].y=NULL;
 	}
 
-	free(file->frames);
-	free(file->anim);
-	free(file->size);
+	if(file->frames != NULL)
+		free(file->frames);
 
-	file->num_frames=NULL;
+	if (file->anim != NULL)
+		free(file->anim);
+
+	if (file->size != NULL)
+		free(file->size);
+
+	file->frames = NULL;
+	file->anim = NULL;
+	file->size = NULL;
+
+	file->num_frames = NULL;
 	
-	file->num_anims=NULL;
+	file->num_anims = NULL;
+
+	if (file->atlas != NULL)
+		free(file->atlas);
 
 	file->atlas = NULL;
 
@@ -4395,18 +4429,36 @@ void InitMGG()
 	for(i=0; i<MAX_MAP_MGG; i++)
 	{
 		memset(&mgg_map[i],0,sizeof(_MGG));
+
+		mgg_map[i].frames = NULL;
+		mgg_map[i].size = NULL;
+		mgg_map[i].anim = NULL;
+		mgg_map[i].atlas = NULL;
+
 		mgg_map[i].type=NONE;
 	}
 
 	for(i=0; i<MAX_GAME_MGG; i++)
 	{
 		memset(&mgg_game[i],0,sizeof(_MGG));
+
+		mgg_game[i].frames = NULL;
+		mgg_game[i].size = NULL;
+		mgg_game[i].anim = NULL;
+		mgg_game[i].atlas = NULL;
+
 		mgg_game[i].type=NONE;
 	}
 
 	for(i=0; i<3; i++)
 	{
 		memset(&mgg_sys[i],0,sizeof(_MGG));
+
+		mgg_sys[i].frames = NULL;
+		mgg_sys[i].size = NULL;
+		mgg_sys[i].anim = NULL;
+		mgg_sys[i].atlas = NULL;
+
 		mgg_sys[i].type=NONE;
 	}
 }
@@ -9610,21 +9662,21 @@ int32 LoadSpriteCFG(char *filename, int id)
 			else
 			if(skip==3)
 			{
-				st.Game_Sprites[id].frame = malloc(num_frames*sizeof(int32));
+				//st.Game_Sprites[id].frame = malloc(num_frames * sizeof(int32));
 				tok=strtok(buf," ");
 
-				for(i = 0; i < num_frames; i++)
+				for(i = 0; i < 8; i++)
 				{
-					tok=strtok(NULL," ");
+					tok = strtok(NULL," ");
 
-					if(tok==NULL) break;
+					if(tok == NULL) break;
 
-					st.Game_Sprites[id].frame[i]=atoi(tok);
+					st.Game_Sprites[id].frame[i] = atoi(tok);
 				}
 
 				st.Game_Sprites[id].num_start_frames = i;
 
-				st.Game_Sprites[id].frame = realloc(st.Game_Sprites[id].frame, st.Game_Sprites[id].num_start_frames * sizeof(int32));
+				//st.Game_Sprites[id].frame = realloc(st.Game_Sprites[id].frame, st.Game_Sprites[id].num_start_frames * sizeof(int32));
 
 				skip=4;
 
