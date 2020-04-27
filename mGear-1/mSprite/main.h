@@ -84,6 +84,7 @@ struct _mSprite
 	int16 curframe;
 
 	_SPRITES sprbck[MAX_SPRITES];
+	_SPRITES BACKUP2[MAX_SPRITES];
 	uint8 changes_detected;
 
 	_SPRITES *sprunstate;

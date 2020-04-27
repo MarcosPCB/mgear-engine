@@ -62,6 +62,7 @@
 #define MAX_LIGHTMAPS 256
 #define MAX_MAPMGG 32
 #define MAX_STRINGS 512
+#define MAX_UISCREENS 64
 
 #define MAX_VERTEX MAX_GRAPHICS*8
 #define MAX_COLORS MAX_GRAPHICS*12
@@ -959,6 +960,21 @@ struct _STRINGS_E
 
 typedef struct _STRINGS_E StringsE;
 
+//MGL code
+struct MGLCode
+{
+	unsigned char *code;
+	size_t size;
+	uint16 cv;
+	uint32 i;
+	uint32 val;
+	uint32 tmp;
+	uint32 v1, v2, v3, v4;
+	uint32 cur;
+	uint32 bp, sp, stack_type, memsize;
+	uint32 ret_addr;
+};
+
 //The main structure
 //Contais all the information about the game
 struct _SETTINGS_
@@ -1078,6 +1094,8 @@ struct _SETTINGS_
 
 	HANDLE process;
 	HANDLE thread;
+
+	struct MGLCode mgl;
 };
 
 typedef struct _SETTINGS_ _SETTINGS;
@@ -1333,6 +1351,9 @@ int16 LoadTextureM(void *img_data, size_t data_size, uint8 mipmap, Pos *size);
 char *CheckAppComm(int8 *command);
 void SendInfo(const char *commfile, const char *data, int8 command);
 void ResetAppComm();
+
+int8 InitMGLCode(const char *file);
+int8 ExecuteMGLCode(uint8 location);
 
 //#ifdef MFC_MGEAR
 //}

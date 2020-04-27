@@ -4264,19 +4264,26 @@ void MenuBar()
 
 	if (state == 1)
 	{
-		check = 1;//FileBrowser(mapname);
+		OPENFILENAME ofn;
+		char path[MAX_PATH];
+		ZeroMemory(&path, sizeof(path));
+		ZeroMemory(&ofn, sizeof(ofn));
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = NULL;  // If you have a window to center over, put its HANDLE here
+		ofn.lpstrFilter = "MGM files\0*.mgm\0";
+		ofn.nMaxFile = MAX_PATH;
+		ofn.lpstrFile = path;
+		ofn.lpstrTitle = "Select the MGM file";
+		//ofn.hInstance = OFN_EXPLORER;
+		ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_EXPLORER;
 
-		if (check == -1)
-			state = 0;
-
-		if (check == 1)
+		if (GetOpenFileName(&ofn))
 		{
-
-			if (LoadMap(StringFormat("%s/test.mgm", meng.prj_path)))
+			if (LoadMap(path))
 			{
 				memset(meng.mgg_list, 0, 32 * 256);
 				meng.num_mgg = 0;
-				LogApp("Map %s loaded", mapname);
+				LogApp("Map %s loaded", st.Current_Map.name);
 
 				for (a = 0; a<st.Current_Map.num_mgg; a++)
 				{
@@ -4384,10 +4391,13 @@ void MenuBar()
 						meng.z_used = lz;
 				}
 
-				state = 0;
+				SetCurrentDirectory(meng.prj_path);
+
 				//break;
 			}
 		}
+
+		state = 0;
 	}
 }
 

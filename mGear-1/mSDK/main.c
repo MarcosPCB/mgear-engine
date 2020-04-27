@@ -10,7 +10,6 @@
 #include "dirent.h"
 #include "UI.h"
 #include <curl.h>
-#include <tomcrypt.h>
 #include "funcs.h"
 #include <time.h>
 #include <SDL_video.h>
@@ -43,9 +42,6 @@ int prev_tic, curr_tic, delta, idx;
 int64 FileSize, TransBytes;
 
 mSdk msdk;
-
-prng_state prng;
-hash_state hash;
 
 void SetThemeBack()
 {
@@ -240,10 +236,6 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 								alloc_mem(buffer, files[i].size);
 							
 								fread(buffer, files[i].size, 1, f);
-							
-								sha256_init(&hash);
-								sha256_process(&hash, buffer, files[i].size);
-								sha256_done(&hash, files[i].hash);
 								
 								free(buffer);
 								fclose(f);
@@ -319,10 +311,6 @@ struct File_sys *GetFolderTreeContent(const char path[MAX_PATH], int16 *num_file
 					alloc_mem(buffer, files[i].size);
 				
 					fread(buffer, files[i].size, 1, f);
-				
-					sha256_init(&hash);
-					sha256_process(&hash, buffer, files[i].size);
-					sha256_done(&hash, files[i].hash);
 					
 					free(buffer);
 					
@@ -1006,48 +994,6 @@ int SavePrjFile(const char *filename)
 	return 1;
 }
 
-int SaveRevFile(const char *filename, char *log, size_t len, int16 num_files, _Files *files)
-{
-	FILE *f;
-
-	time_t t;
-
-	struct tm *tmv;
-
-	uint32 timet;
-
-	char header[13] = { "REV_FILE_SDK" };
-
-	int16 rev = msdk.prj.curr_rev + 1;
-
-	openfile_cmd(f, filename, "wb", MessageBoxRes("Error", MB_OK, "Could not save revision file %d", msdk.prj.curr_rev + 1); return NULL;);
-
-	fwrite(header, 13, 1, f);
-
-	fwrite(&rev, 2, 1, f);
-
-	t = time(NULL);
-
-	tmv = localtime(&t);
-
-	timet = tmv->tm_year << 20;
-	timet |= tmv->tm_mon << 16;
-	timet |= tmv->tm_mday << 11;
-	timet |= tmv->tm_hour << 5;
-	timet |= tmv->tm_min;
-
-	fwrite(&timet, 4, 1, f);
-
-	fwrite(&len, 2, 1, f);
-	fwrite(log, len, 1, f);
-	fwrite(&num_files, 2, 1, f);
-	fwrite(files, sizeof(_Files)* num_files, 1, f);
-
-	fclose(f);
-
-	return 1;
-}
-
 int LoadPrjFile(const char *filename)
 {
 	FILE *f;
@@ -1103,1202 +1049,6 @@ int LoadPrjFile(const char *filename)
 	strcat(msdk.prj.prj_raw_path, "\\_prj_raw");
 
 	return 1;
-}
-
-int CommitPrj()
-{
-	static int state = 0, pct_inc, pct;
-	static int16 num_files, num_files_exp, num_files_commited = 0;
-	
-	char fhash[512], log[1024];
-	
-	static struct File_sys *files;
-	static _Files *exp_files;
-	_Files *prj_files;
-
-	char str[256], filepath[MAX_PATH], *buf;
-
-	static char exp_state = 0, steps = 0, dots[3], pct_str[32], timed = 0;
-
-	static int64 f_timer;
-
-	int i = 0, j = 0;
-	
-	FILE *f;
-	
-	if(state == 0)
-	{
-		files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
-		
-		OPENFILE_D(f, StringFormat("%s/index",msdk.prj.exp_path),"rb");
-		
-		fread(&num_files_exp, sizeof(int16), 1, f);
-		
-		alloc_mem(exp_files, num_files_exp * sizeof(_Files));
-		
-		fread(exp_files, sizeof(_Files) * num_files_exp, 1, f);
-		
-		fclose(f);
-
-		num_files_commited = 0;
-
-		state = 1;
-	}
-	
-	if (state == 1)
-	{
-		if (nk_begin(ctx, "Commit", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 256, 512, 512), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
-		{
-			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_label(ctx, "Exported project path:", NK_TEXT_ALIGN_LEFT);
-
-			nk_label_wrap(ctx, msdk.prj.exp_path);
-
-			nk_layout_row_dynamic(ctx, 250, 1);
-
-			if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
-			{
-				nk_layout_row_dynamic(ctx, 15, 1);
-				for (i = 0; i < num_files; i++)
-				{
-					if (files[i].type == 0)
-					{
-						for (j = 0; j < num_files_exp; j++)
-						{
-							if (strcmp(StringFormat("%s/%s", files[i].parent, files[i].file), exp_files[j].path) == NULL) break;
-						}
-
-						if (j == num_files_exp)
-							j = -1;
-
-						if (j != -1)
-						{
-							if (memcmp(files[i].hash, exp_files[j].hash, 512) != NULL)
-								files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
-						}
-						else
-							files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
-					}
-				}
-
-
-				nk_group_end(ctx);
-			}
-
-			nk_layout_row_dynamic(ctx, 100, 1);
-			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, log, 1024, nk_filter_default);
-
-			nk_layout_row_dynamic(ctx, 25, 4);
-			nk_spacing(ctx, 2);
-			if (nk_button_label(ctx, "Commit"))
-				state = 2;
-
-			if (nk_button_label(ctx, "Cancel"))
-				state = 3;
-		}
-
-		nk_end(ctx);
-	}
-
-	if (state == 2)
-	{
-		if (nk_begin(ctx, "Exporting", nk_rect(st.screenx / 2 - 125, st.screeny / 2 - 48, 350, 96), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
-		{
-			nk_layout_row_dynamic(ctx, 25, 2);
-
-			if (timed == 0)
-			{
-				f_timer = st.time;
-				timed = 1;
-			}
-
-			if (timed == 1)
-			{
-				if (st.time - f_timer > TICSPERSECOND / 2)
-				{
-
-					if (strcmp(dots, "...") == NULL)
-						strcpy(dots, ".");
-					else
-						strcat(dots, ".");
-
-					timed = 0;
-					f_timer = 0;
-				}
-			}
-
-			switch (exp_state)
-			{
-			case 0:
-				sprintf(pct_str, "Creating user system%s", dots);
-				break;
-
-			case 1:
-				sprintf(pct_str, "Copying files%s", dots);
-				break;
-
-			case 2:
-				sprintf(pct_str, "Encrypting%s", dots);
-				break;
-
-			case 3:
-				sprintf(pct_str, "Pushing to storage%s", dots);
-				break;
-			}
-
-			nk_label(ctx, pct_str, NK_TEXT_ALIGN_LEFT);
-
-			if (exp_state == 0)
-			{
-				if (steps < num_files)
-				{
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("versions");
-					SetCurrentDirectory(StringFormat("%d",msdk.prj.revisions));
-
-					if (files[steps].type != 0 || files[steps].commit == 0) steps++;
-					else
-					{
-						strcpy(filepath, files[steps].path);
-						strcat(filepath, "/");
-						strcat(filepath, files[steps].file);
-
-						char extension = strrchr(files[steps].file, '.'), newfilepath[MAX_PATH];
-
-						sprintf(newfilepath, "f%04dr%04d.%s", steps, extension);
-
-						buf = GetRootDir(files[steps].parent);
-
-						if (strcmp(buf, "_prj_raw") == NULL)
-							SetCurrentDirectory("raw");
-						else
-							SetCurrentDirectory("prj");
-				
-						if (CopyFile(filepath, newfilepath, FALSE) == NULL)
-						{
-							sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
-							MessageBox(NULL, str, "Error", MB_OK);
-						}
-
-						SetCurrentDirectory("..");
-
-						steps++;
-					}
-				}
-				else
-				{
-					exp_state = 1;
-
-					SetCurrentDirectory(StringFormat("%s/users/%03d",msdk.prj.exp_path, msdk.prj.user_id));
-
-					prj_files = malloc(sizeof(_Files)* num_files);
-
-					for (i = 0, j = 0; i < num_files; i++)
-					{
-						if (files[i].commit == 1 && files[i].type == 0)
-						{
-							strcpy(prj_files[j].path, files[i].parent);
-							prj_files[j].rev = msdk.prj.curr_rev;
-							prj_files[i].f_rev = msdk.prj.revisions;
-							prj_files[j].size = files[i].size;
-							memcpy(prj_files[j].hash, files[i].hash, 512);
-							j++;
-						}
-					}
-
-					SaveRevFile(StringFormat("%04d.rif", msdk.prj.curr_rev + 1), log, strlen(log), j, prj_files);
-
-					steps = 0;
-				}
-			}
-			else
-			if (exp_state == 1)
-			{
-				if (steps == 0)
-				{
-					if (MessageBoxRes("First Commit", MB_YESNO, "Would you like to push the commit now?") == IDYES)
-					{
-
-					}
-					else
-					{
-						exp_state = 4;
-						steps = 0;
-					}
-				}
-			}
-			else
-			if (exp_state == 3)
-			{
-				MessageBoxRes("Export complete", MB_OK, "Exporting complete");
-				state = 4;
-			}
-
-			if (exp_state == 0)
-					pct = steps + 1;
-
-			if (exp_state == 1)
-				pct = steps + (num_files * 2) + 1;
-
-			if (exp_state == 2)
-				pct = 100 / pct_inc;
-
-			if (exp_state == 3)
-				pct = 100 / pct_inc;
-
-			nk_label(ctx, StringFormat("%d%%", pct * pct_inc), NK_TEXT_ALIGN_RIGHT);
-		}
-
-		nk_end(ctx);
-	}
-	
-	if(state == 3)
-	{
-		free(exp_files);
-		free(files);
-		return 1;
-	}
-
-	return NULL;
-}
-
-int ExportProject()
-{
-	static uint8 encrypted = 0, num_users = 1, usernames[8][16], passwords[8][16], state = 0, selected_str[12], exp_state = 0;
-	static int storage = 0, admin = 0, timed = 0, steps = 0, can_exp = 0, user_ready = 0, select_all = 0, select_all_2 = 0, num_files_commited;
-	static enum USER_TYPE user_perm[8];
-	char str[128], str2[128], dir[MAX_PATH];
-	int pct, pct_inc, err, salt_len, hash2_len, ck_len, master_key_len, tmp_len, tmp2_len;
-	static int16 num_files;
-	static uint64 f_timer, cur_timer, hexcode;
-	static char dots[3] = { "." }, path[MAX_PATH], path_cur[MAX_PATH], hashed_password[MAXBLOCKSIZE], hash2[MAXBLOCKSIZE], mac[MAXBLOCKSIZE], salt[MAXBLOCKSIZE],
-		master_key[MAXBLOCKSIZE], ck[MAXBLOCKSIZE], recover_keys[8][16], tmp[MAXBLOCKSIZE], tmp2[MAXBLOCKSIZE], user_salt[8][MAXBLOCKSIZE], filepath[MAX_PATH],
-		newfilepath[MAX_PATH], *extension, *buf, pct_str[128];
-
-	static struct File_sys *files;
-
-	static FILE *fc;
-
-	static symmetric_key key;
-
-	FILE *f, *f2;
-	DIR *d;
-	dirent *di;
-
-	int16 i, j;
-
-	BOOL cpf;
-
-	struct SDKEXP exporter;
-
-	_Files *prj_files;
-
-	BROWSEINFO bi;
-
-	static LPITEMIDLIST pidl;
-
-	char directory[MAX_PATH];
-	char exepath[MAX_PATH];
-	char args[MAX_PATH * 3];
-	static path2[MAX_PATH];
-	MSG msg;
-
-	DWORD error;
-
-	static DWORD exitcode;
-
-	static SHELLEXECUTEINFO info;
-	
-	static struct indexer *indexed_files;
-	static struct index_f *index_array;
-
-	ZeroMemory(&bi, sizeof(bi));
-
-	if (state == 0)
-	{
-		encrypted = 0;
-		num_users = msdk.prj.num_users;
-		memcpy(usernames, msdk.prj.users, 8 * 16);
-		ZeroMemory(passwords, 8 * 16);
-		admin = 0;
-		memset(user_perm, 0, sizeof(enum USERTYPE) * 8);
-		user_perm[0] = ADMIN;
-		storage = 0;
-		state = 1;
-		strcpy(dots, ".");
-		steps = 1;
-		can_exp = 0;
-		ZeroMemory(path, MAX_PATH);
-		ZeroMemory(path_cur, MAX_PATH);
-		files = GetFolderTreeContent(msdk.prj.prj_path, &num_files);
-		exp_state = steps = 0;
-
-		fc = NULL;
-	}
-
-	if (state == 1)
-	{
-		if (nk_begin(ctx, "Export Project", nk_rect(st.screenx / 2 - 256, st.screeny / 2 - 375, 512, 750), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
-		{
-			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_label(ctx, "Export path", NK_TEXT_ALIGN_LEFT);
-
-			nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
-			nk_layout_row_push(ctx, 0.80f);
-			nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, path, MAX_PATH, nk_filter_ascii);
-
-			nk_layout_row_push(ctx, 0.20f);
-			if (nk_button_label(ctx, "Browse"))
-			{
-				bi.lpszTitle = ("Select a folder to export the project");
-				bi.ulFlags = BIF_USENEWUI;
-
-				pidl = SHBrowseForFolder(&bi);
-
-				if (pidl)
-					SHGetPathFromIDList(pidl, path);
-			}
-			nk_layout_row_end(ctx);
-
-			nk_layout_row_dynamic(ctx, 25, 3);
-
-			encrypted = nk_option_label(ctx, "No encryption", encrypted == 0) ? 0 : encrypted;
-			encrypted = nk_option_label(ctx, "Vital encryption", encrypted == 1) ? 1 : encrypted;
-			encrypted = nk_option_label(ctx, "Full encryption", encrypted == 2) ? 2 : encrypted;
-
-			nk_layout_row_dynamic(ctx, 25, 1);
-			num_users = nk_propertyi(ctx, "Number of users", 1, num_users, 8, 1, 1);
-
-			nk_layout_row_dynamic(ctx, 196, 1);
-			if (nk_group_begin(ctx, "Users", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
-			{
-				for (i = 0; i < num_users; i++)
-				{
-					nk_layout_row_begin(ctx, NK_DYNAMIC, 25, 2);
-					if (encrypted == 0)
-						nk_layout_row_push(ctx, 0.80f);
-					else
-						nk_layout_row_push(ctx, 0.40f);
-
-					nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, usernames[i], 16, nk_filter_ascii);
-
-					if (encrypted != 0)
-					{
-						nk_layout_row_push(ctx, 0.40f);
-						nk_edit_string_zero_terminated(ctx, NK_EDIT_BOX, passwords[i], 16, nk_filter_ascii);
-					}
-
-					nk_layout_row_push(ctx, 0.20f);
-					switch (user_perm[i])
-					{
-					case ADMIN: strcpy(selected_str, "Admin");
-						break;
-
-					case ART: strcpy(selected_str, "Artist");
-						break;
-
-					case CODE: strcpy(selected_str, "Coder");
-						break;
-
-					case SOUND: strcpy(selected_str, "Sound Des.");
-						break;
-
-					case MAP: strcpy(selected_str, "Mapper");
-						break;
-					}
-
-					if (nk_combo_begin_label(ctx, selected_str, nk_vec2(nk_widget_width(ctx), 5 * 20 + 45)))
-					{
-						nk_layout_row_dynamic(ctx, 20, 1);
-						if (admin == -1 || admin == i)
-						{
-							if (nk_combo_item_label(ctx, "Admin", NK_TEXT_ALIGN_LEFT))
-							{
-								admin = i;
-								user_perm[i] = ADMIN;
-							}
-						}
-
-						if (nk_combo_item_label(ctx, "Artist", NK_TEXT_ALIGN_LEFT))
-							user_perm[i] = ART;
-
-						if (nk_combo_item_label(ctx, "Coder", NK_TEXT_ALIGN_LEFT))
-							user_perm[i] = CODE;
-
-						if (nk_combo_item_label(ctx, "Sound Des.", NK_TEXT_ALIGN_LEFT))
-							user_perm[i] = SOUND;
-
-						if (nk_combo_item_label(ctx, "Mapper", NK_TEXT_ALIGN_LEFT))
-							user_perm[i] = MAP;
-
-						if (admin == i && user_perm != ADMIN)
-							admin = -1;
-
-						nk_combo_end(ctx);
-					}
-
-					nk_layout_row_end(ctx);
-				}
-
-				nk_group_end(ctx);
-			}
-
-			nk_layout_row_dynamic(ctx, 15, 1);
-			if (nk_button_label(ctx, "Select all"))
-			{
-				for (i = 0; i < num_files; i++)
-				{
-					if (files[i].type == 0)
-						files[i].commit = 1;
-				}
-			}
-
-			nk_layout_row_dynamic(ctx, 256, 1);
-			if (nk_group_begin(ctx, "Files", NK_WINDOW_BORDER | NK_WINDOW_TITLE))
-			{
-				nk_layout_row_dynamic(ctx, 15, 1);
-				for (i = 0; i < num_files; i++)
-				{
-					//nk_layout_row_dynamic(ctx, 20, 1);
-					if (strcmp(files[i].parent, ".") == NULL && files[i].type == 0)
-						files[i].commit = nk_check_label(ctx, files[i].file, files[i].commit == 1);
-				}
-
-				//	nk_tree_pop(ctx);
-				//}
-
-				for (i = 0; i < num_files; i++)
-				{
-					if (files[i].type == 1 && files[i].filenum > 0)
-					{
-						//nk_layout_row_dynamic(ctx, 20, 1);
-						sprintf(str, "%s/%s", files[i].parent, files[i].file);
-						if (nk_tree_push_id(ctx, NK_TREE_NODE, str, NK_MINIMIZED, i))
-						{
-							nk_layout_row_dynamic(ctx, 15, 1);
-							for (j = 0; j < num_files; j++)
-							{
-								if (strcmp(files[j].parent, str) == NULL && files[j].type == 0)
-									files[j].commit = nk_check_label(ctx, files[j].file, files[j].commit == 1);
-							}
-
-							nk_tree_pop(ctx);
-						}
-					}	
-				}
-
-				nk_group_end(ctx);
-			}
-
-			nk_layout_row_dynamic(ctx, 25, 1);
-			nk_combobox_string(ctx, "Google Drive\0OneDrive\0Drop Box\0Other Storage", &storage, 4, 25, nk_vec2(90, 256));
-
-			can_exp = 0;
-			if (strlen(path) == 0) can_exp++;
-			
-			for (i = 0; i < num_users; i++)
-			{
-				if (strlen(usernames[i]) == 0)
-				{
-					can_exp++;
-					break;
-				}
-
-				if (encrypted > 0 && strlen(passwords[i]) == 0)
-				{
-					can_exp++;
-					break;
-				}
-			}
-
-			if (can_exp != 0)
-			{
-				ctx->style.button.normal = ctx->style.button.hover = ctx->style.button.active;
-				nk_button_label(ctx, "Export");
-				SetThemeBack();
-			}
-			else
-			{
-				if (nk_button_label(ctx, "Export"))
-					state = 2;
-			}
-
-			if (nk_button_label(ctx, "Cancel"))
-				state = 3;
-
-		}
-
-		nk_end(ctx);
-	}
-
-	if (state == 2)
-	{
-		if (nk_begin(ctx, "Exporting", nk_rect(st.screenx / 2 - 125, st.screeny / 2 - 48, 350, 96), NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_TITLE))
-		{
-			nk_layout_row_dynamic(ctx, 25, 2);
-
-			if (timed == 0)
-			{
-				f_timer = st.time;
-				timed = 1;
-			}
-
-			if (timed == 1)
-			{
-				if (st.time - f_timer > TICSPERSECOND / 2)
-				{
-					
-					if (strcmp(dots, "...") == NULL)
-						strcpy(dots, ".");
-					else
-						strcat(dots, ".");
-						
-					timed = 0;
-					f_timer = 0;
-				}
-			}
-
-			switch (exp_state)
-			{
-				case 0:
-					sprintf(pct_str, "Creating base system%s",dots);
-					break;
-
-				case 1:
-					sprintf(pct_str, "Copying files%s", dots);
-					break;
-
-				case 2:
-					sprintf(pct_str, "Encrypting%s", dots);
-					break;
-
-				case 3:
-					sprintf(pct_str, "Pushing to storage%s", dots);
-					break;
-			}
-			
-			nk_label(ctx, pct_str, NK_TEXT_ALIGN_LEFT);
-
-			if (exp_state == 0)
-			{
-				if (steps == 0)
-				{
-					pct_inc = (num_files * 2) + 1 + num_users + 1;
-
-					SetCurrentDirectory(path);
-					CreateDirectory(msdk.prj.name, NULL);
-					SetCurrentDirectory(msdk.prj.name);
-					GetCurrentDirectory(MAX_PATH, msdk.prj.exp_path);
-
-					CreateDirectory("versions", NULL);
-
-					steps++;
-				}
-				else
-				if (steps == 1)
-				{
-					SetCurrentDirectory(msdk.prj.exp_path);
-					//SetCurrentDirectory("versions");
-					/*
-					if (encrypted != 0)
-					{
-					sha256_init(&hash);
-					sha256_process(&hash, passwords[0], 16);
-					sha256_done(&hash, hashed_password);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-					sprintf(str2, "PRNG Error: %s", error_to_string(err));
-					MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(salt, 128, &prng);
-
-					hash2_len = 128;
-
-					pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
-
-					master_key_len = 32;
-
-					aes_keysize(&master_key_len);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-					sprintf(str2, "PRNG Error: %s", error_to_string(err));
-					MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(master_key, master_key_len, &prng);
-
-					if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
-					{
-					sprintf(str2, "RC5 Error: %s", error_to_string(err));
-					MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					i = 0;
-					do
-					{
-					rc5_ecb_encrypt(master_key + i, ck + i, &key);
-					i += 8;
-					} while (i < master_key_len);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-					sprintf(str2, "PRNG Error: %s", error_to_string(err));
-					MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(user_salt[0], 128, &prng);
-
-					tmp2_len = 4;
-
-					pkcs_5_alg2(usernames[0], strlen(usernames[0]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
-
-					for (i = 0; i < 4; i++)
-					{
-					if (i == 0) hexcode = abs(tmp2[i]);
-					else hexcode |= abs(tmp2[i]);
-					hexcode = hexcode << 8;
-					}
-
-					sprintf(str, "ID_%d.UA", hexcode);
-
-					if ((f = fopen(str, "w")) == NULL)
-					{
-					sprintf(str, "User creation error: unable to create user %s file", usernames[0]);
-					MessageBox(NULL, str, "UA Error", MB_OK);
-					}
-
-					ck_len = 32;
-					salt_len = 128;
-					fwrite(&salt_len, sizeof(int), 1, f);
-					fwrite(&ck_len, sizeof(int), 1, f);
-					fwrite(&salt, salt_len, 1, f);
-					fwrite(&ck, ck_len, 1, f);
-
-					fclose(f);
-
-					sprintf(str, "%d", hexcode);
-
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("users");
-					CreateDirectory(str, NULL);
-
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("mgear_sys");
-
-					/*
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-					sprintf(str2, "PRNG Error: %s", error_to_string(err));
-					MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(tmp, 1, &prng);
-					*/
-					/*
-						for (i = 0; i < 16; i++)
-						{
-						tmp[0] = 0;
-						while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
-						{
-						if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-						{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-						}
-
-						yarrow_read(tmp, 1, &prng);
-						}
-						recover_keys[0][i] = tmp[0];
-						}
-
-						sprintf(str, "rs_%d.UA", hexcode);
-
-						if ((f = fopen(str, "w")) == NULL)
-						{
-						sprintf(str, "User creation error: unable to create recover system %s file", usernames[0]);
-						MessageBox(NULL, str, "UA Error", MB_OK);
-						}
-
-						if ((err = rc5_setup(recover_keys[0], 16, 24, &key)) != CRYPT_OK)
-						{
-						sprintf(str2, "RC5 Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-						}
-
-						i = 0;
-						do
-						{
-						rc5_ecb_encrypt(master_key + i, ck + i, &key);
-						i += 8;
-						} while (i < master_key_len);
-
-						ck_len = 32;
-						fwrite(&ck_len, sizeof(int), 1, f);
-						fwrite(&ck, ck_len, 1, f);
-
-						fclose(f);
-
-						steps++;
-						}
-						else
-						*/
-					//{
-					if ((f = fopen("user_list.ua", "w")) == NULL)
-					{
-						sprintf(str, "User creation error: unable to create user list file");
-						MessageBox(NULL, str, "UA Error", MB_OK);
-					}
-
-					for (i = 0; i < num_users; i++)
-					{
-						sprintf(str, "%s;", usernames[i]);
-						fwrite(str, 128, 1, f);
-					}
-
-					fclose(f);
-
-					//SetCurrentDirectory(msdk.prj.exp_path);
-					//SetCurrentDirectory("users");
-					/*
-					for (i = 0; i < num_users; i++)
-					{
-					sprintf(str, "%03d", i);
-					CreateDirectory(str, NULL);
-					}
-
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("mgear_sys");
-					*/
-					exp_state = 1;
-					steps = 0;
-
-					//}
-				}
-			}
-				/*
-				else
-				if (steps >= 1 && num_users - steps != 0)
-				{
-					sha256_init(&hash);
-					sha256_process(&hash, passwords[steps - 1], 16);
-					sha256_done(&hash, hashed_password);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(salt, 128, &prng);
-
-					hash2_len = sizeof(hash2);
-
-					pkcs_5_alg2(hashed_password, strlen(hashed_password), salt, 128, 50000, find_hash("sha512"), hash2, &hash2_len);
-
-					if ((err = rc5_setup(hash2, hash2_len, 24, &key)) != CRYPT_OK)
-					{
-						sprintf(str2, "RC5 Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					i = 0;
-					do
-					{
-						rc5_ecb_encrypt(master_key + i, ck + i, &key);
-						i += 8;
-					} while (i < master_key_len);
-
-					if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-					{
-						sprintf(str2, "PRNG Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					yarrow_read(user_salt[steps - 1], 128, &prng);
-
-					tmp2_len = 4;
-
-					pkcs_5_alg2(usernames[steps - 1], strlen(usernames[steps - 1]), user_salt, 128, 50000, find_hash("sha512"), tmp2, &tmp2_len);
-
-					for (i = 0; i < 4; i++)
-					{
-						if (i == 0) hexcode = abs(tmp2[i]);
-						else hexcode |= abs(tmp2[i]);
-						hexcode = hexcode << 8;
-					}
-
-					sprintf(str, "ID_%d.UA", hexcode);
-
-					if ((f = fopen(str, "w")) == NULL)
-					{
-						sprintf(str, "User creation error: unable to create user %s file", usernames[i]);
-						MessageBox(NULL, str, "UA Error", MB_OK);
-					}
-
-					salt_len = 128;
-					ck_len = 32;
-					fwrite(&salt_len, sizeof(int), 1, f);
-					fwrite(&ck_len, sizeof(int), 1, f);
-					fwrite(&salt, salt_len, 1, f);
-					fwrite(&ck, ck_len, 1, f);
-
-					fclose(f);
-
-					sprintf(str, "%d", hexcode);
-
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("users");
-					CreateDirectory(str, NULL);
-
-					SetCurrentDirectory(msdk.prj.exp_path);
-					SetCurrentDirectory("mgear_sys");
-
-					for (i = 0; i < 16; i++)
-					{
-						tmp[0] = 0;
-						while (((tmp[0] < 65 || tmp[0] > 90) && (tmp[0] < 97 || tmp[0] > 122) && (tmp[0] < 48 || tmp[0] > 57)))
-						{
-							if ((err = rng_make_prng(128, find_prng("yarrow"), &prng, NULL)) != CRYPT_OK)
-							{
-								sprintf(str2, "PRNG Error: %s", error_to_string(err));
-								MessageBox(NULL, str2, "Error", MB_OK);
-							}
-
-							yarrow_read(tmp, 1, &prng);
-						}
-						recover_keys[steps - 1][i] = tmp[0];
-					}
-
-					sprintf(str, "rs_%d.UA", hexcode);
-
-					if ((f = fopen(str, "w")) == NULL)
-					{
-						sprintf(str, "User creation error: unable to create recover system %s file", usernames[0]);
-						MessageBox(NULL, str, "UA Error", MB_OK);
-					}
-
-					if ((err = rc5_setup(recover_keys[steps - 1], 16, 24, &key)) != CRYPT_OK)
-					{
-						sprintf(str2, "RC5 Error: %s", error_to_string(err));
-						MessageBox(NULL, str2, "Error", MB_OK);
-					}
-
-					i = 0;
-					do
-					{
-						rc5_ecb_encrypt(master_key + i, ck + i, &key);
-						i += 8;
-					} while (i < master_key_len);
-
-					ck_len = 32;
-					fwrite(&ck_len, sizeof(int), 1, f);
-					fwrite(&ck, ck_len, 1, f);
-
-					fclose(f);
-
-					steps++;
-				}
-				
-				if (steps > 1 && num_users - steps == 0)
-				{
-					exp_state = 1;
-					steps = 0;
-				}
-			}
-			*/
-			else
-			if (exp_state == 1)
-			{
-				if (steps < num_files)
-				{
-					//SetCurrentDirectory(msdk.prj.prj_path);
-
-					//ToDoBaseListSave();
-
-					if (fc == NULL)
-					{
-						openfile_d(fc, "v0000", "wb");
-						fwrite("REVFILE", 7, 1, fc);
-						fwrite(&msdk.prj.curr_rev, 2, 1, fc);
-
-						prj_files = malloc(sizeof(_Files)* num_files);
-
-						for (i = 0, j = 0; i < num_files; i++)
-						{
-							if (files[i].commit == 1 && files[i].type == 0)
-							{
-								strcpy(prj_files[j].path, files[i].parent);
-								strcat(prj_files[j].path, StringFormat("/%s", files[i].file));
-								prj_files[j].f_rev = prj_files[i].f_rev = 0;
-								prj_files[j].size = files[i].size;
-								memcpy(prj_files[j].hash, files[i].hash, 512);
-								j++;
-							}
-						}
-
-						num_files_commited = j;
-
-						fwrite(&j, sizeof(int16), 1, fc);
-						fwrite(prj_files, sizeof(_Files)* j, 1, fc);
-						fwrite("First Commit", 1024, 1, fc);
-
-						memcpy(msdk.prj.users, usernames, 8 * 16);
-						msdk.prj.num_users = num_users;
-
-						msdk.prj.revisions = 0;
-						msdk.prj.curr_rev = 0;
-
-						msdk.prj.user_id = 0;
-
-						SavePrjFile(msdk.filepath);
-
-						SetCurrentDirectory(msdk.prj.exp_path);
-						SetCurrentDirectory("versions");
-						CreateDirectory("0", NULL);
-						SetCurrentDirectory("0");
-					}
-					
-					if (files[steps].type != 0 || files[steps].commit == 0) steps++;
-					else
-					{
-						strcpy(filepath, files[steps].path);
-						strcat(filepath, "/");
-						strcat(filepath, files[steps].file);
-						
-						//extension = strrchr(files[steps].file, '.');
-						
-						//sprintf(newfilepath, "f%04dr0000.%s", steps, extension);
-						
-						//buf = GetRootDir(files[steps].parent);
-
-						//if (strcmp(buf, "_prj_raw") == NULL)
-							//SetCurrentDirectory("raw");
-						//else
-							//SetCurrentDirectory("prj");
-						/*
-						if (encrypted == 1)
-						{
-							if (strstr(files[steps].file, ".sdkprj") != NULL || strstr(files[steps].file, ".cfg") != NULL || strstr(files[steps].file, ".list") != NULL
-								|| strstr(files[steps].file, ".texprj") != NULL || strstr(files[steps].file, ".mgm") != NULL || strstr(files[steps].file, ".MGM") != NULL)
-							{
-								if ((err = aes_setup(master_key, master_key_len, NULL, &key)) != CRYPT_OK)
-								{
-									MessageBoxRes("Error", MB_OK, "Error when encrypting file %s: %s", files[steps].file, error_to_string(err));
-								}
-
-								if ((f = fopen(filepath, "r")) == NULL)
-								{
-									MessageBoxRes("Error", MB_OK, "Error while opening file %s for encryption", filepath);
-								}
-
-								if ((f = fopen(newfilepath, "w")) == NULL)
-								{
-									MessageBoxRes("Error", MB_OK, "Error while creating file %s", newfilepath);
-								}
-
-								i = 0;
-								do
-								{
-									fread(tmp, 16, 1, f);
-									aes_ecb_encrypt(tmp, ck, &key);
-									fwrite(ck, 16, 1, f2);
-
-								} while (!feof(f));
-
-								files[steps].size = ftell(f);
-
-								fclose(f);
-								fclose(f2);
-							}
-							else
-							{
-								/*
-								if ((f = fopen(filepath, "r")) == NULL)
-								{
-									MessageBoxRes("Error", MB_OK, "Error while opening file %s for copy", filepath);
-								}
-
-								fseek(f, SEEK_END, 0);
-								files[steps].size = ftell(f);
-								
-								rewind(f);
-							
-								char *buffer;
-							
-								alloc_mem(buffer, files[steps].size);
-							
-								fread(buffer, files[steps].size, 1, f);
-							
-								sha256_init(&hash);
-								sha256_process(&hash, buffer, files[steps].size);
-								sha256_done(&hash, files[steps].hash);
-
-								fclose(f);
-								
-								free(buffer);
-								*/
-						/*
-								if (CopyFile(filepath, newfilepath, FALSE) == NULL)
-								{
-									sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
-									MessageBox(NULL, str, "Error", MB_OK);
-								}
-							}
-						}
-						else
-						*/
-						//{
-						/*
-							if (CopyFile(filepath, newfilepath, FALSE) == NULL)
-							{
-								sprintf(str, "Error %x when copying file: %s", GetLastError(), files[steps].file);
-								MessageBox(NULL, str, "Error", MB_OK);
-							}
-							*/
-						//}
-
-						if ((f = fopen(filepath, "rb")) == NULL)
-						{
-							MessageBoxRes("Error", MB_OK, "Could not open file %s", filepath);
-						}
-						else
-						{
-							size_t filesize;
-							getfilesize(f, filesize);
-
-							void *data;
-
-							alloc_mem(data, filesize);
-
-							fread(data, filesize, 1, f);
-							fclose(f);
-
-							fwrite(&filesize, sizeof(size_t), 1, fc);
-							fwrite(data, filesize, 1, fc);
-
-							fflush(fc);
-
-							free_mem(data);
-						}
-
-						//SetCurrentDirectory("..");
-
-						steps++;
-					}
-				}
-				else
-				{
-					fclose(fc);
-
-					if (encrypted != 0)
-					{
-						exp_state = 2;
-					}
-					else
-						exp_state = 3;
-
-					SetCurrentDirectory(msdk.prj.exp_path);
-					
-					openfile_d(f, "log_journal", "wb");
-					
-					
-					
-					fclose(f);
-
-					if ((f = fopen("importer", "wb")) == NULL)
-					{
-						MessageBoxRes("Error", MB_OK, "Error: Could not create importer file");
-					}
-
-					strcpy(exporter.name, msdk.prj.name);
-					exporter.rev = 0;
-					exporter.curr_rev = 0;
-					exporter.encrypted = encrypted;
-					exporter.num_users = num_users;
-					
-					fwrite(&exporter, sizeof(struct SDKEXP), 1, f);
-
-					fclose(f);
-
-					if ((f = fopen("index", "wb")) == NULL)
-					{
-						MessageBoxRes("Error", MB_OK, "Error: Could not create index file");
-					}
-					
-					
-					fwrite(&num_files_commited, sizeof(int), 1, f);
-					fwrite(prj_files, sizeof(_Files) * num_files_commited, 1, f);
-
-					fclose(f);
-
-					steps = 0;
-				}
-			}
-			else
-			if (exp_state == 3)
-			{
-				if (steps == 0)
-				{
-					if (MessageBoxRes("First Commit", MB_YESNO, "Would you like to push the commit now?") == IDYES)
-					{
-
-					}
-					else
-					{
-						exp_state = 4;
-						steps = 0;
-					}
-				}
-			}
-			else
-			if (exp_state == 4)
-			{
-				MessageBoxRes("Export complete", MB_OK, "Exporting complete");
-				state = 4;
-			}
-
-			if (exp_state == 0)
-				pct = steps;
-			
-			if (exp_state == 1)
-			{
-				if (encrypted != 2)
-					pct = (steps * 2) + num_users + 1;
-				else
-					pct = steps + num_users + 1;
-			}
-
-			if (exp_state == 2)
-				pct = (steps * 2) + num_users + 1;
-
-			if (exp_state == 3)
-				pct = steps + (num_files * 2) + num_users + 1;
-
-			if (exp_state == 4)
-				pct = 100/pct_inc;
-
-			nk_label(ctx, StringFormat("%d%%",pct * pct_inc), NK_TEXT_ALIGN_RIGHT);
-		}
-
-		nk_end(ctx);
-	}
-
-	if (state == 3)
-	{
-		state = 0;
-		return -1;
-	}
-
-	if (state == 4)
-	{
-		state = 0;
-		return 1;
-	}
-
-	return NULL;
 }
 
 void UnloadPrj()
@@ -3371,14 +2121,6 @@ void MenuBar()
 			state = 0;
 	}
 
-	if (state == 6)
-	{
-		temp = ExportProject();
-
-		if (temp == -1 || temp == 1)
-			state = 0;
-	}
-
 		if (nk_begin(ctx, "Menu", nk_rect(0, 0, st.screenx, 30), NK_WINDOW_NO_SCROLLBAR))
 		{
 			ctx->current->flags = NK_WINDOW_NO_SCROLLBAR;
@@ -3711,42 +2453,14 @@ void Pannel()
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
 
-
-				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.03f + ((vec4.w * 0.15f) / vec4.h) * 3, 0.15f, (vec4.w * 0.15f) / vec4.h));
-				if (nk_button_image_toggle(ctx, nk_image_id(msdk.app[UIAPP].icon), pannel_state == UIAPP))
-				{
-					pannel_state = UIAPP;
-				}
-
-				//nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.03f + ((vec4.w * 0.15f) / vec4.h) * 3, 0.85f, (vec4.w * 0.15f) / vec4.h));
-
-				vec4s = nk_widget_bounds(ctx);
-
-				vec4s.x -= 5;
-				vec4s.y -= 2;
-				vec4s.h += 4;
-
-				if (pannel_state == UIAPP)
-					nk_fill_rect(nk_window_get_canvas(ctx), vec4s, 0, ctx->style.button.active.data.color);
-
-				nk_label_wrap(ctx, "mInterface");
-				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.03f + ((vec4.w * 0.15f) / vec4.h) * 3 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
-				nk_label_wrap(ctx, "Create interfaces such as menus and HUD for your game");
-				nk_layout_space_end(ctx);
-
-				nk_style_set_font(ctx, &fonts[0]->handle);
-
-
-				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 4, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 3, 0.15f, (vec4.w * 0.15f) / vec4.h));
 				if (nk_button_image_toggle(ctx, nk_image_id(msdk.app[MGGAPP].icon), pannel_state == MGGAPP))
 				{
 					pannel_state = MGGAPP;
 				}
 
 				//nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 4, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 3, 0.85f, (vec4.w * 0.15f) / vec4.h));
 
 				vec4s = nk_widget_bounds(ctx);
 
@@ -3759,21 +2473,21 @@ void Pannel()
 
 				nk_label_wrap(ctx, "MGG Viewer");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 4 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.04f + ((vec4.w * 0.15f) / vec4.h) * 3 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
 				nk_label_wrap(ctx, "Visualize MGG files with their textures and animations");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
 
 
-				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 5, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 4, 0.15f, (vec4.w * 0.15f) / vec4.h));
 				if (nk_button_image_toggle(ctx, nk_image_id(msdk.app[MGVAPP].icon), pannel_state == MGVAPP))
 				{
 					pannel_state = MGVAPP;
 				}
 
 				//nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 5, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 4, 0.85f, (vec4.w * 0.15f) / vec4.h));
 
 				vec4s = nk_widget_bounds(ctx);
 
@@ -3786,21 +2500,21 @@ void Pannel()
 
 				nk_label_wrap(ctx, "MGV Compiler");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 5 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.05f + ((vec4.w * 0.15f) / vec4.h) * 4 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
 				nk_label_wrap(ctx, "Compile videos for your game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
 
 
-				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 6, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 5, 0.15f, (vec4.w * 0.15f) / vec4.h));
 				if (nk_button_image_toggle(ctx, nk_image_id(msdk.app[TEXAPP].icon), pannel_state == TEXAPP))
 				{
 					pannel_state = TEXAPP;
 				}
 
 				//nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 6, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 5, 0.85f, (vec4.w * 0.15f) / vec4.h));
 
 				vec4s = nk_widget_bounds(ctx);
 
@@ -3813,21 +2527,21 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mTex");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 6 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.06f + ((vec4.w * 0.15f) / vec4.h) * 5 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
 				nk_label_wrap(ctx, "Import your textures and animate them to be used in the game");
 				nk_layout_space_end(ctx);
 
 				nk_style_set_font(ctx, &fonts[0]->handle);
 
 
-				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 7, 0.15f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.02f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 6, 0.15f, (vec4.w * 0.15f) / vec4.h));
 				if (nk_button_image_toggle(ctx, nk_image_id(msdk.app[SPRITEAPP].icon), pannel_state == SPRITEAPP))
 				{
 					pannel_state = SPRITEAPP;
 				}
 
 				//nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 7, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 6, 0.85f, (vec4.w * 0.15f) / vec4.h));
 
 				vec4s = nk_widget_bounds(ctx);
 
@@ -3840,7 +2554,7 @@ void Pannel()
 
 				nk_label_wrap(ctx, "mSprite");
 				nk_style_set_font(ctx, &fonts[2]->handle);
-				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 7 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
+				nk_layout_space_push(ctx, nk_rect(0.20f, 0.01f + 0.07f + ((vec4.w * 0.15f) / vec4.h) * 6 + 0.025f, 0.85f, (vec4.w * 0.15f) / vec4.h));
 				nk_label_wrap(ctx, "Create sprites and define AI States for your game");
 				nk_layout_space_end(ctx);
 
@@ -4253,13 +2967,6 @@ int main(int argc, char *argv[])
 
 	//InitGWEN();
 	SetSkin(ctx, msdk.theme);
-
-	register_cipher(&twofish_desc);
-	register_cipher(&aes_desc);
-	register_prng(&yarrow_desc);
-
-	register_hash(&sha256_desc);
-	register_hash(&sha512_desc);
 
 	GetCurrentDirectory(MAX_PATH, msdk.program_path);
 	

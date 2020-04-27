@@ -768,11 +768,15 @@ int main(int argc, char *argv[])
 
 	SETENGINEPATH;
 
+	InitMGLCode(NULL);
+	ExecuteMGLCode(0);
+
 	PlayMovie("Data/Movies/SIB_Logo.mgv");
 	PlayMovie("Data/Movies/Intro.mgv");
 
 	PlayMusic(3, 1);
 	SDL_Delay(1000);
+	//int8 ExecuteMGLCode(2);
 
 	while(!st.quit)
 	{

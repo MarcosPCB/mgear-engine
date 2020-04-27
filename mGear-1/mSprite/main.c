@@ -389,7 +389,7 @@ int SavePrjFile(const char *path)
 {
 	FILE *f;
 	int16 i, j, k, l, error = 0;
-	char str[2048], str2[2048], buf[2048];
+	char str[2048], str2[2048], buf[2048], path2[2048];
 	DIR *d;
 
 	if (st.num_sprites == 0)
@@ -398,7 +398,9 @@ int SavePrjFile(const char *path)
 		return NULL;
 	}
 
-	strcpy(str, path);
+	strcpy(path2, path);
+
+	strcpy(str, path2);
 
 	for (i = strlen(str); i > 0; i--)
 	{
@@ -419,6 +421,12 @@ int SavePrjFile(const char *path)
 
 	for (i = 0; i < st.num_sprites; i++)
 	{
+		if (memcmp(&mspr.BACKUP2[i], &st.Game_Sprites[i], sizeof(_SPRITES)) == NULL)
+		{
+			LogApp("No changes detected to Sprite #%d - \"%s\"", i, st.Game_Sprites[i].name);
+			continue;
+		}
+
 		strcpy(str2, str);
 		strcat(str2, StringFormat("/#%d - %s.cfg", i, st.Game_Sprites[i].name));
 
@@ -430,6 +438,10 @@ int SavePrjFile(const char *path)
 		}
 
 		fprintf(f, "NAME %s\n", st.Game_Sprites[i].name);
+
+		if (st.Game_Sprites[i].shadow == 1)
+			fprintf(f, "SHADOW\n");
+
 		fprintf(f, "MGG %s PART\n", mgg_game[st.Game_Sprites[i].MGG_ID].path);
 		fprintf(f, "NUM_FRAMES %d\n", st.Game_Sprites[i].num_frames);
 
@@ -504,9 +516,6 @@ int SavePrjFile(const char *path)
 		if (st.Game_Sprites[i].flags & 2)
 			fprintf(f, "HIDDEN\n");
 
-		if (st.Game_Sprites[i].shadow == 1)
-			fprintf(f, "SHADOW\n");
-
 		fprintf(f, "FLAMABLE %d\n", st.Game_Sprites[i].body.flamable);
 		fprintf(f, "EXPLOSIVE %d\n", st.Game_Sprites[i].body.explosive);
 
@@ -541,7 +550,7 @@ int SavePrjFile(const char *path)
 		fclose(f);
 	}
 
-	if ((f = fopen(path, "w")) == NULL)
+	if ((f = fopen(path2, "w")) == NULL)
 	{
 		GetError;
 		error = 2;
@@ -558,12 +567,13 @@ int SavePrjFile(const char *path)
 		fprintf(f, "\n");
 	}
 
-	LogApp("Saved Sprite List at \"%s\"", path);
+	LogApp("Saved Sprite List at \"%s\"", path2);
 
 	fclose(f);
 
 	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
-	strcpy(mspr.filepath, StringFormat("%s/sprite.slist", path));
+	memcpy(mspr.BACKUP2, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+	strcpy(mspr.filepath, StringFormat("%s/sprite.slist", path2));
 	
 SVPRJERROR:
 
@@ -619,6 +629,7 @@ int NewProject()
 		FreeMGG(&mgg_game[i]);
 
 	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+	memcpy(mspr.BACKUP2, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
 	memset(mspr.undostates, 0, mspr.max_undo_states + 1 * sizeof(uint16));
 
@@ -1132,7 +1143,28 @@ void MenuBar()
 	//{
 	if (state == 1)
 	{
-		NewProject();
+		if (st.num_sprites > 0 && mspr.changes_detected == 1)
+		{
+			char path[2048];
+			switch (MessageBoxRes("Warning", MB_YESNOCANCEL | MB_ICONQUESTION | MB_TOPMOST, "Would you like to save this project first?"))
+			{
+			case IDYES:
+				SavePrjFile(mspr.filepath);
+
+				sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
+
+				NewProject();
+				break;
+
+			case IDNO:
+				NewProject();
+				break;
+
+			case IDCANCEL:
+				LogApp("New project cancelled...");
+			}
+		}
+
 		state = 0;
 	}
 
@@ -1163,6 +1195,23 @@ void MenuBar()
 				{
 					//UnloadPrj();
 
+					if (st.num_sprites > 0 && mspr.changes_detected == 1)
+					{
+						char path[2048];
+						switch (MessageBoxRes("Warning", MB_YESNOCANCEL | MB_ICONQUESTION | MB_TOPMOST, "Would you like to save this project first?"))
+						{
+						case IDYES:
+							SavePrjFile(mspr.filepath);
+
+							sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
+							break;
+
+						case IDCANCEL:
+							LogApp("Open project cancelled...");
+							goto NOTOPENPRJ;
+						}
+					}
+
 					OPENFILENAME ofn;
 					ZeroMem(&path, sizeof(path));
 					ZeroMem(&ofn, sizeof(ofn));
@@ -1190,27 +1239,22 @@ void MenuBar()
 						{
 							strcpy(mspr.filepath, path);
 							memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+							memcpy(mspr.BACKUP2, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
 							sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
 						}
 					}
+
+NOTOPENPRJ:
 
 					state = 0;
 				}
 				
 				if (nk_menu_item_label(ctx, "Save", NK_TEXT_LEFT))
 				{
-					strcpy(path, mspr.filepath);
+					//strcpy(path, mspr.filepath);
 
-					for (i = strlen(path); i > 0; i--)
-					{
-						if (path[i] == '\\' || path[i] == '/')
-							break;
-						
-						path[i] = '\0';
-					}
-
-					SavePrjFile(path);
+					SavePrjFile(mspr.filepath);
 
 					//strcpy(mspr.filepath, path);
 					//memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
@@ -2309,12 +2353,15 @@ int main(int argc, char *argv[])
 	}
 
 	memcpy(mspr.sprbck, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
+	memcpy(mspr.BACKUP2, st.Game_Sprites, MAX_SPRITES * sizeof(_SPRITES));
 
 	mspr.undostates = calloc(mspr.max_undo_states + 1, sizeof(uint16));
 
 	mspr.sprunstate = calloc(mspr.max_undo_states + 1, sizeof(_SPRITES));
 
 	memcpy(mspr.sprunstate, st.Game_Sprites, mspr.max_undo_states + 1 * sizeof(_SPRITES));
+
+BACKLOOP:
 
 	while(!st.quit)
 	{
@@ -2398,6 +2445,23 @@ int main(int argc, char *argv[])
 			CheckForChanges();
 
 		UndoState();
+	}
+
+	if (st.num_sprites > 0 && mspr.changes_detected == 1)
+	{
+		char path[2048];
+		switch (MessageBoxRes("Warning", MB_YESNOCANCEL | MB_ICONQUESTION | MB_TOPMOST, "Would you like to save this project before quitting?"))
+		{
+		case IDYES:
+			SavePrjFile(mspr.filepath);
+
+			sprintf(st.WindowTitle, "Sprite %s", GetFileNameOnly(mspr.filepath));
+			break;
+
+		case IDCANCEL:
+			st.quit = 0;
+			goto BACKLOOP;
+		}
 	}
 
 	free(mspr.undostates);
