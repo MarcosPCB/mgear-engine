@@ -8,13 +8,13 @@ void Menu()
 
 	static float a_anim = 0.00f, rgb_anim = 0.0f;
 
+	PlayBGVideo("Data/Movies/Menu.mgv", 1);
+
 	if (a_anim < 255.0f && rgb_anim < 255.0f)
 	{
 		a_anim += 0.5f;
 		rgb_anim += 0.5f;
 	}
-
-	PlayBGVideo("Data/Movies/Menu.mgv", 1);
 
 	UIezData(2048 + 1536, 1536, 0.3f, 0, rgb_anim, rgb_anim, rgb_anim, mgg_sys[1].frames[0], a_anim, 0);
 
