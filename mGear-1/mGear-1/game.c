@@ -3,6 +3,7 @@
 #include "UI.h"
 #include "actors.h"
 #include "physics.h"
+#include "mgl.h"
 
 PLAYERC playerc;
 
@@ -768,7 +769,9 @@ int main(int argc, char *argv[])
 
 	SETENGINEPATH;
 
-	InitMGLCode(NULL);
+	BuildMGL("mgl_test.m", "mgl_test.mgc");
+
+	InitMGLCode("mgl_test.mgc");
 	ExecuteMGLCode(0);
 
 	PlayMovie("Data/Movies/SIB_Logo.mgv");

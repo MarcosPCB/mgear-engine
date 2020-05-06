@@ -5,7 +5,7 @@
 #include "funcs.h"
 
 #define PushStack(x) { stack[sp] = x; sp++; }
-#define PopStack(x) { x = stack[sp]; sp--; }
+#define PopStack(x) { x = stack[sp - 1]; sp--; }
 
 #define GetVarAddress(x) { v[2] = (buf[x + 1] << 24) | (buf[x + 2] << 16) | (buf[x + 3] << 8) | buf[x + 4]; if (buf[x] == 1) v[2] += bp; }
 #define GetValueCV(x, loc) { x = (buf[loc] << 24) | (buf[loc + 1] << 16) | (buf[loc + 2] << 8) | buf[loc + 3]; }
@@ -37,23 +37,6 @@ struct MGLEng_Funcs
 };
 
 typedef struct MGLEng_Funcs eng_calls;
-
-//MGL code
-struct MGLCode
-{
-	unsigned char *code;
-	size_t size;
-	uint16 cv;
-	uint32 v[8];
-	uint32 bp, sp, stack_type, memsize;
-	struct Funcs
-	{
-		void(*log)(const char *msg, ...);
-		int32(*msgbox)(const char *quote, UINT type, const char *msg, ...);
-		void(*drawline)(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
-	} funcs;
-	uint32 ret_addr;
-};
 
 //MGL compiling structs
 
@@ -90,7 +73,7 @@ struct _MGMC
 
 	} *function_table;
 
-	struct VarTab
+	struct VarTab2
 	{
 		char name[64];
 		uint8 type; //0 - constant, 1 - int, 2 - float, 3 - buffer, 4 - string (+10 if its local)
@@ -101,9 +84,16 @@ struct _MGMC
 		char *string;
 		size_t len;
 	} *vars_table;
+
+	uint32 stacksize; //0 - 2k, 1 - 4k, 2 - 16k, 3 - 48k, 4 - 64k, 5 - 128k, 6 - 512k, 7 - custom
 };
 
 typedef struct _MGMC MGMC;
 
+
+int8 BuildMGL(const char *filename, const char *finalname);
+
+int8 InitMGLCode(const char *file);
+int8 ExecuteMGLCode(uint8 location);
 
 #endif

@@ -316,3 +316,57 @@ char *GetFileNameOnly(const char *path)
 
 	return filename;
 }
+
+int8 IsNumber(const char *str)
+{
+	register uint8 i;
+	register uint16 len;
+
+	mem_assert(str);
+
+	if (str == NULL)
+		return 0;
+
+	len = strlen(str);
+
+	if (len > 10)
+	{
+		LogApp("Too big for a number!");
+		return 0;
+	}
+
+	for (i = 0; i < len; i++)
+	{
+		if ((str[i] < 48 || str[i] > 57) && (str[i] != 43 && str[i] != 45 && str[i] != '.'))
+			return 0;
+	}
+
+	return 1;
+}
+
+int8 IsNumberFloat(const char *str)
+{
+	register uint8 i;
+	register uint16 len;
+
+	mem_assert(str);
+
+	if (str == NULL)
+		return 0;
+
+	len = strlen(str);
+
+	if (len > 10)
+	{
+		LogApp("Too big for a number!");
+		return 0;
+	}
+
+	for (i = 0; i < len; i++)
+	{
+		if (str[i] == '.')
+			return 1;
+	}
+
+	return 0;
+}

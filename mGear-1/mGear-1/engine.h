@@ -149,6 +149,8 @@ double _inline sqrt14(double n);
 //Inter app commands.
 #define IA_OPENFILE 0
 
+//#include "mgl.h"
+
 enum _Enttype
 {
 	SPRITE,
@@ -966,12 +968,14 @@ struct MGLCode
 	unsigned char *code;
 	size_t size;
 	uint16 cv;
-	uint32 i;
-	uint32 val;
-	uint32 tmp;
-	uint32 v1, v2, v3, v4;
-	uint32 cur;
+	uint32 v[8];
 	uint32 bp, sp, stack_type, memsize;
+	struct Funcs
+	{
+		void(*log)(const char *msg, ...);
+		int32(*msgbox)(const char *quote, UINT type, const char *msg, ...);
+		void(*drawline)(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
+	} funcs;
 	uint32 ret_addr;
 };
 
@@ -1334,7 +1338,7 @@ void StringUIData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, 
 void StringUIvData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void String2Data(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 void StringData(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
-void LineCall(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
+void LineData(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
 
 void Finish();
 
@@ -1351,9 +1355,6 @@ int16 LoadTextureM(void *img_data, size_t data_size, uint8 mipmap, Pos *size);
 char *CheckAppComm(int8 *command);
 void SendInfo(const char *commfile, const char *data, int8 command);
 void ResetAppComm();
-
-int8 InitMGLCode(const char *file);
-int8 ExecuteMGLCode(uint8 location);
 
 //#ifdef MFC_MGEAR
 //}

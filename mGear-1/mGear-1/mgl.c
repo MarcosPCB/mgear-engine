@@ -55,13 +55,57 @@ int8 CopyFloatToInt32(unsigned char *mem, float valf)
 	return 1;
 }
 
+int32 GetValueBuf(unsigned char *mem)
+{
+	mem_assert(mem);
+
+	if (mem == NULL)
+		return NULL;
+
+	return (mem[0] << 24) | (mem[1] << 16) | (mem[2] << 8) | mem[3];
+}
+
+int8 Copy32toBuf(unsigned char *mem, int32 val)
+{
+	mem_assert(mem);
+
+	if (mem == NULL)
+		return NULL;
+
+	mem[0] = val >> 24;
+	mem[1] = (val >> 16) & 0xFF;
+	mem[2] = (val >> 8) & 0xFF;
+	mem[3] = val & 0xFF;
+
+	return 1;
+}
+
+size_t CheckCodeSize(unsigned char *code, uint32 *bt, size_t size, uint32 cur)
+{
+	mem_assert(code);
+	mem_assert(bt);
+
+	if (cur > size - 20)
+	{
+		size += 64;
+		code = realloc(code, size);
+
+		bt = realloc(bt, size * sizeof(uint32));
+
+		CHECKMEM(code);
+		CHECKMEM(bt);
+	}
+
+	return size;
+}
+
 MGMC *CompileMGL(FILE *file, uint8 optimization)
 {
 	MGMC *code;
 	char buf[4096], *tok, str1[64], str2[64];
 	uint16 func = 0, error = 0, line = 0, curfunc = 0;
 	int32 val1, val2, i, cv = 0, cv1 = 0;
-	uint32 brackets = 0, expect_bracket = 0;
+	uint32 brackets = 0, expect_bracket = 0, ret = 0;
 	float valf1, valf2;
 
 	code = calloc(1, sizeof(MGMC));
@@ -76,15 +120,84 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		if (buf[0] == '\0' || buf[0] == '\n')
 			continue;
 
-		tok = strtok(buf, " ");
+		tok = strtok(buf, " \n\t");
 
 		if (tok == NULL)
 			continue;
 
+		if (ret == 1)
+			ret++;
+		else
+		if (ret == 2)
+			ret = 0;
+
 		//Variable declarations
+		if (strcmp(tok, "MEM") == NULL)
+		{
+			tok = strtok(NULL, " \n\t");
+
+			if (tok == NULL)
+			{
+				error++;
+				LogApp("Compiler error: missing stack memory type - line: %d", line);
+				continue;
+			}
+
+			if (IsNumber(tok) == 0)
+			{
+				error++;
+				LogApp("Compiler error: undefined stack memory type - line: %d", line);
+				continue;
+			}
+
+			val1 = atoi(tok);
+
+			if (val1 < 0)
+			{
+				error++;
+				LogApp("Compiler error: undefined stack memory type - line: %d", line);
+				continue;
+			}
+
+			switch (val1)
+			{
+				case 0:
+					code->stacksize = 2048;
+					break;
+
+				case 1:
+					code->stacksize = 4096;
+					break;
+
+				case 2:
+					code->stacksize = 16384;
+					break;
+
+				case 3:
+					code->stacksize = 49152;
+					break;
+
+				case 4:
+					code->stacksize = 65536;
+					break;
+
+				case 5:
+					code->stacksize = 131072;
+					break;
+
+				case 6:
+					code->stacksize = 524288;
+					break;
+
+				default:
+					code->stacksize = val1;
+					break;
+			}
+		}
+		else
 		if (strcmp(tok, "var") == NULL)
 		{
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok == NULL)
 			{
@@ -95,7 +208,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			strcpy(str1, tok);
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok != NULL)
 			{
@@ -129,10 +242,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->num_vars++;
-				if (code->vars_table == 1)
-					code->vars_table = calloc(1, sizeof(code->vars_table));
+				if (code->num_vars == 1)
+					code->vars_table = calloc(1, sizeof(*code->vars_table));
 				else
-					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(code->vars_table));
+					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(*code->vars_table));
 
 				CHECKMEM(code->vars_table);
 
@@ -178,11 +291,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->function_table[curfunc].num_vars++;
-				if (code->function_table[curfunc].vars_table == 1)
-					code->function_table[curfunc].vars_table = calloc(1, sizeof(code->function_table[curfunc].vars_table));
+				if (code->function_table[curfunc].num_vars == 1)
+					code->function_table[curfunc].vars_table = calloc(1, sizeof(*code->function_table[curfunc].vars_table));
 				else
 					code->function_table[curfunc].vars_table = realloc(code->function_table[curfunc].vars_table,
-					code->function_table[curfunc].num_vars * sizeof(code->function_table[curfunc].vars_table));
+					code->function_table[curfunc].num_vars * sizeof(*code->function_table[curfunc].vars_table));
 
 				CHECKMEM(code->function_table[curfunc].vars_table);
 
@@ -200,7 +313,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		else
 		if (strcmp(tok, "float") == NULL)
 		{
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok == NULL)
 			{
@@ -211,7 +324,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			strcpy(str1, tok);
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok != NULL)
 			{
@@ -245,10 +358,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->num_vars++;
-				if (code->vars_table == 1)
-					code->vars_table = calloc(1, sizeof(code->vars_table));
+				if (code->num_vars == 1)
+					code->vars_table = calloc(1, sizeof(*code->vars_table));
 				else
-					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(code->vars_table));
+					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(*code->vars_table));
 
 				CHECKMEM(code->vars_table);
 
@@ -296,11 +409,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->function_table[curfunc].num_vars++;
-				if (code->function_table[curfunc].vars_table == 1)
-					code->function_table[curfunc].vars_table = calloc(1, sizeof(code->function_table[curfunc].vars_table));
+				if (code->function_table[curfunc].num_vars == 1)
+					code->function_table[curfunc].vars_table = calloc(1, sizeof(*code->function_table[curfunc].vars_table));
 				else
 					code->function_table[curfunc].vars_table = realloc(code->function_table[curfunc].vars_table,
-					code->function_table[curfunc].num_vars * sizeof(code->function_table[curfunc].vars_table));
+					code->function_table[curfunc].num_vars * sizeof(*code->function_table[curfunc].vars_table));
 
 				CHECKMEM(code->function_table[curfunc].vars_table);
 
@@ -318,7 +431,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		else
 		if (strcmp(tok, "buffer") == NULL)
 		{
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok == NULL)
 			{
@@ -329,7 +442,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			strcpy(str1, tok);
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok != NULL)
 			{
@@ -367,10 +480,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->num_vars++;
-				if (code->vars_table == 1)
-					code->vars_table = calloc(1, sizeof(code->vars_table));
+				if (code->num_vars == 1)
+					code->vars_table = calloc(1, sizeof(*code->vars_table));
 				else
-					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(code->vars_table));
+					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(*code->vars_table));
 
 				CHECKMEM(code->vars_table);
 
@@ -418,11 +531,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->function_table[curfunc].num_vars++;
-				if (code->function_table[curfunc].vars_table == 1)
-					code->function_table[curfunc].vars_table = calloc(1, sizeof(code->function_table[curfunc].vars_table));
+				if (code->function_table[curfunc].num_vars == 1)
+					code->function_table[curfunc].vars_table = calloc(1, sizeof(*code->function_table[curfunc].vars_table));
 				else
 					code->function_table[curfunc].vars_table = realloc(code->function_table[curfunc].vars_table,
-					code->function_table[curfunc].num_vars * sizeof(code->function_table[curfunc].vars_table));
+					code->function_table[curfunc].num_vars * sizeof(*code->function_table[curfunc].vars_table));
 
 				CHECKMEM(code->function_table[curfunc].vars_table);
 
@@ -440,7 +553,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		else
 		if (strcmp(tok, "string") == NULL)
 		{
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok == NULL)
 			{
@@ -471,10 +584,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->num_vars++;
-				if (code->vars_table == 1)
-					code->vars_table = calloc(1, sizeof(code->vars_table));
+				if (code->num_vars == 1)
+					code->vars_table = calloc(1, sizeof(*code->vars_table));
 				else
-					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(code->vars_table));
+					code->vars_table = realloc(code->vars_table, code->num_vars * sizeof(*code->vars_table));
 
 				CHECKMEM(code->vars_table);
 
@@ -535,11 +648,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					continue;
 
 				code->function_table[curfunc].num_vars++;
-				if (code->function_table[curfunc].vars_table == 1)
-					code->function_table[curfunc].vars_table = calloc(1, sizeof(code->function_table[curfunc].vars_table));
+				if (code->function_table[curfunc].num_vars == 1)
+					code->function_table[curfunc].vars_table = calloc(1, sizeof(*code->function_table[curfunc].vars_table));
 				else
 					code->function_table[curfunc].vars_table = realloc(code->function_table[curfunc].vars_table,
-					code->function_table[curfunc].num_vars * sizeof(code->function_table[curfunc].vars_table));
+					code->function_table[curfunc].num_vars * sizeof(*code->function_table[curfunc].vars_table));
 
 				CHECKMEM(code->function_table[curfunc].vars_table);
 
@@ -580,15 +693,15 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			strcpy(str1, tok);
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
-			int g = 0, f = 0, c = 0;
+			int g = 0, f = 0, c = 0, g1 = 0;
 
 			if (tok != NULL)
 			{
 				if (IsNumber(tok) == 0)
 				{
-					val1 = -1;
+					//val1 = -1;
 					for (i = 0; i < code->num_vars; i++)
 					{
 						if (strcmp(code->vars_table[i].name, tok) == NULL)
@@ -596,10 +709,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							//Found global variable in the table
 							code->vars_table[i].num_use++;
 
-							if (code->vars_table[i].type == 3)
+							if (code->vars_table[i].type == 2)
 								f |= 1;
 
-							val1 = -i;
+							val1 = i;
+							g = 2;
 							break;
 						}
 					}
@@ -609,7 +723,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
 						{
 							//Found local variable in the table
-							if (val1 < -1)
+							if (g == 2)
 							{
 								error++;
 								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
@@ -620,10 +734,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 							code->function_table[curfunc].vars_table[i].num_use++;
 
-							if (code->function_table[curfunc].vars_table[i].type == 3)
+							if (code->function_table[curfunc].vars_table[i].type == 2)
 								f |= 1;
 
-							val1 = -i;
+							val1 = i;
 							g = 1;
 							break;
 						}
@@ -632,7 +746,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					if (g == -1)
 						continue;
 
-					if (val1 == -1)
+					if (g == 0)
 					{
 						error++;
 						LogApp("Compiler error: undefined variable \"%s\" as first argument in \"%s\" command - line: %d, ", tok, str1, line);
@@ -653,14 +767,12 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok != NULL)
 			{
 				if (IsNumber(tok) == 0)
 				{
-					val2 = -1;
-
 					for (i = 0; i < code->num_vars; i++)
 					{
 						if (strcmp(code->vars_table[i].name, tok) == NULL)
@@ -668,10 +780,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							//Found global variable in the table
 							code->vars_table[i].num_use++;
 
-							if (code->vars_table[i].type == 3)
+							if (code->vars_table[i].type == 2)
 								f |= 2;
 
-							val2 = -i;
+							val2 = i;
+							g1 = 2;
 							break;
 						}
 					}
@@ -681,31 +794,31 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
 						{
 							//Found local variable in the table
-							if (val2 < -1)
+							if (g1 == 2)
 							{
 								error++;
 								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
 									code->function_table[curfunc].name, tok, str1, line);
-								g = -1;
+								g1 = -1;
 								break;
 							}
 
 							code->function_table[curfunc].vars_table[i].num_use++;
 
-							val2 = -i;
+							val2 = i;
 
-							if (code->function_table[curfunc].vars_table[i].type == 3)
+							if (code->function_table[curfunc].vars_table[i].type == 2)
 								f |= 2;
 
-							g |= 2;
+							g1 = 1;
 							break;
 						}
 					}
 
-					if (g == -1)
+					if (g1 == -1)
 						continue;
 
-					if (val2 == -1)
+					if (g1 == 0)
 					{
 						error++;
 						LogApp("Compiler error: undefined variable \"%s\" as second argument in \"%s\" command - line: %d, ", tok, str1, line);
@@ -734,31 +847,36 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			int t = 0;
 
-			if (strcmp(tok, "set") == NULL)
+			if (g == 2)
+				g = 0;
+
+			if (g1 == 2)
+				g1 = 0;
+
+			if (strcmp(str1, "set") == NULL)
 				t = 0;
 			else
-			if (strcmp(tok, "add") == NULL)
+			if (strcmp(str1, "add") == NULL)
 				t = 10;
 			else
-			if (strcmp(tok, "sub") == NULL)
+			if (strcmp(str1, "sub") == NULL)
 				t = 20;
 			else
-			if (strcmp(tok, "mul") == NULL)
+			if (strcmp(str1, "mul") == NULL)
 				t = 30;
 			else
-			if (strcmp(tok, "div") == NULL)
+			if (strcmp(str1, "div") == NULL)
 				t = 40;
 			else
-			if (strcmp(tok, "pow") == NULL)
+			if (strcmp(str1, "pow") == NULL)
 				t = 50;
+
+			code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
 
 			if (c == 1 && f == 0)
 			{
-				val1 *= -1;
-				val1 -= 1;
-
 				code->function_code[curfunc][cv] = t + 3;
-				code->function_code[curfunc][cv + 1] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 2] = val1 >> 24;
 				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
@@ -775,11 +893,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1 += 1;
 			}
 			else
-			if (c == 1 && f & 2 == 1 && f & 1 == 0)
+			if (c == 1 && f == 1)
 			{
-				val1 *= -1;
-				val1 -= 1;
-
 				code->function_code[curfunc][cv] = 255;
 				code->function_code[curfunc][cv + 1] = t + 1;
 				code->function_code[curfunc][cv + 2] = 0;
@@ -798,7 +913,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_code[curfunc][cv + 9] = 0;
 
 				code->function_code[curfunc][cv + 10] = t + 4;
-				code->function_code[curfunc][cv + 11] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 11] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 12] = val1 >> 24;
 				code->function_code[curfunc][cv + 13] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 14] = (val1 >> 8) & 0xFF;
@@ -815,11 +930,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1 += 4;
 			}
 			else
-			if (c == 1 && f & 1 == 1 && f & 2 == 0)
+			if (c == 1 && f == 2)
 			{
-				val1 *= -1;
-				val1 -= 1;
-
 				code->function_code[curfunc][cv] = t + 0;
 				code->function_code[curfunc][cv + 1] = 6;
 				code->function_code[curfunc][cv + 2] = val2 >> 24;
@@ -833,7 +945,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				code->function_code[curfunc][cv + 9] = 255;
 				code->function_code[curfunc][cv + 10] = t + 7;
-				code->function_code[curfunc][cv + 11] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 11] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 12] = val1 >> 24;
 				code->function_code[curfunc][cv + 13] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 14] = (val1 >> 8) & 0xFF;
@@ -850,22 +962,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1 += 4;
 			}
 			else
-			if (c == 0 && f & 1 == 1 && f & 2 == 1)
+			if (c == 1 && f == 3)
 			{
-				val1 *= -1;
-				val1 -= 1;
-
-				val2 *= -1;
-				val2 -= 1;
-
 				code->function_code[curfunc][cv] = 255;
 				code->function_code[curfunc][cv + 1] = t + 9;
-				code->function_code[curfunc][cv + 2] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 3] = val1 >> 24;
 				code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
 				code->function_code[curfunc][cv + 6] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 7] = g & 2 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 8] = val2 >> 24;
 				code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
@@ -879,22 +985,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1 += 2;
 			}
 			else
-			if (c == 0 && f & 1 == 1 && f & 2 == 0)
+			if (c == 0 && f == 1)
 			{
-				val1 *= -1;
-				val1 -= 1;
-
-				val2 *= -1;
-				val2 -= 1;
-
 				code->function_code[curfunc][cv] = 255;
 				code->function_code[curfunc][cv + 1] = t + 8;
-				code->function_code[curfunc][cv + 2] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 3] = val1 >> 24;
 				code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
 				code->function_code[curfunc][cv + 6] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 7] = g & 2 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 8] = val2 >> 24;
 				code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
@@ -908,18 +1008,12 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1 += 2;
 			}
 			else
-			if (c == 0 && f & 1 == 0 && f & 2 == 1)
+			if (c == 0 && f == 2)
 			{
-				val1 *= -1;
-				val1 -= 1;
-
-				val2 *= -1;
-				val2 -= 1;
-
 				code->function_code[curfunc][cv] = 255;
 				code->function_code[curfunc][cv + 1] = t + 4;
 				code->function_code[curfunc][cv + 2] = 0;
-				code->function_code[curfunc][cv + 3] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 3] = g1 & 1 == 1 ? 0 : 1;
 				code->function_code[curfunc][cv + 4] = val2 >> 24;
 				code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
@@ -930,7 +1024,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_code[curfunc][cv + 10] = 0;
 
 				code->function_code[curfunc][cv + 11] = t + 4;
-				code->function_code[curfunc][cv + 12] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 12] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 13] = val1 >> 24;
 				code->function_code[curfunc][cv + 14] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 15] = (val1 >> 8) & 0xFF;
@@ -946,21 +1040,39 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				cv1 += 4;
 			}
-			if (c == 0 && f & 1 == 0 && f & 2 == 0)
+			else
+			if (c == 0 && f == 3)
 			{
-				val1 *= -1;
-				val1 -= 1;
+				code->function_code[curfunc][cv] = 255;
+				code->function_code[curfunc][cv + 1] = t + 9;
+				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 3] = val1 >> 24;
+				code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 6] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 8] = val2 >> 24;
+				code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 11] = val2 & 0xFF;
 
-				val2 *= -1;
-				val2 -= 1;
+				cv += 12;
 
+				code->bt_trl[curfunc][cv1] = 255;
+				code->bt_trl[curfunc][cv1 + 1] = t + 9;
+
+				cv1 += 1;
+			}
+			else
+			if (c == 0 && f == 0)
+			{
 				code->function_code[curfunc][cv] = t + 5;
-				code->function_code[curfunc][cv + 1] = g & 1 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 2] = val1 >> 24;
 				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
 				code->function_code[curfunc][cv + 5] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 6] = g & 2 == 1 ? 0 : 1;
+				code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 7] = val2 >> 24;
 				code->function_code[curfunc][cv + 8] = (val2 >> 16) & 0xFF;
 				code->function_code[curfunc][cv + 9] = (val2 >> 8) & 0xFF;
@@ -984,7 +1096,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok == NULL)
 			{
@@ -1013,21 +1125,38 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			i = code->num_functions - 1;
 
 			if (code->num_functions - 1 == 0)
-				code->function_table = calloc(1, sizeof(code->function_table));
+			{
+				code->function_table = calloc(1, sizeof(*code->function_table));
+				code->bt_trl = calloc(1, sizeof(uint32*));
+				code->bt_trl[0] = calloc(128, sizeof(uint32));
+				code->function_code = calloc(1, sizeof(unsigned char*));
+				code->function_code[0] = calloc(128, 1);
+			}
 			else
-				code->function_table = realloc(code->function_table, code->num_functions * sizeof(code->function_table));
+			{
+				code->function_table = realloc(code->function_table, code->num_functions * sizeof(*code->function_table));
+				
+				code->function_code = realloc(code->function_code, code->num_functions * sizeof(unsigned char*));
+				code->function_code[code->num_functions - 1] = calloc(128, 1);
+
+				code->bt_trl = realloc(code->bt_trl, code->num_functions * sizeof(uint32*));
+				code->bt_trl[code->num_functions - 1] = calloc(128, sizeof(uint32));
+			}
 
 			CHECKMEM(code->function_table);
+			CHECKMEM(code->function_code);
+			CHECKMEM(code->bt_trl);
 
 			strcpy(code->function_table[i].name, tok);
 			curfunc = i;
 			code->function_table[i].num_vars = 0;
 			code->function_table[i].num_use = 0;
-			code->function_table[i].size = 0;
-			code->function_table[i].address = cv;
+			code->function_table[i].address = 0;
 			code->function_table[i].num_args = 0;
 
-			while ((tok = strtok(NULL, " ")) != NULL)
+			code->function_table[i].size = 128;
+
+			while ((tok = strtok(NULL, " \n\t")) != NULL)
 			{
 				if (strcmp(tok, "var") == NULL || strcmp(tok, "float") == NULL || strcmp(tok, "buffer") == NULL || strcmp(tok, "string") == NULL)
 					code->function_table[i].num_args++;
@@ -1036,7 +1165,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					error++;
 					LogApp("Compiler error: undefined keyword \"%s\" in function argument list \"%s\" - line: %d", tok, code->function_table[i].name, line);
 					code->num_functions--; //Remove function due to error
-					code->function_table = realloc(code->function_table, code->num_functions * sizeof(code->function_table));
+					code->function_table = realloc(code->function_table, code->num_functions * sizeof(*code->function_table));
 					CHECKMEM(code->function_table);
 					func = 0;
 					break;
@@ -1044,6 +1173,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			}
 
 			expect_bracket = 1;
+			cv = 0;
+			cv1 = 0;
 		}
 		else
 		if (strcmp(tok, "return") == NULL)
@@ -1055,9 +1186,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			int g = 0, f = 0, c = 0;
+
+			code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
 
 			if (tok != NULL)
 			{
@@ -1072,10 +1205,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							//Found global variable in the table
 							code->vars_table[i].num_use++;
 
-							if (code->vars_table[i].type == 3)
+							if (code->vars_table[i].type == 2)
 								f |= 2;
 
-							val1 = -i;
+							val1 -= i;
 							break;
 						}
 					}
@@ -1096,9 +1229,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 							code->function_table[curfunc].vars_table[i].num_use++;
 
-							val1 = -i;
+							val1 -= i;
 
-							if (code->function_table[curfunc].vars_table[i].type == 3)
+							if (code->function_table[curfunc].vars_table[i].type == 2)
 								f |= 2;
 
 							g |= 2;
@@ -1132,6 +1265,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			else
 			{
 				code->function_code[curfunc][cv] = 210;
+				ret = 1;
 				cv++;
 				continue;
 			}
@@ -1222,6 +1356,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				cv1 += 4;
 			}
+
+			ret = 1;
 		}
 		else
 		if (strcmp(tok, "call") == NULL)
@@ -1233,7 +1369,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
-			tok = strtok(NULL, " ");
+			tok = strtok(NULL, " \n\t");
 
 			if (tok == NULL)
 			{
@@ -1272,10 +1408,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			int c = 0, g = 0, f = 0, j = 0, b = 0;
 			val1 = -1;
 
-			while ((tok = strtok(NULL, " ")) != NULL)
+			while ((tok = strtok(NULL, " \n\t")) != NULL)
 			{
 				c = 0;
-				val1 = -1;
 				g = 0;
 				f = 0;
 				j = 0;
@@ -1289,6 +1424,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 						{
 							val1 = j;
 
+							g = 2;
+
 							if (code->vars_table[j].type == 2)
 								f = 1;
 
@@ -1296,7 +1433,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 						}
 					}
 
-					if (val1 == -1)
+					if (g == 2)
 					{
 						for (j = 0; j < code->function_table[curfunc].num_vars; j++)
 						{
@@ -1313,7 +1450,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							}
 						}
 
-						if (val1 == -1)
+						if (g == 0)
 						{
 							error++;
 							LogApp("Compiler error: undefined keyword \"%s\" at call command - line: %d", tok, line);
@@ -1334,6 +1471,11 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					else
 						val1 = atol(tok);
 				}
+
+				code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
+
+				if (g == 2)
+					g = 0;
 
 				if (c == 1 && f == 0)
 				{
@@ -1372,7 +1514,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				if (c == 0 && f == 0)
 				{
 					code->function_code[curfunc][cv] = 206;
-					code->function_code[curfunc][cv + 1] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
 					code->function_code[curfunc][cv + 2] = val1 >> 24;
 					code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
 					code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
@@ -1390,7 +1532,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					code->function_code[curfunc][cv] = 255;
 					code->function_code[curfunc][cv + 1] = 4;
 					code->function_code[curfunc][cv + 2] = 0;
-					code->function_code[curfunc][cv + 3] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 3] = g == 1 ? 1 : 0;
 					code->function_code[curfunc][cv + 4] = val1 >> 24;
 					code->function_code[curfunc][cv + 5] = (val1 >> 16) & 0xFF;
 					code->function_code[curfunc][cv + 6] = (val1 >> 8) & 0xFF;
@@ -1423,7 +1565,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				code->function_code[curfunc][cv] = 204;
 
-				i = code->function_table[i].address;
+				//i = code->function_table[i].address;
 
 				code->function_code[curfunc][cv + 1] = 0;
 				code->function_code[curfunc][cv + 2] = i >> 24;
@@ -1460,6 +1602,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->bt_trl[curfunc][cv1] = 204;
 
 				cv1++;
+
+				code->function_table[i].num_use++;
 			}
 		}
 		else
@@ -1480,7 +1624,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
-			if (brackets < 0)
+			if (brackets > 0)
 				brackets--;
 			else
 			{
@@ -1488,8 +1632,509 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				LogApp("Compiler error: found } before { - line: %d", line);
 				continue;
 			}
+
+			if (brackets == 0)
+			{
+				if (ret == 2)
+				{
+					code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
+
+					code->function_code[curfunc][cv] = 210;
+					cv++;
+
+					code->bt_trl[curfunc][cv1] = 210;
+					cv1++;
+				}
+
+				code->function_table[curfunc].size = cv;
+
+				code->bt_trl[curfunc] = realloc(code->bt_trl[curfunc], code->function_table[curfunc].size);
+				code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
+
+				func = 0;
+			}
 		}
 	}
+
+	fclose(file);
+
+	if (func == 1)
+	{
+		error++;
+		LogApp("Compiler error: missing } in function \"%s\" - line: %d", code->function_table[curfunc].name, line - 1);
+	}
+
+	if (error > 0)
+	{
+		LogApp("Compiler: found %d errors - compilling process was stopped", error);
+		
+		for (i = 0; i < code->num_functions; i++)
+		{
+			free(code->bt_trl[i]);
+			free(code->function_code[i]);
+
+			if (code->function_table[i].num_vars > 0)
+				free(code->function_table[i].vars_table);
+		}
+
+		free(code->bt_trl);
+		free(code->function_code);
+		free(code->function_table);
+		free(code->vars_table);
+
+		return NULL;
+	}
+
+	size_t tsize = 0;
+
+	for (i = 0; i < code->num_functions; i++)
+		tsize += code->function_table[i].size;
+
+	LogApp("Compiled %d functions and %d global variables  - total size: %l", code->num_functions, code->num_vars, tsize);
+
+	LogApp("Compiling process done - no errors detected");
+
+	return code;
+}
+
+unsigned char *LinkMGL(MGMC *code, uint8 optimization)
+{
+	register int32 i = 0, j = 0, cv = 0, cv1 = 0, cv2 = 0;
+
+	uint32 line = 0, errors = 0, status = 0;
+
+	int32 temp;
+
+	mem_assert(code);
+
+	unsigned char *c = calloc(2048, 1);
+	CHECKMEM(c);
+
+	size_t csize = 2048;
+
+	//Header
+	c[0] = 'M';
+	c[1] = 'G';
+	c[2] = 'L';
+	c[3] = ' ';
+
+	//Bytes 4 - 13 holds the entry points
+	//Byte 14 - holds the stack type - next 4 bytes the size if its a custom type
+
+	if (code->stacksize > 6)
+	{
+		c[24] = 7;
+		c[25] = code->stacksize >> 24;
+		c[26] = (code->stacksize >> 16) & 0xFF;
+		c[27] = (code->stacksize >> 8) & 0xFF;
+		c[28] = code->stacksize & 0xFF;
+	}
+	else
+		c[24] = code->stacksize;
+
+	cv = 37;
+	cv1 = 0;
+	cv2 = 0;
+
+	for (j = 0; j < code->num_vars; j++)
+	{
+		c[cv] = 254;
+		c[cv + 1] = code->vars_table[j].type;
+
+		if (c[cv + 1] != 2)
+			Copy32toBuf(c + cv + 2, code->vars_table[j].value);
+		else
+			CopyFloatToInt32(c + cv + 2, code->vars_table[j].valuef);
+
+		cv += 6;
+	}
+
+	for (i = 0; i < code->num_functions; i++)
+	{
+		if (cv > csize - 32)
+		{
+			c = realloc(c, csize + 128);
+			CHECKMEM(c);
+			csize += 128;
+		}
+
+		code->function_table[i].address = cv;
+
+		if (strcmp(code->function_table[i].name, "Init") == NULL)
+		{
+			c[4] = cv >> 24;
+			c[5] = (cv >> 16) & 0xFF;
+			c[6] = (cv >> 8) & 0xFF;
+			c[7] = cv & 0xFF;
+
+			status |= 2;
+		}
+		else
+		if (strcmp(code->function_table[i].name, "PreGame") == NULL)
+		{
+			c[8] = cv >> 24;
+			c[9] = (cv >> 16) & 0xFF;
+			c[10] = (cv >> 8) & 0xFF;
+			c[11] = cv & 0xFF;
+
+			status |= 4;
+		}
+		else
+		if (strcmp(code->function_table[i].name, "GameLoop") == NULL)
+		{
+			c[12] = cv >> 24;
+			c[13] = (cv >> 16) & 0xFF;
+			c[14] = (cv >> 8) & 0xFF;
+			c[15] = cv & 0xFF;
+
+			status |= 8;
+		}
+		else
+		if (strcmp(code->function_table[i].name, "MainLoop") == NULL)
+		{
+			c[16] = cv >> 24;
+			c[17] = (cv >> 16) & 0xFF;
+			c[18] = (cv >> 8) & 0xFF;
+			c[19] = cv & 0xFF;
+
+			status |= 16;
+		}
+		else
+		if (strcmp(code->function_table[i].name, "End") == NULL)
+		{
+			c[20] = cv >> 24;
+			c[21] = (cv >> 16) & 0xFF;
+			c[22] = (cv >> 8) & 0xFF;
+			c[23] = cv & 0xFF;
+
+			status |= 32;
+		}
+
+		for (j = 0; j < code->function_table[i].num_vars; j++)
+		{
+			if (cv > csize - 10)
+			{
+				c = realloc(c, csize + 128);
+				CHECKMEM(c);
+				csize += 128;
+			}
+
+			c[cv] = 254;
+			c[cv + 1] = code->function_table[i].vars_table[j].type;
+
+			if (c[cv + 1] != 2)
+				Copy32toBuf(c + cv + 2, code->function_table[i].vars_table[j].value);
+			else
+				CopyFloatToInt32(c + cv + 2, code->function_table[i].vars_table[j].valuef);
+
+			cv += 6;
+		}
+
+		for (cv1 = 0; cv1 < code->function_table[i].size; )
+		{
+			if (cv > csize - 16)
+			{
+				c = realloc(c, csize + 128);
+				CHECKMEM(c);
+				csize += 128;
+			}
+
+			c[cv] = code->function_code[i][cv1];
+
+			if (c[cv] < 56)
+			{
+				switch (c[cv] % 10)
+				{
+					case 0: //6 bytes
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						cv += 6;
+						cv1 += 6;
+						break;
+
+					case 1: //7 bytes
+					case 4:
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+						cv += 7;
+						cv1 += 7;
+						break;
+
+					case 2: //3 bytes
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						cv += 3;
+						cv1 += 3;
+						break;
+
+					case 3: //10 bytes
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+						c[cv + 7] = code->function_code[i][cv1 + 7];
+						c[cv + 8] = code->function_code[i][cv1 + 8];
+						c[cv + 9] = code->function_code[i][cv1 + 9];
+						cv += 10;
+						cv1 += 10;
+						break;
+
+					case 5: //11 bytes
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+						c[cv + 7] = code->function_code[i][cv1 + 7];
+						c[cv + 8] = code->function_code[i][cv1 + 8];
+						c[cv + 9] = code->function_code[i][cv1 + 9];
+						c[cv + 10] = code->function_code[i][cv1 + 10];
+						cv += 11;
+						cv1 += 11;
+						break;
+				}
+
+				continue;
+			}
+			else
+			if (c[cv] == 255 && c[cv] < 56)
+			{
+				switch (c[cv + 1] % 10)
+				{
+				case 0: //6 bytes
+				case 1:
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+					cv += 7;
+					cv1 += 7;
+					break;
+
+				case 3: //7 bytes
+				case 4:
+				case 7:
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+					c[cv + 7] = code->function_code[i][cv1 + 7];
+					cv += 8;
+					cv1 += 8;
+					break;
+
+				case 2: //3 bytes
+				case 5:
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					cv += 4;
+					cv1 += 4;
+					break;
+
+				case 6: //10 bytes
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+					c[cv + 7] = code->function_code[i][cv1 + 7];
+					c[cv + 8] = code->function_code[i][cv1 + 8];
+					c[cv + 9] = code->function_code[i][cv1 + 9];
+					c[cv + 10] = code->function_code[i][cv1 + 10];
+					cv += 11;
+					cv1 += 11;
+					break;
+
+				case 8: //11 bytes
+				case 9:
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+					c[cv + 7] = code->function_code[i][cv1 + 7];
+					c[cv + 8] = code->function_code[i][cv1 + 8];
+					c[cv + 9] = code->function_code[i][cv1 + 9];
+					c[cv + 10] = code->function_code[i][cv1 + 10];
+					c[cv + 11] = code->function_code[i][cv1 + 11];
+					cv += 12;
+					cv1 += 12;
+					break;
+				}
+
+				continue;
+			}
+			else
+			if (c[cv] == 204 && code->function_code[i][cv1 + 1] == 0)
+			{
+				temp = (code->function_code[i][cv1 + 2] << 24) | (code->function_code[i][cv1 + 3] << 16) | (code->function_code[i][cv1 + 4] << 8)
+					| code->function_code[i][cv1 + 5];
+
+				if (temp > code->num_functions)
+				{
+					errors++;
+					LogApp("Linker error: detected call to undefined function in address: %l of function: %s", cv1, code->function_table[i].name);
+					cv += 6;
+					cv1 += 6;
+					continue;
+				}
+
+				if (temp > i)
+				{
+					errors++;
+					LogApp("Linker error: detected call to function: %s - not defined yet", cv1, code->function_table[temp].name);
+					cv += 6;
+					cv1 += 6;
+					continue;
+				}
+
+				c[cv + 1] = 0;
+
+				Copy32toBuf(c + cv + 2, code->function_table[temp].address);
+
+				cv += 6;
+				cv1 += 6;
+				continue;
+			}
+			else
+			if (c[cv] == 204 && code->function_code[i][cv1 + 1] == 1)
+			{
+				c[cv + 1] = code->function_code[i][cv1 + 1];
+				c[cv + 2] = code->function_code[i][cv1 + 2];
+				c[cv + 3] = code->function_code[i][cv1 + 3];
+				c[cv + 4] = code->function_code[i][cv1 + 4];
+				c[cv + 5] = code->function_code[i][cv1 + 5];
+
+				cv += 6;
+				cv1 += 6;
+				continue;
+			}
+			else
+			{
+				cv++;
+				cv1++;
+			}
+		}
+	}
+
+	if (!(status && 2))
+		LogApp("Linker warning: missing function Init entry point");
+
+	if (!(status && 4))
+		LogApp("Linker warning: missing function PreGame entry point");
+
+	if (!(status && 8))
+		LogApp("Linker warning: missing function GameLoop entry point");
+
+	if (!(status && 16))
+		LogApp("Linker warning: missing function MainLoop entry point");
+
+	if (!(status && 32))
+		LogApp("Linker warning: missing function End entry point");
+
+	if (errors > 0)
+	{
+		LogApp("Errors detected during linking stage - stopping...");
+		free(c);
+		return NULL;
+	}
+
+	Copy32toBuf(c + 29, cv - 37); //Save the code size 
+	Copy32toBuf(c + 33, cv); ///Save the resource offset (maybe you can save resources with the code, like art, maps and stuff??)
+
+	c = realloc(c, cv + 1);
+	CHECKMEM(c);
+
+	if (status < 2 + 4 + 8 + 16 + 32)
+		LogApp("Linking sucessfull with some warnings - code may not work correctly");
+	else
+		LogApp("Linking sucessfull with no errors or warnings");
+
+	return c;
+}
+
+int8 BuildMGL(const char *filename, const char *finalname)
+{
+	FILE *f;
+
+	MGMC *code;
+	unsigned char *c;
+
+	openfile_d(f, filename, "r");
+
+	code = CompileMGL(f, 0);
+
+	if (code == NULL)
+	{
+		LogApp("Compiling stage failed");
+		fclose(f);
+		return NULL;
+	}
+
+	fclose(f);
+
+	c = LinkMGL(code, 0);
+
+	if (c == NULL)
+	{
+		LogApp("Linking stage failed");
+
+		for (int i = 0; i < code->num_functions; i++)
+		{
+			free(code->bt_trl[i]);
+			free(code->function_code[i]);
+
+			if (code->function_table[i].num_vars > 0)
+				free(code->function_table[i].vars_table);
+		}
+
+		free(code->bt_trl);
+		free(code->function_code);
+		free(code->function_table);
+		free(code->vars_table);
+
+		return NULL;
+	}
+
+	openfile_d(f, finalname, "wb");
+
+	size_t size = GetValueBuf(c + 33);
+
+	fwrite(c, 1, size, f);
+
+	fclose(f);
+
+	free(c);
+
+	for (int i = 0; i < code->num_functions; i++)
+	{
+		free(code->bt_trl[i]);
+		free(code->function_code[i]);
+
+		if (code->function_table[i].num_vars > 0)
+			free(code->function_table[i].vars_table);
+	}
+
+	free(code->bt_trl);
+	free(code->function_code);
+	free(code->function_table);
+	free(code->vars_table);
+
+	LogApp("Build complete");
+
+	return 1;
 }
 
 int8 InitMGLCode(const char *file)
@@ -1518,71 +2163,73 @@ int8 InitMGLCode(const char *file)
 		c[2] = 'L';
 		c[3] = ' ';
 
-		c[4] = 30 >> 8;
-		c[5] = 30 & 0xFF;
+		c[4] = 30 >> 24;
+		c[5] = (30 >> 16) & 0xFF;
+		c[6] = (30 >> 8) & 0xFF;
+		c[7] = 30 & 0xFF;
 
-		c[14] = 0;
+		c[24] = 0;
 
 		//Define two global variables
-		c[18] = 254;
-		c[19] = 1;
-		c[20] = 16384 >> 24;
-		c[21] = (16384 >> 16) & 0xFF;
-		c[22] = (16384 >> 8) & 0xFF;
-		c[23] = 16384 & 0xFF;
+		c[29] = 254;
+		c[30] = 1;
+		c[31] = 16384 >> 24;
+		c[32] = (16384 >> 16) & 0xFF;
+		c[33] = (16384 >> 8) & 0xFF;
+		c[34] = 16384 & 0xFF;
 
-		c[24] = 254;
-		c[25] = 1;
-		c[26] = 32768 >> 24;
-		c[27] = (32768 >> 16) & 0xFF;
-		c[28] = (32768 >> 8) & 0xFF;
-		c[29] = 32768 & 0xFF;
+		c[35] = 254;
+		c[36] = 1;
+		c[37] = 32768 >> 24;
+		c[38] = (32768 >> 16) & 0xFF;
+		c[39] = (32768 >> 8) & 0xFF;
+		c[40] = 32768 & 0xFF;
 
 		//Init entry point
 		//define local var
-		c[30] = 254;
-		c[31] = 1;
-		c[32] = 65536 >> 24;
-		c[33] = (65536 >> 16) & 0xFF;
-		c[34] = (65536 >> 8) & 0xFF;
-		c[35] = 65536 & 0xFF;
+		c[41] = 254;
+		c[42] = 1;
+		c[43] = 65536 >> 24;
+		c[44] = (65536 >> 16) & 0xFF;
+		c[45] = (65536 >> 8) & 0xFF;
+		c[46] = 65536 & 0xFF;
 
 		//set regi mem
-		c[36] = 1;
-		c[37] = 14;
-		c[38] = 0;
-		c[39] = 0 >> 24;
-		c[40] = (0 >> 16) & 0xFF;
-		c[41] = (0 >> 8) & 0xFF;
-		c[42] = 0 & 0xFF;
+		c[47] = 1;
+		c[48] = 14;
+		c[49] = 0;
+		c[50] = 0 >> 24;
+		c[51] = (0 >> 16) & 0xFF;
+		c[52] = (0 >> 8) & 0xFF;
+		c[53] = 0 & 0xFF;
 
 		//set regi regi
-		c[43] = 2;
-		c[44] = 15;
-		c[45] = 14;
+		c[54] = 2;
+		c[55] = 15;
+		c[56] = 14;
 
 		//set mem regi
-		c[46] = 4;
-		c[47] = 0;
-		c[48] = 0 >> 24;
-		c[49] = (0 >> 16) & 0xFF;
-		c[50] = (0 >> 8) & 0xFF;
-		c[51] = 0 & 0xFF;
-		c[52] = 16;
+		c[57] = 4;
+		c[58] = 0;
+		c[59] = 0 >> 24;
+		c[60] = (0 >> 16) & 0xFF;
+		c[61] = (0 >> 8) & 0xFF;
+		c[62] = 0 & 0xFF;
+		c[63] = 16;
 
 		//add mem mem
-		c[53] = 15;
-		c[54] = 1;
-		c[55] = 1 >> 24;
-		c[56] = (1 >> 16) & 0xFF;
-		c[57] = (1 >> 8) & 0xFF;
-		c[58] = 1 & 0xFF;
-		c[59] = 0;
-		c[60] = 0 >> 24;
-		c[61] = (0 >> 16) & 0xFF;
-		c[62] = (0 >> 8) & 0xFF;
-		c[63] = 0 & 0xFF;
-		c[64] = 210;
+		c[64] = 15;
+		c[65] = 1;
+		c[66] = 1 >> 24;
+		c[67] = (1 >> 16) & 0xFF;
+		c[68] = (1 >> 8) & 0xFF;
+		c[69] = 1 & 0xFF;
+		c[70] = 0;
+		c[71] = 0 >> 24;
+		c[72] = (0 >> 16) & 0xFF;
+		c[73] = (0 >> 8) & 0xFF;
+		c[74] = 0 & 0xFF;
+		c[75] = 210;
 	}
 	else
 	{
@@ -1596,6 +2243,8 @@ int8 InitMGLCode(const char *file)
 		st.mgl.code = malloc(st.mgl.size);
 		CHECKMEM(st.mgl.code);
 
+		fread(st.mgl.code, 1, st.mgl.size, f);
+
 		fclose(f);
 	}
 
@@ -1605,14 +2254,14 @@ int8 InitMGLCode(const char *file)
 		return NULL;
 	}
 
-	if (st.mgl.code[14] == 0)
+	if (st.mgl.code[24] == 0)
 	{
 		st.mgl.memsize = 131072;
 		st.mgl.stack_type = 0;
 	}
 	else
 	{
-		st.mgl.memsize = (st.mgl.code[15] << 24) | (st.mgl.code[16] << 16) | (st.mgl.code[17] << 8) | st.mgl.code[18];
+		st.mgl.memsize = (st.mgl.code[25] << 24) | (st.mgl.code[26] << 16) | (st.mgl.code[27] << 8) | st.mgl.code[28];
 		st.mgl.stack_type = 1;
 	}
 
@@ -1622,7 +2271,7 @@ int8 InitMGLCode(const char *file)
 	///Load engine calls
 
 	st.mgl.funcs.log = LogApp;
-	st.mgl.funcs.drawline = LineCall;
+	st.mgl.funcs.drawline = LineData;
 	st.mgl.funcs.msgbox = MessageBoxRes;
 
 	return 1;
@@ -1824,23 +2473,23 @@ int8 ExecuteMGLCode(uint8 location)
 	switch (location)
 	{
 	case 0:
-		st.mgl.cv = (st.mgl.code[4] << 8) | st.mgl.code[5]; //Get the entry point Init
+		st.mgl.cv = GetValueBuf(st.mgl.code + 4);//Get the entry point Init
 		break;
 
 	case 1:
-		st.mgl.cv = (st.mgl.code[6] << 8) | st.mgl.code[7]; //Get the entry point PreGame
+		st.mgl.cv = GetValueBuf(st.mgl.code + 8); //Get the entry point PreGame
 		break;
 
 	case 2:
-		st.mgl.cv = (st.mgl.code[8] << 8) | st.mgl.code[9]; //Get the entry point GameLoop
+		st.mgl.cv = GetValueBuf(st.mgl.code + 12); //Get the entry point GameLoop
 		break;
 
 	case 3:
-		st.mgl.cv = (st.mgl.code[10] << 8) | st.mgl.code[11]; //Get the entry point MainLoop
+		st.mgl.cv = GetValueBuf(st.mgl.code + 16); //Get the entry point MainLoop
 		break;
 
 	case 4:
-		st.mgl.cv = (st.mgl.code[12] << 8) | st.mgl.code[13]; //Get the entry point End
+		st.mgl.cv = GetValueBuf(st.mgl.code + 20); //Get the entry point End
 		break;
 	}
 
@@ -1851,9 +2500,9 @@ int8 ExecuteMGLCode(uint8 location)
 
 	if (location == 0)
 	{
-		cv = 18;
+		cv = 37;
 		//fetch global variables to the stack
-		while (buf[cv] == 254)
+		while (buf[cv] == 254 && cv < GetValueBuf(st.mgl.code + 4))
 		{
 			if (buf[cv + 1] < 5)
 			{
@@ -1875,7 +2524,7 @@ int8 ExecuteMGLCode(uint8 location)
 		sp = bp + 1;
 		PushStack(0);
 		bp += 2;
-		sp = bp + 1;
+		sp = bp;
 		cv = st.mgl.cv;
 	}
 
@@ -1925,7 +2574,7 @@ int8 ExecuteMGLCode(uint8 location)
 
 				case 3:
 					GetVarAddress(cv + 1);
-					CodeToStack(v[2], cv + 5);
+					CodeToStack(v[2], cv + 6);
 					cv += 10;
 					break;
 
