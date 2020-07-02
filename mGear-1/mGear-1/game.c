@@ -772,10 +772,12 @@ int main(int argc, char *argv[])
 	BuildMGL("mgl_test.m", "mgl_test.mgc");
 
 	InitMGLCode("mgl_test.mgc");
-	ExecuteMGLCode(0);
+	//ExecuteMGLCode(0);
 
-	PlayMovie("Data/Movies/SIB_Logo.mgv");
-	PlayMovie("Data/Movies/Intro.mgv");
+	//Quit();
+
+	//PlayMovie("Data/Movies/SIB_Logo.mgv");
+	//PlayMovie("Data/Movies/Intro.mgv");
 
 	PlayMusic(3, 1);
 	SDL_Delay(1000);
@@ -795,9 +797,10 @@ int main(int argc, char *argv[])
 		while(GetTicks() > curr_tic && loops < 10)
 		{
 			Finish();
-
+			//LineData(0, 4096, 8192, 4096, 255, 255, 255, 255, 16, 15);
 			if (st.gt == MAIN_MENU)
-				Menu();
+				ExecuteMGLCode(0);
+				//Menu();
 			else
 			if(st.gt==INGAME)
 			{

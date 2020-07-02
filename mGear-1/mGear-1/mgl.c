@@ -80,23 +80,20 @@ int8 Copy32toBuf(unsigned char *mem, int32 val)
 	return 1;
 }
 
-size_t CheckCodeSize(unsigned char *code, uint32 *bt, size_t size, uint32 cur)
+void CheckCodeSize(MGMC *code, uint32 curfunc, uint32 cur)
 {
 	mem_assert(code);
-	mem_assert(bt);
 
-	if (cur > size - 20)
+	if (cur > code->function_table[curfunc].size - 20)
 	{
-		size += 64;
-		code = realloc(code, size);
+		code->function_table[curfunc].size += 64;
+		code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
 
-		bt = realloc(bt, size * sizeof(uint32));
+		code->bt_trl[curfunc] = realloc(code->bt_trl[curfunc], code->function_table[curfunc].size * sizeof(uint32));
 
-		CHECKMEM(code);
-		CHECKMEM(bt);
+		CHECKMEM(code->function_code[curfunc]);
+		CHECKMEM(code->bt_trl[curfunc]);
 	}
-
-	return size;
 }
 
 MGMC *CompileMGL(FILE *file, uint8 optimization)
@@ -701,45 +698,70 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			{
 				if (IsNumber(tok) == 0)
 				{
-					//val1 = -1;
-					for (i = 0; i < code->num_vars; i++)
+					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
 					{
-						if (strcmp(code->vars_table[i].name, tok) == NULL)
-						{
-							//Found global variable in the table
-							code->vars_table[i].num_use++;
+						if (strlen(tok) == 4)
+							val1 = tok[3] - 48 + 8;
 
-							if (code->vars_table[i].type == 2)
-								f |= 1;
+						if (strlen(tok) == 5 && tok[3] != 'f')
+							val1 = atoi(tok + 3) + 8;
 
-							val1 = i;
-							g = 2;
-							break;
-						}
+						if (strlen(tok) == 5 && tok[3] == 'f')
+							val1 = tok[4] - 48 + 8;
+
+						if (strlen(tok) == 6 && tok[3] == 'f')
+							val1 = atoi(tok + 4) + 8;
+
+						g = 3;
 					}
-
-					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					else
+					if (strcmp(tok, "return") == NULL)
 					{
-						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						val1 = 0;
+						g = 3;
+					}
+					else
+					{
+						//val1 = -1;
+						for (i = 0; i < code->num_vars; i++)
 						{
-							//Found local variable in the table
-							if (g == 2)
+							if (strcmp(code->vars_table[i].name, tok) == NULL)
 							{
-								error++;
-								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
-									code->function_table[curfunc].name, tok, str1, line);
-								g = -1;
+								//Found global variable in the table
+								code->vars_table[i].num_use++;
+
+								if (code->vars_table[i].type == 2)
+									f |= 1;
+
+								val1 = i;
+								g = 2;
 								break;
 							}
+						}
 
-							code->function_table[curfunc].vars_table[i].num_use++;
+						for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+						{
+							if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+							{
+								//Found local variable in the table
+								if (g == 2)
+								{
+									error++;
+									LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+										code->function_table[curfunc].name, tok, str1, line);
+									g = -1;
+									break;
+								}
 
-							if (code->function_table[curfunc].vars_table[i].type == 2)
-								f |= 1;
+								code->function_table[curfunc].vars_table[i].num_use++;
 
-							val1 = i;
-							g = 1;
-							break;
+								if (code->function_table[curfunc].vars_table[i].type == 2)
+									f |= 1;
+
+								val1 = i;
+								g = 1;
+								break;
+							}
 						}
 					}
 
@@ -773,45 +795,70 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			{
 				if (IsNumber(tok) == 0)
 				{
-					for (i = 0; i < code->num_vars; i++)
+					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
 					{
-						if (strcmp(code->vars_table[i].name, tok) == NULL)
-						{
-							//Found global variable in the table
-							code->vars_table[i].num_use++;
+						if (strlen(tok) == 4)
+							val2 = tok[3] - 48 + 8;
 
-							if (code->vars_table[i].type == 2)
-								f |= 2;
+						if (strlen(tok) == 5 && tok[3] != 'f')
+							val2 = atoi(tok + 3) + 8;
 
-							val2 = i;
-							g1 = 2;
-							break;
-						}
+						if (strlen(tok) == 5 && tok[3] == 'f')
+							val2 = tok[4] - 48 + 8;
+
+						if (strlen(tok) == 6 && tok[3] == 'f')
+							val2 = atoi(tok + 4) + 8;
+
+						g1 = 3;
 					}
-
-					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					else
+					if (strcmp(tok, "return") == NULL)
 					{
-						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						val2 = 0;
+						g1 = 3;
+					}
+					else
+					{
+						for (i = 0; i < code->num_vars; i++)
 						{
-							//Found local variable in the table
-							if (g1 == 2)
+							if (strcmp(code->vars_table[i].name, tok) == NULL)
 							{
-								error++;
-								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
-									code->function_table[curfunc].name, tok, str1, line);
-								g1 = -1;
+								//Found global variable in the table
+								code->vars_table[i].num_use++;
+
+								if (code->vars_table[i].type == 2)
+									f |= 2;
+
+								val2 = i;
+								g1 = 2;
 								break;
 							}
+						}
 
-							code->function_table[curfunc].vars_table[i].num_use++;
+						for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+						{
+							if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+							{
+								//Found local variable in the table
+								if (g1 == 2)
+								{
+									error++;
+									LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+										code->function_table[curfunc].name, tok, str1, line);
+									g1 = -1;
+									break;
+								}
 
-							val2 = i;
+								code->function_table[curfunc].vars_table[i].num_use++;
 
-							if (code->function_table[curfunc].vars_table[i].type == 2)
-								f |= 2;
+								val2 = i;
 
-							g1 = 1;
-							break;
+								if (code->function_table[curfunc].vars_table[i].type == 2)
+									f |= 2;
+
+								g1 = 1;
+								break;
+							}
 						}
 					}
 
@@ -871,218 +918,536 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			if (strcmp(str1, "pow") == NULL)
 				t = 50;
 
-			code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
+			CheckCodeSize(code, curfunc, cv);
 
-			if (c == 1 && f == 0)
+			if (g == 3 || g1 == 3)
 			{
-				code->function_code[curfunc][cv] = t + 3;
-				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 2] = val1 >> 24;
-				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 5] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 6] = val2 >> 24;
-				code->function_code[curfunc][cv + 7] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 8] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 9] = val2 & 0xFF;
+				if (c == 1 && f == 0 && g == 3)
+				{
+					code->function_code[curfunc][cv] = t;
+					code->function_code[curfunc][cv + 1] = val1;
+					code->function_code[curfunc][cv + 2] = val2 >> 24;
+					code->function_code[curfunc][cv + 3] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = val2 & 0xFF;
 
-				cv += 10;
+					cv += 6;
 
-				code->bt_trl[curfunc][cv1] = t + 3;
+					code->bt_trl[curfunc][cv1] = t;
 
-				cv1 += 1;
+					cv1 += 1;
+				}
+				else
+				if (c == 1 && f == 1 && g == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t;
+					code->function_code[curfunc][cv + 2] = val1;
+					code->function_code[curfunc][cv + 3] = val2 >> 24;
+					code->function_code[curfunc][cv + 4] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = val2 & 0xFF;
+
+					cv += 7;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 1 && f == 2 && g == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 1;
+					code->function_code[curfunc][cv + 2] = 0;
+					memcpy(code->function_code[curfunc] + cv + 3, &valf2, sizeof(float));
+
+					uint8 x = code->function_code[curfunc][cv + 3];
+					uint8 y = code->function_code[curfunc][cv + 4];
+
+					code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
+					code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
+					code->function_code[curfunc][cv + 5] = y;
+					code->function_code[curfunc][cv + 6] = x;
+
+					code->function_code[curfunc][cv + 7] = 250;
+					code->function_code[curfunc][cv + 8] = val1;
+					code->function_code[curfunc][cv + 9] = 0;
+
+					cv += 10;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 1;
+					code->bt_trl[curfunc][cv1 + 2] = 250;
+
+					cv1 += 3;
+				}
+				else
+				if (c == 1 && f == 3 && g == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 1;
+					code->function_code[curfunc][cv + 2] = val1;
+					memcpy(code->function_code[curfunc] + cv + 3, &valf2, sizeof(float));
+
+					uint8 x = code->function_code[curfunc][cv + 3];
+					uint8 y = code->function_code[curfunc][cv + 4];
+
+					code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
+					code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
+					code->function_code[curfunc][cv + 5] = y;
+					code->function_code[curfunc][cv + 6] = x;
+
+					cv += 7;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 1;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 0)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = t + 1;
+						code->function_code[curfunc][cv + 1] = val1;
+						code->function_code[curfunc][cv + 2] = g1 == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 3] = val2 >> 24;
+						code->function_code[curfunc][cv + 4] = (val2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 5] = (val2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 6] = val2 & 0xFF;
+
+						cv += 7;
+
+						code->bt_trl[curfunc][cv1] = t + 1;
+
+						cv1 += 1;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = t + 2;
+						code->function_code[curfunc][cv + 1] = val1;
+						code->function_code[curfunc][cv + 2] = val2;
+
+						cv += 3;
+
+						code->bt_trl[curfunc][cv1] = t + 2;
+
+						cv1 += 1;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = t + 4;
+						code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 2] = val1 >> 24;
+						code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+						code->function_code[curfunc][cv + 6] = val2;
+
+						cv += 7;
+
+						code->bt_trl[curfunc][cv1] = t + 4;
+
+						cv1 += 1;
+					}
+				}
+				else
+				if (c == 0 && f == 1)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 3;
+						code->function_code[curfunc][cv + 2] = val1;
+						code->function_code[curfunc][cv + 3] = g1 == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 4] = val2 >> 24;
+						code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 7] = val2 & 0xFF;
+
+						cv += 8;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 3;
+
+						cv1 += 2;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 2;
+						code->function_code[curfunc][cv + 2] = val1;
+						code->function_code[curfunc][cv + 3] = val2;
+
+						cv += 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 5;
+
+						cv1 += 2;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 251;
+						code->function_code[curfunc][cv + 1] = 0;
+						code->function_code[curfunc][cv + 2] = val2;
+						code->function_code[curfunc][cv + 3] = 255;
+						code->function_code[curfunc][cv + 4] = t + 7;
+						code->function_code[curfunc][cv + 5] = g == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 6] = val1 >> 24;
+						code->function_code[curfunc][cv + 7] = (val1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 8] = (val1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 9] = val1 & 0xFF;
+						code->function_code[curfunc][cv + 10] = 0;
+
+						cv += 11;
+
+						code->bt_trl[curfunc][cv1] = 251;
+						code->bt_trl[curfunc][cv1 + 1] = 255;
+						code->bt_trl[curfunc][cv1 + 2] = t + 7;
+
+						cv1 += 3;
+					}
+				}
+				else
+				if (c == 0 && f == 2)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 4;
+						code->function_code[curfunc][cv + 2] = 0;
+						code->function_code[curfunc][cv + 3] = g1 == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 4] = val2 >> 24;
+						code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 7] = val2 & 0xFF;
+						code->function_code[curfunc][cv + 8] = 250;
+						code->function_code[curfunc][cv + 9] = val1;
+						code->function_code[curfunc][cv + 10] = 0;
+
+						cv += 11;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 4;
+						code->bt_trl[curfunc][cv1 + 2] = 250;
+
+						cv1 += 3;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 5;
+						code->function_code[curfunc][cv + 2] = 0;
+						code->function_code[curfunc][cv + 3] = val2;
+						code->function_code[curfunc][cv + 4] = 250;
+						code->function_code[curfunc][cv + 5] = val1;
+						code->function_code[curfunc][cv + 6] = 0;
+
+						cv += 7;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 5;
+						code->bt_trl[curfunc][cv1 + 2] = 250;
+
+						cv1 += 3;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 250;
+						code->function_code[curfunc][cv + 1] = 6;
+						code->function_code[curfunc][cv + 2] = val2;
+						code->function_code[curfunc][cv + 3] = t + 4;
+						code->function_code[curfunc][cv + 4] = g == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 5] = val1 >> 24;
+						code->function_code[curfunc][cv + 6] = (val1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 7] = (val1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 8] = val1 & 0xFF;
+						code->function_code[curfunc][cv + 9] = 6;
+
+						cv += 10;
+
+						code->bt_trl[curfunc][cv1] = 250;
+						code->bt_trl[curfunc][cv1 + 1] = t + 4;
+
+						cv1 += 2;
+					}
+				}
+				else
+				if (c == 0 && f == 3)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 4;
+						code->function_code[curfunc][cv + 2] = val1;
+						code->function_code[curfunc][cv + 3] = g1 == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 4] = val2 >> 24;
+						code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 7] = val2 & 0xFF;
+
+						cv += 7;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 4;
+
+						cv1 += 2;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 5;
+						code->function_code[curfunc][cv + 2] = val1;
+						code->function_code[curfunc][cv + 3] = val2;
+
+						cv += 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 5;
+
+						cv1 += 2;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 7;
+						code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+						code->function_code[curfunc][cv + 3] = val1 >> 24;
+						code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 6] = val1 & 0xFF;
+						code->function_code[curfunc][cv + 7] = val2;
+
+						cv += 8;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 7;
+
+						cv1 += 2;
+					}
+				}
 			}
 			else
-			if (c == 1 && f == 1)
 			{
-				code->function_code[curfunc][cv] = 255;
-				code->function_code[curfunc][cv + 1] = t + 1;
-				code->function_code[curfunc][cv + 2] = 0;
-				memcpy(code->function_code[curfunc] + cv + 3, &valf2, sizeof(float));
+				if (c == 1 && f == 0)
+				{
+					code->function_code[curfunc][cv] = t + 3;
+					code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 2] = val1 >> 24;
+					code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 6] = val2 >> 24;
+					code->function_code[curfunc][cv + 7] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 8] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 9] = val2 & 0xFF;
 
-				uint8 x = code->function_code[curfunc][cv + 3];
-				uint8 y = code->function_code[curfunc][cv + 4];
+					cv += 10;
 
-				code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
-				code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
-				code->function_code[curfunc][cv + 5] = y;
-				code->function_code[curfunc][cv + 6] = x;
+					code->bt_trl[curfunc][cv1] = t + 3;
 
-				code->function_code[curfunc][cv + 7] = 250;
-				code->function_code[curfunc][cv + 8] = 6;
-				code->function_code[curfunc][cv + 9] = 0;
+					cv1 += 1;
+				}
+				else
+				if (c == 1 && f == 1)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 1;
+					code->function_code[curfunc][cv + 2] = 0;
+					memcpy(code->function_code[curfunc] + cv + 3, &valf2, sizeof(float));
 
-				code->function_code[curfunc][cv + 10] = t + 4;
-				code->function_code[curfunc][cv + 11] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 12] = val1 >> 24;
-				code->function_code[curfunc][cv + 13] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 14] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 15] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 16] = 6;
+					uint8 x = code->function_code[curfunc][cv + 3];
+					uint8 y = code->function_code[curfunc][cv + 4];
 
-				cv += 17;
+					code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
+					code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
+					code->function_code[curfunc][cv + 5] = y;
+					code->function_code[curfunc][cv + 6] = x;
 
-				code->bt_trl[curfunc][cv1] = 255;
-				code->bt_trl[curfunc][cv1 + 1] = t + 1;
-				code->bt_trl[curfunc][cv1 + 2] = 250;
-				code->bt_trl[curfunc][cv1 + 3] = t + 4;
+					code->function_code[curfunc][cv + 7] = 250;
+					code->function_code[curfunc][cv + 8] = 6;
+					code->function_code[curfunc][cv + 9] = 0;
 
-				cv1 += 4;
-			}
-			else
-			if (c == 1 && f == 2)
-			{
-				code->function_code[curfunc][cv] = t + 0;
-				code->function_code[curfunc][cv + 1] = 6;
-				code->function_code[curfunc][cv + 2] = val2 >> 24;
-				code->function_code[curfunc][cv + 3] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 4] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 5] = val2 & 0xFF;
+					code->function_code[curfunc][cv + 10] = t + 4;
+					code->function_code[curfunc][cv + 11] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 12] = val1 >> 24;
+					code->function_code[curfunc][cv + 13] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 14] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 15] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 16] = 6;
 
-				code->function_code[curfunc][cv + 6] = 251;
-				code->function_code[curfunc][cv + 7] = 0;
-				code->function_code[curfunc][cv + 8] = 6;
+					cv += 17;
 
-				code->function_code[curfunc][cv + 9] = 255;
-				code->function_code[curfunc][cv + 10] = t + 7;
-				code->function_code[curfunc][cv + 11] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 12] = val1 >> 24;
-				code->function_code[curfunc][cv + 13] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 14] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 15] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 16] = 0;
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 1;
+					code->bt_trl[curfunc][cv1 + 2] = 250;
+					code->bt_trl[curfunc][cv1 + 3] = t + 4;
 
-				cv += 17;
+					cv1 += 4;
+				}
+				else
+				if (c == 1 && f == 2)
+				{
+					code->function_code[curfunc][cv] = t + 0;
+					code->function_code[curfunc][cv + 1] = 6;
+					code->function_code[curfunc][cv + 2] = val2 >> 24;
+					code->function_code[curfunc][cv + 3] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = val2 & 0xFF;
 
-				code->bt_trl[curfunc][cv1] = t + 0;
-				code->bt_trl[curfunc][cv1 + 1] = 251;
-				code->bt_trl[curfunc][cv1 + 2] = 255;
-				code->bt_trl[curfunc][cv1 + 3] = t + 7;
+					code->function_code[curfunc][cv + 6] = 251;
+					code->function_code[curfunc][cv + 7] = 0;
+					code->function_code[curfunc][cv + 8] = 6;
 
-				cv1 += 4;
-			}
-			else
-			if (c == 1 && f == 3)
-			{
-				code->function_code[curfunc][cv] = 255;
-				code->function_code[curfunc][cv + 1] = t + 9;
-				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 3] = val1 >> 24;
-				code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 6] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 8] = val2 >> 24;
-				code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 11] = val2 & 0xFF;
+					code->function_code[curfunc][cv + 9] = 255;
+					code->function_code[curfunc][cv + 10] = t + 7;
+					code->function_code[curfunc][cv + 11] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 12] = val1 >> 24;
+					code->function_code[curfunc][cv + 13] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 14] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 15] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 16] = 0;
 
-				cv += 12;
+					cv += 17;
 
-				code->bt_trl[curfunc][cv1] = 255;
-				code->bt_trl[curfunc][cv1 + 1] = t + 9;
+					code->bt_trl[curfunc][cv1] = t + 0;
+					code->bt_trl[curfunc][cv1 + 1] = 251;
+					code->bt_trl[curfunc][cv1 + 2] = 255;
+					code->bt_trl[curfunc][cv1 + 3] = t + 7;
 
-				cv1 += 2;
-			}
-			else
-			if (c == 0 && f == 1)
-			{
-				code->function_code[curfunc][cv] = 255;
-				code->function_code[curfunc][cv + 1] = t + 8;
-				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 3] = val1 >> 24;
-				code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 6] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 8] = val2 >> 24;
-				code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 11] = val2 & 0xFF;
+					cv1 += 4;
+				}
+				else
+				if (c == 1 && f == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 9;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 3] = val1 >> 24;
+					code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 8] = val2 >> 24;
+					code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 11] = val2 & 0xFF;
 
-				cv += 12;
+					cv += 12;
 
-				code->bt_trl[curfunc][cv1] = 255;
-				code->bt_trl[curfunc][cv1 + 1] = t + 8;
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 9;
 
-				cv1 += 2;
-			}
-			else
-			if (c == 0 && f == 2)
-			{
-				code->function_code[curfunc][cv] = 255;
-				code->function_code[curfunc][cv + 1] = t + 4;
-				code->function_code[curfunc][cv + 2] = 0;
-				code->function_code[curfunc][cv + 3] = g1 & 1 == 1 ? 0 : 1;
-				code->function_code[curfunc][cv + 4] = val2 >> 24;
-				code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 7] = val2 & 0xFF;
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 1)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 8;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 3] = val1 >> 24;
+					code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 8] = val2 >> 24;
+					code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 11] = val2 & 0xFF;
 
-				code->function_code[curfunc][cv + 8] = 250;
-				code->function_code[curfunc][cv + 9] = 6;
-				code->function_code[curfunc][cv + 10] = 0;
+					cv += 12;
 
-				code->function_code[curfunc][cv + 11] = t + 4;
-				code->function_code[curfunc][cv + 12] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 13] = val1 >> 24;
-				code->function_code[curfunc][cv + 14] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 15] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 16] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 17] = 6;
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 8;
 
-				cv += 18;
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 2)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 4;
+					code->function_code[curfunc][cv + 2] = 0;
+					code->function_code[curfunc][cv + 3] = g1 & 1 == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 4] = val2 >> 24;
+					code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 7] = val2 & 0xFF;
 
-				code->bt_trl[curfunc][cv1] = 255;
-				code->bt_trl[curfunc][cv1 + 1] = t + 4;
-				code->bt_trl[curfunc][cv1 + 2] = 250;
-				code->bt_trl[curfunc][cv1 + 3] = t + 4;
+					code->function_code[curfunc][cv + 8] = 250;
+					code->function_code[curfunc][cv + 9] = 6;
+					code->function_code[curfunc][cv + 10] = 0;
 
-				cv1 += 4;
-			}
-			else
-			if (c == 0 && f == 3)
-			{
-				code->function_code[curfunc][cv] = 255;
-				code->function_code[curfunc][cv + 1] = t + 9;
-				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 3] = val1 >> 24;
-				code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 6] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 8] = val2 >> 24;
-				code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 11] = val2 & 0xFF;
+					code->function_code[curfunc][cv + 11] = t + 4;
+					code->function_code[curfunc][cv + 12] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 13] = val1 >> 24;
+					code->function_code[curfunc][cv + 14] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 15] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 16] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 17] = 6;
 
-				cv += 12;
+					cv += 18;
 
-				code->bt_trl[curfunc][cv1] = 255;
-				code->bt_trl[curfunc][cv1 + 1] = t + 9;
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 4;
+					code->bt_trl[curfunc][cv1 + 2] = 250;
+					code->bt_trl[curfunc][cv1 + 3] = t + 4;
 
-				cv1 += 1;
-			}
-			else
-			if (c == 0 && f == 0)
-			{
-				code->function_code[curfunc][cv] = t + 5;
-				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 2] = val1 >> 24;
-				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 5] = val1 & 0xFF;
-				code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
-				code->function_code[curfunc][cv + 7] = val2 >> 24;
-				code->function_code[curfunc][cv + 8] = (val2 >> 16) & 0xFF;
-				code->function_code[curfunc][cv + 9] = (val2 >> 8) & 0xFF;
-				code->function_code[curfunc][cv + 10] = val2 & 0xFF;
+					cv1 += 4;
+				}
+				else
+				if (c == 0 && f == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 9;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 3] = val1 >> 24;
+					code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 8] = val2 >> 24;
+					code->function_code[curfunc][cv + 9] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 10] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 11] = val2 & 0xFF;
 
-				cv += 11;
+					cv += 12;
 
-				code->bt_trl[curfunc][cv1] = t + 5;
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 9;
 
-				cv1 += 1;
+					cv1 += 1;
+				}
+				else
+				if (c == 0 && f == 0)
+				{
+					code->function_code[curfunc][cv] = t + 5;
+					code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 2] = val1 >> 24;
+					code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+					code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 7] = val2 >> 24;
+					code->function_code[curfunc][cv + 8] = (val2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 9] = (val2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 10] = val2 & 0xFF;
+
+					cv += 11;
+
+					code->bt_trl[curfunc][cv1] = t + 5;
+
+					cv1 += 1;
+				}
 			}
 
 		}
@@ -1137,7 +1502,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_table = realloc(code->function_table, code->num_functions * sizeof(*code->function_table));
 				
 				code->function_code = realloc(code->function_code, code->num_functions * sizeof(unsigned char*));
-				code->function_code[code->num_functions - 1] = calloc(128, 1);
+				code->function_code[code->num_functions - 1] = calloc(128, sizeof(unsigned char));
 
 				code->bt_trl = realloc(code->bt_trl, code->num_functions * sizeof(uint32*));
 				code->bt_trl[code->num_functions - 1] = calloc(128, sizeof(uint32));
@@ -1190,7 +1555,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			int g = 0, f = 0, c = 0;
 
-			code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
+			CheckCodeSize(code,curfunc, cv);
 
 			if (tok != NULL)
 			{
@@ -1208,7 +1573,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							if (code->vars_table[i].type == 2)
 								f |= 2;
 
-							val1 -= i;
+							val1 = i;
+
+							g = 2;
+
 							break;
 						}
 					}
@@ -1229,12 +1597,12 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 							code->function_table[curfunc].vars_table[i].num_use++;
 
-							val1 -= i;
+							val1 = i;
 
 							if (code->function_table[curfunc].vars_table[i].type == 2)
 								f |= 2;
 
-							g |= 2;
+							g = 1;
 							break;
 						}
 					}
@@ -1269,6 +1637,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv++;
 				continue;
 			}
+
+			if (g == 2)
+				g = 0;
 
 			if (c == 1 && f == 0)
 			{
@@ -1315,7 +1686,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			{
 				code->function_code[curfunc][cv] = 1;
 				code->function_code[curfunc][cv + 1] = 0;
-				code->function_code[curfunc][cv + 2] = g == 2 ? 0 : 1;
+				code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 3] = val1 >> 24;
 				code->function_code[curfunc][cv + 4] = (val1 >> 16) && 0xFF;
 				code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
@@ -1335,7 +1706,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_code[curfunc][cv] = 255;
 				code->function_code[curfunc][cv + 1] = 4;
 				code->function_code[curfunc][cv + 2] = 0;
-				code->function_code[curfunc][cv + 3] = g == 2 ? 0 : 1;
+				code->function_code[curfunc][cv + 3] = g == 1 ? 1 : 0;
 				code->function_code[curfunc][cv + 4] = val1 >> 24;
 				code->function_code[curfunc][cv + 5] = (val1 >> 16) && 0xFF;
 				code->function_code[curfunc][cv + 6] = (val1 >> 8) & 0xFF;
@@ -1392,14 +1763,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			if (a == 0)
 			{
-				for (i = 0; i < num_efuncs; i++)
+				if ((i = GetEngFunc(tok)) != -1)
 				{
-					if (GetEngFunc(tok) != -1)
-					{
-						//Found engine function
-						a = 2;
-						break;
-					}
+					//Found engine function
+					a = 2;
 				}
 			}
 
@@ -1472,22 +1839,23 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 						val1 = atol(tok);
 				}
 
-				code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
+				CheckCodeSize(code, curfunc, cv);
 
 				if (g == 2)
 					g = 0;
 
 				if (c == 1 && f == 0)
 				{
-					code->function_code[curfunc][cv] = 205;
-					code->function_code[curfunc][cv + 1] = val1 >> 24;
-					code->function_code[curfunc][cv + 2] = (val1 >> 16) & 0xFF;
-					code->function_code[curfunc][cv + 3] = (val1 >> 8) & 0xFF;
-					code->function_code[curfunc][cv + 4] = val1 & 0xFF;
+					code->function_code[curfunc][cv] = 0;
+					code->function_code[curfunc][cv + 1] = b + 9;
+					code->function_code[curfunc][cv + 2] = val1 >> 24;
+					code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = val1 & 0xFF;
 
-					cv += 5;
+					cv += 6;
 
-					code->bt_trl[curfunc][cv1] = 205;
+					code->bt_trl[curfunc][cv1] = 0;
 
 					cv1++;
 				}
@@ -1496,33 +1864,30 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				{
 					code->function_code[curfunc][cv] = 255;
 					code->function_code[curfunc][cv + 1] = 1;
-					code->function_code[curfunc][cv + 2] = 0;
+					code->function_code[curfunc][cv + 2] = b + 5;
 					CopyFloatToInt32(code->function_code[curfunc] + cv + 3, valf1);
 
-					code->function_code[curfunc][cv + 7] = 208;
-					code->function_code[curfunc][cv + 8] = 0;
-
-					cv += 9;
+					cv += 7;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = 1;
-					code->bt_trl[curfunc][cv1 + 2] = 208;
 
-					cv1 += 3;
+					cv1 += 2;
 				}
 				else
 				if (c == 0 && f == 0)
 				{
-					code->function_code[curfunc][cv] = 206;
-					code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
-					code->function_code[curfunc][cv + 2] = val1 >> 24;
-					code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
-					code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
-					code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+					code->function_code[curfunc][cv] = 1;
+					code->function_code[curfunc][cv + 1] = b + 9;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 3] = val1 >> 24;
+					code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = val1 & 0xFF;
 
-					cv += 6;
+					cv += 7;
 
-					code->bt_trl[curfunc][cv1] = 206;
+					code->bt_trl[curfunc][cv1] = 1;
 
 					cv1++;
 				}
@@ -1531,23 +1896,19 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				{
 					code->function_code[curfunc][cv] = 255;
 					code->function_code[curfunc][cv + 1] = 4;
-					code->function_code[curfunc][cv + 2] = 0;
+					code->function_code[curfunc][cv + 2] = b + 5;
 					code->function_code[curfunc][cv + 3] = g == 1 ? 1 : 0;
 					code->function_code[curfunc][cv + 4] = val1 >> 24;
 					code->function_code[curfunc][cv + 5] = (val1 >> 16) & 0xFF;
 					code->function_code[curfunc][cv + 6] = (val1 >> 8) & 0xFF;
 					code->function_code[curfunc][cv + 7] = val1 & 0xFF;
 
-					code->function_code[curfunc][cv + 8] = 208;
-					code->function_code[curfunc][cv + 9] = 0;
-
-					cv += 10;
+					cv += 8;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = 4;
-					code->bt_trl[curfunc][cv1 + 2] = 208;
 
-					cv1 += 3;
+					cv1 += 2;
 				}
 
 				b++;
@@ -1637,7 +1998,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			{
 				if (ret == 2)
 				{
-					code->function_table[curfunc].size = CheckCodeSize(code->function_code[curfunc], code->bt_trl[curfunc], code->function_table[curfunc].size, cv);
+					CheckCodeSize(code, curfunc, cv);
 
 					code->function_code[curfunc][cv] = 210;
 					cv++;
@@ -1648,7 +2009,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				code->function_table[curfunc].size = cv;
 
-				code->bt_trl[curfunc] = realloc(code->bt_trl[curfunc], code->function_table[curfunc].size);
+				code->bt_trl[curfunc] = realloc(code->bt_trl[curfunc], code->function_table[curfunc].size * sizeof(uint32));
 				code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
 
 				func = 0;
@@ -1718,8 +2079,8 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 	c[2] = 'L';
 	c[3] = ' ';
 
-	//Bytes 4 - 13 holds the entry points
-	//Byte 14 - holds the stack type - next 4 bytes the size if its a custom type
+	//Bytes 4 - 23 holds the entry points
+	//Byte 24 - holds the stack type - next 4 bytes the size if its a custom type
 
 	if (code->stacksize > 6)
 	{
@@ -2076,7 +2437,7 @@ int8 BuildMGL(const char *filename, const char *finalname)
 
 	code = CompileMGL(f, 0);
 
-	if (code == NULL)
+ 	if (code == NULL)
 	{
 		LogApp("Compiling stage failed");
 		fclose(f);
@@ -2277,16 +2638,42 @@ int8 InitMGLCode(const char *file)
 	return 1;
 }
 
+int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, void **heap)
+{
+	//mem_assert(stack);
+	//mem_assert(heap);
+
+	bp -= 2;
+
+	switch (address)
+	{
+		case E_LOG:
+			st.mgl.funcs.log(heap[v[9]]);
+			break;
+
+		case E_DRAWLINE:
+			st.mgl.funcs.drawline(v[9], v[10], v[11], v[12], v[13], v[14], v[15], v[16], v[17], v[18]);
+			break;
+	}
+}
+
 int8 ExecuteMGLCode(uint8 location)
 {
 	register int32 bp, sp, cv;
-	int32 v[8];
+	int32 v[32];
 
-	static int32 stack1[131072], *stack2, *stack;
+	static int32 stack1[131072], *stack2, *stack, num_heap = 0;
 	uint8 *vars, state = 0;
-	void **heap;
 
-	float f[5];
+	static struct MGLHeap
+	{
+		size_t size;
+		size_t cur;
+		void *mem;
+		uint8 type; //0 - buffer, 1 - string
+	} *heap;
+
+	float f[24];
 
 	unsigned char *buf = st.mgl.code;
 
@@ -2506,6 +2893,28 @@ int8 ExecuteMGLCode(uint8 location)
 		{
 			if (buf[cv + 1] < 5)
 			{
+				if (buf[cv] == 3 || buf[cv] == 4)
+				{
+					GetValueCV(v[7], cv + 2);
+
+					if (num_heap == 0)
+					{
+						heap = calloc(1, sizeof(struct MGLHeap));
+						CHECKMEM(heap);
+					}
+					else
+					{
+						heap = realloc(heap, (num_heap + 1) * sizeof(struct MGLHeap));
+						CHECKMEM(heap);
+					}
+
+					stack[bp] = num_heap;
+
+					
+
+					num_heap++;
+				}
+
 				CodeToStack(bp, cv + 2);
 				bp++;
 				cv += 6;
@@ -2912,6 +3321,23 @@ int8 ExecuteMGLCode(uint8 location)
 					cv += 11;
 					break;
 
+				case 204:
+					if (buf[cv + 1] == 0)
+					{
+						PushStack(bp);
+						PushStack(cv + 6);
+						bp = sp;
+						sp = bp + 1;
+						GetValueCV(cv, cv + 2);
+					}
+					else
+					{
+						GetValueCV(v[7], cv + 2);
+						CallEngFunction(v[7], v, stack, bp, heap);
+						cv += 6;
+					}
+					break;
+
 				case 210:
 					sp = bp;
 					PopStack(cv);
@@ -2920,12 +3346,147 @@ int8 ExecuteMGLCode(uint8 location)
 					sp = bp + 1;
 					break;
 
-				case 249:
-					v[buf[cv + 1]] = f[buf[cv + 2]];
+				case 233:
+					GetValueCV(sp, cv + 1);
+					cv++;
+					break;
+
+				case 234:
+					sp = bp;
+					cv++;
+					break;
+
+				case 235:
+					GetValueCV(v[7], cv + 1);
+					sp += v[7];
+					cv += 5;
+					break;
+
+				case 236:
+					sp += bp;
+					cv++;
+					break;
+
+				case 237:
+					GetValueCV(v[7], cv + 1);
+					bp -= v[7];
+					cv += 5;
+					break;
+
+				case 238:
+					sp -= bp;
+					cv++;
+					break;
+
+				case 239:
+					v[buf[cv + 1]] = stack[bp - 1 - buf[cv + 2]];
+					cv += 3;
+					break;
+
+				case 240:
+					GetVarAddress(cv + 1);
+					stack[v[2]] = stack[bp - 1 - buf[cv + 6]];
+					cv += 7;
+					break;
+
+				case 241:
+					GetVarAddress(cv + 1);
+
+					v[7] = stack[v[2]];
+
+					if (v[7] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].cur + 12 > heap[v[7]].size)
+					{
+						//Allocate more memory
+						heap[v[7]].size += 32;
+						heap[v[7]].mem = realloc(heap[v[7]].mem, heap[v[7]].size);
+						CHECKMEM(heap[v[7]].mem);
+					}
+
+					strcat(heap[v[7]].mem, StringFormat("%d", v[buf[cv + 5]]));
+					heap[v[7]].cur = strlen(heap[v[7]].mem);
+					cv += 7;
+
+					break;
+
+				case 242:
+					GetVarAddress(cv + 1);
+
+					v[7] = stack[v[2]];
+
+					GetVarAddress(cv + 6);
+
+					v[6] = stack[v[2]];
+
+					if (v[7] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (v[6] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[6]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].cur + heap[v[6]].cur > heap[v[7]].size)
+					{
+						//Allocate more memory
+						heap[v[7]].size += heap[v[6]].cur + 32;
+						heap[v[7]].mem = realloc(heap[v[7]].mem, heap[v[7]].size);
+						CHECKMEM(heap[v[7]].mem);
+					}
+
+					strcat(heap[v[7]].mem, heap[v[6]].mem);
+					heap[v[7]].cur = strlen(heap[v[7]].mem);
+					cv += 11;
+
 					break;
 
 				case 250:
+					v[buf[cv + 1]] = f[buf[cv + 2]];
+					cv += 3;
+					break;
+
+				case 251:
 					f[buf[cv + 1]] = v[buf[cv + 2]];
+					cv += 3;
 					break;
 
 				case 255:
