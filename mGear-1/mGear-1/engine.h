@@ -975,6 +975,8 @@ struct MGLCode
 		void(*log)(const char *msg, ...);
 		int32(*msgbox)(const char *quote, UINT type, const char *msg, ...);
 		void(*drawline)(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
+
+		void(*getsystemScreenSize)(int32 *w, int32 *h, int32 *bpp, int32 *fullscreen);
 	} funcs;
 	uint32 ret_addr;
 };

@@ -689,6 +689,279 @@ void SparkPart(PARTICLES part)
 	
 }
 
+void InternalCoding()
+{
+	FILE *f, *f2;
+	char str[128], *tok, buf[256], parent[16], levelname[16], type[8], member[32];
+
+	int32 i = 0, j = 0, k, l, m = 0, level = 0, typei = 0, pointer = 0, line = 0, gotoline = 0, repeat = 0, repeated = 0;
+
+	openfile_d(f, "sysstructs.txt", "r");
+	
+	while (!feof(f))
+	{
+		ZeroMem(buf, 256);
+		line++;
+
+		fgets(buf, 256, f);
+
+		if (buf[0] == '\n')
+			continue;
+
+		tok = strtok(buf, " \n\t");
+
+		if (tok == NULL)
+			continue;
+
+		if (strcmp(tok, "BEGIN") == NULL)
+		{
+			if (repeat > 0)
+			{
+				if (repeated < repeat)
+				{
+
+				}
+			}
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok == NULL)
+				break;
+
+			strcpy(parent, tok);
+
+			LogApp("Begining %s declaration...", tok);
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				for (j = 0; j < strlen(tok); j++)
+				{
+					if (tok[j] < '0' || tok[j] > '9')
+						j = 666;
+				}
+
+				if (j != 666)
+				{
+					repeat = atoi(tok);
+					repeated = 0;
+					gotoline = line + 1;
+				}
+
+			}
+
+			continue;
+		}
+		else
+		if (strcmp(tok, "INSIDE") == NULL)
+		{
+			tok = strtok(NULL, " \n\t");
+
+			if (tok == NULL)
+				break;
+
+			strcpy(levelname, tok);
+			level = 1;
+
+			continue;
+		}
+		else
+		if (strcmp(tok, "RETURN") == NULL)
+		{
+			ZeroMem(levelname, 16);
+			level = 0;
+
+			continue;
+		}
+		else
+		if (strcmp(tok, "uint8") == NULL || strcmp(tok, "int8") == NULL || strcmp(tok, "uint16") == NULL || strcmp(tok, "int16") == NULL || 
+			strcmp(tok, "uint32") == NULL || strcmp(tok, "int32") == NULL || strcmp(tok, "uint64") == NULL || strcmp(tok, "int64") == NULL || 
+			strcmp(tok, "float") == NULL || strcmp(tok, "double") == NULL || strcmp(tok, "Pos") == NULL || strcmp(tok, "PosF") == NULL)
+		{
+			int8 pos = 0;
+
+			if (strcmp(tok, "uint8") == NULL)
+			{
+				typei = 4;
+				strcpy(type, "b8");
+			}
+			else
+			if (strcmp(tok, "int8") == NULL)
+			{
+				typei = 5;
+				strcpy(type, "sb8");
+			}
+			else
+			if (strcmp(tok, "uint16") == NULL)
+			{
+				typei = 8;
+				strcpy(type, "b16");
+			}
+			else
+			if (strcmp(tok, "int16") == NULL)
+			{
+				typei = 9;
+				strcpy(type, "sb16");
+			}
+			else
+			if (strcmp(tok, "uint32") == NULL)
+			{
+				typei = 16;
+				strcpy(type, "b32");
+			}
+			else
+			if (strcmp(tok, "int32") == NULL)
+			{
+				typei = 17;
+				strcpy(type, "sb32");
+			}
+			else
+			if (strcmp(tok, "uint64") == NULL)
+			{
+				typei = 32;
+				strcpy(type, "b64");
+			}
+			else
+			if (strcmp(tok, "int64") == NULL)
+			{
+				typei = 33;
+				strcpy(type, "sb64");
+			}
+			else
+			if (strcmp(tok, "float") == NULL)
+			{
+				typei = 64;
+				strcpy(type, "fl");
+			}
+			else
+			if (strcmp(tok, "double") == NULL)
+			{
+				typei = 128;
+				strcpy(type, "db");
+			}
+			else
+			if (strcmp(tok, "Pos") == NULL)
+			{
+				typei = 16;
+				pos = 1;
+				strcpy(type, "sb32");
+			}
+			else
+			if (strcmp(tok, "PosF") == NULL)
+			{
+				typei = 64;
+				pos = 1;
+				strcpy(type, "fl");
+			}
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok == NULL)
+				break;
+
+			k = l = 0;
+
+			ZeroMem(member, 32);
+
+			for (j = 0, m = 0; j < strlen(tok); j++)
+			{
+				if (tok[j] == ';')
+				{
+					tok[j] = '\0';
+					break;
+				}
+
+				if (tok[j] == '[')
+					k = j;
+
+				if (tok[j] == ']')
+					l = j;
+
+				if (tok[j] != ';' && tok[j] != '[' && tok[j] != ']' && tok[j] != '*')
+				{
+					member[m] = tok[j];
+					m++;
+				}
+
+				if (tok[j] == '*')
+					pointer == 1;
+			}
+
+			//It's an array
+			if (k != l - 1)
+			{
+				ZeroMem(str, 128);
+
+				for (j = k + 1, m = 0; j < l; j++)
+					str[m] = tok[j];
+
+				LogApp("strsys[%d].size = %d;", i, atoi(str));
+
+				pointer = 1;
+			}
+
+			if (k == 0 && l == 0)
+				LogApp("strsys[%d].size = 1;", i);
+
+			if (pointer == 1)
+				typei += 2;
+
+			if (pos == 1)
+			{
+				LogApp("strcpy(strsys[%d].name, \"%s.x\");", i, tok);
+				LogApp("strcpy(strsys[%d].parent, \"%s\");", i, parent);
+				LogApp("strsys[%d].level = %d;\nstrsys[%d].type = %d;", i, level, i, typei);
+
+				LogApp("strcpy(strsys[%d].levelname, \"%s\");", i, levelname);
+
+				if (pointer == 0)
+					LogApp("strsys[%d].%s = &%s;", i, type, str);
+				else
+					LogApp("strsys[%d].%s = %s;", i, type, str);
+
+				i++;
+
+				LogApp("strcpy(strsys[%d].name, \"%s.y\");", i, tok);
+				LogApp("strcpy(strsys[%d].parent, \"%s\");", i, parent);
+				LogApp("strsys[%d].level = %d;\nstrsys[%d].type = %d;", i, level, i, typei);
+
+				LogApp("strcpy(strsys[%d].levelname, \"%s\");", i, levelname);
+
+				if (pointer == 0)
+					LogApp("strsys[%d].%s = &%s;", i, type, str);
+				else
+					LogApp("strsys[%d].%s = %s;", i, type, str);
+
+				LogApp("strsys[%d].size = 1");
+			}
+			else
+			{
+				LogApp("strcpy(strsys[%d].name, \"%s\");", i, tok);
+				LogApp("strcpy(strsys[%d].parent, \"%s\");", i, parent);
+				LogApp("strsys[%d].level = %d;\nstrsys[%d].type = %d;", i, level, i, typei);
+
+				LogApp("strcpy(strsys[%d].levelname, \"%s\");", i, levelname);
+
+				if (pointer == 0)
+					LogApp("strsys[%d].%s = &%s;", i, type, str);
+				else
+					LogApp("strsys[%d].%s = %s;", i, type, str);
+			}
+
+			if (repeat > 0)
+			{
+				LogApp("strsys[%d].index = %d", repeated);
+				repeated++;
+			}
+
+			i++;
+		}
+	}
+
+	fclose(f);
+}
+
 int main(int argc, char *argv[])
 {
 	int loops;

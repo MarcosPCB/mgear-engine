@@ -3,12 +3,28 @@
 
 eng_calls e_funcs[] =
 {
-	{ "log", E_LOG, 2 }, //0
-	{ "drawline", E_DRAWLINE, 10 }, //1
-	{ "msgbox", E_MSGBOX, 4 } //2
+	{ "log", E_LOG, 2, 0 }, //0
+	{ "drawline", E_DRAWLINE, 10, 0 }, //1
+	{ "msgbox", E_MSGBOX, 4, 0 }, //2
+	{ "getsys.Screen", C_GSYSSCREEN, 4, 1} //3
 };
 
-const uint16 num_efuncs = 3;
+const uint16 num_efuncs = 4;
+
+void GetSystemScreen(int32 *w, int32 *h, int32 *bpp, int32 *fullscreen)
+{
+	if (w != NULL)
+		*w = st.screenx;
+
+	if (h != NULL)
+		*h = st.screeny;
+
+	if (bpp != NULL)
+		*bpp = st.bpp;
+
+	if (fullscreen != NULL)
+		*fullscreen = st.fullscreen;
+}
 
 int16 GetEngFunc(const char *name)
 {
@@ -701,16 +717,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
 					{
 						if (strlen(tok) == 4)
-							val1 = tok[3] - 48 + 8;
+							val1 = tok[3] - 48 + 4;
 
 						if (strlen(tok) == 5 && tok[3] != 'f')
-							val1 = atoi(tok + 3) + 8;
+							val1 = atoi(tok + 3) + 4;
 
 						if (strlen(tok) == 5 && tok[3] == 'f')
-							val1 = tok[4] - 48 + 8;
+							val1 = tok[4] - 48 + 4;
 
 						if (strlen(tok) == 6 && tok[3] == 'f')
-							val1 = atoi(tok + 4) + 8;
+							val1 = atoi(tok + 4) + 4;
 
 						g = 3;
 					}
@@ -798,16 +814,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
 					{
 						if (strlen(tok) == 4)
-							val2 = tok[3] - 48 + 8;
+							val2 = tok[3] - 48 + 4;
 
 						if (strlen(tok) == 5 && tok[3] != 'f')
-							val2 = atoi(tok + 3) + 8;
+							val2 = atoi(tok + 3) + 4;
 
 						if (strlen(tok) == 5 && tok[3] == 'f')
-							val2 = tok[4] - 48 + 8;
+							val2 = tok[4] - 48 + 4;
 
 						if (strlen(tok) == 6 && tok[3] == 'f')
-							val2 = atoi(tok + 4) + 8;
+							val2 = atoi(tok + 4) + 4;
 
 						g1 = 3;
 					}
@@ -1772,8 +1788,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			strcpy(str1, tok);
 
-			int c = 0, g = 0, f = 0, j = 0, b = 0;
+			int c = 0, g = 0, f = 0, j = 0, b = 0, vars[24], var_c = 0;
 			val1 = -1;
+
+			ZeroMem(vars, 24 * sizeof(int));
 
 			while ((tok = strtok(NULL, " \n\t")) != NULL)
 			{
@@ -1796,6 +1814,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							if (code->vars_table[j].type == 2)
 								f = 1;
 
+							vars[var_c] = j;
+							var_c++;
+
 							break;
 						}
 					}
@@ -1812,6 +1833,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 								if (code->function_table[curfunc].vars_table[j].type == 2)
 									f = 1;
+
+								vars[var_c] = j * -1;
+								var_c++;
 
 								break;
 							}
@@ -1965,6 +1989,53 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1++;
 
 				code->function_table[i].num_use++;
+
+				if (e_funcs[i].returnv == 1)
+				{
+					int k = 0;
+					for (j = 0; j < var_c; j++)
+					{
+						if (vars[j] < 0) //Local
+						{
+							k = vars[j] * -1;
+
+							if (code->function_table[curfunc].vars_table[k].type == 2)
+							{
+								code->function_code[curfunc][cv] = 255;
+								code->function_code[curfunc][cv + 1] = 7;
+								code->function_code[curfunc][cv + 2] = 1;
+								code->function_code[curfunc][cv + 3] = k >> 24;
+								code->function_code[curfunc][cv + 4] = (k >> 16) & 0xFF;
+								code->function_code[curfunc][cv + 5] = (k >> 8) & 0xFF;
+								code->function_code[curfunc][cv + 6] = k & 0xFF;
+								code->function_code[curfunc][cv + 7] = j + 5;
+
+								cv += 8;
+
+								code->bt_trl[curfunc][cv1] = 255;
+								code->bt_trl[curfunc][cv1 + 1] = 7;
+
+								cv1 += 2;
+							}
+							else
+							{
+								code->function_code[curfunc][cv] = 4;
+								code->function_code[curfunc][cv + 1] = 1;
+								code->function_code[curfunc][cv + 2] = k >> 24;
+								code->function_code[curfunc][cv + 3] = (k >> 16) & 0xFF;
+								code->function_code[curfunc][cv + 4] = (k >> 8) & 0xFF;
+								code->function_code[curfunc][cv + 5] = k & 0xFF;
+								code->function_code[curfunc][cv + 6] = j + 9;
+
+								cv += 7;
+
+								code->bt_trl[curfunc][cv1] = 4;
+
+								cv1++;
+							}
+						}
+					}
+				}
 			}
 		}
 		else
@@ -2653,6 +2724,10 @@ int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, void **hea
 
 		case E_DRAWLINE:
 			st.mgl.funcs.drawline(v[9], v[10], v[11], v[12], v[13], v[14], v[15], v[16], v[17], v[18]);
+			break;
+
+		case C_GSYSSCREEN:
+			st.mgl.funcs.getsystemScreenSize(&v[9], &v[10], &v[11], &v[12]);
 			break;
 	}
 }

@@ -27,6 +27,8 @@ enum enginecalls
 	E_LOG = 0,
 	E_DRAWLINE = 1,
 	E_MSGBOX = 2,
+
+	C_GSYSSCREEN = 3
 };
 
 struct MGLEng_Funcs
@@ -34,6 +36,7 @@ struct MGLEng_Funcs
 	char name[32];
 	enum enginecalls func;
 	uint8 num_args;
+	uint8 returnv;
 };
 
 typedef struct MGLEng_Funcs eng_calls;
