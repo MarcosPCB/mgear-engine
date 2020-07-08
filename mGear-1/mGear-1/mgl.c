@@ -1,6 +1,15 @@
 #include "mgl.h" 
 #include <stdio.h>
 
+struct MGLHeap
+{
+	size_t size;
+	size_t cur;
+	void *mem;
+	char *string;
+	uint8 type; //0 - buffer, 1 - string
+};
+
 eng_calls e_funcs[] =
 {
 	{ "log", E_LOG, 2, 0 }, //0
@@ -2709,7 +2718,7 @@ int8 InitMGLCode(const char *file)
 	return 1;
 }
 
-int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, void **heap)
+int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, struct MGLHeap *heap)
 {
 	//mem_assert(stack);
 	//mem_assert(heap);
@@ -2719,7 +2728,7 @@ int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, void **hea
 	switch (address)
 	{
 		case E_LOG:
-			st.mgl.funcs.log(heap[v[9]]);
+			st.mgl.funcs.log(heap[v[9]].string);
 			break;
 
 		case E_DRAWLINE:
@@ -2740,13 +2749,7 @@ int8 ExecuteMGLCode(uint8 location)
 	static int32 stack1[131072], *stack2, *stack, num_heap = 0;
 	uint8 *vars, state = 0;
 
-	static struct MGLHeap
-	{
-		size_t size;
-		size_t cur;
-		void *mem;
-		uint8 type; //0 - buffer, 1 - string
-	} *heap;
+	static struct MGLHeap *heap;
 
 	float f[24];
 
@@ -2968,10 +2971,8 @@ int8 ExecuteMGLCode(uint8 location)
 		{
 			if (buf[cv + 1] < 5)
 			{
-				if (buf[cv] == 3 || buf[cv] == 4)
+				if (buf[cv + 1] == 3 || buf[cv + 1] == 4)
 				{
-					GetValueCV(v[7], cv + 2);
-
 					if (num_heap == 0)
 					{
 						heap = calloc(1, sizeof(struct MGLHeap));
@@ -2985,14 +2986,35 @@ int8 ExecuteMGLCode(uint8 location)
 
 					stack[bp] = num_heap;
 
-					
+					if (buf[cv + 1] == 4)
+					{
+						GetValueCV(v[7], cv + 2);
+						heap[num_heap].size = v[7];
+						heap[num_heap].type = 1; //String
+						heap[num_heap].string = malloc(v[7]);
+						CHECKMEM(heap[num_heap].string);
+						memcpy(heap[num_heap].string, buf + cv + 6, v[7]);
+
+						cv += 6 + v[7];
+					}
+					else
+					{
+						heap[num_heap].size = 1;
+						heap[num_heap].type = 0;
+						heap[num_heap].mem = malloc(1);
+						CHECKMEM(heap[num_heap].mem);
+						cv += 2;
+					}
 
 					num_heap++;
 				}
+				else
+				{
+					CodeToStack(bp, cv + 2);
+					cv += 6;
+				}
 
-				CodeToStack(bp, cv + 2);
 				bp++;
-				cv += 6;
 			}
 			else
 			{
@@ -3022,12 +3044,60 @@ int8 ExecuteMGLCode(uint8 location)
 			case 0:
 			case 1:
 			case 2:
-			case 3:
-			case 4:
 				CodeToStack(sp, cv + 2);
 				sp++;
 				cv += 6;
 				break;
+
+			case 3:
+				if (num_heap == 0)
+				{
+					heap = calloc(1, sizeof(struct MGLHeap));
+					CHECKMEM(heap);
+				}
+				else
+				{
+					heap = realloc(heap, (num_heap + 1) * sizeof(struct MGLHeap));
+					CHECKMEM(heap);
+				}
+
+				stack[sp] = num_heap;
+
+				heap[num_heap].size = 1;
+				heap[num_heap].type = 0;
+				heap[num_heap].mem = malloc(1);
+				CHECKMEM(heap[num_heap].mem);
+
+				num_heap++;
+
+				sp++;
+				cv += 2;
+
+			case 4:
+				if (num_heap == 0)
+				{
+					heap = calloc(1, sizeof(struct MGLHeap));
+					CHECKMEM(heap);
+				}
+				else
+				{
+					heap = realloc(heap, (num_heap + 1) * sizeof(struct MGLHeap));
+					CHECKMEM(heap);
+				}
+
+				stack[sp] = num_heap;
+
+				GetValueCV(v[7], cv + 2);
+				heap[num_heap].size = v[7];
+				heap[num_heap].type = 1; //String
+				heap[num_heap].string = malloc(v[7]);
+				CHECKMEM(heap[num_heap].string);
+				memcpy(heap[num_heap].string, buf + cv + 6, v[7]);
+
+				cv += 6 + v[7];
+				num_heap++;
+
+				sp++;
 			}
 		}
 		else

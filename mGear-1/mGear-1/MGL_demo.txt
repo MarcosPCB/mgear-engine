@@ -1,0 +1,172 @@
+/*
+	Type definition:
+	0 - constant
+	1 - int
+	2 - float
+	3 - buffer
+	4 - string
+	7 - st
+	8 - map
+	9 - mgg_map
+	10 - mgg_game
+	11 - mgg_sys
+	12 - val
+	13 - tmp
+	14 - v1
+	15 - v2
+	16 - v3
+	17 - v4
+	18 - i
+	19 - cur
+	20 - bp
+	21 - sp
+	22 - cv
+	23 - f1
+	24 - f2
+	25 - f3
+	26 - f4
+
+	Command definition: - after every command, there's a type variable indicator and if its global or local
+
+	Each command has variations depending on the argument type
+	0 - com regi const - 6 bs
+	1 - com regi mem - 7 bs
+	2 - com regi regi - 3 bs
+	3 - com mem const - 10 bs
+	4 - com mem regi - 7 bs
+	5 - com mem mem - 11 bs
+	6 - com const const - 9 bs
+	7 - com const regi - 6 bs
+	8 - com const mem - 10 bs
+
+	If the command accepts only one command
+	0 - com const 5
+	1 - com constf 5
+	3 - com regi 2
+	4 - com regf 2
+	5 - com mem 6
+
+	If the command is a float variation
+	0 - com regf const 6
+	1 - com regf constf 6
+	2 - com regf regi 3
+	3 - com regf mem 7
+	4 - com regf memf 7
+	5 - com regf regf 3
+	6 - com memf constf 10
+	7 - com memf regf 7
+	8 - com memf mem 11
+	9 - com memf memf 11
+
+	//List of commands
+	0 - set x y
+	10 - add x y
+	20 - sub x y
+	30 - mul x y
+	40 - div x y
+
+	50 - pow x y
+	60 - logf x y
+	70 - sqrtf x
+
+	76 - cosf x
+	82 - sinf x
+	88 - tanf x
+ 	94 - acosf x
+	100 - asinf x
+	106 - atanf x
+
+	112 - and x y
+	122 - or x y
+	132 - xor x y
+
+	142 - if>= x y z
+	152 - if<= x y
+	162 - if> x y
+	172 - if< x y
+	182 - if= x y
+	192 - if!= x y
+
+	202 - while iftype
+	203 - loop
+
+	204 - call type x //Go to the address and take the arguments to the stack - n is the number os arguments
+						//type 0 is MGL function, type 1 is engine call
+	205 - push const
+	206 - push mem
+	207 - push regi
+	208 - push regf
+	
+	210 - ret x
+
+	211 - shiftl x y
+	221 - shiftr x y
+
+	231 - setmem buffer regi
+	232 - compmem buffer buffer - val
+	232 - copymem buffer buffer
+	
+	233 - setsp const
+	234 - setsp bp
+	235 - addsp const
+	236 - addsp bp
+	237 - subsp const
+	238 - subsp bp
+
+	239 - getarg regi n - set the argument n in stack to register regi
+
+	240 - getarg mem n
+
+	241 - catstringi string regi
+	242 - catstrings string string
+	
+
+	247 - jump x - jumps to address
+
+	//These should come after an if comparision
+	248 - jumpif x - jumps to address if val is 1
+	249 - jumpelse x - jumps to address if val is 0
+	250 - fti regi regf - interchange values
+	251 - itf regf regi - interchange values
+
+	252 - pop regi
+	253 - pop regf
+
+	254 - data //define a variable in the stack
+	255 - next byte is the extended command list
+
+	//Extended commands - 01
+	0 - setf x y
+	10 - addf x y
+	20 - subf x y
+	30 - mulf x y
+	40 - divf x y
+	50 - powf x y
+
+	50 - iff>= x y
+	60 - iff<= x y
+	70 - iff> x y
+	80 - iff< x y
+	90 - iff= x y
+	100 - iff!= x y
+
+	110 - quit
+	111 - messagebox string type string ... - val
+	112 - log string ...
+
+	//dont look at these yet
+	48 - drawpui x y w h frame a z tex_offset_x tex_offset_y tex_offset_w tex_offset_h
+	49 - drawphud x y w h frame a z tex_offset_x tex_offset_y tex_offset_w tex_offset_h
+	50 - drawpstring x y size string
+	51 - drawpstringui x y size string
+	52 - drawpstringui2 x y size string
+	53 - spawnsprite x y w h sprite - val
+	54 - loadmap string - val
+	55 - loadmgg string - val
+	56 - freemap x
+	57 - freemgg x
+	58 - checkcolworld x y z w h x2 y2 z2 w2 h2 - val
+	59 - checkcol x y z w h x2 y2 z2 w2 h2 - val
+	60 - checkcolsprite x y - val
+	61 - checkcolspritescene x y - val
+	*/

@@ -1342,7 +1342,8 @@ int Preferences()
 
 	SetCurrentDirectory(msdk.program_path);
 
-	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 380), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE))
+	if (nk_begin(ctx, "Preferences", nk_rect(st.screenx / 2 - 160, st.screeny / 2 - 190, 320, 380), NK_WINDOW_TITLE | NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
+		| NK_WINDOW_NO_SCROLLBAR))
 	{
 		nk_layout_row_dynamic(ctx, 15, 1);
 		nk_label(ctx, "UI skin", NK_TEXT_ALIGN_LEFT);
@@ -2822,6 +2823,20 @@ void Pannel()
 						}
 
 						info.lpFile = exepath;
+						if (pannel_state == ENGINEERAPP)
+						{
+							if (msdk.app[pannel_state].selected > 0)
+							{
+								sprintf(args, "-p \"%s\" -o \"%s/%s\"", msdk.prj.prj_path,
+									msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected - 1]].path,
+									msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected - 1]].file);
+							}
+							else
+								sprintf(args, "-p \"%s\"", msdk.prj.prj_path);
+
+							info.lpParameters = args;
+						}
+
 						if (msdk.app[pannel_state].selected > 0)
 						{
 							sprintf(args, "-o \"%s/%s\"", msdk.prj_files[msdk.app[pannel_state].files[msdk.app[pannel_state].selected - 1]].path,

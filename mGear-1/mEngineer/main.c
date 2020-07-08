@@ -1,4 +1,9 @@
-﻿#include "input.h"
+﻿#include <Windows.h>
+//#include <ShlObj.h>
+#include <Shlwapi.h>
+#include <commdlg.h>
+#undef PlaySound
+#include "input.h"
 #include "main.h"
 #include <stdio.h> 
 #include <stdlib.h>
@@ -7,8 +12,6 @@
 #include "UI.h"
 #include "physics.h"
 #include "mggeditor.h"
-#include <commdlg.h>
-#include <Windows.h>
 #include "funcs.h"
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -243,7 +246,7 @@ void RedoZBuffers()
 	}
 }
 
-int8 DeleteScenario(int16 id)
+void DeleteScenario(int16 id)
 {
 	if (st.Current_Map.num_obj == id + 1) //Just delete it
 	{
@@ -262,7 +265,7 @@ int8 DeleteScenario(int16 id)
 	}
 }
 
-int8 DeleteSprite(int16 id)
+void DeleteSprite(int16 id)
 {
 	if (st.Current_Map.num_sprites == id + 1) //Just delete it
 	{
@@ -281,7 +284,7 @@ int8 DeleteSprite(int16 id)
 	}
 }
 
-int8 DeleteSector(int16 id)
+void DeleteSector(int16 id)
 {
 	if (st.Current_Map.num_sector == id + 1) //Just delete it
 	{
@@ -299,7 +302,7 @@ int8 DeleteSector(int16 id)
 	}
 }
 
-int8 DeleteLight(int16 id)
+void DeleteLight(int16 id)
 {
 	if (st.num_lights == id) //Just delete it
 	{
@@ -703,7 +706,7 @@ void LightingMisc()
 				//gl[i].color[0] = meng.light.color;
 				gl[i].ambient_color = meng.light.color;
 				gl[i].falloff[1] = meng.light.intensity;
-				gl[i].falloff[4] = meng.light.l + 24;
+				gl[i].falloff[4] = meng.light.l;
 
 				int8 lz = meng.light.l + 24;
 
@@ -4232,7 +4235,8 @@ void MenuBar()
 		//{
 			if (LoadMGG(&mgg_map[mggid], filename))
 			{
-				strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg], filename);
+				PathRelativePathTo(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg], meng.prj_path, FILE_ATTRIBUTE_DIRECTORY, filename, FILE_ATTRIBUTE_DIRECTORY);
+				//strcpy(st.Current_Map.MGG_FILES[st.Current_Map.num_mgg], filename);
 				strcpy(meng.mgg_list[st.Current_Map.num_mgg], mgg_map[mggid].name);
 				meng.num_mgg++;
 				st.Current_Map.num_mgg++;
@@ -4290,9 +4294,11 @@ void MenuBar()
 					DrawUI(8192, 4608, 16384, 8192, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[0].frames[4], 255, 0);
 					sprintf(str, "Loading %d%", (a / st.Current_Map.num_mgg) * 100);
 					DrawString2UI(str, 8192, 4608, 1, 1, 0, 255, 255, 255, 255, ARIAL, FONT_SIZE * 2, FONT_SIZE * 2, 0);
-					if (CheckMGGFile(st.Current_Map.MGG_FILES[a]))
+					char path2[MAX_PATH];
+					PathRelativePathTo(path2, meng.prj_path, FILE_ATTRIBUTE_DIRECTORY, st.Current_Map.MGG_FILES[a], FILE_ATTRIBUTE_DIRECTORY);
+					if (CheckMGGFile(path2))
 					{
-						LoadMGG(&mgg_map[id], st.Current_Map.MGG_FILES[a]);
+						LoadMGG(&mgg_map[id], path2);
 						strcpy(meng.mgg_list[a], mgg_map[id].name);
 						meng.num_mgg++;
 						id++;
@@ -4435,7 +4441,7 @@ void SpriteListSelection()
 			for (i = 0; i < st.num_sprites; i++)
 			{
 				j = st.sprite_id_list[i];
-				if (st.Game_Sprites[j].num_start_frames>0)
+				if (st.Game_Sprites[j].num_start_frames > 0)
 				{
 					for (k = 0; k < st.Game_Sprites[j].num_start_frames; k++)
 					{
@@ -5748,7 +5754,7 @@ void NewLeftPannel()
 					texid = nk_subimage_id(data.data, data.w, data.h, nk_recta(nk_vec2(px, py), nk_vec2(sx, sy)));
 				}
 				else
-					texid = nk_image_id(ctx, data.data);
+					texid = nk_image_id(data.data);
 
 				nk_image(ctx, texid);
 
@@ -5886,6 +5892,7 @@ int main(int argc, char *argv[])
 	}
 
 	SetCurrentDirectory(meng.prj_path);
+	LogApp("Project directory is \"%s\"", meng.prj_path);
 
 	meng.num_mgg=0;
 	memset(st.Game_Sprites,0,MAX_SPRITES*sizeof(_SPRITES));
@@ -5901,9 +5908,10 @@ int main(int argc, char *argv[])
 	//SpriteListLoad();
 
 	BASICBKD(255,255,255);
-	DrawString2UI("Loading sprites...",8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,6);
+	DrawString2UI("Loading assets...",8192,4608,0,0,0,255,255,255,255,ARIAL,2048,2048,6);
 
 	Renderer(1);
+	SwapBuffer(wn);
 
 	LoadSpriteList("sprite.slist");
 
@@ -5990,7 +5998,10 @@ int main(int argc, char *argv[])
 			BASICBKD(255,255,255);
 		*/
 		loops=0;
-		while(GetTicks() > curr_tic && loops < 10)
+
+		uint32 c_tick = GetTicks();
+
+		while(c_tick > curr_tic && loops < 10)
 		{
 			if (meng.scaling == 1 && meng.sub_com != SCALER_SELECT)
 			{
@@ -6100,9 +6111,9 @@ int main(int argc, char *argv[])
 				st.Current_Map.sprites[sp].body.sector_id = UpdateSector(st.Current_Map.sprites[sp].position, st.Current_Map.sprites[sp].body.size);
 			}
 
-			curr_tic+=1000/TICSPERSECOND;
+			curr_tic += 1000/TICSPERSECOND;
 			loops++;
-			SetTimerM(1);
+			//SetTimerM(1);
 
 			if(meng.loop_complete)
 			{
@@ -6205,8 +6216,8 @@ int main(int argc, char *argv[])
 		MainSound();
 		Renderer(0);
 
-		float bg[4];
-		nk_color_fv(bg, background);
+		//float bg[4];
+		//nk_color_fv(bg, background);
 
 		//if (nkrendered == 0)
 			//printf("porra\n");

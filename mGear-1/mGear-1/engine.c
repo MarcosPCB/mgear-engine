@@ -9665,11 +9665,11 @@ int32 LoadSpriteCFG(char *filename, int id)
 			if(skip==3)
 			{
 				//st.Game_Sprites[id].frame = malloc(num_frames * sizeof(int32));
-				tok=strtok(buf," ");
+				tok = strtok(buf, " ");
 
 				for(i = 0; i < 8; i++)
 				{
-					tok = strtok(NULL," ");
+					tok = strtok(NULL," \n");
 
 					if(tok == NULL) break;
 
@@ -11063,7 +11063,7 @@ void Renderer(uint8 type)
 			glClearColor(0, 0, 0, 0);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//glClear(GL_STENCIL_BUFFER_BIT);
 
 		if (z_used > 31 || z_used < 24)
