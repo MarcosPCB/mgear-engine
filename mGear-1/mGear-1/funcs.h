@@ -99,6 +99,9 @@ cdecl int8 mchalloc_ab(void *data); //Checks if the pointer is valid, if not, gi
 
 cdecl char *GetFileNameOnly(const char *path);
 
+cdecl int8 IsNumber(const char *str);
+cdecl int8 IsNumberFloat(const char *str);
+
 #define mem_assert(expr) assert(expr && "memory not valid");
 
 #endif

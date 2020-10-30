@@ -3,6 +3,7 @@
 
 struct MGLHeap
 {
+	int32 stack_pos;
 	size_t size;
 	size_t cur;
 	void *mem;
@@ -15,25 +16,18 @@ eng_calls e_funcs[] =
 	{ "log", E_LOG, 2, 0 }, //0
 	{ "drawline", E_DRAWLINE, 10, 0 }, //1
 	{ "msgbox", E_MSGBOX, 4, 0 }, //2
-	{ "getsys.Screen", C_GSYSSCREEN, 4, 1} //3
+	{ "playmovie", E_PLAYMOV, 1, 1}, //3
+	{ "playbgmovie", E_PLAYBGMOV, 2, 1 }, //4
+	{ "getsys.Screen", C_GSYSSCREEN, 4, 1}, //5
+
+	{ "getsprite.Frame", C_GSPRFRAME, 1, 1}, //32
+	{ "getsprite.NumFrames", C_GSPRNUMFRAMES, 1, 1}, //33
+	{ "getsprite.Anim", C_GSPRANIM, 1, 1}, //34
+	{ "getsprite.NumAnim", C_GSPRNUMANIMS, 1, 1} //35
+
 };
 
 const uint16 num_efuncs = 4;
-
-void GetSystemScreen(int32 *w, int32 *h, int32 *bpp, int32 *fullscreen)
-{
-	if (w != NULL)
-		*w = st.screenx;
-
-	if (h != NULL)
-		*h = st.screeny;
-
-	if (bpp != NULL)
-		*bpp = st.bpp;
-
-	if (fullscreen != NULL)
-		*fullscreen = st.fullscreen;
-}
 
 int16 GetEngFunc(const char *name)
 {
@@ -121,13 +115,112 @@ void CheckCodeSize(MGMC *code, uint32 curfunc, uint32 cur)
 	}
 }
 
+int16 GetVarOrNumber(char *tok, MGMC *code, int32 curfunc, int32 *var, int32 *number, float *numberf)
+{
+	int32 val1, valf1, g = 0, f = 0, i = 0;
+
+	if (tok != NULL)
+	{
+		if (IsNumber(tok) == 0)
+		{
+			if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
+			{
+				if (strlen(tok) == 4)
+					val1 = tok[3] - 48 + 4;
+
+				if (strlen(tok) == 5 && tok[3] != 'f')
+					val1 = atoi(tok + 3) + 4;
+
+				if (strlen(tok) == 5 && tok[3] == 'f')
+					val1 = tok[4] - 48 + 4;
+
+				if (strlen(tok) == 6 && tok[3] == 'f')
+					val1 = atoi(tok + 4) + 4;
+
+				g = 3;
+			}
+			else
+			if (strcmp(tok, "return") == NULL)
+			{
+				val1 = 0;
+				g = 3;
+			}
+			else
+			{
+				//val1 = -1;
+				for (i = 0; i < code->num_vars; i++)
+				{
+					if (strcmp(code->vars_table[i].name, tok) == NULL)
+					{
+						//Found global variable in the table
+						code->vars_table[i].num_use++;
+
+						if (code->vars_table[i].type == 2)
+							f |= 1;
+
+						val1 = i;
+						g = 2;
+						break;
+					}
+				}
+
+				for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+				{
+					if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+					{
+						//Found local variable in the table
+						code->function_table[curfunc].vars_table[i].num_use++;
+
+						if (code->function_table[curfunc].vars_table[i].type == 2)
+							f |= 1;
+
+						val1 = i;
+						g = 1;
+						break;
+					}
+				}
+			}
+
+			if (g == 0)
+				return 0;
+
+			*var = val1;
+
+			if (g == 2)
+				return 1;
+
+			if (g == 1)
+				return 2;
+
+			if (g == 3)
+				return 5;
+		}
+		else
+		{
+			if (IsNumber(tok))
+			{
+				*number = atol(tok);
+				return 3;
+			}
+			else
+			if (IsNumberFloat(tok))
+			{
+				*numberf = atof(tok);
+				return 4;
+			}
+		}
+	}
+	else
+		return -2;
+}
+
 MGMC *CompileMGL(FILE *file, uint8 optimization)
 {
 	MGMC *code;
 	char buf[4096], *tok, str1[64], str2[64];
 	uint16 func = 0, error = 0, line = 0, curfunc = 0;
 	int32 val1, val2, i, cv = 0, cv1 = 0;
-	uint32 brackets = 0, expect_bracket = 0, ret = 0;
+	uint32 brackets = 0, expect_bracket = 0, ret = 0, ifcmp = 0, ifcmpaddr[64];
 	float valf1, valf2;
 
 	code = calloc(1, sizeof(MGMC));
@@ -145,6 +238,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		tok = strtok(buf, " \n\t");
 
 		if (tok == NULL)
+			continue;
+
+		if (tok[0] == '/' && tok[1] == '/')
 			continue;
 
 		if (ret == 1)
@@ -726,16 +822,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
 					{
 						if (strlen(tok) == 4)
-							val1 = tok[3] - 48 + 4;
+							val1 = tok[3] - 48 + 9 - 1;
 
 						if (strlen(tok) == 5 && tok[3] != 'f')
-							val1 = atoi(tok + 3) + 4;
+							val1 = atoi(tok + 3) + 9 - 1;
 
 						if (strlen(tok) == 5 && tok[3] == 'f')
-							val1 = tok[4] - 48 + 4;
+							val1 = tok[4] - 48 + 9 - 1;
 
 						if (strlen(tok) == 6 && tok[3] == 'f')
-							val1 = atoi(tok + 4) + 4;
+							val1 = atoi(tok + 4) + 9 - 1;
 
 						g = 3;
 					}
@@ -823,16 +919,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
 					{
 						if (strlen(tok) == 4)
-							val2 = tok[3] - 48 + 4;
+							val2 = tok[3] - 48 + 9 - 1;
 
 						if (strlen(tok) == 5 && tok[3] != 'f')
-							val2 = atoi(tok + 3) + 4;
+							val2 = atoi(tok + 3) + 9 - 1;
 
 						if (strlen(tok) == 5 && tok[3] == 'f')
-							val2 = tok[4] - 48 + 4;
+							val2 = tok[4] - 48 + 9 - 1;
 
 						if (strlen(tok) == 6 && tok[3] == 'f')
-							val2 = atoi(tok + 4) + 4;
+							val2 = atoi(tok + 4) + 9 - 1;
 
 						g1 = 3;
 					}
@@ -1830,7 +1926,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 						}
 					}
 
-					if (g == 2)
+					if (g == 0)
 					{
 						for (j = 0; j < code->function_table[curfunc].num_vars; j++)
 						{
@@ -2074,6 +2170,15 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
+			if (ifcmp > 0)
+			{
+				ifcmp--;
+				code->function_code[curfunc][ifcmpaddr[ifcmp]] = cv >> 24;
+				code->function_code[curfunc][ifcmpaddr[ifcmp] + 1] = (cv >> 16) & 0xFF;
+				code->function_code[curfunc][ifcmpaddr[ifcmp] + 2] = (cv >> 8) & 0xFF;
+				code->function_code[curfunc][ifcmpaddr[ifcmp] + 3] = cv & 0xFF;
+			}
+
 			if (brackets == 0)
 			{
 				if (ret == 2)
@@ -2093,6 +2198,1041 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
 
 				func = 0;
+			}
+		}
+		else
+		if (strcmp(tok, "if") == NULL)
+		{
+			if (func == 0)
+			{
+				error++;
+				LogApp("If comparison outside function at line: %d", line);
+				continue;
+			}
+
+			int g = 0, f = 0, c = 0, g1 = 0, t;
+
+			int32 var1, var2, v, n;
+			float nf, var1f, var2f;
+			int16 res = 0;
+
+			if ((tok = strtok(NULL, " \n\t")) != NULL)
+			{
+				res = GetVarOrNumber(tok, code, curfunc, &v, &n, &nf);
+
+				if (res == 0)
+				{
+					error++;
+					LogApp("Undefined variable \"%s\" at if sentence at line: %d", tok, line);
+					continue;
+				}
+				
+				switch (res)
+				{
+					case 1:
+						g = 1;
+
+						if (code->vars_table[v].type == 2)
+							f = 1;
+						else
+							f = 0;
+
+						var1 = v;
+						break;
+
+					case 2:
+						g = 0;
+
+						if (code->function_table[curfunc].vars_table[v].type == 2)
+							f = 1;
+						else
+							f = 0;
+
+						var1 = v;
+						break;
+
+					case 3:
+						var1 = n;
+						c = 1;
+						break;
+
+					case 4:
+						var1f = nf;
+						f = 1;
+						c = 1;
+						break;
+
+					case 5:
+						var1 = v;
+						g = 3;
+						break;
+				}
+
+				if (c == 1)
+				{
+					error++;
+					LogApp("Found constant value as first argument in if sentence at line: %d", line);
+					continue;
+				}
+			}
+			else
+			{
+				error++;
+				LogApp("Missing argument at if sentence at line: %d", line);
+				continue;
+			}
+
+			if ((tok = strtok(NULL, " \n\t")) != NULL)
+			{
+				if (strcmp(tok, "==") == NULL)
+					t = 182;
+				else
+				if (strcmp(tok, "!=") == NULL)
+					t = 192;
+				else
+				if (strcmp(tok, ">") == NULL)
+					t = 162;
+				else
+				if (strcmp(tok, "<") == NULL)
+					t = 172;
+				else
+				if (strcmp(tok, ">=") == NULL)
+					t = 142;
+				else
+				if (strcmp(tok, "<=") == NULL)
+					t = 152;
+				else
+				if (strcmp(tok, "=>") == NULL)
+					t = 142;
+				else
+				if (strcmp(tok, "=<") == NULL)
+					t = 152;
+			}
+			else
+			{
+				error++;
+				LogApp("Missing operator at if sentence at line: %d", line);
+				continue;
+			}
+
+			if ((tok = strtok(NULL, " \n\t")) != NULL)
+			{
+				res = GetVarOrNumber(tok, code, curfunc, &v, &n, &nf);
+
+				if (res == 0)
+				{
+					error++;
+					LogApp("Undefined variable \"%s\" at if sentence at line: %d", tok, line);
+					continue;
+				}
+
+				switch (res)
+				{
+				case 1:
+					g1 = 1;
+
+					if (code->vars_table[v].type == 2)
+						f += 2;
+
+					var2 = v;
+					break;
+
+				case 2:
+					g1 = 0;
+
+					if (code->function_table[curfunc].vars_table[v].type == 2)
+						f += 2;
+
+					var2 = v;
+					break;
+
+				case 3:
+					var2 = n;
+					c += 1;
+					break;
+
+				case 4:
+					var2f = nf;
+					f += 2;
+					c += 1;
+					break;
+
+				case 5:
+					var2 = v;
+					g1 = 3;
+					break;
+				}
+			}
+			else
+			{
+				error++;
+				LogApp("Missing second argument at if sentence at line: %d", line);
+				continue;
+			}
+
+			expect_bracket = 1;
+
+			ifcmp += 1;
+
+			if (g == 3 || g1 == 3)
+			{
+				if (c == 1 && f == 0 && g == 3)
+				{
+					code->function_code[curfunc][cv] = t;
+					code->function_code[curfunc][cv + 1] = var1;
+					code->function_code[curfunc][cv + 2] = var2 >> 24;
+					code->function_code[curfunc][cv + 3] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = var2 & 0xFF;
+
+					cv += 6 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = t;
+
+					cv1 += 1;
+				}
+				else
+				if (c == 1 && f == 1 && g == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t;
+					code->function_code[curfunc][cv + 2] = var1;
+					code->function_code[curfunc][cv + 3] = var2 >> 24;
+					code->function_code[curfunc][cv + 4] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = var2 & 0xFF;
+
+					cv += 7 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 1 && f == 2 && g == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 1;
+					code->function_code[curfunc][cv + 2] = 0;
+					memcpy(code->function_code[curfunc] + cv + 3, &var2f, sizeof(float));
+
+					uint8 x = code->function_code[curfunc][cv + 3];
+					uint8 y = code->function_code[curfunc][cv + 4];
+
+					code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
+					code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
+					code->function_code[curfunc][cv + 5] = y;
+					code->function_code[curfunc][cv + 6] = x;
+
+					code->function_code[curfunc][cv + 7] = 250;
+					code->function_code[curfunc][cv + 8] = var1;
+					code->function_code[curfunc][cv + 9] = 0;
+
+					cv += 10 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 1;
+					code->bt_trl[curfunc][cv1 + 2] = 250;
+
+					cv1 += 3;
+				}
+				else
+				if (c == 1 && f == 3 && g == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 1;
+					code->function_code[curfunc][cv + 2] = var1;
+					memcpy(code->function_code[curfunc] + cv + 3, &var2f, sizeof(float));
+
+					uint8 x = code->function_code[curfunc][cv + 3];
+					uint8 y = code->function_code[curfunc][cv + 4];
+
+					code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
+					code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
+					code->function_code[curfunc][cv + 5] = y;
+					code->function_code[curfunc][cv + 6] = x;
+
+					cv += 7 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 1;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 0)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = t + 1;
+						code->function_code[curfunc][cv + 1] = var1;
+						code->function_code[curfunc][cv + 2] = g1 == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 3] = var2 >> 24;
+						code->function_code[curfunc][cv + 4] = (var2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 5] = (var2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 6] = var2 & 0xFF;
+
+						cv += 7 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = t + 1;
+
+						cv1 += 1;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = t + 2;
+						code->function_code[curfunc][cv + 1] = var1;
+						code->function_code[curfunc][cv + 2] = var2;
+
+						cv += 3 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = t + 2;
+
+						cv1 += 1;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = t + 4;
+						code->function_code[curfunc][cv + 1] = g == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 2] = var1 >> 24;
+						code->function_code[curfunc][cv + 3] = (var1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 4] = (var1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 5] = var1 & 0xFF;
+						code->function_code[curfunc][cv + 6] = var2;
+
+						cv += 7 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = t + 4;
+
+						cv1 += 1;
+					}
+				}
+				else
+				if (c == 0 && f == 1)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 3;
+						code->function_code[curfunc][cv + 2] = var1;
+						code->function_code[curfunc][cv + 3] = g1 == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 4] = var2 >> 24;
+						code->function_code[curfunc][cv + 5] = (var2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 6] = (var2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 7] = var2 & 0xFF;
+
+						cv += 8 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 3;
+
+						cv1 += 2;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 2;
+						code->function_code[curfunc][cv + 2] = var1;
+						code->function_code[curfunc][cv + 3] = var2;
+
+						cv += 4 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 5;
+
+						cv1 += 2;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 251;
+						code->function_code[curfunc][cv + 1] = 0;
+						code->function_code[curfunc][cv + 2] = var2;
+						code->function_code[curfunc][cv + 3] = 255;
+						code->function_code[curfunc][cv + 4] = t + 7;
+						code->function_code[curfunc][cv + 5] = g == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 6] = var1 >> 24;
+						code->function_code[curfunc][cv + 7] = (var1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 8] = (var1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 9] = var1 & 0xFF;
+						code->function_code[curfunc][cv + 10] = 0;
+
+						cv += 11 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 251;
+						code->bt_trl[curfunc][cv1 + 1] = 255;
+						code->bt_trl[curfunc][cv1 + 2] = t + 7;
+
+						cv1 += 3;
+					}
+				}
+				else
+				if (c == 0 && f == 2)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 4;
+						code->function_code[curfunc][cv + 2] = 0;
+						code->function_code[curfunc][cv + 3] = g1 == 0 ? 1 : 1;
+						code->function_code[curfunc][cv + 4] = var2 >> 24;
+						code->function_code[curfunc][cv + 5] = (var2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 6] = (var2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 7] = var2 & 0xFF;
+						code->function_code[curfunc][cv + 8] = 250;
+						code->function_code[curfunc][cv + 9] = var1;
+						code->function_code[curfunc][cv + 10] = 0;
+
+						cv += 11 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 4;
+						code->bt_trl[curfunc][cv1 + 2] = 250;
+
+						cv1 += 3;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 5;
+						code->function_code[curfunc][cv + 2] = 0;
+						code->function_code[curfunc][cv + 3] = var2;
+						code->function_code[curfunc][cv + 4] = 250;
+						code->function_code[curfunc][cv + 5] = var1;
+						code->function_code[curfunc][cv + 6] = 0;
+
+						cv += 7 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 5;
+						code->bt_trl[curfunc][cv1 + 2] = 250;
+
+						cv1 += 3;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 250;
+						code->function_code[curfunc][cv + 1] = 6;
+						code->function_code[curfunc][cv + 2] = var2;
+						code->function_code[curfunc][cv + 3] = t + 4;
+						code->function_code[curfunc][cv + 4] = g == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 5] = var1 >> 24;
+						code->function_code[curfunc][cv + 6] = (var1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 7] = (var1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 8] = var1 & 0xFF;
+						code->function_code[curfunc][cv + 9] = 6;
+
+						cv += 10 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 250;
+						code->bt_trl[curfunc][cv1 + 1] = t + 4;
+
+						cv1 += 2;
+					}
+				}
+				else
+				if (c == 0 && f == 3)
+				{
+					if (g == 3 && g1 != 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 4;
+						code->function_code[curfunc][cv + 2] = var1;
+						code->function_code[curfunc][cv + 3] = g1 == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 4] = var2 >> 24;
+						code->function_code[curfunc][cv + 5] = (var2 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 6] = (var2 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 7] = var2 & 0xFF;
+
+						cv += 7 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 4;
+
+						cv1 += 2;
+					}
+					else
+					if (g == 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 5;
+						code->function_code[curfunc][cv + 2] = var1;
+						code->function_code[curfunc][cv + 3] = var2;
+
+						cv += 4 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 5;
+
+						cv1 += 2;
+					}
+					if (g != 3 && g1 == 3)
+					{
+						code->function_code[curfunc][cv] = 255;
+						code->function_code[curfunc][cv + 1] = t + 7;
+						code->function_code[curfunc][cv + 2] = g == 1 ? 0 : 1;
+						code->function_code[curfunc][cv + 3] = var1 >> 24;
+						code->function_code[curfunc][cv + 4] = (var1 >> 16) & 0xFF;
+						code->function_code[curfunc][cv + 5] = (var1 >> 8) & 0xFF;
+						code->function_code[curfunc][cv + 6] = var1 & 0xFF;
+						code->function_code[curfunc][cv + 7] = var2;
+
+						cv += 8 + 4;
+
+						ifcmpaddr[ifcmp - 1] = cv - 4;
+
+						code->bt_trl[curfunc][cv1] = 255;
+						code->bt_trl[curfunc][cv1 + 1] = t + 7;
+
+						cv1 += 2;
+					}
+				}
+			}
+			else
+			{
+				if (c == 1 && f == 0)
+				{
+					code->function_code[curfunc][cv] = t + 3;
+					code->function_code[curfunc][cv + 1] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 2] = var1 >> 24;
+					code->function_code[curfunc][cv + 3] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 6] = var2 >> 24;
+					code->function_code[curfunc][cv + 7] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 8] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 9] = var2 & 0xFF;
+
+					cv += 10 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = t + 3;
+
+					cv1 += 1;
+				}
+				else
+				if (c == 1 && f == 1)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 1;
+					code->function_code[curfunc][cv + 2] = 0;
+					memcpy(code->function_code[curfunc] + cv + 3, &var2f, sizeof(float));
+
+					uint8 x = code->function_code[curfunc][cv + 3];
+					uint8 y = code->function_code[curfunc][cv + 4];
+
+					code->function_code[curfunc][cv + 3] = code->function_code[curfunc][cv + 6];
+					code->function_code[curfunc][cv + 4] = code->function_code[curfunc][cv + 5];
+					code->function_code[curfunc][cv + 5] = y;
+					code->function_code[curfunc][cv + 6] = x;
+
+					code->function_code[curfunc][cv + 7] = 250;
+					code->function_code[curfunc][cv + 8] = 6;
+					code->function_code[curfunc][cv + 9] = 0;
+
+					code->function_code[curfunc][cv + 10] = t + 4;
+					code->function_code[curfunc][cv + 11] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 12] = var1 >> 24;
+					code->function_code[curfunc][cv + 13] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 14] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 15] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 16] = 6;
+
+					cv += 17 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 1;
+					code->bt_trl[curfunc][cv1 + 2] = 250;
+					code->bt_trl[curfunc][cv1 + 3] = t + 4;
+
+					cv1 += 4;
+				}
+				else
+				if (c == 1 && f == 2)
+				{
+					code->function_code[curfunc][cv] = t + 0;
+					code->function_code[curfunc][cv + 1] = 6;
+					code->function_code[curfunc][cv + 2] = var2 >> 24;
+					code->function_code[curfunc][cv + 3] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = var2 & 0xFF;
+
+					code->function_code[curfunc][cv + 6] = 251;
+					code->function_code[curfunc][cv + 7] = 0;
+					code->function_code[curfunc][cv + 8] = 6;
+
+					code->function_code[curfunc][cv + 9] = 255;
+					code->function_code[curfunc][cv + 10] = t + 7;
+					code->function_code[curfunc][cv + 11] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 12] = var1 >> 24;
+					code->function_code[curfunc][cv + 13] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 14] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 15] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 16] = 0;
+
+					cv += 17 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = t + 0;
+					code->bt_trl[curfunc][cv1 + 1] = 251;
+					code->bt_trl[curfunc][cv1 + 2] = 255;
+					code->bt_trl[curfunc][cv1 + 3] = t + 7;
+
+					cv1 += 4;
+				}
+				else
+				if (c == 1 && f == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 9;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 3] = var1 >> 24;
+					code->function_code[curfunc][cv + 4] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 8] = var2 >> 24;
+					code->function_code[curfunc][cv + 9] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 10] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 11] = var2 & 0xFF;
+
+					cv += 12 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 9;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 1)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 8;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 3] = var1 >> 24;
+					code->function_code[curfunc][cv + 4] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 8] = var2 >> 24;
+					code->function_code[curfunc][cv + 9] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 10] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 11] = var2 & 0xFF;
+
+					cv += 12 + 4;
+
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 8;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 2)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 4;
+					code->function_code[curfunc][cv + 2] = 0;
+					code->function_code[curfunc][cv + 3] = g1 & 1 == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 4] = var2 >> 24;
+					code->function_code[curfunc][cv + 5] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 6] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 7] = var2 & 0xFF;
+
+					code->function_code[curfunc][cv + 8] = 250;
+					code->function_code[curfunc][cv + 9] = 6;
+					code->function_code[curfunc][cv + 10] = 0;
+
+					code->function_code[curfunc][cv + 11] = t + 4;
+					code->function_code[curfunc][cv + 12] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 13] = var1 >> 24;
+					code->function_code[curfunc][cv + 14] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 15] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 16] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 17] = 6;
+
+					cv += 18 + 4;
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 4;
+					code->bt_trl[curfunc][cv1 + 2] = 250;
+					code->bt_trl[curfunc][cv1 + 3] = t + 4;
+
+					cv1 += 4;
+				}
+				else
+				if (c == 0 && f == 3)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = t + 9;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 3] = var1 >> 24;
+					code->function_code[curfunc][cv + 4] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 8] = var2 >> 24;
+					code->function_code[curfunc][cv + 9] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 10] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 11] = var2 & 0xFF;
+
+					cv += 12 + 4;
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = t + 9;
+
+					cv1 += 1;
+				}
+				else
+				if (c == 0 && f == 0)
+				{
+					code->function_code[curfunc][cv] = t + 5;
+					code->function_code[curfunc][cv + 1] = g == 1 ? 0 : 1;
+					code->function_code[curfunc][cv + 2] = var1 >> 24;
+					code->function_code[curfunc][cv + 3] = (var1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (var1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = var1 & 0xFF;
+					code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 7] = var2 >> 24;
+					code->function_code[curfunc][cv + 8] = (var2 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 9] = (var2 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 10] = var2 & 0xFF;
+
+					cv += 11 + 4;
+					ifcmpaddr[ifcmp - 1] = cv - 4;
+
+					code->bt_trl[curfunc][cv1] = t + 5;
+
+					cv1 += 1;
+				}
+			}
+		}
+		else
+		{
+			int a = 0;
+
+			for (i = 0; i < code->num_functions; i++)
+			{
+				if (strcmp(tok, code->function_table[i].name) == NULL)
+				{
+					//Found function
+					a = 1;
+					break;
+				}
+			}
+
+			if (a == 0)
+			{
+				if ((i = GetEngFunc(tok)) != -1)
+				{
+					//Found engine function
+					a = 2;
+				}
+			}
+
+			if (a == 0)
+			{
+				error++;
+				LogApp("Found undefined token \"%s\" at line: %d", tok, line);
+				continue;
+			}
+			else
+			{
+				if (func == 0)
+				{
+					error++;
+					LogApp("Compiler error: function call outside function declaration - line: %d", line);
+					continue;
+				}
+			}
+
+			strcpy(str1, tok);
+
+			int c = 0, g = 0, f = 0, j = 0, b = 0, vars[24], var_c = 0;
+			val1 = -1;
+
+			ZeroMem(vars, 24 * sizeof(int));
+
+			while ((tok = strtok(NULL, " \n\t")) != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					//It's a variable
+					for (j = 0; j < code->num_vars; j++)
+					{
+						if (strcmp(tok, code->vars_table[j].name) == NULL)
+						{
+							val1 = j;
+
+							g = 2;
+
+							if (code->vars_table[j].type == 2)
+								f = 1;
+
+							vars[var_c] = j;
+							var_c++;
+
+							break;
+						}
+					}
+
+					//if (g == 2)
+					//{
+						for (j = 0; j < code->function_table[curfunc].num_vars; j++)
+						{
+							if (strcmp(tok, code->function_table[curfunc].vars_table[j].name) == NULL)
+							{
+								val1 = j;
+
+								g = 1;
+
+								if (code->function_table[curfunc].vars_table[j].type == 2)
+									f = 1;
+
+								vars[var_c] = j * -1;
+								var_c++;
+
+								break;
+							}
+						}
+
+						if (g == 0)
+						{
+							error++;
+							LogApp("Compiler error: undefined keyword \"%s\" at call command - line: %d", tok, line);
+							c = -1;
+							break;
+						}
+					//}
+				}
+				else
+				{
+					c = 1;
+
+					if (IsNumberFloat(tok) == 1)
+					{
+						valf1 = atof(tok);
+						f = 1;
+					}
+					else
+						val1 = atol(tok);
+				}
+
+				CheckCodeSize(code, curfunc, cv);
+
+				if (g == 2)
+					g = 0;
+
+				if (c == 1 && f == 0)
+				{
+					code->function_code[curfunc][cv] = 0;
+					code->function_code[curfunc][cv + 1] = b + 9;
+					code->function_code[curfunc][cv + 2] = val1 >> 24;
+					code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+
+					cv += 6;
+
+					code->bt_trl[curfunc][cv1] = 0;
+
+					cv1++;
+				}
+				else
+				if (c == 1 && f == 1)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = 1;
+					code->function_code[curfunc][cv + 2] = b + 5;
+					CopyFloatToInt32(code->function_code[curfunc] + cv + 3, valf1);
+
+					cv += 7;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = 1;
+
+					cv1 += 2;
+				}
+				else
+				if (c == 0 && f == 0)
+				{
+					code->function_code[curfunc][cv] = 1;
+					code->function_code[curfunc][cv + 1] = b + 9;
+					code->function_code[curfunc][cv + 2] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 3] = val1 >> 24;
+					code->function_code[curfunc][cv + 4] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 5] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 6] = val1 & 0xFF;
+
+					cv += 7;
+
+					code->bt_trl[curfunc][cv1] = 1;
+
+					cv1++;
+				}
+				else
+				if (c == 0 && f == 1)
+				{
+					code->function_code[curfunc][cv] = 255;
+					code->function_code[curfunc][cv + 1] = 4;
+					code->function_code[curfunc][cv + 2] = b + 5;
+					code->function_code[curfunc][cv + 3] = g == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 4] = val1 >> 24;
+					code->function_code[curfunc][cv + 5] = (val1 >> 16) & 0xFF;
+					code->function_code[curfunc][cv + 6] = (val1 >> 8) & 0xFF;
+					code->function_code[curfunc][cv + 7] = val1 & 0xFF;
+
+					cv += 8;
+
+					code->bt_trl[curfunc][cv1] = 255;
+					code->bt_trl[curfunc][cv1 + 1] = 4;
+
+					cv1 += 2;
+				}
+
+				b++;
+			}
+
+			//If MGL function
+			if (a == 1)
+			{
+				if (b < code->function_table[i].num_args)
+				{
+					error++;
+					LogApp("Compiler error: missing arguments in call to \"%s\" - line: %d", str1, line);
+					continue;
+				}
+
+				code->function_code[curfunc][cv] = 204;
+
+				//i = code->function_table[i].address;
+
+				code->function_code[curfunc][cv + 1] = 0;
+				code->function_code[curfunc][cv + 2] = i >> 24;
+				code->function_code[curfunc][cv + 3] = (i >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 4] = (i >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 5] = i & 0xFF;
+
+				cv += 6;
+
+				code->bt_trl[curfunc][cv1] = 204;
+
+				cv1++;
+			}
+			else
+			{
+				//It's an engine call
+
+				if (b < e_funcs[i].num_args)
+				{
+					error++;
+					LogApp("Compiler error: missing arguments in call to \"%s\" - line: %d", str1, line);
+					continue;
+				}
+
+				code->function_code[curfunc][cv] = 204;
+				code->function_code[curfunc][cv + 1] = 1;
+				code->function_code[curfunc][cv + 2] = i >> 24;
+				code->function_code[curfunc][cv + 3] = (i >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 4] = (i >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 5] = i & 0xFF;
+
+				cv += 6;
+
+				code->bt_trl[curfunc][cv1] = 204;
+
+				cv1++;
+
+				code->function_table[i].num_use++;
+
+				if (e_funcs[i].returnv == 1)
+				{
+					int k = 0;
+					for (j = 0; j < var_c; j++)
+					{
+						if (vars[j] < 0) //Local
+						{
+							k = vars[j] * -1;
+
+							if (code->function_table[curfunc].vars_table[k].type == 2)
+							{
+								code->function_code[curfunc][cv] = 255;
+								code->function_code[curfunc][cv + 1] = 7;
+								code->function_code[curfunc][cv + 2] = 1;
+								code->function_code[curfunc][cv + 3] = k >> 24;
+								code->function_code[curfunc][cv + 4] = (k >> 16) & 0xFF;
+								code->function_code[curfunc][cv + 5] = (k >> 8) & 0xFF;
+								code->function_code[curfunc][cv + 6] = k & 0xFF;
+								code->function_code[curfunc][cv + 7] = j + 5;
+
+								cv += 8;
+
+								code->bt_trl[curfunc][cv1] = 255;
+								code->bt_trl[curfunc][cv1 + 1] = 7;
+
+								cv1 += 2;
+							}
+							else
+							{
+								code->function_code[curfunc][cv] = 4;
+								code->function_code[curfunc][cv + 1] = 1;
+								code->function_code[curfunc][cv + 2] = k >> 24;
+								code->function_code[curfunc][cv + 3] = (k >> 16) & 0xFF;
+								code->function_code[curfunc][cv + 4] = (k >> 8) & 0xFF;
+								code->function_code[curfunc][cv + 5] = k & 0xFF;
+								code->function_code[curfunc][cv + 6] = j + 9;
+
+								cv += 7;
+
+								code->bt_trl[curfunc][cv1] = 4;
+
+								cv1++;
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -2179,15 +3319,22 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 	for (j = 0; j < code->num_vars; j++)
 	{
-		c[cv] = 254;
-		c[cv + 1] = code->vars_table[j].type;
-
-		if (c[cv + 1] != 2)
+		if (c[cv + 1] == 1)
 			Copy32toBuf(c + cv + 2, code->vars_table[j].value);
-		else
+
+		if (c[cv + 1] == 2)
 			CopyFloatToInt32(c + cv + 2, code->vars_table[j].valuef);
 
-		cv += 6;
+		if (c[cv + 1] == 4)
+		{
+			Copy32toBuf(c + cv + 2, code->vars_table[j].len);
+			memcpy(c + cv + 6, code->vars_table[j].string, code->vars_table[j].len);
+		}
+
+		if (c[cv + 1] != 4)
+			cv += 6;
+		else
+			cv += 6 + code->vars_table[j].len;
 	}
 
 	for (i = 0; i < code->num_functions; i++)
@@ -2263,12 +3410,22 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 			c[cv] = 254;
 			c[cv + 1] = code->function_table[i].vars_table[j].type;
 
-			if (c[cv + 1] != 2)
+			if (c[cv + 1] == 1)
 				Copy32toBuf(c + cv + 2, code->function_table[i].vars_table[j].value);
-			else
+			
+			if (c[cv + 1] == 2)
 				CopyFloatToInt32(c + cv + 2, code->function_table[i].vars_table[j].valuef);
 
-			cv += 6;
+			if (c[cv + 1] == 4)
+			{
+				Copy32toBuf(c + cv + 2, code->function_table[i].vars_table[j].len);
+				memcpy(c + cv + 6, code->function_table[i].vars_table[j].string, code->function_table[i].vars_table[j].len);
+			}
+
+			if (c[cv + 1] != 4)
+				cv += 6;
+			else
+				cv += 6 + code->function_table[i].vars_table[j].len;
 		}
 
 		for (cv1 = 0; cv1 < code->function_table[i].size; )
@@ -2343,6 +3500,122 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 						cv += 11;
 						cv1 += 11;
 						break;
+				}
+
+				continue;
+			}
+			else
+			if (c[cv] < 202 && c[cv] > 141)
+			{
+				switch ((c[cv] % 10) - 2)
+				{
+				case 0: //6 bytes
+					c[cv + 1] = code->function_code[i][cv1 + 1];
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+
+					temp = (code->function_code[i][cv1 + 6] << 24) | (code->function_code[i][cv1 + 7] << 16) |
+						(code->function_code[i][cv1 + 8] << 8) | code->function_code[i][cv1 + 9];
+					temp = cv + (temp - cv1);
+
+					c[cv + 6] = temp >> 24;
+					c[cv + 7] = (temp >> 16) & 0xFF;
+					c[cv + 8] = (temp >> 8) & 0xFF;
+					c[cv + 9] = temp & 0xFF;
+
+					cv += 6 + 4;
+					cv1 += 6 + 4;
+					break;
+
+				case 1: //7 bytes
+				case 4:
+					c[cv + 1] = code->function_code[i][cv1 + 1];
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+
+					temp = (code->function_code[i][cv1 + 7] << 24) | (code->function_code[i][cv1 + 8] << 16) |
+						(code->function_code[i][cv1 + 9] << 8) | code->function_code[i][cv1 + 10];
+					temp = cv + (temp - cv1);
+
+					c[cv + 7] = temp >> 24;
+					c[cv + 8] = (temp >> 16) & 0xFF;
+					c[cv + 9] = (temp >> 8) & 0xFF;
+					c[cv + 10] = temp & 0xFF;
+
+					cv += 7 + 4;
+					cv1 += 7 + 4;
+					break;
+
+				case 2: //3 bytes
+					c[cv + 1] = code->function_code[i][cv1 + 1];
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+
+					temp = (code->function_code[i][cv1 + 3] << 24) | (code->function_code[i][cv1 + 4] << 16) |
+						(code->function_code[i][cv1 + 5] << 8) | code->function_code[i][cv1 + 6];
+					temp = cv + (temp - cv1);
+
+					c[cv + 3] = temp >> 24;
+					c[cv + 4] = (temp >> 16) & 0xFF;
+					c[cv + 5] = (temp >> 8) & 0xFF;
+					c[cv + 6] = temp & 0xFF;
+
+					cv += 3 + 4;
+					cv1 += 3 + 4;
+					break;
+
+				case 3: //10 bytes
+					c[cv + 1] = code->function_code[i][cv1 + 1];
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+					c[cv + 7] = code->function_code[i][cv1 + 7];
+					c[cv + 8] = code->function_code[i][cv1 + 8];
+					c[cv + 9] = code->function_code[i][cv1 + 9];
+
+					temp = (code->function_code[i][cv1 + 10] << 24) | (code->function_code[i][cv1 + 11] << 16) |
+						(code->function_code[i][cv1 + 12] << 8) | code->function_code[i][cv1 + 13];
+					temp = cv + (temp - cv1);
+
+					c[cv + 10] = temp >> 24;
+					c[cv + 11] = (temp >> 16) & 0xFF;
+					c[cv + 12] = (temp >> 8) & 0xFF;
+					c[cv + 13] = temp & 0xFF;
+
+					cv += 14;
+					cv1 += 14;
+					break;
+
+				case 5: //11 bytes
+					c[cv + 1] = code->function_code[i][cv1 + 1];
+					c[cv + 2] = code->function_code[i][cv1 + 2];
+					c[cv + 3] = code->function_code[i][cv1 + 3];
+					c[cv + 4] = code->function_code[i][cv1 + 4];
+					c[cv + 5] = code->function_code[i][cv1 + 5];
+					c[cv + 6] = code->function_code[i][cv1 + 6];
+					c[cv + 7] = code->function_code[i][cv1 + 7];
+					c[cv + 8] = code->function_code[i][cv1 + 8];
+					c[cv + 9] = code->function_code[i][cv1 + 9];
+					c[cv + 10] = code->function_code[i][cv1 + 10];
+
+					temp = (code->function_code[i][cv1 + 11] << 24) | (code->function_code[i][cv1 + 12] << 16) |
+						(code->function_code[i][cv1 + 13] << 8) | code->function_code[i][cv1 + 14];
+					temp = cv + (temp - cv1);
+
+					c[cv + 11] = temp >> 24;
+					c[cv + 12] = (temp >> 16) & 0xFF;
+					c[cv + 13] = (temp >> 8) & 0xFF;
+					c[cv + 14] = temp & 0xFF;
+
+					cv += 11 + 4;
+					cv1 += 11 + 4;
+					break;
 				}
 
 				continue;
@@ -2506,6 +3779,642 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 	return c;
 }
 
+void WriteASM(MGMC *code, uint8 function_or_code)
+{
+	register  int32 i, j, k, l, cv, lcv;
+
+	uint32 temp = 0;
+
+	FILE *f;
+
+	mem_assert(code);
+
+	system("md asm");
+
+	if (function_or_code == 0) //function
+	{
+		for (i = 0; i < code->num_functions; i++)
+		{
+			openfile_d(f, StringFormat("asm/%s.asm", code->function_table[i].name), "w");
+
+			switch (code->stacksize)
+			{
+				case 0:
+					fprintf(f, ".TINY\n");
+					break;
+
+				case 1:
+					fprintf(f, ".LIGHT\n");
+					break;
+
+				case 2:
+					fprintf(f, ".SMALL\n");
+					break;
+
+				case 3:
+					fprintf(f, ".MEDIUM\n");
+					break;
+
+				case 4:
+					fprintf(f, ".GREAT\n");
+					break;
+
+				case 5:
+					fprintf(f, ".BIG\n");
+					break;
+
+				case 6:
+					fprintf(f, ".HUGE\n");
+					break;
+
+				default:
+					fprintf(f, ".FLAT %d\n", code->stacksize);
+					break;
+			}
+
+			fprintf(f, "\n");
+
+			fprintf(f, ".global\n");
+
+			for (j = 0; j < code->num_vars; j++)
+			{
+				if (j < 10)
+					fprintf(f, "$G000%d ", j);
+
+				if (j >= 10 && j < 100)
+					fprintf(f, "$G00%d ", j);
+
+				if (j >= 100 && j < 1000)
+					fprintf(f, "$G0%d ", j);
+
+				if (j >= 1000)
+					fprintf(f, "$G%d ", j);
+
+				switch (code->vars_table[j].type)
+				{
+					case 1:
+						fprintf(f, "DW %d     ;%s\n", code->vars_table[j].value, code->vars_table[j].name);
+						break;
+
+					case 2:
+						fprintf(f, "FP %f     ;%s\n", code->vars_table[j].valuef, code->vars_table[j].name);
+						break;
+
+					case 3:
+						fprintf(f, "PTR     ;%s\n", code->vars_table[j].name);
+						break;
+
+					case 4:
+						fprintf(f, "B %d \"%s\"     ;%s\n", code->vars_table[j].len, code->vars_table[j].string, code->vars_table[j].name);
+						break;
+				}
+			}
+
+			fprintf(f, "\n");
+			fprintf(f, ".text\n\n");
+
+			//for (k = 0; k < code->num_functions; k++)
+			//{
+				fprintf(f, "PROC _%s\n\n", code->function_table[i].name);
+
+				k = i;
+
+				for (j = 0; j < code->function_table[k].num_vars; j++)
+				{
+					fprintf(f, "data ");
+
+					if (j < 10)
+						fprintf(f, "$L000%d ", j);
+
+					if (j >= 10 && j < 100)
+						fprintf(f, "$L00%d ", j);
+
+					if (j >= 100 && j < 1000)
+						fprintf(f, "$L0%d ", j);
+
+					if (j >= 1000)
+						fprintf(f, "$L%d ", j);
+
+					switch (code->vars_table[j].type)
+					{
+					case 1:
+						fprintf(f, "DW %d     ;%s\n", code->function_table[k].vars_table[j].value, code->function_table[k].vars_table[j].name);
+						break;
+
+					case 2:
+						fprintf(f, "FP %f     ;%s\n", code->function_table[k].vars_table[j].valuef, code->function_table[k].vars_table[j].name);
+						break;
+
+					case 3:
+						fprintf(f, "PTR     ;%s\n", code->function_table[k].vars_table[j].name);
+						break;
+
+					case 4:
+						fprintf(f, "B %d \"%s\"     ;%s\n", code->function_table[k].vars_table[j].len, code->function_table[k].vars_table[j].string,
+							code->function_table[k].vars_table[j].name);
+						break;
+					}
+				}
+
+				unsigned char *buf = code->function_code[k];
+
+				for (cv = 0; cv < code->function_table[k].size; )
+				{
+					lcv = cv;
+					//alloc_mem(buf, code->function_table[k].size);
+
+					if (buf[cv] < 56)
+					{
+						switch (buf[cv] / 10)
+						{
+							case 0:
+								fprintf(f, "mov");
+								break;
+
+							case 1:
+								fprintf(f, "add");
+								break;
+
+							case 2:
+								fprintf(f, "sub");
+								break;
+
+							case 3:
+								fprintf(f, "mul");
+								break;
+
+							case 4:
+								fprintf(f, "div");
+								break;
+
+							case 5:
+								fprintf(f, "pow");
+								break;
+						}
+
+						switch (buf[cv] % 10)
+						{
+							case 0:
+								fprintf(f, "rc ");
+
+								fprintf(f, "r%d ", buf[cv + 1]);
+
+								fprintf(f, "%d\n", GetValueBuf(buf + cv + 2));
+
+								cv += 6;
+
+								break;
+
+							case 1:
+								fprintf(f, "rm ");
+
+								fprintf(f, "r%d ", buf[cv + 1]);
+
+								if (buf[cv + 2] == 0)
+									fprintf(f, "$G");
+								else
+									fprintf(f, "$L");
+
+								temp = GetValueBuf(buf + cv + 3);
+
+								if (temp < 10)
+									fprintf(f, "000%d", temp);
+
+								if (temp >= 10 && temp < 100)
+									fprintf(f, "00%d", temp);
+
+								if (temp >= 100 && temp < 1000)
+									fprintf(f, "0%d", temp);
+
+								if (temp >= 1000)
+									fprintf(f, "%d", temp);
+
+								fprintf(f, "\n");
+
+								cv += 7;
+
+								break;
+
+							case 2:
+								fprintf(f, "rr ");
+
+								fprintf(f, "r%d ", buf[cv + 1]);
+
+								fprintf(f, "r%d ", buf[cv + 2]);
+
+								cv += 3;
+
+								break;
+
+							case 3:
+								fprintf(f, "mc ");
+
+								if (buf[cv + 1] == 0)
+									fprintf(f, "$G");
+								else
+									fprintf(f, "$L");
+
+								temp = GetValueBuf(buf + cv + 2);
+
+								if (temp < 10)
+									fprintf(f, "000%d", temp);
+
+								if (temp >= 10 && temp < 100)
+									fprintf(f, "00%d", temp);
+
+								if (temp >= 100 && temp < 1000)
+									fprintf(f, "0%d", temp);
+
+								if (temp >= 1000)
+									fprintf(f, "%d", temp);
+
+								fprintf(f, " %d\n", GetValueBuf(buf + cv + 6));
+
+								cv += 10;
+
+								break;
+
+							case 4:
+								fprintf(f, "mr ");
+
+								if (buf[cv + 1] == 0)
+									fprintf(f, "$G");
+								else
+									fprintf(f, "$L");
+
+								temp = GetValueBuf(buf + cv + 2);
+
+								if (temp < 10)
+									fprintf(f, "000%d", temp);
+
+								if (temp >= 10 && temp < 100)
+									fprintf(f, "00%d", temp);
+
+								if (temp >= 100 && temp < 1000)
+									fprintf(f, "0%d", temp);
+
+								if (temp >= 1000)
+									fprintf(f, "%d", temp);
+
+								fprintf(f, " r%d\n", buf[cv + 6]);
+
+								cv += 7;
+
+								break;
+
+							case 5:
+								fprintf(f, "mm ");
+
+								if (buf[cv + 1] == 0)
+									fprintf(f, "$G");
+								else
+									fprintf(f, "$L");
+
+								temp = GetValueBuf(buf + cv + 2);
+
+								if (temp < 10)
+									fprintf(f, "000%d", temp);
+
+								if (temp >= 10 && temp < 100)
+									fprintf(f, "00%d", temp);
+
+								if (temp >= 100 && temp < 1000)
+									fprintf(f, "0%d", temp);
+
+								if (temp >= 1000)
+									fprintf(f, "%d", temp);
+
+								if (buf[cv + 6] == 0)
+									fprintf(f, "$G");
+								else
+									fprintf(f, "$L");
+
+								temp = GetValueBuf(buf + cv + 7);
+
+								if (temp < 10)
+									fprintf(f, "000%d", temp);
+
+								if (temp >= 10 && temp < 100)
+									fprintf(f, "00%d", temp);
+
+								if (temp >= 100 && temp < 1000)
+									fprintf(f, "0%d", temp);
+
+								if (temp >= 1000)
+									fprintf(f, "%d", temp);
+
+								fprintf(f, "\n");
+
+								cv += 11;
+
+								break;
+						}
+					}
+
+					if (buf[cv] > 141 && buf[cv] < 202)
+					{
+						switch (buf[cv] / 10)
+						{
+						case 14:
+							fprintf(f, "ifge");
+							break;
+
+						case 15:
+							fprintf(f, "ifle");
+							break;
+
+						case 16:
+							fprintf(f, "ifg");
+							break;
+
+						case 17:
+							fprintf(f, "ifl");
+							break;
+
+						case 18:
+							fprintf(f, "ife");
+							break;
+
+						case 19:
+							fprintf(f, "ifne");
+							break;
+						}
+
+						switch ((buf[cv] % 10) - 2)
+						{
+						case 0:
+							fprintf(f, "rc ");
+
+							fprintf(f, "r%d ", buf[cv + 1]);
+
+							fprintf(f, "%d\n", GetValueBuf(buf + cv + 2));
+
+							cv += 6;
+
+							break;
+
+						case 1:
+							fprintf(f, "rm ");
+
+							fprintf(f, "r%d ", buf[cv + 1]);
+
+							if (buf[cv + 2] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 3);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, "\n");
+
+							cv += 7;
+
+							break;
+
+						case 2:
+							fprintf(f, "rr ");
+
+							fprintf(f, "r%d ", buf[cv + 1]);
+
+							fprintf(f, "r%d ", buf[cv + 2]);
+
+							cv += 3;
+
+							break;
+
+						case 3:
+							fprintf(f, "mc ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, " %d\n", GetValueBuf(buf + cv + 6));
+
+							cv += 10;
+
+							break;
+
+						case 4:
+							fprintf(f, "mr ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, " r%d\n", buf[cv + 6]);
+
+							cv += 7;
+
+							break;
+
+						case 5:
+							fprintf(f, "mm ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							if (buf[cv + 6] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 7);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, "\n");
+
+							cv += 11;
+
+							break;
+						}
+
+						cv += 4;
+					}
+
+					if (buf[cv] == 204)
+					{
+						fprintf(f, "call ");
+
+						if (buf[cv + 1] == 0)
+						{
+							temp = GetValueBuf(buf + cv + 2);
+
+							for (l = 0; l < code->num_functions; l++)
+							{
+								if (temp == code->function_table[l].address)
+								{
+									fprintf(f, "_%s\n\n", code->function_table[l].name);
+									break;
+								}
+							}
+						}
+						else
+						{
+							temp = GetValueBuf(buf + cv + 2);
+
+							fprintf(f, "%s\n\n", e_funcs[temp].name);
+						}
+
+						cv += 6;
+					}
+
+					if (buf[cv] == 205)
+					{
+						fprintf(f, "pushc %d\n", GetValueBuf(buf + cv + 1));
+						cv += 5;
+					}
+
+					if (buf[cv] == 206)
+					{
+						fprintf(f, "pushm ");
+
+						if (buf[cv + 1] == 0)
+							fprintf(f, "$G");
+						else
+							fprintf(f, "$L");
+
+						temp = GetValueBuf(buf + cv + 2);
+
+						if (temp < 10)
+							fprintf(f, "000%d", temp);
+
+						if (temp >= 10 && temp < 100)
+							fprintf(f, "00%d", temp);
+
+						if (temp >= 100 && temp < 1000)
+							fprintf(f, "0%d", temp);
+
+						if (temp >= 1000)
+							fprintf(f, "%d", temp);
+
+						fprintf(f, "\n");
+
+						cv += 6;
+					}
+
+					if (buf[cv] == 207)
+					{
+						fprintf(f, "pushr r%d\n", buf[cv + 1]);
+						cv += 2;
+					}
+
+					if (buf[cv] == 208)
+					{
+						fprintf(f, "pushfr f%d\n", buf[cv + 1]);
+						cv += 2;
+					}
+
+					if (buf[cv] == 210)
+					{
+						fprintf(f, "ret\n");
+
+						if (buf[lcv] == 210)
+							break;
+
+						cv++;
+					}
+
+					if (buf[cv] == 250)
+					{
+						fprintf(f, "fti r%d f%d", buf[cv + 1], buf[cv + 2]);
+						cv += 3;
+					}
+
+					if (buf[cv] == 251)
+					{
+						fprintf(f, "itf f%d r%d", buf[cv + 1], buf[cv + 2]);
+						cv += 3;
+					}
+
+					if (buf[cv] == 252)
+					{
+						fprintf(f, "popr r%d\n", buf[cv + 1]);
+						cv += 2;
+					}
+
+					if (buf[cv] == 253)
+					{
+						fprintf(f, "popfr f%d\n", buf[cv + 1]);
+						cv += 2;
+					}
+				}
+			//}
+		}
+
+		fclose(f);
+	}
+}
+
 int8 BuildMGL(const char *filename, const char *finalname)
 {
 	FILE *f;
@@ -2525,6 +4434,8 @@ int8 BuildMGL(const char *filename, const char *finalname)
 	}
 
 	fclose(f);
+
+	WriteASM(code, 0);
 
 	c = LinkMGL(code, 0);
 
@@ -2714,6 +4625,8 @@ int8 InitMGLCode(const char *file)
 	st.mgl.funcs.log = LogApp;
 	st.mgl.funcs.drawline = LineData;
 	st.mgl.funcs.msgbox = MessageBoxRes;
+	st.mgl.funcs.playmovie = PlayMovie;
+	st.mgl.funcs.playbgvideo = PlayBGVideo;
 
 	return 1;
 }
@@ -2735,15 +4648,30 @@ int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, struct MGL
 			st.mgl.funcs.drawline(v[9], v[10], v[11], v[12], v[13], v[14], v[15], v[16], v[17], v[18]);
 			break;
 
+		case E_PLAYMOV:
+			v[2] = st.mgl.funcs.playmovie(heap[v[9]].string);
+			break;
+
+		case E_PLAYBGMOV:
+			v[2] = st.mgl.funcs.playbgvideo(heap[v[9]].string, v[10]);
+			break;
+
 		case C_GSYSSCREEN:
-			st.mgl.funcs.getsystemScreenSize(&v[9], &v[10], &v[11], &v[12]);
+			v[9] = st.screenx;
+			v[10] = st.screeny;
+			v[11] = st.fullscreen;
+			v[12] = st.bpp;
+			break;
+
+		case C_GSPRFRAME:
+			v[2] = st.Game_Sprites[v[9]].frame[v[10]];
 			break;
 	}
 }
 
 int8 ExecuteMGLCode(uint8 location)
 {
-	register int32 bp, sp, cv;
+	register int32 bp, sp, cv, lcv;
 	int32 v[32];
 
 	static int32 stack1[131072], *stack2, *stack, num_heap = 0;
@@ -3018,7 +4946,7 @@ int8 ExecuteMGLCode(uint8 location)
 			}
 			else
 			{
-				MessageBoxRes("MGVM error", MB_OK, "Error: detected invalid operator in the stack definition bytecode:\naddress: %d, byte: %d, stack address: %d",
+				MessageBoxRes("MGVM error", MB_OK, "VM error: detected invalid operator in the stack definition bytecode:\naddress: %d, byte: %d, stack address: %d",
 					cv, buf[cv + 1], bp);
 				st.quit = 1;
 				return NULL;
@@ -3036,6 +4964,9 @@ int8 ExecuteMGLCode(uint8 location)
 
 	while (bp > st.mgl.ret_addr)
 	{
+		if (st.quit == 1)
+			break;
+
 		//If is data definition
 		if (buf[cv] == 254)
 		{
@@ -3072,6 +5003,7 @@ int8 ExecuteMGLCode(uint8 location)
 
 				sp++;
 				cv += 2;
+				break;
 
 			case 4:
 				if (num_heap == 0)
@@ -3087,17 +5019,26 @@ int8 ExecuteMGLCode(uint8 location)
 
 				stack[sp] = num_heap;
 
+				heap[num_heap].stack_pos = sp;
+
 				GetValueCV(v[7], cv + 2);
 				heap[num_heap].size = v[7];
 				heap[num_heap].type = 1; //String
 				heap[num_heap].string = malloc(v[7]);
 				CHECKMEM(heap[num_heap].string);
 				memcpy(heap[num_heap].string, buf + cv + 6, v[7]);
-
+				heap[num_heap].string[v[7]] = '\0';
 				cv += 6 + v[7];
 				num_heap++;
 
 				sp++;
+				break;
+
+				default:
+					MessageBoxRes("MGVM error", MB_OK, "VM error: Iinvalid operator in data definition bytecode:\naddress: %d, byte: %d, stack address: %d",
+						cv, buf[cv + 1], bp);
+					st.quit = 1;
+
 			}
 		}
 		else
@@ -3185,7 +5126,7 @@ int8 ExecuteMGLCode(uint8 location)
 				case 13:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
-					GetValueCV(v[1], cv + 5);
+					GetValueCV(v[1], cv + 6);
 					v[7] += v[1];
 					SetStack(v[7], v[2]);
 					cv += 10;
@@ -3250,7 +5191,7 @@ int8 ExecuteMGLCode(uint8 location)
 				case 23:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
-					GetValueCV(v[1], cv + 5);
+					GetValueCV(v[1], cv + 6);
 					v[7] -= v[1];
 					SetStack(v[7], v[2]);
 					cv += 10;
@@ -3315,7 +5256,7 @@ int8 ExecuteMGLCode(uint8 location)
 				case 33:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
-					GetValueCV(v[1], cv + 5);
+					GetValueCV(v[1], cv + 6);
 					v[7] *= v[1];
 					SetStack(v[7], v[2]);
 					cv += 10;
@@ -3380,7 +5321,7 @@ int8 ExecuteMGLCode(uint8 location)
 				case 43:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
-					GetValueCV(v[1], cv + 5);
+					GetValueCV(v[1], cv + 6);
 					v[7] /= v[1];
 					SetStack(v[7], v[2]);
 					cv += 10;
@@ -3439,7 +5380,7 @@ int8 ExecuteMGLCode(uint8 location)
 				case 53:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
-					GetValueCV(v[1], cv + 5);
+					GetValueCV(v[1], cv + 6);
 					v[7] = pow(v[7], v[1]);
 					SetStack(v[7], v[2]);
 					cv += 10;
@@ -3466,6 +5407,685 @@ int8 ExecuteMGLCode(uint8 location)
 					cv += 11;
 					break;
 
+				case 142:
+					GetValueCV(v[7], cv + 2);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] >= v[2])
+					{
+						v[2] = 1;
+						cv += 6 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 6);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 143:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] >= v[2])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 144:
+					GetRegSwitch(buf[cv + 2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] >= v[2])
+					{
+						v[2] = 1;
+						cv += 3 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 3);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 145:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetValueCV(v[2], cv + 6);
+					if (v[7] >= v[2])
+					{
+						v[2] = 1;
+						cv += 10 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 10);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 146:
+					GetVarAddress(cv + 1);
+					GetRegSwitch(buf[cv + 6]);
+					GetValueStack(v[2], v[2]);
+					if (v[2] >= v[7])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 147:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[2], v[2]);
+					if (v[7] >= v[2])
+					{
+						v[2] = 1;
+						cv += 11 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 11);
+						cv = v[7];
+					}
+
+					break;
+
+				case 152:
+					GetValueCV(v[7], cv + 2);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] <= v[2])
+					{
+						v[2] = 1;
+						cv += 6 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 6);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 153:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] <= v[2])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 154:
+					GetRegSwitch(buf[cv + 2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] <= v[2])
+					{
+						v[2] = 1;
+						cv += 3 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 3);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 155:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetValueCV(v[2], cv + 6);
+					if (v[7] <= v[2])
+					{
+						v[2] = 1;
+						cv += 10 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 10);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 156:
+					GetVarAddress(cv + 1);
+					GetRegSwitch(buf[cv + 6]);
+					GetValueStack(v[2], v[2]);
+					if (v[2] <= v[7])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 157:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[2], v[2]);
+					if (v[7] <= v[2])
+					{
+						v[2] = 1;
+						cv += 11 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 11);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 162:
+					GetValueCV(v[7], cv + 2);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] > v[2])
+					{
+						v[2] = 1;
+						cv += 6 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 6);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 163:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] > v[2])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 164:
+					GetRegSwitch(buf[cv + 2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] > v[2])
+					{
+						v[2] = 1;
+						cv += 3 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 3);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 165:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetValueCV(v[2], cv + 6);
+					if (v[7] > v[2])
+					{
+						v[2] = 1;
+						cv += 10 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 10);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 166:
+					GetVarAddress(cv + 1);
+					GetRegSwitch(buf[cv + 6]);
+					GetValueStack(v[2], v[2]);
+					if (v[2] > v[7])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 167:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[2], v[2]);
+					if (v[7] > v[2])
+					{
+						v[2] = 1;
+						cv += 11 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 11);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 172:
+					GetValueCV(v[7], cv + 2);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] < v[2])
+					{
+						v[2] = 1;
+						cv += 6 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 6);
+						cv = v[7];
+						
+					}
+
+					break;
+
+				case 173:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] < v[2])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 174:
+					GetRegSwitch(buf[cv + 2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] < v[2])
+					{
+						v[2] = 1;
+						cv += 3 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 3);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 175:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetValueCV(v[2], cv + 6);
+					if (v[7] < v[2])
+					{
+						v[2] = 1;
+						cv += 10 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 10);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 176:
+					GetVarAddress(cv + 1);
+					GetRegSwitch(buf[cv + 6]);
+					GetValueStack(v[2], v[2]);
+					if (v[2] < v[7])
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 177:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[2], v[2]);
+					if (v[7] < v[2])
+					{
+						v[2] = 1;
+						cv += 11 + 4;
+					}
+					else
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 11);
+						cv = v[7];
+
+					}
+
+					break;
+
+				case 182:
+					GetValueCV(v[7], cv + 2);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] != v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 6);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 6 + 4;
+					}
+
+					break;
+
+				case 183:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] != v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+
+					break;
+
+				case 184:
+					GetRegSwitch(buf[cv + 2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] != v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 3);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 3 + 4;
+					}
+					break;
+
+				case 185:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetValueCV(v[2], cv + 6);
+					if (v[7] != v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 10);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 10 + 4;
+					}
+
+					break;
+
+				case 186:
+					GetVarAddress(cv + 1);
+					GetRegSwitch(buf[cv + 6]);
+					GetValueStack(v[2], v[2]);
+					if (v[7] != v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+
+					break;
+
+				case 187:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[2], v[2]);
+					if (v[7] == v[2])
+					{
+						v[2] = 1;
+						GetValueCV(v[7], cv + 11);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 0;
+						cv += 11 + 4;
+					}
+					break;
+
+				case 192:
+					GetValueCV(v[7], cv + 2);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] == v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 6);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 6 + 4;
+					}
+
+					break;
+
+				case 193:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] == v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+
+					break;
+
+				case 194:
+					GetRegSwitch(buf[cv + 2]);
+					v[2] = v[7];
+					GetRegSwitch(buf[cv + 1]);
+					if (v[7] == v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 3);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 3 + 4;
+					}
+					break;
+
+				case 195:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetValueCV(v[2], cv + 6);
+					if (v[7] == v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 10);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 10 + 4;
+					}
+
+					break;
+
+				case 196:
+					GetVarAddress(cv + 1);
+					GetRegSwitch(buf[cv + 6]);
+					GetValueStack(v[2], v[2]);
+					if (v[7] == v[2])
+					{
+						v[2] = 0;
+						GetValueCV(v[7], cv + 7);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 1;
+						cv += 7 + 4;
+					}
+
+					break;
+
+				case 197:
+					GetVarAddress(cv + 1);
+					GetValueStack(v[7], v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[2], v[2]);
+					if (v[7] == v[2])
+					{
+						v[2] = 1;
+						GetValueCV(v[7], cv + 11);
+						cv = v[7];
+					}
+					else
+					{
+						v[2] = 0;
+						cv += 11 + 4;
+					}
+					break;
+
 				case 204:
 					if (buf[cv + 1] == 0)
 					{
@@ -3489,6 +6109,15 @@ int8 ExecuteMGLCode(uint8 location)
 					bp = sp - 1;
 					bp = stack[bp];
 					sp = bp + 1;
+
+					for (int m = num_heap; m > 0; m--)
+					{
+						if (heap[m].stack_pos < sp && heap[m].type == 1)
+							free(heap[m].string);
+
+						num_heap--;
+					}
+
 					break;
 
 				case 233:
@@ -3639,6 +6268,11 @@ int8 ExecuteMGLCode(uint8 location)
 					state = 1;
 					cv++;
 					break;
+
+				default:
+					MessageBoxRes("MGVM error", MB_OK, "VM error: Invalid instruction in bytecode:\naddress: %d, byte: %d, stack address: %d",
+						cv, buf[cv + 1], bp);
+					st.quit = 1;
 				}
 			}
 			else
@@ -3738,6 +6372,11 @@ int8 ExecuteMGLCode(uint8 location)
 					PopStack(v[2]);
 					cv += 11;
 					break;
+
+				default:
+					MessageBoxRes("MGVM error", MB_OK, "VM error: Invalid instruction (set 2#) in bytecode:\naddress: %d, byte: %d, stack address: %d",
+						cv, buf[cv + 1], bp);
+					st.quit = 1;
 				}
 
 				state = 0;

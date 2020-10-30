@@ -27,8 +27,13 @@ enum enginecalls
 	E_LOG = 0,
 	E_DRAWLINE = 1,
 	E_MSGBOX = 2,
-
-	C_GSYSSCREEN = 3
+	E_PLAYMOV = 3,
+	E_PLAYBGMOV = 4,
+	C_GSYSSCREEN = 5,
+	C_GSPRFRAME = 32,
+	C_GSPRNUMFRAMES = 33,
+	C_GSPRANIM = 34,
+	C_GSPRNUMANIMS = 35
 };
 
 struct MGLEng_Funcs
