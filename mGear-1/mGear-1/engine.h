@@ -963,13 +963,29 @@ struct _STRINGS_E
 typedef struct _STRINGS_E StringsE;
 
 //MGL code
+
+struct MGLHeap
+{
+	int32 stack_pos;
+	size_t size;
+	size_t cur;
+	void *mem;
+	char *string;
+	uint8 type; //0 - buffer, 1 - string
+};
+
 struct MGLCode
 {
 	unsigned char *code;
 	size_t size;
 	uint16 cv;
-	uint32 v[8];
+	uint32 v[32];
+	float  f[24];
 	uint32 bp, sp, stack_type, memsize;
+
+	struct MGLHeap *heap;
+	uint16 num_heap;
+
 	struct Funcs
 	{
 		void(*log)(const char *msg, ...);
@@ -977,6 +993,9 @@ struct MGLCode
 		void(*drawline)(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
 		uint32(*playmovie)(const char *name);
 		uint32(*playbgvideo)(const char *name, uint8 play);
+		void(*drawui)(int32 x, int32 y, float size, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int8 layer);
+		void(*drawuistring)(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
+		void(*drawuistringl)(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 	} funcs;
 	uint32 ret_addr;
 };

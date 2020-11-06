@@ -1071,6 +1071,7 @@ int main(int argc, char *argv[])
 		{
 			Finish();
 			//LineData(0, 4096, 8192, 4096, 255, 255, 255, 255, 16, 15);
+			//PlayBGVideo("Data/Movies/Menu.mgv", 1);
 			if (st.gt == MAIN_MENU)
 				ExecuteMGLCode(0);
 				//Menu();
@@ -1090,6 +1091,7 @@ int main(int argc, char *argv[])
 
 			MainSound();
 
+			CleanupHeap(st.mgl.heap, st.mgl.num_heap);
 		}
 
 		DrawSys();

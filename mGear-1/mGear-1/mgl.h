@@ -30,6 +30,24 @@ enum enginecalls
 	E_PLAYMOV = 3,
 	E_PLAYBGMOV = 4,
 	C_GSYSSCREEN = 5,
+	C_GSYSMOUSEPOS = 6,
+	C_GSYSMOUSELMB = 7,
+	C_GSYSMOUSERMB = 8,
+	C_GSYSMOUSEMMB = 9,
+	C_GSYSKEY = 10,
+	E_STW = 11,
+	E_WTS = 12,
+	E_STWCI = 13,
+	E_WTSCI = 14,
+	E_STWF = 15,
+	E_WTSF = 16,
+	C_GSYSNUMMGGS = 17,
+	C_GSYSMOUSEWHEEL = 18,
+	C_GSYSGAMESTATE = 19,
+	E_DRAWUI = 20,
+	E_DRAWUISTRING = 21,
+	E_DRAWUISTRINGL = 22,
+	C_GMGGTEX = 23,
 	C_GSPRFRAME = 32,
 	C_GSPRNUMFRAMES = 33,
 	C_GSPRANIM = 34,
@@ -56,6 +74,7 @@ struct _MGMC
 
 	uint16 num_functions;
 	uint16 num_vars;
+	uint32 lines;
 
 	struct FuncTab
 	{
@@ -65,6 +84,7 @@ struct _MGMC
 		uint8 num_args;
 
 		int32 address;
+		uint32 line;
 
 		uint16 num_vars;
 		struct VarTab
@@ -77,6 +97,7 @@ struct _MGMC
 			float valuef;
 			char *string;
 			size_t len;
+			uint32 line;
 		} *vars_table;
 
 	} *function_table;
@@ -91,7 +112,16 @@ struct _MGMC
 		float valuef;
 		char *string;
 		size_t len;
+		uint32 line;
 	} *vars_table;
+
+	struct LineCode
+	{
+		int16 func;
+		char code[256];
+		uint32 byte_start;
+		uint32 byte_end;
+	} *linecode;
 
 	uint32 stacksize; //0 - 2k, 1 - 4k, 2 - 16k, 3 - 48k, 4 - 64k, 5 - 128k, 6 - 512k, 7 - custom
 };
@@ -103,5 +133,6 @@ int8 BuildMGL(const char *filename, const char *finalname);
 
 int8 InitMGLCode(const char *file);
 int8 ExecuteMGLCode(uint8 location);
+void CleanupHeap(struct MGLHeap *heap, uint16 num_heap);
 
 #endif

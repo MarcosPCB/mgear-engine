@@ -1,16 +1,6 @@
 #include "mgl.h" 
 #include <stdio.h>
 
-struct MGLHeap
-{
-	int32 stack_pos;
-	size_t size;
-	size_t cur;
-	void *mem;
-	char *string;
-	uint8 type; //0 - buffer, 1 - string
-};
-
 eng_calls e_funcs[] =
 {
 	{ "log", E_LOG, 2, 0 }, //0
@@ -19,7 +9,24 @@ eng_calls e_funcs[] =
 	{ "playmovie", E_PLAYMOV, 1, 1}, //3
 	{ "playbgmovie", E_PLAYBGMOV, 2, 1 }, //4
 	{ "getsys.Screen", C_GSYSSCREEN, 4, 1}, //5
-
+	{ "getsys.mouse.pos", C_GSYSMOUSEPOS, 2, 1 }, //6
+	{ "getsys.mouse.lmb", C_GSYSMOUSELMB, 1, 1 }, //7
+	{ "getsys.mouse.rmb", C_GSYSMOUSERMB, 1, 1 }, //8
+	{ "getsys.mouse.mmb", C_GSYSMOUSEMMB, 1, 1 }, //9
+	{ "getsys.key", C_GSYSKEY, 2, 1 }, //10
+	{ "screentoworld", E_STW, 2, 1 }, //11
+	{ "worldtoscreen", E_WTS, 2, 1 }, //12
+	{ "screentoworld_nocamera", E_STWCI, 2, 1 }, //13
+	{ "worldtoscreen_nocamera", E_WTSCI, 2, 1 }, //14
+	{ "screentoworld_float", E_STWCI, 2, 1 }, //15
+	{ "worldtoscreen_float", E_WTSCI, 2, 1 }, //16
+	{ "getsys.num_mggs",C_GSYSNUMMGGS, 1, 1 }, //17
+	{ "getsys.mouse.wheel", C_GSYSMOUSEWHEEL, 1, 1 }, //18
+	{ "getsys.game_state", C_GSYSGAMESTATE, 1, 1 }, //19
+	{ "drawui", E_DRAWUI, 10, 0 }, //20
+	{ "drawuistring", E_DRAWUISTRING, 14, 0 }, //21
+	{ "drawuistring_left", E_DRAWUISTRINGL, 14, 0 }, //22
+	{ "getmgg.tex", C_GMGGTEX, 2, 0 }, //23
 	{ "getsprite.Frame", C_GSPRFRAME, 1, 1}, //32
 	{ "getsprite.NumFrames", C_GSPRNUMFRAMES, 1, 1}, //33
 	{ "getsprite.Anim", C_GSPRANIM, 1, 1}, //34
@@ -27,7 +34,7 @@ eng_calls e_funcs[] =
 
 };
 
-const uint16 num_efuncs = 4;
+const uint16 num_efuncs = 35;
 
 int16 GetEngFunc(const char *name)
 {
@@ -63,6 +70,7 @@ int8 CopyFloatToInt32(unsigned char *mem, float valf)
 
 	memcpy(mem, &valf, sizeof(float));
 
+	/*
 	uint8 x = mem[0];
 	uint8 y = mem[1];
 
@@ -70,6 +78,7 @@ int8 CopyFloatToInt32(unsigned char *mem, float valf)
 	mem[1] = mem[2];
 	mem[2] = y;
 	mem[3] = x;
+	*/
 
 	return 1;
 }
@@ -103,9 +112,9 @@ void CheckCodeSize(MGMC *code, uint32 curfunc, uint32 cur)
 {
 	mem_assert(code);
 
-	if (cur > code->function_table[curfunc].size - 20)
+	if (cur > code->function_table[curfunc].size - 32)
 	{
-		code->function_table[curfunc].size += 64;
+		code->function_table[curfunc].size += 256;
 		code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
 
 		code->bt_trl[curfunc] = realloc(code->bt_trl[curfunc], code->function_table[curfunc].size * sizeof(uint32));
@@ -219,16 +228,27 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 	MGMC *code;
 	char buf[4096], *tok, str1[64], str2[64];
 	uint16 func = 0, error = 0, line = 0, curfunc = 0;
-	int32 val1, val2, i, cv = 0, cv1 = 0;
+	int32 val1, val2, i, cv = 0, cv1 = 0, cur_line = 64;
 	uint32 brackets = 0, expect_bracket = 0, ret = 0, ifcmp = 0, ifcmpaddr[64];
 	float valf1, valf2;
 
 	code = calloc(1, sizeof(MGMC));
 	CHECKMEM(code);
 
+	code->linecode = malloc(sizeof(*code->linecode) * 64);
+
 	while (!feof(file))
 	{
+		if (line > cur_line)
+			code->linecode = realloc(code->linecode, sizeof(*code->linecode) * (cur_line + 64));
+
 		line++;
+
+		ZeroMem(code->linecode[line].code, 256);
+		code->linecode[line].byte_start = 0;
+		code->linecode[line].byte_end = 0;
+		code->linecode[line].func = -1;
+
 		ZeroMem(buf, 4096);
 		fgets(buf, 4096, file);
 
@@ -799,9 +819,720 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			}
 		}
 		else
+		if (strcmp(tok, "cat_string") == NULL)
+		{
+			if (func == 0 || expect_bracket == 1)
+			{
+				error++;
+				LogApp("Compiler error: detected command outside function - line: %d, command: \"%s\"", line, tok);
+				continue;
+			}
+
+			CheckCodeSize(code, curfunc, cv);
+
+			int32 g = 0, f = 0, g1 = 0, c = 0, s = 0;
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					for (i = 0; i < code->num_vars; i++)
+					{
+						if (strcmp(code->vars_table[i].name, tok) == NULL)
+						{
+							//Found global variable in the table
+							code->vars_table[i].num_use++;
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							val1 = i;
+							g = 2;
+							break;
+						}
+					}
+
+					if (g == 3)
+						continue;
+
+					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					{
+						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						{
+							//Found local variable in the table
+							if (g == 2)
+							{
+								error++;
+								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+									code->function_table[curfunc].name, tok, str1, line);
+								g = -1;
+								break;
+							}
+
+							if (code->function_table[curfunc].vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->function_table[curfunc].vars_table[i].name);
+								break;
+							}
+
+							code->function_table[curfunc].vars_table[i].num_use++;
+
+							///if (code->function_table[curfunc].vars_table[i].type == 2)
+								//f |= 1;
+
+							val1 = i;
+							g = 1;
+							break;
+						}
+					}
+
+					if (g == 3)
+						continue;
+				}
+				else
+				{
+					error++;
+					LogApp("Compiler error: detected constant in the first argument - line: %d", line);
+					continue;
+				}
+			}
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					if (tok[0] == 'a' && tok[1] == 'r' && tok[2] == 'g' && ((tok[3] >= '0' && tok[3] <= '9') || (tok[3] == 'f' && (tok[4] >= '0' && tok[4] <= '9'))))
+					{
+						if (strlen(tok) == 4)
+							val2 = tok[3] - 48 + 9 - 1;
+
+						if (strlen(tok) == 5 && tok[3] != 'f')
+							val2 = atoi(tok + 3) + 9 - 1;
+
+						if (strlen(tok) == 5 && tok[3] == 'f')
+							val2 = tok[4] - 48 + 5 - 1;
+
+						if (strlen(tok) == 6 && tok[3] == 'f')
+							val2 = atoi(tok + 4) + 5 - 1;
+
+						g = 3;
+					}
+					else
+					if (strcmp(tok, "return") == NULL)
+					{
+						val2 = 2;
+						g1 = 3;
+					}
+					else
+					{
+						for (i = 0; i < code->num_vars; i++)
+						{
+							if (strcmp(code->vars_table[i].name, tok) == NULL)
+							{
+								//Found global variable in the table
+								code->vars_table[i].num_use++;
+
+								if (code->vars_table[i].type == 4)
+									s = 1;
+
+								val2 = i;
+								g1 = 2;
+								break;
+							}
+						}
+
+						for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+						{
+							if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+							{
+								//Found local variable in the table
+								if (g1 == 2)
+								{
+									error++;
+									LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+										code->function_table[curfunc].name, tok, str1, line);
+									g1 = -1;
+									break;
+								}
+
+								if (code->function_table[curfunc].vars_table[i].type == 4)
+									s = 1;
+
+								code->function_table[curfunc].vars_table[i].num_use++;
+
+								if (code->function_table[curfunc].vars_table[i].type == 2)
+									f |= 1;
+
+								val2 = i;
+								g1 = 1;
+								break;
+							}
+						}
+					}
+				}
+				else
+				{
+					c = 1;
+
+					if (IsNumberFloat(tok) == 0)
+						val2 = atol(tok);
+					else
+					{
+						f = 1;
+						val2 = atof(tok);
+					}
+				}
+			}
+
+			if (g1 == 2)
+				g1 = 0;
+
+			if (g == 2)
+				g = 0;
+
+			if (s == 1)
+			{
+				code->function_code[curfunc][cv] = 242;
+				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 2] = val1 >> 24;
+				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 7] = val2 >> 24;
+				code->function_code[curfunc][cv + 8] = (val2 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 9] = (val2 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 10] = val2 & 0xFF;
+
+				cv += 11;
+
+				code->bt_trl[curfunc][cv1] = 242;
+
+				cv1++;
+			}
+			else
+			if (s == 0 && c == 1 && f == 0 && g1 != 3)
+			{
+				code->function_code[curfunc][cv] = 0;
+				code->function_code[curfunc][cv + 1] = 0;
+				code->function_code[curfunc][cv + 2] = val2 >> 24;
+				code->function_code[curfunc][cv + 3] = (val2 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 4] = (val2 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 5] = val2 & 0xFF;
+
+				code->function_code[curfunc][cv + 6] = 241;
+				code->function_code[curfunc][cv + 7] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 8] = val1 >> 24;
+				code->function_code[curfunc][cv + 9] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 10] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 11] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 12] = 0;
+
+				cv += 13;
+
+				code->bt_trl[curfunc][cv1] = 0;
+				code->bt_trl[curfunc][cv1 + 1] = 241;
+
+				cv1 += 2;
+			}
+			else
+			if (s == 0 && c == 1 && f == 1 && g1 != 3)
+			{
+				code->function_code[curfunc][cv] = 255;
+				code->function_code[curfunc][cv + 1] = 1;
+				code->function_code[curfunc][cv + 2] = 0;
+				code->function_code[curfunc][cv + 3] = val2 >> 24;
+				code->function_code[curfunc][cv + 4] = (val2 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 5] = (val2 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 6] = val2 & 0xFF;
+
+				code->function_code[curfunc][cv + 7] = 245;
+				code->function_code[curfunc][cv + 8] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 9] = val1 >> 24;
+				code->function_code[curfunc][cv + 10] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 11] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 12] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 13] = 0;
+
+				cv += 14;
+
+				code->bt_trl[curfunc][cv1] = 255;
+				code->bt_trl[curfunc][cv1 + 1] = 1;
+				code->bt_trl[curfunc][cv1 + 2] = 245;
+
+				cv1 += 3;
+			}
+			else
+			if (s == 0 && c == 0 && f == 0 && g1 != 3)
+			{
+				code->function_code[curfunc][cv] = 1;
+				code->function_code[curfunc][cv + 1] = 0;
+				code->function_code[curfunc][cv + 2] = g1 == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 3] = val2 >> 24;
+				code->function_code[curfunc][cv + 4] = (val2 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 5] = (val2 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 6] = val2 & 0xFF;
+
+				code->function_code[curfunc][cv + 7] = 242;
+				code->function_code[curfunc][cv + 8] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 9] = val1 >> 24;
+				code->function_code[curfunc][cv + 10] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 11] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 12] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 13] = 0;
+
+				cv += 14;
+
+				code->bt_trl[curfunc][cv1] = 1;
+				code->bt_trl[curfunc][cv1 + 1] = 242;
+				
+				cv1 += 2;
+			}
+			else
+			if (s == 0 && c == 0 && f == 1 && g1 != 3)
+			{
+				code->function_code[curfunc][cv] = 255;
+				code->function_code[curfunc][cv + 1] = 4;
+				code->function_code[curfunc][cv + 2] = 0;
+				code->function_code[curfunc][cv + 3] = g1 == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 4] = val2 >> 24;
+				code->function_code[curfunc][cv + 5] = (val2 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 6] = (val2 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 7] = val2 & 0xFF;
+
+				code->function_code[curfunc][cv + 8] = 245;
+				code->function_code[curfunc][cv + 9] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 10] = val1 >> 24;
+				code->function_code[curfunc][cv + 11] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 12] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 13] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 14] = 0;
+
+				cv += 15;
+
+				code->bt_trl[curfunc][cv1] = 255;
+				code->bt_trl[curfunc][cv1 + 1] = 4;
+				code->bt_trl[curfunc][cv1 + 2] = 245;
+
+				cv1 += 3;
+			}
+			else
+			if (s == 0 && c == 0 && f == 0 && g1 == 3)
+			{
+				code->function_code[curfunc][cv] = 242;
+				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 2] = val1 >> 24;
+				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 6] = val2;
+
+				cv += 6;
+
+				code->bt_trl[curfunc][cv1] = 242;
+
+				cv1 ++;
+			}
+			else
+			if (s == 0 && c == 0 && f == 1 && g1 == 3)
+			{
+				code->function_code[curfunc][cv] = 245;
+				code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+				code->function_code[curfunc][cv + 2] = val1 >> 24;
+				code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+				code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+				code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+				code->function_code[curfunc][cv + 6] = val2;
+
+				cv += 6;
+
+				code->bt_trl[curfunc][cv1] = 245;
+
+				cv1++;
+			}
+		}
+		else
+		if (strcmp(tok, "compare_string") == NULL)
+		{
+			if (func == 0 || expect_bracket == 1)
+			{
+				error++;
+				LogApp("Compiler error: detected command outside function - line: %d, command: \"%s\"", line, tok);
+				continue;
+			}
+
+			CheckCodeSize(code, curfunc, cv);
+
+			int32 g = 0, f = 0, g1 = 0;
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					for (i = 0; i < code->num_vars; i++)
+					{
+						if (strcmp(code->vars_table[i].name, tok) == NULL)
+						{
+							//Found global variable in the table
+							code->vars_table[i].num_use++;
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							val1 = i;
+							g = 2;
+							break;
+						}
+					}
+
+					if (g == 3)
+						continue;
+
+					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					{
+						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						{
+							//Found local variable in the table
+							if (g == 2)
+							{
+								error++;
+								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+									code->function_table[curfunc].name, tok, str1, line);
+								g = -1;
+								break;
+							}
+
+							if (code->function_table[curfunc].vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->function_table[curfunc].vars_table[i].name);
+								break;
+							}
+
+							code->function_table[curfunc].vars_table[i].num_use++;
+
+							///if (code->function_table[curfunc].vars_table[i].type == 2)
+							//f |= 1;
+
+							val1 = i;
+							g = 1;
+							break;
+						}
+					}
+
+					if (g == 3)
+						continue;
+				}
+				else
+				{
+					error++;
+					LogApp("Compiler error: detected constant in the first argument - line: %d", line);
+					continue;
+				}
+			}
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					for (i = 0; i < code->num_vars; i++)
+					{
+						if (strcmp(code->vars_table[i].name, tok) == NULL)
+						{
+							//Found global variable in the table
+							code->vars_table[i].num_use++;
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							val2 = i;
+							g1 = 2;
+							break;
+						}
+					}
+
+					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					{
+						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						{
+							//Found local variable in the table
+							if (g1 == 2)
+							{
+								error++;
+								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+									code->function_table[curfunc].name, tok, str1, line);
+								g1 = -1;
+								break;
+							}
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							code->function_table[curfunc].vars_table[i].num_use++;
+
+							val2 = i;
+							g1 = 1;
+							break;
+						}
+					}
+				}
+				else
+				{
+					error++;
+					LogApp("Compiler error: detected constant in the second argument - line: %d", line);
+					continue;
+				}
+			}
+
+			if (g1 == 2)
+				g1 = 0;
+
+			if (g == 2)
+				g = 0;
+
+			code->function_code[curfunc][cv] = 243;
+			code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+			code->function_code[curfunc][cv + 2] = val1 >> 24;
+			code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+			code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+			code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+			code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
+			code->function_code[curfunc][cv + 7] = val2 >> 24;
+			code->function_code[curfunc][cv + 8] = (val2 >> 16) & 0xFF;
+			code->function_code[curfunc][cv + 9] = (val2 >> 8) & 0xFF;
+			code->function_code[curfunc][cv + 10] = val2 & 0xFF;
+
+			cv += 11;
+
+			code->bt_trl[curfunc][cv1] = 243;
+
+			cv1++;
+		}
+		else
+		if (strcmp(tok, "copy_string") == NULL)
+		{
+			if (func == 0 || expect_bracket == 1)
+			{
+				error++;
+				LogApp("Compiler error: detected command outside function - line: %d, command: \"%s\"", line, tok);
+				continue;
+			}
+
+			CheckCodeSize(code, curfunc, cv);
+
+			int32 g = 0, f = 0, g1 = 0;
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					for (i = 0; i < code->num_vars; i++)
+					{
+						if (strcmp(code->vars_table[i].name, tok) == NULL)
+						{
+							//Found global variable in the table
+							code->vars_table[i].num_use++;
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							val1 = i;
+							g = 2;
+							break;
+						}
+					}
+
+					if (g == 3)
+						continue;
+
+					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					{
+						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						{
+							//Found local variable in the table
+							if (g == 2)
+							{
+								error++;
+								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+									code->function_table[curfunc].name, tok, str1, line);
+								g = -1;
+								break;
+							}
+
+							if (code->function_table[curfunc].vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->function_table[curfunc].vars_table[i].name);
+								break;
+							}
+
+							code->function_table[curfunc].vars_table[i].num_use++;
+
+							///if (code->function_table[curfunc].vars_table[i].type == 2)
+							//f |= 1;
+
+							val1 = i;
+							g = 1;
+							break;
+						}
+					}
+
+					if (g == 3)
+						continue;
+				}
+				else
+				{
+					error++;
+					LogApp("Compiler error: detected constant in the first argument - line: %d", line);
+					continue;
+				}
+			}
+
+			tok = strtok(NULL, " \n\t");
+
+			if (tok != NULL)
+			{
+				if (IsNumber(tok) == 0)
+				{
+					for (i = 0; i < code->num_vars; i++)
+					{
+						if (strcmp(code->vars_table[i].name, tok) == NULL)
+						{
+							//Found global variable in the table
+							code->vars_table[i].num_use++;
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							val2 = i;
+							g1 = 2;
+							break;
+						}
+					}
+
+					for (i = 0; i < code->function_table[curfunc].num_vars; i++)
+					{
+						if (strcmp(code->function_table[curfunc].vars_table[i].name, tok) == NULL)
+						{
+							//Found local variable in the table
+							if (g1 == 2)
+							{
+								error++;
+								LogApp("Compiler error: function \"%s\" local variable \"%s\" conflicting with global variable with the same name in \"%s\" command - line: %d",
+									code->function_table[curfunc].name, tok, str1, line);
+								g1 = -1;
+								break;
+							}
+
+							if (code->vars_table[i].type != 4)
+							{
+								g = 3;
+								error++;
+								LogApp("Compiler error: detected variable that is not a string in the first argument - line: %d, variable: \"%s\"",
+									line, code->vars_table[i].name);
+								break;
+							}
+
+							code->function_table[curfunc].vars_table[i].num_use++;
+
+							val2 = i;
+							g1 = 1;
+							break;
+						}
+					}
+				}
+				else
+				{
+					error++;
+					LogApp("Compiler error: detected constant in the second argument - line: %d", line);
+					continue;
+				}
+			}
+
+			if (g1 == 2)
+				g1 = 0;
+
+			if (g == 2)
+				g = 0;
+
+			code->function_code[curfunc][cv] = 244;
+			code->function_code[curfunc][cv + 1] = g == 1 ? 1 : 0;
+			code->function_code[curfunc][cv + 2] = val1 >> 24;
+			code->function_code[curfunc][cv + 3] = (val1 >> 16) & 0xFF;
+			code->function_code[curfunc][cv + 4] = (val1 >> 8) & 0xFF;
+			code->function_code[curfunc][cv + 5] = val1 & 0xFF;
+			code->function_code[curfunc][cv + 6] = g1 == 1 ? 1 : 0;
+			code->function_code[curfunc][cv + 7] = val2 >> 24;
+			code->function_code[curfunc][cv + 8] = (val2 >> 16) & 0xFF;
+			code->function_code[curfunc][cv + 9] = (val2 >> 8) & 0xFF;
+			code->function_code[curfunc][cv + 10] = val2 & 0xFF;
+
+			cv += 11;
+
+			code->bt_trl[curfunc][cv1] = 244;
+
+			cv1++;
+		}
+		else
 		if (strcmp(tok, "set") == NULL || strcmp(tok, "add") == NULL || strcmp(tok, "sub") == NULL || strcmp(tok, "mul") == NULL || strcmp(tok, "div") == NULL
 			|| strcmp(tok, "pow") == NULL)
 		{
+			strcpy(code->linecode[line].code, buf);
+			code->linecode[line].func = curfunc;
+
 			if (func == 0 || expect_bracket == 1)
 			{
 				error++;
@@ -828,17 +1559,17 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							val1 = atoi(tok + 3) + 9 - 1;
 
 						if (strlen(tok) == 5 && tok[3] == 'f')
-							val1 = tok[4] - 48 + 9 - 1;
+							val1 = tok[4] - 48 + 5 - 1;
 
 						if (strlen(tok) == 6 && tok[3] == 'f')
-							val1 = atoi(tok + 4) + 9 - 1;
+							val1 = atoi(tok + 4) + 5 - 1;
 
 						g = 3;
 					}
 					else
 					if (strcmp(tok, "return") == NULL)
 					{
-						val1 = 0;
+						val1 = 2;
 						g = 3;
 					}
 					else
@@ -925,17 +1656,17 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 							val2 = atoi(tok + 3) + 9 - 1;
 
 						if (strlen(tok) == 5 && tok[3] == 'f')
-							val2 = tok[4] - 48 + 9 - 1;
+							val2 = tok[4] - 48 + 5 - 1;
 
 						if (strlen(tok) == 6 && tok[3] == 'f')
-							val2 = atoi(tok + 4) + 9 - 1;
+							val2 = atoi(tok + 4) + 5 - 1;
 
 						g1 = 3;
 					}
 					else
 					if (strcmp(tok, "return") == NULL)
 					{
-						val2 = 0;
+						val2 = 2;
 						g1 = 3;
 					}
 					else
@@ -1040,6 +1771,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				t = 50;
 
 			CheckCodeSize(code, curfunc, cv);
+
+			code->linecode[line].byte_start = cv;
 
 			if (g == 3 || g1 == 3)
 			{
@@ -1571,10 +2304,15 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				}
 			}
 
+			code->linecode[line].byte_end = cv;
+
 		}
 		else
 		if (strcmp(tok, "func") == NULL) //Function entry point
 		{
+			strcpy(code->linecode[line].code, buf);
+			//code->linecode[line].func = curfunc;
+
 			if (func == 1)
 			{
 				error++;
@@ -1658,6 +2396,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				}
 			}
 
+			code->function_table[curfunc].line = line;
+
 			expect_bracket = 1;
 			cv = 0;
 			cv1 = 0;
@@ -1665,6 +2405,9 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		else
 		if (strcmp(tok, "return") == NULL)
 		{
+			strcpy(code->linecode[line].code, buf);
+			code->linecode[line].func = curfunc;
+
 			if (func == 0 || expect_bracket == 1)
 			{
 				error++;
@@ -1762,6 +2505,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			if (g == 2)
 				g = 0;
 
+			code->linecode[line].byte_start = cv;
+
 			if (c == 1 && f == 0)
 			{
 				code->function_code[curfunc][cv] = 0;
@@ -1849,11 +2594,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				cv1 += 4;
 			}
 
+			code->linecode[line].byte_end = cv;
+
 			ret = 1;
 		}
 		else
 		if (strcmp(tok, "call") == NULL)
 		{
+			strcpy(code->linecode[line].code, buf);
+			code->linecode[line].func = curfunc;
+
 			if (func == 0)
 			{
 				error++;
@@ -1897,6 +2647,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			val1 = -1;
 
 			ZeroMem(vars, 24 * sizeof(int));
+
+			code->linecode[line].byte_start = cv;
 
 			while ((tok = strtok(NULL, " \n\t")) != NULL)
 			{
@@ -2142,6 +2894,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					}
 				}
 			}
+
+			code->linecode[line].byte_end = cv;
 		}
 		else
 		if (strcmp(tok, "{") == NULL)
@@ -2203,12 +2957,17 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 		else
 		if (strcmp(tok, "if") == NULL)
 		{
+			strcpy(code->linecode[line].code, buf);
+			code->linecode[line].func = curfunc;
+
 			if (func == 0)
 			{
 				error++;
 				LogApp("If comparison outside function at line: %d", line);
 				continue;
 			}
+
+			CheckCodeSize(code, curfunc, cv);
 
 			int g = 0, f = 0, c = 0, g1 = 0, t;
 
@@ -2373,6 +3132,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			expect_bracket = 1;
 
 			ifcmp += 1;
+
+			code->linecode[line].byte_start = cv;
 
 			if (g == 3 || g1 == 3)
 			{
@@ -2948,9 +3709,14 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					cv1 += 1;
 				}
 			}
+
+			code->linecode[line].byte_end = cv;
 		}
 		else
 		{
+			strcpy(code->linecode[line].code, buf);
+			code->linecode[line].func = curfunc;
+
 			int a = 0;
 
 			for (i = 0; i < code->num_functions; i++)
@@ -2995,8 +3761,13 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			ZeroMem(vars, 24 * sizeof(int));
 
+			code->linecode[line].byte_start = cv;
+
 			while ((tok = strtok(NULL, " \n\t")) != NULL)
 			{
+				c = 0;
+				g = 0;
+				f = 0;
 				if (IsNumber(tok) == 0)
 				{
 					//It's a variable
@@ -3234,6 +4005,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					}
 				}
 			}
+
+			code->linecode[line].byte_end = cv;
 		}
 	}
 
@@ -3271,7 +4044,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 	for (i = 0; i < code->num_functions; i++)
 		tsize += code->function_table[i].size;
 
-	LogApp("Compiled %d functions and %d global variables  - total size: %l", code->num_functions, code->num_vars, tsize);
+	LogApp("Compiled %d functions and %d global variables  - total size: %d", code->num_functions, code->num_vars, tsize);
 
 	LogApp("Compiling process done - no errors detected");
 
@@ -3621,9 +4394,89 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 				continue;
 			}
 			else
-			if (c[cv] == 255 && c[cv] < 56)
+			if (c[cv] > 240 && c[cv] < 246)
 			{
-				switch (c[cv + 1] % 10)
+				switch (c[cv])
+				{
+					case 241:
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+
+						cv += 7;
+						cv1 += 7;
+						break;
+
+					case 242:
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+						c[cv + 7] = code->function_code[i][cv1 + 7];
+						c[cv + 8] = code->function_code[i][cv1 + 8];
+						c[cv + 9] = code->function_code[i][cv1 + 9];
+						c[cv + 10] = code->function_code[i][cv1 + 10];
+
+						cv += 11;
+						cv1 += 11;
+						break;
+
+					case 243:
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+						c[cv + 7] = code->function_code[i][cv1 + 7];
+						c[cv + 8] = code->function_code[i][cv1 + 8];
+						c[cv + 9] = code->function_code[i][cv1 + 9];
+						c[cv + 10] = code->function_code[i][cv1 + 10];
+
+						cv += 11;
+						cv1 += 11;
+						break;
+
+					case 244:
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+						c[cv + 7] = code->function_code[i][cv1 + 7];
+						c[cv + 8] = code->function_code[i][cv1 + 8];
+						c[cv + 9] = code->function_code[i][cv1 + 9];
+						c[cv + 10] = code->function_code[i][cv1 + 10];
+
+						cv += 11;
+						cv1 += 11;
+						break;
+
+					case 245:
+						c[cv + 1] = code->function_code[i][cv1 + 1];
+						c[cv + 2] = code->function_code[i][cv1 + 2];
+						c[cv + 3] = code->function_code[i][cv1 + 3];
+						c[cv + 4] = code->function_code[i][cv1 + 4];
+						c[cv + 5] = code->function_code[i][cv1 + 5];
+						c[cv + 6] = code->function_code[i][cv1 + 6];
+
+						cv += 7;
+						cv1 += 7;
+						break;
+				}
+			}
+			else
+			if (c[cv] == 255 && code->function_code[i][cv1 + 1] < 56)
+			{
+				c[cv + 1] = code->function_code[i][cv1 + 1];
+
+				switch (c[cv1 + 1] % 10)
 				{
 				case 0: //6 bytes
 				case 1:
@@ -3895,7 +4748,7 @@ void WriteASM(MGMC *code, uint8 function_or_code)
 					if (j >= 1000)
 						fprintf(f, "$L%d ", j);
 
-					switch (code->vars_table[j].type)
+					switch (code->function_table[k].vars_table[j].type)
 					{
 					case 1:
 						fprintf(f, "DW %d     ;%s\n", code->function_table[k].vars_table[j].value, code->function_table[k].vars_table[j].name);
@@ -4109,6 +4962,295 @@ void WriteASM(MGMC *code, uint8 function_or_code)
 
 								break;
 						}
+					}
+
+					if (buf[cv] == 255 && buf[cv + 1] < 56)
+					{
+						switch (buf[cv + 1] / 10)
+						{
+						case 0:
+							fprintf(f, "movf");
+							break;
+
+						case 1:
+							fprintf(f, "addf");
+							break;
+
+						case 2:
+							fprintf(f, "subf");
+							break;
+
+						case 3:
+							fprintf(f, "mulf");
+							break;
+
+						case 4:
+							fprintf(f, "divf");
+							break;
+
+						case 5:
+							fprintf(f, "powf");
+							break;
+						}
+
+						switch (buf[cv + 1] % 10)
+						{
+						case 0:
+							fprintf(f, "rfc ");
+
+							fprintf(f, "rf%d ", buf[cv + 1]);
+
+							fprintf(f, "%d\n", GetValueBuf(buf + cv + 2));
+
+							cv += 6;
+
+							break;
+
+						case 1:
+							fprintf(f, "rfcf ");
+
+							fprintf(f, "rf%d ", buf[cv + 1]);
+
+							fprintf(f, "%f\n", GetValueBuf(buf + cv + 2));
+
+							cv += 6;
+
+							break;
+
+						case 2:
+							fprintf(f, "rfr ");
+
+							fprintf(f, "rf%d ", buf[cv + 1]);
+
+							fprintf(f, "r%d ", buf[cv + 2]);
+
+							cv += 3;
+
+							break;
+
+						case 3:
+							fprintf(f, "rfm ");
+
+							fprintf(f, "rf%d ", buf[cv + 1]);
+
+							if (buf[cv + 2] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 3);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, "\n");
+
+							cv += 7;
+
+							break;
+
+						case 4:
+							fprintf(f, "rfmf ");
+
+							fprintf(f, "rf%d ", buf[cv + 1]);
+
+							if (buf[cv + 2] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 3);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, "\n");
+
+							cv += 7;
+
+							break;
+
+						case 5:
+							fprintf(f, "rfrf ");
+
+							fprintf(f, "rf%d ", buf[cv + 1]);
+
+							fprintf(f, "rf%d ", buf[cv + 2]);
+
+							cv += 3;
+
+							break;
+
+						case 6:
+							fprintf(f, "mfcf ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, " %f\n", GetValueBuf(buf + cv + 6));
+
+							cv += 10;
+
+							break;
+
+						case 7:
+							fprintf(f, "mfrf ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, " rf%d\n", buf[cv + 6]);
+
+							cv += 7;
+
+							break;
+
+						case 8:
+							fprintf(f, "mfm ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							if (buf[cv + 6] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 7);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, "\n");
+
+							cv += 11;
+
+							break;
+
+						case 9:
+							fprintf(f, "mfmf ");
+
+							if (buf[cv + 1] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 2);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							if (buf[cv + 6] == 0)
+								fprintf(f, "$G");
+							else
+								fprintf(f, "$L");
+
+							temp = GetValueBuf(buf + cv + 7);
+
+							if (temp < 10)
+								fprintf(f, "000%d", temp);
+
+							if (temp >= 10 && temp < 100)
+								fprintf(f, "00%d", temp);
+
+							if (temp >= 100 && temp < 1000)
+								fprintf(f, "0%d", temp);
+
+							if (temp >= 1000)
+								fprintf(f, "%d", temp);
+
+							fprintf(f, "\n");
+
+							cv += 11;
+
+							break;
+						}
+
+						cv++;
 					}
 
 					if (buf[cv] > 141 && buf[cv] < 202)
@@ -4627,15 +5769,15 @@ int8 InitMGLCode(const char *file)
 	st.mgl.funcs.msgbox = MessageBoxRes;
 	st.mgl.funcs.playmovie = PlayMovie;
 	st.mgl.funcs.playbgvideo = PlayBGVideo;
+	st.mgl.funcs.drawui = UIezData;
 
 	return 1;
 }
 
-int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, struct MGLHeap *heap)
+int8 CallEngFunction(int32 address, int32 *v, float *f, int32 *stack, int32 bp, struct MGLHeap *heap)
 {
 	//mem_assert(stack);
 	//mem_assert(heap);
-
 	bp -= 2;
 
 	switch (address)
@@ -4663,8 +5805,76 @@ int8 CallEngFunction(int32 address, int32 *v, int32 *stack, int32 bp, struct MGL
 			v[12] = st.bpp;
 			break;
 
+		case C_GSYSMOUSEPOS:
+			v[9] = st.mouse.x;
+			v[10] = st.mouse.y;
+			break;
+
+		case C_GSYSMOUSELMB:
+			v[9] = v[2] = st.mouse1;
+			break;
+
+		case C_GSYSMOUSERMB:
+			v[9] = v[2] = st.mouse2;
+			break;
+
+		case C_GSYSKEY:
+			v[10] = v[2] = st.keys[v[9]].state;
+			break;
+
 		case C_GSPRFRAME:
 			v[2] = st.Game_Sprites[v[9]].frame[v[10]];
+			break;
+
+		case E_STW:
+			STW(&v[9], &v[10]);
+			break;
+
+		case E_WTS:
+			WTS(&v[9], &v[10]);
+			break;
+
+		case E_STWCI:
+			STWci(&v[9], &v[10]);
+			break;
+
+		case E_WTSCI:
+			WTSci(&v[9], &v[10]);
+			break;
+
+		case E_STWF:
+			STWf(&v[9], &v[10]);
+			break;
+
+		case E_WTSF:
+			WTSf(&v[9], &v[10]);
+			break;
+
+		case C_GSYSNUMMGGS:
+			v[9] = st.num_mgg;
+			break;
+
+		case C_GSYSMOUSEWHEEL:
+			v[9] = st.mouse_wheel;
+			break;
+
+		case C_GSYSGAMESTATE:
+			v[9] = st.gt;
+			break;
+
+		case E_DRAWUI:
+			st.mgl.funcs.drawui(v[9], v[10], f[7], v[12], v[13], v[14], v[15], *(TEX_DATA*) v[16], v[17], v[18]);
+			break;
+
+		case C_GMGGTEX:
+			if (v[9] == 0)
+				(uint32*) v[2] = mgg_sys[v[10]].frames + v[11];
+			else
+			if (v[9] == 1)
+				v[2] = &mgg_game[v[10]].frames[v[11]];
+			else
+			if (v[9] == 2)
+				v[2] = &mgg_map[v[10]].frames[v[11]];
 			break;
 	}
 }
@@ -4674,10 +5884,10 @@ int8 ExecuteMGLCode(uint8 location)
 	register int32 bp, sp, cv, lcv;
 	int32 v[32];
 
-	static int32 stack1[131072], *stack2, *stack, num_heap = 0;
+	int32 stack1[131072], *stack2, *stack, num_heap = 0;
 	uint8 *vars, state = 0;
 
-	static struct MGLHeap *heap;
+	struct MGLHeap *heap;
 
 	float f[24];
 
@@ -5024,10 +6234,11 @@ int8 ExecuteMGLCode(uint8 location)
 				GetValueCV(v[7], cv + 2);
 				heap[num_heap].size = v[7];
 				heap[num_heap].type = 1; //String
-				heap[num_heap].string = malloc(v[7]);
+				heap[num_heap].string = malloc(v[7] + 1);
 				CHECKMEM(heap[num_heap].string);
 				memcpy(heap[num_heap].string, buf + cv + 6, v[7]);
 				heap[num_heap].string[v[7]] = '\0';
+				heap[num_heap].stack_pos = sp;
 				cv += 6 + v[7];
 				num_heap++;
 
@@ -5035,7 +6246,7 @@ int8 ExecuteMGLCode(uint8 location)
 				break;
 
 				default:
-					MessageBoxRes("MGVM error", MB_OK, "VM error: Iinvalid operator in data definition bytecode:\naddress: %d, byte: %d, stack address: %d",
+					MessageBoxRes("MGVM error", MB_OK, "VM error: Invalid operator in data definition bytecode:\naddress: %d, byte: %d, stack address: %d",
 						cv, buf[cv + 1], bp);
 					st.quit = 1;
 
@@ -5074,8 +6285,8 @@ int8 ExecuteMGLCode(uint8 location)
 					break;
 
 				case 4:
-					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
+					GetVarAddress(cv + 1);
 					SetStack(v[7], v[2]);
 					cv += 7;
 					break;
@@ -6098,7 +7309,7 @@ int8 ExecuteMGLCode(uint8 location)
 					else
 					{
 						GetValueCV(v[7], cv + 2);
-						CallEngFunction(v[7], v, stack, bp, heap);
+						CallEngFunction(v[7], v, f, stack, bp, heap);
 						cv += 6;
 					}
 					break;
@@ -6109,14 +7320,6 @@ int8 ExecuteMGLCode(uint8 location)
 					bp = sp - 1;
 					bp = stack[bp];
 					sp = bp + 1;
-
-					for (int m = num_heap; m > 0; m--)
-					{
-						if (heap[m].stack_pos < sp && heap[m].type == 1)
-							free(heap[m].string);
-
-						num_heap--;
-					}
 
 					break;
 
@@ -6253,6 +7456,108 @@ int8 ExecuteMGLCode(uint8 location)
 
 					break;
 
+				case 243:
+					GetVarAddress(cv + 1);
+
+					v[7] = stack[v[2]];
+
+					GetVarAddress(cv + 6);
+
+					v[6] = stack[v[2]];
+
+					if (v[7] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (v[6] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[6]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].cur < heap[v[6]].size)
+					{
+						//Allocate more memory
+						heap[v[7]].size = heap[v[6]].size;
+						heap[v[7]].mem = realloc(heap[v[7]].mem, heap[v[7]].size);
+						CHECKMEM(heap[v[7]].mem);
+					}
+
+					strcpy(heap[v[7]].mem, heap[v[6]].mem);
+					heap[v[7]].cur = strlen(heap[v[7]].mem);
+					cv += 11;
+
+					break;
+
+				case 244:
+					GetVarAddress(cv + 1);
+
+					v[7] = stack[v[2]];
+
+					GetVarAddress(cv + 6);
+
+					v[6] = stack[v[2]];
+
+					if (v[7] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (v[6] > num_heap)
+					{
+						LogApp("Invalid heap memory address access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[7]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					if (heap[v[6]].type != 1)
+					{
+						LogApp("Invalid string access - %0x%X", v[7]);
+						LogApp("cv: %d - bp: %d - sp: %d", cv, bp, sp);
+						error++;
+						break;
+					}
+
+					v[2] = strcmp(heap[v[7]].mem, heap[v[6]].mem);
+					heap[v[7]].cur = strlen(heap[v[7]].mem);
+					cv += 11;
+
+					break;
+
 				case 250:
 					v[buf[cv + 1]] = f[buf[cv + 2]];
 					cv += 3;
@@ -6280,6 +7585,100 @@ int8 ExecuteMGLCode(uint8 location)
 			{
 				switch (buf[cv])
 				{
+					//setf
+				case 0:
+					GetValueCV(v[7], cv + 2);
+					GetRegfSwitch(buf[cv + 1]);
+					f[4] = v[7];
+					SetRegfSwitch(buf[cv + 1]);
+					cv += 6;
+					break;
+
+				case 1:
+					//GetValueCV(f[3], cv + 2);
+					memcpy(f + 3, buf + cv + 2, sizeof(float));
+					GetRegfSwitch(buf[cv + 1]);
+					f[4] = f[3];
+					SetRegfSwitch(buf[cv + 1]);
+					cv += 6;
+					break;
+
+				case 2:
+					GetRegfSwitch(buf[cv + 1]);
+					GetRegSwitch(buf[cv + 2]);
+					f[4] = v[7];
+					SetRegfSwitch(buf[cv + 1]);
+					cv += 3;
+					break;
+
+				case 3:
+					GetVarAddress(cv + 2);
+					GetValueStack(v[7], v[2]);
+					GetRegfSwitch(buf[cv + 1]);
+					f[4] = v[7];
+					SetRegfSwitch(buf[cv + 1]);
+					cv += 7;
+					break;
+
+				case 4:
+					GetVarAddress(cv + 2);
+					GetValueStack(f[3], v[2]);
+					GetRegfSwitch(buf[cv + 1]);
+					f[4] = f[3];
+					SetRegfSwitch(buf[cv + 1]);
+					cv += 7;
+					break;
+
+				case 5:
+					GetRegfSwitch(buf[cv + 2]);
+					f[3] = f[4];
+					GetRegfSwitch(buf[cv + 1]);
+					f[4] = f[3];
+					SetRegfSwitch(buf[cv + 1]);
+					cv += 3;
+					break;
+
+				case 6:
+					GetVarAddress(cv + 1);
+					GetValueStack(f[4], v[2]);
+					GetValueCV(f[3], cv + 5);
+					f[4] = f[3];
+					memcpy(stack + v[2], &f[4], 4);
+					cv += 10;
+					break;
+
+				case 7:
+					GetVarAddress(cv + 1);
+					GetRegfSwitch(buf[cv + 6]);
+					GetValueStack(f[3], v[2]);
+					f[3] = f[4];
+					//SetStack(f[4], v[2]);
+					memcpy(stack + v[2], &f[3], 4);
+					cv += 7;
+					break;
+
+				case 8:
+					GetVarAddress(cv + 1);
+					GetValueStack(f[4], v[2]);
+					PushStack(v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(v[7], v[2]);
+					f[4] = v[7];
+					PopStack(v[2]);
+					cv += 11;
+					break;
+
+				case 9:
+					GetVarAddress(cv + 1);
+					GetValueStack(f[4], v[2]);
+					PushStack(v[2]);
+					GetVarAddress(cv + 6);
+					GetValueStack(f[3], v[2]);
+					f[4] = pow(f[4], f[3]);
+					PopStack(v[2]);
+					cv += 11;
+					break;
+
 					//powf
 				case 50:
 					GetValueCV(v[7], cv + 2);
@@ -6387,7 +7786,21 @@ int8 ExecuteMGLCode(uint8 location)
 	st.mgl.bp = bp;
 	st.mgl.sp = sp;
 	st.mgl.cv = cv;
-	memcpy(st.mgl.v, v, 8 * sizeof(uint32));
+	memcpy(st.mgl.v, v, 32 * sizeof(uint32));
+	memcpy(st.mgl.f, f, 24 * sizeof(float));
+
+	st.mgl.heap = heap;
+	st.mgl.num_heap = num_heap;
 
 	return 1;
+}
+
+void CleanupHeap(struct MGLHeap *heap, uint16 num_heap)
+{
+	for (register int m = num_heap - 1; m >= 0; m--)
+		free(heap[m].string);
+
+	num_heap = 0;
+
+	free(heap);
 }
