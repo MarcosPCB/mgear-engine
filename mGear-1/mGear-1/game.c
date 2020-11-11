@@ -1091,7 +1091,7 @@ int main(int argc, char *argv[])
 
 			MainSound();
 
-			CleanupHeap(st.mgl.heap, st.mgl.num_heap);
+			//CleanupHeap(st.mgl.heap, st.mgl.num_heap);
 		}
 
 		DrawSys();
@@ -1109,6 +1109,9 @@ int main(int argc, char *argv[])
 
 		SwapBuffer(wn);
 	}
+
+	if (st.mgl.num_heap > 0)
+		free(st.mgl.heap);
 
 	StopAllSounds();
 	Quit();

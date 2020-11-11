@@ -48,10 +48,22 @@ enum enginecalls
 	E_DRAWUISTRING = 21,
 	E_DRAWUISTRINGL = 22,
 	C_GMGGTEX = 23,
-	C_GSPRFRAME = 32,
-	C_GSPRNUMFRAMES = 33,
-	C_GSPRANIM = 34,
-	C_GSPRNUMANIMS = 35
+	E_OPENFILE = 24,
+	E_CLOSEFILE = 25,
+	E_GETSTRINGFILE = 26,
+	E_CHECKEOFFILE = 27,
+	E_WRITEFILE = 28,
+	E_READFILE = 29,
+	E_REWINDFILE = 30,
+	E_SEEKFILE = 31,
+	E_CURBYTEFILE = 32,
+	E_PRINT = 33,
+	E_SCAN = 34,
+	E_STRINGSCAN = 35,
+	C_GSPRFRAME = 50,
+	C_GSPRNUMFRAMES = 51,
+	C_GSPRANIM = 52,
+	C_GSPRNUMANIMS = 53
 };
 
 struct MGLEng_Funcs
@@ -87,10 +99,11 @@ struct _MGMC
 		uint32 line;
 
 		uint16 num_vars;
+
 		struct VarTab
 		{
 			char name[64];
-			uint8 type; //0 - constant, 1 - int, 2 - float, 3 - buffer, 4 - string (+10 if its local)
+			uint8 type; //0 - constant, 1 - int, 2 - float, 3 - buffer, 4 - string (+10 if its an array)
 			uint16 num_use;
 			uint8 stat;
 			int32 value;
@@ -105,7 +118,7 @@ struct _MGMC
 	struct VarTab2
 	{
 		char name[64];
-		uint8 type; //0 - constant, 1 - int, 2 - float, 3 - buffer, 4 - string (+10 if its local)
+		uint8 type; //0 - constant, 1 - int, 2 - float, 3 - buffer, 4 - string (+10 if its an array)
 		uint16 num_use;
 		uint8 stat;
 		int32 value;

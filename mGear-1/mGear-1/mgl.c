@@ -6,9 +6,9 @@ eng_calls e_funcs[] =
 	{ "log", E_LOG, 2, 0 }, //0
 	{ "drawline", E_DRAWLINE, 10, 0 }, //1
 	{ "msgbox", E_MSGBOX, 4, 0 }, //2
-	{ "playmovie", E_PLAYMOV, 1, 1}, //3
+	{ "playmovie", E_PLAYMOV, 1, 1 }, //3
 	{ "playbgmovie", E_PLAYBGMOV, 2, 1 }, //4
-	{ "getsys.Screen", C_GSYSSCREEN, 4, 1}, //5
+	{ "getsys.Screen", C_GSYSSCREEN, 4, 1 }, //5
 	{ "getsys.mouse.pos", C_GSYSMOUSEPOS, 2, 1 }, //6
 	{ "getsys.mouse.lmb", C_GSYSMOUSELMB, 1, 1 }, //7
 	{ "getsys.mouse.rmb", C_GSYSMOUSERMB, 1, 1 }, //8
@@ -20,13 +20,25 @@ eng_calls e_funcs[] =
 	{ "worldtoscreen_nocamera", E_WTSCI, 2, 1 }, //14
 	{ "screentoworld_float", E_STWCI, 2, 1 }, //15
 	{ "worldtoscreen_float", E_WTSCI, 2, 1 }, //16
-	{ "getsys.num_mggs",C_GSYSNUMMGGS, 1, 1 }, //17
+	{ "getsys.num_mggs", C_GSYSNUMMGGS, 1, 1 }, //17
 	{ "getsys.mouse.wheel", C_GSYSMOUSEWHEEL, 1, 1 }, //18
 	{ "getsys.game_state", C_GSYSGAMESTATE, 1, 1 }, //19
 	{ "drawui", E_DRAWUI, 10, 0 }, //20
 	{ "drawuistring", E_DRAWUISTRING, 14, 0 }, //21
 	{ "drawuistring_left", E_DRAWUISTRINGL, 14, 0 }, //22
 	{ "getmgg.tex", C_GMGGTEX, 2, 0 }, //23
+	{ "open_file", E_OPENFILE, 3, 1 }, //24
+	{ "close_file", E_CLOSEFILE, 1, 0 }, //25
+	{ "getstring_file", E_GETSTRINGFILE, 3, 1 }, //26
+	{ "checkendoffile_file", E_CHECKEOFFILE, 1, 0 }, //27
+	{ "write_file", E_WRITEFILE, 2, 0 }, //28
+	{ "read_file", E_READFILE, 2, 1 }, //29
+	{ "rewind_file", E_REWINDFILE, 1, 0 }, //30
+	{ "seek_file", E_SEEKFILE, 3, 0 }, //31
+	{ "currentbyte_file", E_CURBYTEFILE, 1, 0 }, //32
+	{ "print", E_PRINT, 1, 1 }, //33
+	{ "scan", E_SCAN, 1, 1 }, //34
+	{ "string_scan", E_STRINGSCAN, 2, 1 }, //35
 	{ "getsprite.Frame", C_GSPRFRAME, 1, 1}, //32
 	{ "getsprite.NumFrames", C_GSPRNUMFRAMES, 1, 1}, //33
 	{ "getsprite.Anim", C_GSPRANIM, 1, 1}, //34
@@ -34,7 +46,7 @@ eng_calls e_funcs[] =
 
 };
 
-const uint16 num_efuncs = 35;
+const uint16 num_efuncs = 128;
 
 int16 GetEngFunc(const char *name)
 {
@@ -112,7 +124,7 @@ void CheckCodeSize(MGMC *code, uint32 curfunc, uint32 cur)
 {
 	mem_assert(code);
 
-	if (cur > code->function_table[curfunc].size - 32)
+	if (cur > code->function_table[curfunc].size - 64)
 	{
 		code->function_table[curfunc].size += 256;
 		code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
@@ -221,6 +233,95 @@ int16 GetVarOrNumber(char *tok, MGMC *code, int32 curfunc, int32 *var, int32 *nu
 	}
 	else
 		return -2;
+}
+
+uint8 DetectArgument(char *string)
+{
+	static char *buf = NULL;
+	static int16 c = 0;
+	uint8 fa = 0;
+
+	if (string != NULL)
+	{
+		mem_assert(string);
+
+		buf = string;
+		c = 0;
+	}
+
+	mem_assert(buf);
+
+	while (buf[c] != '\0')
+	{
+		if (fa != 0)
+			break;
+
+		if (buf[c] == '%' && buf[c + 1] != '%')
+		{
+			if (c > 0)
+			{
+				if (buf[c - 1] == '%')
+					continue;
+			}
+
+			switch (buf[c + 1])
+			{
+				case 's':
+					fa = 1;
+					break;
+
+				case 'd':
+					fa = 2;
+					break;
+
+				case 'l':
+					fa = 3;
+					break;
+
+				case 'c':
+					fa = 4;
+					break;
+
+				case 'f':
+					fa = 5;
+					break;
+			}
+		}
+
+		c++;
+	}
+
+	return fa;
+}
+
+void RemoveSlashes(char *string)
+{
+	mem_assert(string);
+
+	CHECKMEM(string);
+
+	register int i = 0;
+
+	while (string[i] != '\0')
+	{
+		if (string[i] == '\\')
+		{
+			switch (string[i + 1])
+			{
+				case 'n':
+					string[i] = '\n';
+					string[i + 1] = '\b';
+					break;
+
+				case 't':
+					string[i] = '\t';
+					string[i + 1] = '\b';
+					break;
+			}
+		}
+
+		i++;
+	}
 }
 
 MGMC *CompileMGL(FILE *file, uint8 optimization)
@@ -344,6 +445,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
+			int8 arraytype = 0;
+
 			strcpy(str1, tok);
 
 			tok = strtok(NULL, " \n\t");
@@ -352,12 +455,39 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 			{
 				if (IsNumber(tok) == 0)
 				{
-					error++;
-					LogApp("Compiler error: invalid variable value in declaration - line: %d - value: \"%s\"", line, tok);
-					continue;
-				}
+					if (strcmp(tok, "array") == 0)
+					{
+						arraytype = 1;
 
-				val1 = atol(tok);
+						tok = strtok(NULL, " \n\t");
+
+						if (tok != NULL)
+						{
+							if (IsNumber(tok) == 0)
+							{
+								error++;
+								LogApp("Compiler error: invalid array size in declaration - line: %d - size: \"%s\"", line, tok);
+								continue;
+							}
+							else
+								val1 = atol(tok);
+						}
+						else
+						{
+							error++;
+							LogApp("Compiler error: missing array size in declaration - line: %d - size: \"%s\"", line, tok);
+							continue;
+						}
+					}
+					else
+					{
+						error++;
+						LogApp("Compiler error: invalid variable value in declaration - line: %d - value: \"%s\"", line, tok);
+						continue;
+					}
+				}
+				else
+					val1 = atol(tok);
 			}
 			else
 				val1 = 0;
@@ -395,6 +525,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->vars_table[i].value = val1;
 
 				code->vars_table[i].type = 1;
+
+				if (arraytype == 1)
+					code->vars_table[i].type += 10;
+
 				code->vars_table[i].stat = 0;
 			}
 			else
@@ -445,6 +579,10 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_table[curfunc].vars_table[i].value = val1;
 
 				code->function_table[curfunc].vars_table[i].type = 1;
+
+				if (arraytype == 1)
+					code->function_table[curfunc].vars_table[i].type += 10;
+
 				code->function_table[curfunc].vars_table[i].stat = 0;
 			}
 		}
@@ -702,7 +840,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			strcpy(str1, tok);
 
-			tok = strtok(NULL, " \"");
+			tok = strtok(NULL, "\"");
 
 			if (func == 0)
 			{
@@ -738,6 +876,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				if (tok != NULL)
 				{
+					RemoveSlashes(tok);
+
 					code->vars_table[i].len = strlen(tok);
 
 					code->vars_table[i].string = calloc(code->vars_table[i].len, 1);
@@ -801,6 +941,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				if (tok != NULL)
 				{
+					RemoveSlashes(tok);
+
 					code->function_table[curfunc].vars_table[i].len = strlen(tok);
 
 					code->function_table[curfunc].vars_table[i].string = calloc(code->function_table[curfunc].vars_table[i].len, 1);
@@ -2795,6 +2937,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				b++;
 			}
 
+			CheckCodeSize(code, curfunc, cv);
+
 			//If MGL function
 			if (a == 1)
 			{
@@ -2852,6 +2996,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					int k = 0;
 					for (j = 0; j < var_c; j++)
 					{
+						CheckCodeSize(code, curfunc, cv);
+
 						if (vars[j] < 0) //Local
 						{
 							k = vars[j] * -1;
@@ -2949,7 +3095,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				code->function_table[curfunc].size = cv;
 
 				code->bt_trl[curfunc] = realloc(code->bt_trl[curfunc], code->function_table[curfunc].size * sizeof(uint32));
-				code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size);
+				code->function_code[curfunc] = realloc(code->function_code[curfunc], code->function_table[curfunc].size + 1);
 
 				func = 0;
 			}
@@ -3906,6 +4052,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				b++;
 			}
 
+			CheckCodeSize(code, curfunc, cv);
+
 			//If MGL function
 			if (a == 1)
 			{
@@ -3956,13 +4104,15 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 				cv1++;
 
-				code->function_table[i].num_use++;
+				code->function_table[curfunc].num_use++;
 
 				if (e_funcs[i].returnv == 1)
 				{
 					int k = 0;
 					for (j = 0; j < var_c; j++)
 					{
+						CheckCodeSize(code, curfunc, cv);
+
 						if (vars[j] < 0) //Local
 						{
 							k = vars[j] * -1;
@@ -4092,6 +4242,9 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 	for (j = 0; j < code->num_vars; j++)
 	{
+		c[cv] = 254;
+		c[cv + 1] = code->vars_table[j].type;
+
 		if (c[cv + 1] == 1)
 			Copy32toBuf(c + cv + 2, code->vars_table[j].value);
 
@@ -4112,7 +4265,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 	for (i = 0; i < code->num_functions; i++)
 	{
-		if (cv > csize - 32)
+		if (cv > csize - 48)
 		{
 			c = realloc(c, csize + 128);
 			CHECKMEM(c);
@@ -4173,7 +4326,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 		for (j = 0; j < code->function_table[i].num_vars; j++)
 		{
-			if (cv > csize - 10)
+			if (cv > csize - 48)
 			{
 				c = realloc(c, csize + 128);
 				CHECKMEM(c);
@@ -4203,7 +4356,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 		for (cv1 = 0; cv1 < code->function_table[i].size; )
 		{
-			if (cv > csize - 16)
+			if (cv > csize - 48)
 			{
 				c = realloc(c, csize + 128);
 				CHECKMEM(c);
@@ -4476,7 +4629,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 			{
 				c[cv + 1] = code->function_code[i][cv1 + 1];
 
-				switch (c[cv1 + 1] % 10)
+				switch (c[cv + 1] % 10)
 				{
 				case 0: //6 bytes
 				case 1:
@@ -4969,27 +5122,27 @@ void WriteASM(MGMC *code, uint8 function_or_code)
 						switch (buf[cv + 1] / 10)
 						{
 						case 0:
-							fprintf(f, "movf");
+							fprintf(f, "mov");
 							break;
 
 						case 1:
-							fprintf(f, "addf");
+							fprintf(f, "add");
 							break;
 
 						case 2:
-							fprintf(f, "subf");
+							fprintf(f, "sub");
 							break;
 
 						case 3:
-							fprintf(f, "mulf");
+							fprintf(f, "mul");
 							break;
 
 						case 4:
-							fprintf(f, "divf");
+							fprintf(f, "div");
 							break;
 
 						case 5:
-							fprintf(f, "powf");
+							fprintf(f, "pow");
 							break;
 						}
 
@@ -5551,9 +5704,9 @@ void WriteASM(MGMC *code, uint8 function_or_code)
 					}
 				}
 			//}
-		}
 
-		fclose(f);
+			fclose(f);
+		}
 	}
 }
 
@@ -5577,7 +5730,7 @@ int8 BuildMGL(const char *filename, const char *finalname)
 
 	fclose(f);
 
-	WriteASM(code, 0);
+	//WriteASM(code, 0);
 
 	c = LinkMGL(code, 0);
 
@@ -5643,104 +5796,20 @@ int8 InitMGLCode(const char *file)
 	FILE *f;
 	//char *buffer;
 
-	if (file == NULL)
-	{
-		//TESTING
-		st.mgl.size = 1024;
-		st.mgl.code = malloc(st.mgl.size);
-		CHECKMEM(st.mgl.code);
+	openfile_d(f, file, "rb");
 
-		unsigned char *c = st.mgl.code;
+	fseek(f, 0, SEEK_END);
 
-		c[0] = 'M';
-		c[1] = 'G';
-		c[2] = 'L';
-		c[3] = ' ';
+	st.mgl.size = ftell(f);
+	rewind(f);
 
-		c[4] = 30 >> 24;
-		c[5] = (30 >> 16) & 0xFF;
-		c[6] = (30 >> 8) & 0xFF;
-		c[7] = 30 & 0xFF;
+	st.mgl.code = malloc(st.mgl.size);
+	CHECKMEM(st.mgl.code);
 
-		c[24] = 0;
+	fread(st.mgl.code, 1, st.mgl.size, f);
 
-		//Define two global variables
-		c[29] = 254;
-		c[30] = 1;
-		c[31] = 16384 >> 24;
-		c[32] = (16384 >> 16) & 0xFF;
-		c[33] = (16384 >> 8) & 0xFF;
-		c[34] = 16384 & 0xFF;
+	fclose(f);
 
-		c[35] = 254;
-		c[36] = 1;
-		c[37] = 32768 >> 24;
-		c[38] = (32768 >> 16) & 0xFF;
-		c[39] = (32768 >> 8) & 0xFF;
-		c[40] = 32768 & 0xFF;
-
-		//Init entry point
-		//define local var
-		c[41] = 254;
-		c[42] = 1;
-		c[43] = 65536 >> 24;
-		c[44] = (65536 >> 16) & 0xFF;
-		c[45] = (65536 >> 8) & 0xFF;
-		c[46] = 65536 & 0xFF;
-
-		//set regi mem
-		c[47] = 1;
-		c[48] = 14;
-		c[49] = 0;
-		c[50] = 0 >> 24;
-		c[51] = (0 >> 16) & 0xFF;
-		c[52] = (0 >> 8) & 0xFF;
-		c[53] = 0 & 0xFF;
-
-		//set regi regi
-		c[54] = 2;
-		c[55] = 15;
-		c[56] = 14;
-
-		//set mem regi
-		c[57] = 4;
-		c[58] = 0;
-		c[59] = 0 >> 24;
-		c[60] = (0 >> 16) & 0xFF;
-		c[61] = (0 >> 8) & 0xFF;
-		c[62] = 0 & 0xFF;
-		c[63] = 16;
-
-		//add mem mem
-		c[64] = 15;
-		c[65] = 1;
-		c[66] = 1 >> 24;
-		c[67] = (1 >> 16) & 0xFF;
-		c[68] = (1 >> 8) & 0xFF;
-		c[69] = 1 & 0xFF;
-		c[70] = 0;
-		c[71] = 0 >> 24;
-		c[72] = (0 >> 16) & 0xFF;
-		c[73] = (0 >> 8) & 0xFF;
-		c[74] = 0 & 0xFF;
-		c[75] = 210;
-	}
-	else
-	{
-		openfile_d(f, file, "rb");
-
-		fseek(f, 0, SEEK_END);
-
-		st.mgl.size = ftell(f);
-		rewind(f);
-
-		st.mgl.code = malloc(st.mgl.size);
-		CHECKMEM(st.mgl.code);
-
-		fread(st.mgl.code, 1, st.mgl.size, f);
-
-		fclose(f);
-	}
 
 	if (st.mgl.code[0] != 'M' || st.mgl.code[1] != 'G' || st.mgl.code[2] != 'L' && st.mgl.code[3] != ' ')
 	{
@@ -5748,19 +5817,53 @@ int8 InitMGLCode(const char *file)
 		return NULL;
 	}
 
-	if (st.mgl.code[24] == 0)
+	switch(st.mgl.code[24])
 	{
-		st.mgl.memsize = 131072;
-		st.mgl.stack_type = 0;
-	}
-	else
-	{
-		st.mgl.memsize = (st.mgl.code[25] << 24) | (st.mgl.code[26] << 16) | (st.mgl.code[27] << 8) | st.mgl.code[28];
-		st.mgl.stack_type = 1;
+		case 0:
+			st.mgl.memsize = 512;
+			st.mgl.stack_type = 0;
+			break;
+
+		case 1:
+			st.mgl.memsize = 1024;
+			st.mgl.stack_type = 0;
+			break;
+
+		case 2:
+			st.mgl.memsize = 4096;
+			st.mgl.stack_type = 0;
+			break;
+
+		case 3:
+			st.mgl.memsize = 12288;
+			st.mgl.stack_type = 0;
+			break;
+
+		case 4:
+			st.mgl.memsize = 16384;
+			st.mgl.stack_type = 0;
+			break;
+
+		case 5:
+			st.mgl.memsize = 32768;
+			st.mgl.stack_type = 0;
+			break;
+
+		case 6:
+			st.mgl.memsize = 131072;
+			st.mgl.stack_type = 0;
+			break;
+
+		default:
+			st.mgl.memsize = (st.mgl.code[25] << 24) | (st.mgl.code[26] << 16) | (st.mgl.code[27] << 8) | st.mgl.code[28];
+			st.mgl.stack_type = 1;
+			break;
 	}
 
 	ZeroMem(st.mgl.v, sizeof(8 * sizeof(uint32)));
 	st.mgl.bp = st.mgl.sp = 0;
+
+	st.mgl.stack = NULL;
 
 	///Load engine calls
 
@@ -5780,10 +5883,30 @@ int8 CallEngFunction(int32 address, int32 *v, float *f, int32 *stack, int32 bp, 
 	//mem_assert(heap);
 	bp -= 2;
 
+	uint8 args[24];
+
+	ZeroMem(args, 24);
+
 	switch (address)
 	{
 		case E_LOG:
-			st.mgl.funcs.log(heap[v[9]].string);
+			v[7] = v[8] = 0;
+			while (v[7] == 0)
+			{
+				if (v[8] == 0)
+					args[v[8]] = DetectArgument(heap[v[9]].string);
+				else
+					args[v[8]] = DetectArgument(NULL);
+
+				if (args[v[8]] == 0)
+					v[7] = 1;
+
+				v[8]++;
+			}
+
+			st.mgl.funcs.log(heap[v[9]].string, args[0] == 1 ? heap[v[10]].string : v[10], args[1] == 1 ? heap[v[11]].string : v[11], args[2] == 1 ? heap[v[12]].string : v[12],
+				args[3] == 1 ? heap[v[13]].string : v[13], args[4] == 1 ? heap[v[14]].string : v[14], args[5] == 1 ? heap[v[15]].string : v[15],
+				args[6] == 1 ? heap[v[16]].string : v[16], args[7] == 1 ? heap[v[17]].string : v[17], args[8] == 1 ? heap[v[18]].string : v[18]);
 			break;
 
 		case E_DRAWLINE:
@@ -5876,6 +5999,26 @@ int8 CallEngFunction(int32 address, int32 *v, float *f, int32 *stack, int32 bp, 
 			if (v[9] == 2)
 				v[2] = &mgg_map[v[10]].frames[v[11]];
 			break;
+
+		case E_PRINT:
+			v[7] = v[8] = 0;
+			while(v[7] == 0)
+			{
+				if (v[8] == 0)
+					args[v[8]] = DetectArgument(heap[v[9]].string);
+				else
+					args[v[8]] = DetectArgument(NULL);
+
+				if (args[v[8]] == 0)
+					v[7] = 1;
+
+				v[8]++;
+			}
+
+			printf(heap[v[9]].string, args[0] == 1 ? heap[v[10]].string : v[10], args[1] == 1 ? heap[v[11]].string : v[11], args[2] == 1 ? heap[v[12]].string : v[12],
+				args[3] == 1 ? heap[v[13]].string : v[13], args[4] == 1 ? heap[v[14]].string : v[14], args[5] == 1 ? heap[v[15]].string : v[15],
+				args[6] == 1 ? heap[v[16]].string : v[16], args[7] == 1 ? heap[v[17]].string : v[17], args[8] == 1 ? heap[v[18]].string : v[18]);
+			break;
 	}
 }
 
@@ -5884,7 +6027,8 @@ int8 ExecuteMGLCode(uint8 location)
 	register int32 bp, sp, cv, lcv;
 	int32 v[32];
 
-	int32 stack1[131072], *stack2, *stack, num_heap = 0;
+
+	int32 *stack = NULL, num_heap = 0;
 	uint8 *vars, state = 0;
 
 	struct MGLHeap *heap;
@@ -5898,180 +6042,7 @@ int8 ExecuteMGLCode(uint8 location)
 	cv = st.mgl.cv;
 	memcpy(v, st.mgl.v, 8 * sizeof(uint32));
 
-	if (st.mgl.stack_type == 0)
-		stack = stack1;
-	else
-	{
-		stack2 = malloc(st.mgl.memsize * sizeof(uint32));
-		CHECKMEM(stack2);
-		stack = stack2;
-	}
-
 	//location - 0: Init, 1: PreGame, 2: GameLoop (game clock), 3: MainLoop(engine clock), 4: End
-
-	/*
-	Type definition:
-	0 - constant
-	1 - int
-	2 - float
-	3 - buffer
-	4 - string
-	7 - st
-	8 - map
-	9 - mgg_map
-	10 - mgg_game
-	11 - mgg_sys
-	12 - v[1]
-	13 - tmp
-	14 - v1
-	15 - v2
-	16 - v3
-	17 - v4
-	18 - i
-	19 - cur
-	20 - bp
-	21 - sp
-	22 - cv
-	23 - f1
-	24 - f2
-	25 - f3
-	26 - f4
-
-	Command definition: - after every command, there's a type variable indicator and if its global or local
-
-	Each command has variations depending on the argument type
-	0 - com regi const
-	1 - com regi mem
-	2 - com regi regi
-	3 - com mem const
-	4 - com mem regi
-	5 - com mem mem
-	7 - com const const
-	8 - com const regi
-	9 - com const mem
-
-	If the command accepts only one command
-	0 - com const
-	1 - com constf
-	3 - com regi
-	4 - com regf
-	5 - com mem
-
-	If the command is a float variation
-	0 - com regf const
-	1 - com regf constf
-	2 - com regf regi
-	3 - com regf mem
-	4 - com regf regf
-	5 - com mem constf
-	6 - com mem regf
-	7 - com mem mem
-	8 - com constf constf
-	9 - com constf regf
-
-	//List of commands
-	0 - set x y
-	10 - add x y
-	20 - sub x y
-	30 - mul x y
-	40 - div x y
-
-	50 - pow x y
-	60 - powf x y
-	70 - logf x y
-	80 - sqrtf x
-
-	86 - cosf x
-	92 - sinf x
-	98 - tanf x
-	104 - acosf x
-	110 - asinf x
-	116 - atanf x
-
-	126 - and x y
-	136 - or x y
-	146 - xor x y
-
-	156 - if>= x y z
-	166 - if<= x y
-	176 - if> x y
-	186 - if< x y
-	196 - if= x y
-	206 - if!= x y
-
-	207 - while iftype
-	208 - loop
-
-	209 - call x n ... //Go to the address and take the arguments to the stack - n is the number os arguments
-	// if call is calling cv, it means its calling an engine function - x is the engine function address
-	210 - ret x
-
-	211 - shiftl x y
-	221 - shiftr x y
-
-	231 - setmem buffer regi
-	232 - compmem buffer buffer - v[1]
-	232 - copymem buffer buffer
-
-	233 - compstring string string - v[1]
-	234 - copystring string string
-	235 - tokenstring string string - v[1]
-	236 - stringstring string string  - v[1]
-	237 - charstring string x - v[1]
-
-	238 - openfile buffer string - v[1]
-	239 - closefile buffer
-	240 - printfile buffer string ...
-	241 - scanfile buffer string ...
-	242 - writefile buffer buffer x - v[1]
-	243 - readfile buffer buffer x - v[1]
-	244 - seekfile buffer x y - v[1]
-	245 - rewindfile buffer
-	246 - sizefile buffer - v[1]
-
-	247 - jump x - jumps to address
-
-	//These should come after an if comparision
-	248 - jumpif x - jumps to address if v[1] is 1
-	249 - jumpelse x - jumps to address if v[1] is 0
-
-	254 - data //define a variable in the stack
-	255 - next byte is the extended command list
-
-	//Extended commands - 01
-	0 - setf x y
-	10 - addf x y
-	20 - subf x y
-	30 - mulf x y
-	40 - divf x y
-
-	50 - iff>= x y
-	60 - iff<= x y
-	70 - iff> x y
-	80 - iff< x y
-	90 - iff= x y
-	100 - iff!= x y
-
-	110 - quit
-	111 - messagebox string type string ... - v[1]
-	112 - log string ...
-
-	//dont look at these yet
-	48 - drawpui x y w h frame a z tex_offset_x tex_offset_y tex_offset_w tex_offset_h
-	49 - drawphud x y w h frame a z tex_offset_x tex_offset_y tex_offset_w tex_offset_h
-	50 - drawpstring x y size string
-	51 - drawpstringui x y size string
-	52 - drawpstringui2 x y size string
-	53 - spawnsprite x y w h sprite - v[1]
-	54 - loadmap string - v[1]
-	55 - loadmgg string - v[1]
-	56 - freemap x
-	57 - freemgg x
-	58 - checkcolworld x y z w h x2 y2 z2 w2 h2 - v[1]
-	59 - checkcol x y z w h x2 y2 z2 w2 h2 - v[1]
-	60 - checkcolsprite x y - v[1]
-	61 - checkcolspritescene x y - v[1]
-	*/
 
 	switch (location)
 	{
@@ -6101,8 +6072,22 @@ int8 ExecuteMGLCode(uint8 location)
 	bp = st.mgl.bp;
 	sp = st.mgl.sp;
 
+	if (st.mgl.stack != NULL)
+		stack = st.mgl.stack;
+
+	if (st.mgl.num_heap > 0)
+		heap = st.mgl.heap;
+
+	num_heap = st.mgl.num_heap;
+
 	if (location == 0)
 	{
+		if (stack == NULL)
+		{
+			stack = malloc(st.mgl.memsize * sizeof(uint32));
+			CHECKMEM(stack);
+		}
+
 		cv = 37;
 		//fetch global variables to the stack
 		while (buf[cv] == 254 && cv < GetValueBuf(st.mgl.code + 4))
@@ -7301,6 +7286,7 @@ int8 ExecuteMGLCode(uint8 location)
 					if (buf[cv + 1] == 0)
 					{
 						PushStack(bp);
+						PushStack(sp);
 						PushStack(cv + 6);
 						bp = sp;
 						sp = bp + 1;
@@ -7318,8 +7304,26 @@ int8 ExecuteMGLCode(uint8 location)
 					sp = bp;
 					PopStack(cv);
 					bp = sp - 1;
-					bp = stack[bp];
-					sp = bp + 1;
+					sp = stack[bp];
+					sp--;
+					bp = stack[bp - 1];
+					//sp = bp + 1;
+
+					for (register int m = num_heap - 1; m >= 0; m--)
+					{
+						if (heap[m].stack_pos > sp)
+						{
+							free(heap[m].string);
+
+							if (num_heap - 1 == 0)
+								free(heap);
+							else
+								heap = realloc(heap, (num_heap - 1) * sizeof(struct MGLHeap));
+
+							num_heap--;
+
+						}
+					}
 
 					break;
 
@@ -7791,6 +7795,8 @@ int8 ExecuteMGLCode(uint8 location)
 
 	st.mgl.heap = heap;
 	st.mgl.num_heap = num_heap;
+
+	st.mgl.stack = stack;
 
 	return 1;
 }

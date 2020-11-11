@@ -983,6 +983,8 @@ struct MGLCode
 	float  f[24];
 	uint32 bp, sp, stack_type, memsize;
 
+	int32 *stack;
+
 	struct MGLHeap *heap;
 	uint16 num_heap;
 
