@@ -236,6 +236,7 @@ struct _ENTITIES_ //To be rendered
 	GLubyte color[16];
 	ColorF Color;
 	int8 scenario;
+	int8 circle;
 };
 
 typedef struct _ENTITIES_ _ENTITIES;
@@ -874,7 +875,7 @@ struct _Render
 	GLuint GShader[16];
 	GLuint Program[16];
 
-	GLint unifs[16];
+	GLint unifs[17];
 
 	//Custom shaders
 	/*
@@ -974,6 +975,24 @@ struct MGLHeap
 	uint8 type; //0 - buffer, 1 - string
 };
 
+//Flags register
+union MGLFlags
+{
+	struct
+	{
+		uint8 cm : 1; //conditional result from last comparision - 0: false, 1:true
+		uint8 ca : 1; //if last comparision contained an and
+		uint8 co : 1; //if last comparision containd an or
+		uint8 fc : 1; //float conversion flag
+		uint8 ic : 1; //integer conversion flag
+		uint8 zf : 1; //zero flag
+		uint8 of : 1; //overflow flag
+		uint8 r : 1; //reserved
+	};
+
+	uint8 flags;
+};
+
 struct MGLCode
 {
 	unsigned char *code;
@@ -982,6 +1001,8 @@ struct MGLCode
 	uint32 v[32];
 	float  f[24];
 	uint32 bp, sp, stack_type, memsize;
+
+	union MGLFlags flags;
 
 	int32 *stack;
 
@@ -1014,6 +1035,7 @@ struct _SETTINGS_
 	uint16 screenx;
 	uint16 screeny;
 	uint16 gamex, gamey;
+	float aspect;
 	uint8 bpp;
 	uint8 fullscreen;
 	uint32 audiof;
@@ -1228,7 +1250,9 @@ void _fastcall WTSci(int32 *x, int32 *y); //No camera position in calculation
 
 void _inline WTSf(float *x, float *y);
 
-void _inline WTScf(float *x, float *y); ////No camera position in calculation
+void _inline WTScf(float *x, float *y); //No camera position in calculation
+
+void AddCamCalc(Pos *pos, Pos *size); //Add camera calculation
 
 #ifndef MGEAR_CLEAN_VERSION
 uint32 PlayMovie(const char *name);
@@ -1312,6 +1336,7 @@ int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, 
 int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type, int16 ang);
 int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
+int8 DrawCircle(int32 x, int32 y, int32 radius, uint8 r, uint8 g, uint8 b, uint8 a, int32 z);
 int8 DrawString(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);
 int8 DrawString2(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z); //Light does not affect
 int8 DrawString2UI(const char *text, int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, uint8 a, uint8 font, int32 override_sizex, int32 override_sizey, int8 z);

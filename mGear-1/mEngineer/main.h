@@ -94,6 +94,7 @@
 
 #define SCALER_SELECT 108
 #define PICK_TAG 109
+#define OBJEXTRUDE 110
 
 //Font icons
 #define DEBUG_ICON 37
@@ -104,6 +105,15 @@
 #define FOWARD_ICON 70
 #define BACKJUMP_ICON 71
 #define FOWARDJUMP_ICON 72
+
+#define PLAY2_ICON 59
+#define PAUSE2_ICON 60
+#define STOP2_ICON 61
+#define BACK2_ICON 62
+#define FOWARD2_ICON 63
+#define BACKJUMP2_ICON 64
+#define FOWARDJUMP2_ICON 65
+
 #define CONFIG_ICON 35
 #define GEARS_ICON 36
 #define TERMINAL_ICON 118
@@ -155,6 +165,8 @@ struct _mEng
 	int8 LayerBar;
 	int8 NodeMode;
 
+	uint8 gridsize;
+
 	int8 playing_sound;
 
 	int16 sprite_selection;
@@ -171,6 +183,8 @@ struct _mEng
 	int16 editview;
 
 	int8 scaling;
+
+	int8 extruding;
 
 	int8 picking_tag;
 
@@ -248,6 +262,8 @@ struct _mEng
 	char prj_path[MAX_PATH];
 
 	enum NKUITheme theme;
+
+	uint8 select_edge;
 };
 
 typedef struct _mEng mEng;

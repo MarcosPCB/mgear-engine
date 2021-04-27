@@ -215,11 +215,11 @@ nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_b
     scale.y = (float)display_height/(float)height;
 
     /* setup global state */
-    glViewport(0,0,display_width,display_height);
-    glEnable(GL_BLEND);
-    glBlendEquation(GL_FUNC_ADD);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDisable(GL_CULL_FACE);
+    //glViewport(0,0,display_width,display_height);
+    //glEnable(GL_BLEND);
+    //glBlendEquation(GL_FUNC_ADD);
+   // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    //glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_SCISSOR_TEST);
     glActiveTexture(GL_TEXTURE0);
@@ -310,12 +310,13 @@ nk_sdl_render(enum nk_anti_aliasing AA, int max_vertex_buffer, int max_element_b
 	//nk_buffer_free(sdl.ctx.draw_list.elements);
 	//nk_buffer_free(sdl.ctx.draw_list.buffer);
 
-    glUseProgram(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-    glDisable(GL_BLEND);
+    //glUseProgram(0);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    //glBindVertexArray(0);
+   // glDisable(GL_BLEND);
     glDisable(GL_SCISSOR_TEST);
+	glEnable(GL_DEPTH_TEST);
 }
 
 static void

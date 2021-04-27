@@ -330,7 +330,8 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 	char buf[4096], *tok, str1[64], str2[64];
 	uint16 func = 0, error = 0, line = 0, curfunc = 0;
 	int32 val1, val2, i, cv = 0, cv1 = 0, cur_line = 64;
-	uint32 brackets = 0, expect_bracket = 0, ret = 0, ifcmp = 0, ifcmpaddr[64];
+	uint32 brackets = 0, expect_bracket = 0, ret = 0, ifcmp = 0;
+	int32 ifcmpaddr[64];
 	float valf1, valf2;
 
 	code = calloc(1, sizeof(MGMC));
@@ -1724,7 +1725,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 								//Found global variable in the table
 								code->vars_table[i].num_use++;
 
-								if (code->vars_table[i].type == 2)
+								if (code->vars_table[i].type % 10 == 2)
 									f |= 1;
 
 								val1 = i;
@@ -1755,6 +1756,56 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 								val1 = i;
 								g = 1;
 								break;
+							}
+						}
+
+						if (g == 2)
+						{
+							if (code->vars_table[val1].type >= 10) //It's an array
+							{
+								tok = strtok(NULL, " \n\t");
+
+								if (tok != NULL)
+								{
+									if (tok[0] != '[' || tok[strlen(tok)] != ']')
+									{
+										error++;
+										LogApp("Compiler error: variable \"%s\" array index outside square brackets - line: %d", tok, line);
+										continue;
+									}
+
+									char str2[64];
+
+									strcpy(str2, tok + 1);
+									str2[strlen(str2)] = '\0';
+
+									for (i = 0; i < code->num_vars; i++)
+									{
+										if (strcmp(code->vars_table[i].name, str2) == NULL)
+										{
+											//Found global variable in the table
+											code->vars_table[i].num_use++;
+
+											if (code->vars_table[i].type % 10 == 2)
+											{
+												error++;
+												LogApp("Compiler error: variable float \"%s\" used as array index - line: %d", str2, line);
+												break;
+											}
+
+											val1 = i;
+											g = 2;
+											break;
+										}
+									}
+									
+								}
+								else
+								{
+									error++;
+									LogApp("Compiler error: missing variable \"%s\" array index - line: %d", tok, line);
+									continue;
+								}
 							}
 						}
 					}
@@ -3234,7 +3285,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				switch (res)
 				{
 				case 1:
-					g1 = 1;
+					g1 = 0;
 
 					if (code->vars_table[v].type == 2)
 						f += 2;
@@ -3243,7 +3294,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					break;
 
 				case 2:
-					g1 = 0;
+					g1 = 1;
 
 					if (code->function_table[curfunc].vars_table[v].type == 2)
 						f += 2;
@@ -3275,9 +3326,27 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 				continue;
 			}
 
-			expect_bracket = 1;
+			int8 ifand = -1;
 
-			ifcmp += 1;
+			if ((tok = strtok(NULL, " \n\t")) != NULL)
+			{
+				if (strcmp(tok, "and") == NULL)
+					ifand = 0;
+				else
+				if (strcmp(tok, "or") == NULL)
+					ifand = 1;
+				else
+				{
+					error++;
+					LogApp("Undefined keyword \"%s\" at line: %d", tok, line);
+					continue;
+				}
+			}
+			else
+			{
+				expect_bracket = 1;
+				ifcmp += 1;
+			}
 
 			code->linecode[line].byte_start = cv;
 
@@ -3294,7 +3363,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 6 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = t;
 
@@ -3313,7 +3391,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 7 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t;
@@ -3342,7 +3429,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 10 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 1;
@@ -3368,7 +3464,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 7 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 1;
@@ -3390,7 +3495,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 7 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = t + 1;
 
@@ -3405,7 +3519,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 3 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = t + 2;
 
@@ -3423,7 +3546,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 7 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = t + 4;
 
@@ -3446,7 +3578,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 8 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 3;
@@ -3463,7 +3604,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 4 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 5;
@@ -3486,7 +3636,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 11 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 251;
 						code->bt_trl[curfunc][cv1 + 1] = 255;
@@ -3514,7 +3673,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 11 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 4;
@@ -3535,7 +3703,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 7 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 5;
@@ -3558,7 +3735,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 10 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 250;
 						code->bt_trl[curfunc][cv1 + 1] = t + 4;
@@ -3582,7 +3768,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 7 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 4;
@@ -3599,7 +3794,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 4 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 5;
@@ -3619,7 +3823,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 						cv += 8 + 4;
 
-						ifcmpaddr[ifcmp - 1] = cv - 4;
+						if (ifand != -1)
+						{
+							int32 cv2 = cv - 4;
+							code->function_code[curfunc][cv2] = ifand >> 24;
+							code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+							code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+							code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+						}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 						code->bt_trl[curfunc][cv1] = 255;
 						code->bt_trl[curfunc][cv1 + 1] = t + 7;
@@ -3645,7 +3858,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 10 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = t + 3;
 
@@ -3681,7 +3903,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 17 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 1;
@@ -3715,7 +3946,25 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 17 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4; if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+						else
+							ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = t + 0;
 					code->bt_trl[curfunc][cv1 + 1] = 251;
@@ -3742,7 +3991,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 12 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 9;
@@ -3767,7 +4025,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 					cv += 12 + 4;
 
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 8;
@@ -3799,7 +4066,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					code->function_code[curfunc][cv + 17] = 6;
 
 					cv += 18 + 4;
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 4;
@@ -3818,14 +4094,23 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					code->function_code[curfunc][cv + 4] = (var1 >> 16) & 0xFF;
 					code->function_code[curfunc][cv + 5] = (var1 >> 8) & 0xFF;
 					code->function_code[curfunc][cv + 6] = var1 & 0xFF;
-					code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 0;
+					code->function_code[curfunc][cv + 7] = g1 == 1 ? 1 : 1;
 					code->function_code[curfunc][cv + 8] = var2 >> 24;
 					code->function_code[curfunc][cv + 9] = (var2 >> 16) & 0xFF;
 					code->function_code[curfunc][cv + 10] = (var2 >> 8) & 0xFF;
 					code->function_code[curfunc][cv + 11] = var2 & 0xFF;
 
 					cv += 12 + 4;
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = 255;
 					code->bt_trl[curfunc][cv1 + 1] = t + 9;
@@ -3848,7 +4133,16 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 					code->function_code[curfunc][cv + 10] = var2 & 0xFF;
 
 					cv += 11 + 4;
-					ifcmpaddr[ifcmp - 1] = cv - 4;
+					if (ifand != -1)
+					{
+						int32 cv2 = cv - 4;
+						code->function_code[curfunc][cv2] = ifand >> 24;
+						code->function_code[curfunc][cv2 + 1] = (ifand >> 16) & 0xFF;
+						code->function_code[curfunc][cv2 + 2] = (ifand >> 8) & 0xFF;
+						code->function_code[curfunc][cv2 + 3] = ifand & 0xFF;
+					}
+					else
+						ifcmpaddr[ifcmp - 1] = cv - 4;
 
 					code->bt_trl[curfunc][cv1] = t + 5;
 
@@ -3858,7 +4152,7 @@ MGMC *CompileMGL(FILE *file, uint8 optimization)
 
 			code->linecode[line].byte_end = cv;
 		}
-		else
+		else //function calling withou call operator
 		{
 			strcpy(code->linecode[line].code, buf);
 			code->linecode[line].func = curfunc;
@@ -4444,7 +4738,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 					temp = (code->function_code[i][cv1 + 6] << 24) | (code->function_code[i][cv1 + 7] << 16) |
 						(code->function_code[i][cv1 + 8] << 8) | code->function_code[i][cv1 + 9];
-					temp = cv + (temp - cv1);
+					temp = temp == 0 || temp  == 1 ? temp : cv + (temp - cv1);
 
 					c[cv + 6] = temp >> 24;
 					c[cv + 7] = (temp >> 16) & 0xFF;
@@ -4466,7 +4760,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 					temp = (code->function_code[i][cv1 + 7] << 24) | (code->function_code[i][cv1 + 8] << 16) |
 						(code->function_code[i][cv1 + 9] << 8) | code->function_code[i][cv1 + 10];
-					temp = cv + (temp - cv1);
+					temp = temp == 0 || temp == 1 ? temp : cv + (temp - cv1);
 
 					c[cv + 7] = temp >> 24;
 					c[cv + 8] = (temp >> 16) & 0xFF;
@@ -4483,7 +4777,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 					temp = (code->function_code[i][cv1 + 3] << 24) | (code->function_code[i][cv1 + 4] << 16) |
 						(code->function_code[i][cv1 + 5] << 8) | code->function_code[i][cv1 + 6];
-					temp = cv + (temp - cv1);
+					temp = temp == 0 || temp == 1 ? temp : cv + (temp - cv1);
 
 					c[cv + 3] = temp >> 24;
 					c[cv + 4] = (temp >> 16) & 0xFF;
@@ -4507,7 +4801,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 					temp = (code->function_code[i][cv1 + 10] << 24) | (code->function_code[i][cv1 + 11] << 16) |
 						(code->function_code[i][cv1 + 12] << 8) | code->function_code[i][cv1 + 13];
-					temp = cv + (temp - cv1);
+					temp = temp == 0 || temp == 1 ? temp : cv + (temp - cv1);
 
 					c[cv + 10] = temp >> 24;
 					c[cv + 11] = (temp >> 16) & 0xFF;
@@ -4532,7 +4826,7 @@ unsigned char *LinkMGL(MGMC *code, uint8 optimization)
 
 					temp = (code->function_code[i][cv1 + 11] << 24) | (code->function_code[i][cv1 + 12] << 16) |
 						(code->function_code[i][cv1 + 13] << 8) | code->function_code[i][cv1 + 14];
-					temp = cv + (temp - cv1);
+					temp = temp == 0 || temp == 1 ? temp : cv + (temp - cv1);
 
 					c[cv + 11] = temp >> 24;
 					c[cv + 12] = (temp >> 16) & 0xFF;
@@ -5873,6 +6167,7 @@ int8 InitMGLCode(const char *file)
 	st.mgl.funcs.playmovie = PlayMovie;
 	st.mgl.funcs.playbgvideo = PlayBGVideo;
 	st.mgl.funcs.drawui = UIezData;
+	st.mgl.flags.flags = 0;
 
 	return 1;
 }
@@ -6026,7 +6321,8 @@ int8 ExecuteMGLCode(uint8 location)
 {
 	register int32 bp, sp, cv, lcv;
 	int32 v[32];
-
+	
+	union MGLFlags fl;
 
 	int32 *stack = NULL, num_heap = 0;
 	uint8 *vars, state = 0;
@@ -6071,6 +6367,7 @@ int8 ExecuteMGLCode(uint8 location)
 	funcaddr = cv;
 	bp = st.mgl.bp;
 	sp = st.mgl.sp;
+	fl = st.mgl.flags;
 
 	if (st.mgl.stack != NULL)
 		stack = st.mgl.stack;
@@ -6244,7 +6541,7 @@ int8 ExecuteMGLCode(uint8 location)
 				switch (buf[cv])
 				{
 					//set
-				case 0:
+				case opSET:
 					GetValueCV(v[7], cv + 2);
 					SetRegSwitch(buf[cv + 1]);
 					cv += 6;
@@ -6285,7 +6582,7 @@ int8 ExecuteMGLCode(uint8 location)
 					break;
 
 					//add
-				case 10:
+				case opADD:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 
@@ -6350,7 +6647,7 @@ int8 ExecuteMGLCode(uint8 location)
 					break;
 
 					//sub
-				case 20:
+				case opSUB:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 
@@ -6415,7 +6712,7 @@ int8 ExecuteMGLCode(uint8 location)
 					break;
 
 					//mul
-				case 30:
+				case opMUL:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 
@@ -6480,7 +6777,7 @@ int8 ExecuteMGLCode(uint8 location)
 					break;
 
 					//div
-				case 40:
+				case opDIV:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 
@@ -6545,7 +6842,7 @@ int8 ExecuteMGLCode(uint8 location)
 					break;
 
 					//pow
-				case 50:
+				case opPOW:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
@@ -6603,61 +6900,53 @@ int8 ExecuteMGLCode(uint8 location)
 					cv += 11;
 					break;
 
-				case 142:
+				case opIFGE:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] >= v[2])
-					{
-						v[2] = 1;
-						cv += 6 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 6);
-						cv = v[7];
 
-					}
+					GetValueCV(v[1], cv + 6);
+
+					fl.cm = v[7] >= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 6 + 4 : v[1];
 
 					break;
 
 				case 143:
+					v[6] = v[2];
 					GetVarAddress(cv + 2);
 					GetValueStack(v[7], v[2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] >= v[2])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
 
-					}
+					GetValueCV(v[1], cv + 7);
+
+					fl.cm = v[7] >= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
 				case 144:
+					v[6] = v[2];
 					GetRegSwitch(buf[cv + 2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] >= v[2])
-					{
-						v[2] = 1;
-						cv += 3 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 3);
-						cv = v[7];
+					GetValueCV(v[1], cv + 3);
 
-					}
+					fl.cm = v[7] >= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					cv = fl.cm == 1 ? cv + 3 + 4 : v[1];
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
 
 					break;
 
@@ -6665,18 +6954,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
 					GetValueCV(v[2], cv + 6);
-					if (v[7] >= v[2])
-					{
-						v[2] = 1;
-						cv += 10 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 10);
-						cv = v[7];
+					GetValueCV(v[1], cv + 10);
 
-					}
+					fl.cm = v[7] >= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 10 + 4 : v[1];
 
 					break;
 
@@ -6684,18 +6969,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
 					GetValueStack(v[2], v[2]);
-					if (v[2] >= v[7])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] >= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -6704,36 +6985,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					GetVarAddress(cv + 6);
 					GetValueStack(v[2], v[2]);
-					if (v[7] >= v[2])
-					{
-						v[2] = 1;
-						cv += 11 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 11);
-						cv = v[7];
-					}
+					GetValueCV(v[1], cv + 11);
+
+					fl.cm = v[7] >= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 11 + 4 : v[1];
 
 					break;
 
-				case 152:
+				case opIFLE:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] <= v[2])
-					{
-						v[2] = 1;
-						cv += 6 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 6);
-						cv = v[7];
+					GetValueCV(v[1], cv + 6);
 
-					}
+					fl.cm = v[7] <= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 6 + 4 : v[1];
 
 					break;
 
@@ -6742,18 +7016,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] <= v[2])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] <= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -6761,18 +7031,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetRegSwitch(buf[cv + 2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] <= v[2])
-					{
-						v[2] = 1;
-						cv += 3 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 3);
-						cv = v[7];
+					GetValueCV(v[1], cv + 3);
 
-					}
+					fl.cm = v[7] <= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 3 + 4 : v[1];
 
 					break;
 
@@ -6780,18 +7046,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
 					GetValueCV(v[2], cv + 6);
-					if (v[7] <= v[2])
-					{
-						v[2] = 1;
-						cv += 10 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 10);
-						cv = v[7];
+					GetValueCV(v[1], cv + 10);
 
-					}
+					fl.cm = v[7] <= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 10 + 4 : v[1];
 
 					break;
 
@@ -6799,18 +7061,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
 					GetValueStack(v[2], v[2]);
-					if (v[2] <= v[7])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] <= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -6819,37 +7077,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					GetVarAddress(cv + 6);
 					GetValueStack(v[2], v[2]);
-					if (v[7] <= v[2])
-					{
-						v[2] = 1;
-						cv += 11 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 11);
-						cv = v[7];
+					GetValueCV(v[1], cv + 11);
 
-					}
+					fl.cm = v[7] <= v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 11 + 4 : v[1];
 
 					break;
 
-				case 162:
+				case opIFG:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] > v[2])
-					{
-						v[2] = 1;
-						cv += 6 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 6);
-						cv = v[7];
+					GetValueCV(v[1], cv + 6);
 
-					}
+					fl.cm = v[7] > v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 6 + 4 : v[1];
 
 					break;
 
@@ -6858,18 +7108,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] > v[2])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] > v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -6877,18 +7123,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetRegSwitch(buf[cv + 2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] > v[2])
-					{
-						v[2] = 1;
-						cv += 3 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 3);
-						cv = v[7];
+					GetValueCV(v[1], cv + 3);
 
-					}
+					fl.cm = v[7] > v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 3 + 4 : v[1];
 
 					break;
 
@@ -6896,18 +7138,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
 					GetValueCV(v[2], cv + 6);
-					if (v[7] > v[2])
-					{
-						v[2] = 1;
-						cv += 10 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 10);
-						cv = v[7];
+					GetValueCV(v[1], cv + 10);
 
-					}
+					fl.cm = v[7] > v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 10 + 4 : v[1];
 
 					break;
 
@@ -6915,18 +7153,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
 					GetValueStack(v[2], v[2]);
-					if (v[2] > v[7])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] > v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -6935,37 +7169,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					GetVarAddress(cv + 6);
 					GetValueStack(v[2], v[2]);
-					if (v[7] > v[2])
-					{
-						v[2] = 1;
-						cv += 11 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 11);
-						cv = v[7];
+					GetValueCV(v[1], cv + 11);
 
-					}
+					fl.cm = v[7] > v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 11 + 4 : v[1];
 
 					break;
 
-				case 172:
+				case opIFL:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] < v[2])
-					{
-						v[2] = 1;
-						cv += 6 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 6);
-						cv = v[7];
-						
-					}
+					GetValueCV(v[1], cv + 6);
+
+					fl.cm = v[7] < v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 6 + 4 : v[1];
 
 					break;
 
@@ -6974,18 +7200,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] < v[2])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] < v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -6993,18 +7215,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetRegSwitch(buf[cv + 2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] < v[2])
-					{
-						v[2] = 1;
-						cv += 3 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 3);
-						cv = v[7];
+					GetValueCV(v[1], cv + 3);
 
-					}
+					fl.cm = v[7] < v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 3 + 4 : v[1];
 
 					break;
 
@@ -7012,18 +7230,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
 					GetValueCV(v[2], cv + 6);
-					if (v[7] < v[2])
-					{
-						v[2] = 1;
-						cv += 10 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 10);
-						cv = v[7];
+					GetValueCV(v[1], cv + 10);
 
-					}
+					fl.cm = v[7] < v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 10 + 4 : v[1];
 
 					break;
 
@@ -7031,18 +7245,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
 					GetValueStack(v[2], v[2]);
-					if (v[2] < v[7])
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
+					GetValueCV(v[1], cv + 7);
 
-					}
+					fl.cm = v[7] < v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -7051,36 +7261,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					GetVarAddress(cv + 6);
 					GetValueStack(v[2], v[2]);
-					if (v[7] < v[2])
-					{
-						v[2] = 1;
-						cv += 11 + 4;
-					}
-					else
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 11);
-						cv = v[7];
+					GetValueCV(v[1], cv + 11);
 
-					}
+					fl.cm = v[7] < v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 11 + 4 : v[1];
 
 					break;
 
-				case 182:
+				case opIFE:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] != v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 6);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 6 + 4;
-					}
+					GetValueCV(v[1], cv + 6);
+
+					fl.cm = v[7] == v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 6 + 4 : v[1];
 
 					break;
 
@@ -7089,17 +7292,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] != v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
+					GetValueCV(v[1], cv + 7);
+
+					fl.cm = v[7] == v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -7107,34 +7307,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetRegSwitch(buf[cv + 2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] != v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 3);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 3 + 4;
-					}
+					GetValueCV(v[1], cv + 3);
+
+					fl.cm = v[7] == v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 3 + 4 : v[1];
+
 					break;
 
 				case 185:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
 					GetValueCV(v[2], cv + 6);
-					if (v[7] != v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 10);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 10 + 4;
-					}
+					GetValueCV(v[1], cv + 10);
+
+					fl.cm = v[7] == v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 10 + 4 : v[1];
 
 					break;
 
@@ -7142,17 +7337,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
 					GetValueStack(v[2], v[2]);
-					if (v[7] != v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
+					GetValueCV(v[1], cv + 7);
+
+					fl.cm = v[7] == v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -7161,34 +7353,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					GetVarAddress(cv + 6);
 					GetValueStack(v[2], v[2]);
-					if (v[7] == v[2])
-					{
-						v[2] = 1;
-						GetValueCV(v[7], cv + 11);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 0;
-						cv += 11 + 4;
-					}
+					GetValueCV(v[1], cv + 11);
+
+					fl.cm = v[7] == v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 11 + 4 : v[1];
+
 					break;
 
-				case 192:
+				case opIFNE:
 					GetValueCV(v[7], cv + 2);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] == v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 6);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 6 + 4;
-					}
+					GetValueCV(v[1], cv + 6);
+
+					fl.cm = v[7] != v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 6 + 4 : v[1];
 
 					break;
 
@@ -7197,17 +7384,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] == v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
+					GetValueCV(v[1], cv + 7);
+
+					fl.cm = v[7] != v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -7215,34 +7399,29 @@ int8 ExecuteMGLCode(uint8 location)
 					GetRegSwitch(buf[cv + 2]);
 					v[2] = v[7];
 					GetRegSwitch(buf[cv + 1]);
-					if (v[7] == v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 3);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 3 + 4;
-					}
+					GetValueCV(v[1], cv + 3);
+
+					fl.cm = v[7] != v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 3 + 4 : v[1];
+
 					break;
 
 				case 195:
 					GetVarAddress(cv + 1);
 					GetValueStack(v[7], v[2]);
 					GetValueCV(v[2], cv + 6);
-					if (v[7] == v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 10);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 10 + 4;
-					}
+					GetValueCV(v[1], cv + 10);
+
+					fl.cm = v[7] != v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 10 + 4 : v[1];
 
 					break;
 
@@ -7250,17 +7429,14 @@ int8 ExecuteMGLCode(uint8 location)
 					GetVarAddress(cv + 1);
 					GetRegSwitch(buf[cv + 6]);
 					GetValueStack(v[2], v[2]);
-					if (v[7] == v[2])
-					{
-						v[2] = 0;
-						GetValueCV(v[7], cv + 7);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 1;
-						cv += 7 + 4;
-					}
+					GetValueCV(v[1], cv + 7);
+
+					fl.cm = v[7] != v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 7 + 4 : v[1];
 
 					break;
 
@@ -7269,20 +7445,18 @@ int8 ExecuteMGLCode(uint8 location)
 					GetValueStack(v[7], v[2]);
 					GetVarAddress(cv + 6);
 					GetValueStack(v[2], v[2]);
-					if (v[7] == v[2])
-					{
-						v[2] = 1;
-						GetValueCV(v[7], cv + 11);
-						cv = v[7];
-					}
-					else
-					{
-						v[2] = 0;
-						cv += 11 + 4;
-					}
+					GetValueCV(v[1], cv + 11);
+
+					fl.cm = v[7] != v[2] || (fl.co == 1 && fl.cm == 1);
+
+					fl.ca = v[1] == 0;
+					fl.co = v[1] == 1;
+
+					cv = fl.cm == 1 || fl.ca == 1 || fl.co == 1 ? cv + 11 + 4 : v[1];
+
 					break;
 
-				case 204:
+				case opCALL:
 					if (buf[cv + 1] == 0)
 					{
 						PushStack(bp);
@@ -7300,7 +7474,7 @@ int8 ExecuteMGLCode(uint8 location)
 					}
 					break;
 
-				case 210:
+				case opRET:
 					sp = bp;
 					PopStack(cv);
 					bp = sp - 1;
@@ -7790,6 +7964,7 @@ int8 ExecuteMGLCode(uint8 location)
 	st.mgl.bp = bp;
 	st.mgl.sp = sp;
 	st.mgl.cv = cv;
+	st.mgl.flags = fl;
 	memcpy(st.mgl.v, v, 32 * sizeof(uint32));
 	memcpy(st.mgl.f, f, 24 * sizeof(float));
 

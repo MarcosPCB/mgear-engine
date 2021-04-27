@@ -12,13 +12,15 @@ static const char *Texture_VShader[64]={
 	"out vec2 TexCoord2;\n"
 	"out vec4 colore;\n"
 	"out vec2 TexLight2;\n"
+	"out vec3 Pos;\n"
 
 	"void main()\n"
 	"{\n"
-		"gl_Position = vec4(Position, 1.0);\n"
-		"TexCoord2 = TexCoord;\n"
-		"colore = Color;\n"
-		"TexLight2 = TexLight;\n"
+	"gl_Position = vec4(Position, 1.0);\n"
+	"TexCoord2 = TexCoord;\n"
+	"colore = Color;\n"
+	"TexLight2 = TexLight;\n"
+	"Pos = Position;\n"
 	"}\n"
 };
 
@@ -279,6 +281,8 @@ static const char *Lightmap_FShader[128]={
 
 	"in vec2 TexLight2;\n"
 
+	"in vec3 Pos;\n"
+
 	"uniform vec3 Lightpos;\n"
 
 	"layout (location = 0) out vec4 FColor;\n"
@@ -308,11 +312,24 @@ static const char *Lightmap_FShader[128]={
 	"uniform float sector;\n"
 	"uniform float sector_y;\n"
 	"uniform float sector_y_2;\n"
+	"uniform int circle;\n"
 
 	"void main()\n"
 	"{\n"
 		"if(normal == 0.0)\n"
-			"FColor = texture(texu, TexCoord2) * colore;\n"
+		"{\n"
+			"vec4 alpha = vec4(1.0);\n"
+
+			"if(circle == 1)\n"
+			"{\n"
+				"vec2 d = 2.0 * TexCoord2.xy - 1.0;\n"
+				"float r = dot(d, d);\n"
+				"float delta = fwidth(r);\n"
+				"alpha = vec4(vec3(1.0), 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r));\n"
+			"}\n"
+			
+			"FColor = texture(texu, TexCoord2) * colore * alpha;\n"
+		"}\n"
 
 		"if(normal == 1.0)\n"
 		"{\n"
@@ -359,8 +376,8 @@ static const char *Lightmap_FShader[128]={
 
 			//calculate attenuation
 			//"float Attenuation = clamp((1.0 / (0.01 + (falloff.x * D))) - 0.01, 0.0, 10);\n"
-			"float Attenuation = 1/pow((D/(falloff.x * cams.x))+1,2);\n"
-			"Attenuation = ((Attenuation - falloff.z) / (1 - Attenuation));\n"
+			"float Attenuation = 1.0f / (((D / (falloff.x * cams.x)) + 1.0f) * (256.0f / falloff.y));\n"
+			"Attenuation = ((Attenuation - falloff.z) / (1.0f - Attenuation));\n"
 			//"Attenuation = clamp(falloff.y / pow((D / falloff.x) + 1, 2), 0.0, falloff.y); \n"
 			//"float Attenuation = pow(smoothstep(falloff.x, 0, D), falloff.y);\n"
 
@@ -391,7 +408,6 @@ static const char *Lightmap_FShader[128]={
 		"{\n"
 			"FColor = vec4(0, 0, 0, 1.0 - texture(texu4, TexCoord2).a);\n"
 		"}\n"
-
 	"}\n"
 };
 

@@ -277,26 +277,26 @@ void FPSCounter()
 
 void _inline STW(int32 *x, int32 *y)
 {
-	*x=((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
-	*y=((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+	*x = ((((*x*GAME_WIDTH) / st.screenx) / st.Camera.dimension.x) + st.Camera.position.x);
+	*y = ((((*y*st.gamey) / st.screeny) / st.Camera.dimension.y) + st.Camera.position.y);
 }
 
 void _inline STWci(int32 *x, int32 *y)
 {
-	*x=((((*x*GAME_WIDTH)/st.screenx)));
-	*y=((((*y*st.gamey)/st.screeny)));
+	*x = ((((*x*GAME_WIDTH) / st.screenx)));
+	*y = ((((*y*st.gamey) / st.screeny)));
 }
 
 void _fastcall STWf(float *x, float *y)
 {
-	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x)+st.Camera.position.x);
-	*y=(float) ((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y)+st.Camera.position.y);
+	*x = (float)((((*x*GAME_WIDTH) / st.screenx) / st.Camera.dimension.x) + st.Camera.position.x);
+	*y = (float)((((*y*st.gamey) / st.screeny) / st.Camera.dimension.y) + st.Camera.position.y);
 }
 
 void _inline STWcf(float *x, float *y)
 {
-	*x=(float) ((((*x*GAME_WIDTH)/st.screenx)/st.Camera.dimension.x));
-	*y=(float) ((((*y*st.gamey)/st.screeny)/st.Camera.dimension.y));
+	*x = (float)((((*x*GAME_WIDTH) / st.screenx) / st.Camera.dimension.x));
+	*y = (float)((((*y*st.gamey) / st.screeny) / st.Camera.dimension.y));
 }
 
 void _fastcall WTS(int32 *x, int32 *y)
@@ -310,23 +310,35 @@ void _fastcall WTS(int32 *x, int32 *y)
 
 void _fastcall WTSci(int32 *x, int32 *y)
 {
-	*x=((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
+	*x = ((*x*st.screenx) / GAME_WIDTH)*st.Camera.dimension.x;
+	*y = ((*y*st.screeny) / st.gamey)*st.Camera.dimension.y;
 }
 
 void _inline WTSf(float *x, float *y)
 {
-	*x-=st.Camera.position.x;
-	*y-=st.Camera.position.y;
+	*x -= st.Camera.position.x;
+	*y -= st.Camera.position.y;
 
-	*x=(float) ((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=(float) ((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
+	*x = (float)((*x*st.screenx) / GAME_WIDTH)*st.Camera.dimension.x;
+	*y = (float)((*y*st.screeny) / st.gamey)*st.Camera.dimension.y;
 }
 
 void _inline WTScf(float *x, float *y)
 {
-	*x=(float) ((*x*st.screenx)/GAME_WIDTH)*st.Camera.dimension.x;
-	*y=(float) ((*y*st.screeny)/st.gamey)*st.Camera.dimension.y;
+	*x = (float)((*x*st.screenx) / GAME_WIDTH)*st.Camera.dimension.x;
+	*y = (float)((*y*st.screeny) / st.gamey)*st.Camera.dimension.y;
+}
+
+void AddCamCalc(Pos *pos, Pos *size)
+{
+	pos->x -= st.Camera.position.x;
+	pos->y -= st.Camera.position.y;
+
+	pos->x *= st.Camera.dimension.x;
+	pos->y *= st.Camera.dimension.y;
+
+	size->x *= st.Camera.dimension.x;
+	size->y *= st.Camera.dimension.y;
 }
 
 float mCos(int16 ang)
@@ -2737,6 +2749,7 @@ SHADER_CREATION:
 				st.renderer.unifs[13] = glGetUniformLocation(st.renderer.Program[3], "sector");
 				st.renderer.unifs[14] = glGetUniformLocation(st.renderer.Program[3], "sector_y");
 				st.renderer.unifs[15] = glGetUniformLocation(st.renderer.Program[3], "sector_y_2");
+				st.renderer.unifs[16] = glGetUniformLocation(st.renderer.Program[3], "circle");
 				//st.renderer.unifs[6]=glGetUniformLocation(st.renderer.Program[3],"Tile");
 				//st.renderer.unifs[7]=glGetUniformLocation(st.renderer.Program[3],"Tiles");
 
@@ -5221,7 +5234,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	shw[m][i].vertex[11] = z;
 
 	//int32 d, a;
-	int32 v[4], v2[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4], zdw = 32 - z, zdl = zl - z, by = 0, mdist;
+	int32 v[4], v2[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4] + 24, zdw = 32 - z, zdl = zl - z, by = 0, mdist;
 
 	if (ldist == 1)
 	{
@@ -7340,30 +7353,31 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	int16 ang;
 
-	float ax=1/(GAME_WIDTH/2), ay=1/(st.gamey/2), az=1/(4096/2), ang2, tx1, ty1, tx2, ty2;
+	float ax = 1 / (GAME_WIDTH / 2), ay = 1 / (st.gamey / 2), az = 1 / (4096 / 2), ang2, tx1, ty1, tx2, ty2;
 
 	i=st.num_entities;
 
-	if(i==MAX_GRAPHICS-1 && ent[i].stat==USED)
+	if (i == MAX_GRAPHICS - 1 && ent[i].stat == USED)
 		return 2;
 
 	//if(ent[i].stat==DEAD)
 	//{
-		ent[i].stat=USED;
+		ent[i].stat = USED;
 		st.num_entities++;
-		ent[i].data.data=DataNT;
-		ent[i].data.vb_id=-1;
-		ent[i].data.channel=0;
-		ent[i].data.normal=0;
-		ent[i].scenario=-1;
+		ent[i].data.data = DataNT;
+		ent[i].data.vb_id = -1;
+		ent[i].data.channel = 0;
+		ent[i].data.normal = 0;
+		ent[i].scenario = -1;
+		ent[i].circle = 0.000000000;
 
-		if(z>56) z=56;
+		if (z > 56) z = 56;
 		//else if(z<16) z+=16;
 
 		z_buffer[z][z_slot[z]]=i;
 		z_slot[z]++;
 
-		if(z>z_used) z_used=z;
+		if (z > z_used) z_used = z;;
 		
 		if(z>15)
 		{
@@ -7372,8 +7386,8 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 			tx2=x2;
 			ty2=y2;
 
-			x-=st.Camera.position.x;
-			y-=st.Camera.position.y;
+			x -= st.Camera.position.x;
+			y -= st.Camera.position.y;
 
 			x2-=st.Camera.position.x;
 			y2-=st.Camera.position.y;
@@ -7503,6 +7517,165 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 		texone_ids[texone_num]=i;
 		texone_num++;
+	//}
+
+	return 0;
+}
+
+int8 DrawCircle(int32 x, int32 y, int32 radius, uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
+{
+	uint8 valx = 0, valy = 0;
+
+	uint16 i = 0, j = 0, k = 0;
+
+	uint32 a1;
+
+	int16 ang;
+
+	float ax = 1 / (GAME_WIDTH / 2), ay = 1 / (st.gamey / 2), az = 1 / (4096 / 2), ang2, tx1, ty1, tx2, ty2;
+
+	i = st.num_entities;
+
+	if (i == MAX_GRAPHICS - 1 && ent[i].stat == USED)
+		return 2;
+
+	ax = (float)1 / (GAME_WIDTH / 2);
+	ay = (float)1 / (st.gamey / 2);
+
+	ay *= -1.0f;
+
+	az = (float)1 / (4096 / 2);
+
+	//if(ent[i].stat==DEAD)
+	//{
+	ent[i].stat = USED;
+	st.num_entities++;
+	ent[i].data.data = DataNT;
+	ent[i].data.vb_id = -1;
+	ent[i].data.channel = 0;
+	ent[i].data.normal = 0;
+	ent[i].scenario = -1;
+	ent[i].circle = 1;
+
+	if (z>56) z = 56;
+	//else if(z<16) z+=16;
+
+	z_buffer[z][z_slot[z]] = i;
+	z_slot[z]++;
+
+	if (z>z_used) z_used = z;
+
+	if (z>15)
+	{
+		tx1 = x;
+		ty1 = y;
+
+		x -= st.Camera.position.x;
+		y -= st.Camera.position.y;
+
+		x *= st.Camera.dimension.x;
+		y *= st.Camera.dimension.y;
+	}
+
+
+	ang = 0;
+
+	ent[i].vertex[0] = (float)x - radius;
+	ent[i].vertex[1] = (float)y - radius;
+	ent[i].vertex[2] = z;
+
+	ent[i].vertex[3] = (float)x + radius;
+	ent[i].vertex[4] = (float)y - radius;
+	ent[i].vertex[5] = z;
+
+	ent[i].vertex[6] = (float)x + radius;
+	ent[i].vertex[7] = (float)y + radius;
+	ent[i].vertex[8] = z;
+
+	ent[i].vertex[9] = (float)x - radius;
+	ent[i].vertex[10] = (float)y + radius;
+	ent[i].vertex[11] = z;
+
+	if (z>15)
+	{
+		/*
+		ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+		ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+		ent[i].texcorlight[2]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
+		ent[i].texcorlight[3]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
+
+		ent[i].texcorlight[4]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+		ent[i].texcorlight[5]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+
+		ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
+		ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
+		*/
+
+		ent[i].texcorlight[0] = (float)tx1 - radius;
+		ent[i].texcorlight[1] = (float)ty1 - radius;
+
+		ent[i].texcorlight[2] = (float)tx1 + radius;
+		ent[i].texcorlight[3] = (float)ty1 - radius;
+
+		ent[i].texcorlight[4] = (float)tx1 + radius;
+		ent[i].texcorlight[5] = (float)ty1 + radius;
+
+		ent[i].texcorlight[6] = (float)tx1 - radius;
+		ent[i].texcorlight[7] = (float)ty1 + radius;
+
+		WTSf(&ent[i].texcorlight[0], &ent[i].texcorlight[1]);
+		WTSf(&ent[i].texcorlight[2], &ent[i].texcorlight[3]);
+		WTSf(&ent[i].texcorlight[4], &ent[i].texcorlight[5]);
+		WTSf(&ent[i].texcorlight[6], &ent[i].texcorlight[7]);
+
+		ent[i].texcorlight[0] /= (float)st.screenx;
+		ent[i].texcorlight[1] /= (float)st.screeny;
+		ent[i].texcorlight[2] /= (float)st.screenx;
+		ent[i].texcorlight[3] /= (float)st.screeny;
+		ent[i].texcorlight[4] /= (float)st.screenx;
+		ent[i].texcorlight[5] /= (float)st.screeny;
+		ent[i].texcorlight[6] /= (float)st.screenx;
+		ent[i].texcorlight[7] /= (float)st.screeny;
+
+		ent[i].texcorlight[1] *= -1;
+		ent[i].texcorlight[3] *= -1;
+		ent[i].texcorlight[5] *= -1;
+		ent[i].texcorlight[7] *= -1;
+	}
+
+	ent[i].texcor[0] = 0.0f;
+	ent[i].texcor[1] = 0.0f;
+	ent[i].texcor[2] = 1.0f;
+	ent[i].texcor[3] = 0.0f;
+	ent[i].texcor[4] = 1.0f;
+	ent[i].texcor[5] = 1.0f;
+	ent[i].texcor[6] = 0.0f;
+	ent[i].texcor[7] = 1.0f;
+
+	for (j = 0; j < 12; j += 3)
+	{
+		ent[i].vertex[j] *= ax;
+		ent[i].vertex[j] -= 1;
+
+		ent[i].vertex[j + 1] *= ay;
+		ent[i].vertex[j + 1] += 1;
+
+		ent[i].vertex[j + 2] *= az;
+		ent[i].vertex[j + 2] -= 1;
+
+	}
+
+	for (j = 0; j < 16; j += 4)
+	{
+		ent[i].color[j] = r;
+		ent[i].color[j + 1] = g;
+		ent[i].color[j + 2] = b;
+		ent[i].color[j + 3] = a;
+	}
+
+	texone_ids[texone_num] = i;
+	texone_num++;
 	//}
 
 	return 0;
@@ -10682,62 +10855,61 @@ void DrawMap()
 	int32 x_f;
 	Pos tmp;
 	
-	if(st.Current_Map.bcktex_id>-1)
-		DrawGraphic(8192,4608,GAME_WIDTH,st.gamey,0,255,255,255,mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id],255,st.Current_Map.bck3_pan.x,st.Current_Map.bck3_pan.y,
-		st.Current_Map.bck3_size.x,st.Current_Map.bck3_size.y,55,0);
+	if (st.Current_Map.bcktex_id > -1)
+		DrawGraphic(8192, 4608, GAME_WIDTH, st.gamey, 0, 255, 255, 255, mgg_map[st.Current_Map.bcktex_mgg].frames[st.Current_Map.bcktex_id], 255, st.Current_Map.bck3_pan.x, st.Current_Map.bck3_pan.y,
+		st.Current_Map.bck3_size.x, st.Current_Map.bck3_size.y, 55, 0);
 
-			for(i=0;i<st.Current_Map.num_obj;i++)
+	for (i = 0; i < st.Current_Map.num_obj; i++)
+	{
+		if (((st.viewmode & 1 && st.Current_Map.obj[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.obj[i].position.z>23 && st.Current_Map.obj[i].position.z<32)
+			|| (st.viewmode & 4 && st.Current_Map.obj[i].position.z>31 && st.Current_Map.obj[i].position.z<40) || (st.viewmode & 8 && st.Current_Map.obj[i].position.z>39 && st.Current_Map.obj[i].position.z<48)
+			|| (st.viewmode & 16 && st.Current_Map.obj[i].position.z>47 && st.Current_Map.obj[i].position.z < 57)) && (st.Current_Map.obj[i].flag != 1024))
+		{
+			if (st.Current_Map.obj[i].flag & 2)
 			{
+				max_f = mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].num_frames;
+				curf = mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].startID;
 
-				if(((st.viewmode & 1 && st.Current_Map.obj[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.obj[i].position.z>23 && st.Current_Map.obj[i].position.z<32)
-					 || (st.viewmode & 4 && st.Current_Map.obj[i].position.z>31 && st.Current_Map.obj[i].position.z<40) || (st.viewmode & 8 && st.Current_Map.obj[i].position.z>39 && st.Current_Map.obj[i].position.z<48)
-					 || (st.viewmode & 16 && st.Current_Map.obj[i].position.z>47 && st.Current_Map.obj[i].position.z<57)) && (st.Current_Map.obj[i].flag != 1024))
-				{
-					if (st.Current_Map.obj[i].flag & 2)
-					{
-						max_f = mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].num_frames;
-						curf = mgg_map[st.Current_Map.obj[i].tex.MGG_ID].anim[0].startID;
+				st.Current_Map.obj[i].current_frame = curf + (st.Camera.position.x / 512);
 
-						st.Current_Map.obj[i].current_frame = curf + (st.Camera.position.x / 512);
+				if (st.Current_Map.obj[i].current_frame>max_f - 1)
+					st.Current_Map.obj[i].current_frame = max_f - 1;
+				else
+				if (st.Current_Map.obj[i].current_frame < 0)
+					st.Current_Map.obj[i].current_frame = 0;
 
-						if (st.Current_Map.obj[i].current_frame>max_f - 1)
-							st.Current_Map.obj[i].current_frame = max_f - 1;
-						else
-						if (st.Current_Map.obj[i].current_frame < 0)
-							st.Current_Map.obj[i].current_frame = 0;
+				DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
+					st.Current_Map.obj[i].angle, (float)st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, (float)st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
+					(float)st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].current_frame],
+					st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
+					st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
 
-						DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
-							st.Current_Map.obj[i].angle, (float)st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, (float) st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
-							(float) st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].current_frame],
-							st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
-							st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
-
-					}
-					else
-						DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
-						st.Current_Map.obj[i].angle, (float)st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, (float) st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
-						(float) st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],
-						st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
-						st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
-				}
 			}
-
-			for(i=0;i<st.Current_Map.num_sprites;i++)
-			{
-				if(((st.viewmode & 1 && st.Current_Map.sprites[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.sprites[i].position.z>23 && st.Current_Map.sprites[i].position.z<32)
-					 || (st.viewmode & 4 && st.Current_Map.sprites[i].position.z>31 && st.Current_Map.sprites[i].position.z<40)
-					 || (st.viewmode & 8 && st.Current_Map.sprites[i].position.z>39 && st.Current_Map.sprites[i].position.z<48)
-					 || (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z<57)) && (st.Current_Map.sprites[i].flags != 1024))
-				{
-					if((st.viewmode & 32 && (~st.Current_Map.sprites[i].flags & 2)) || ((~st.viewmode & 32) && st.Current_Map.sprites[i].flags & 2) || ((~st.viewmode & 32) && (~st.Current_Map.sprites[i].flags & 2)))
-						DrawSprite(st.Current_Map.sprites[i].position.x,st.Current_Map.sprites[i].position.y,st.Current_Map.sprites[i].body.size.x,st.Current_Map.sprites[i].body.size.y,st.Current_Map.sprites[i].angle,
-						(float)st.Current_Map.sprites[i].color.r, (float)st.Current_Map.sprites[i].color.g, (float) st.Current_Map.sprites[i].color.b,
-							mgg_game[st.Current_Map.sprites[i].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
-							st.Current_Map.sprites[i].color.a,st.Current_Map.sprites[i].position.z,st.Current_Map.sprites[i].flags,
-							st.Current_Map.sprites[i].size_a.x,st.Current_Map.sprites[i].size_a.y,st.Current_Map.sprites[i].size_m.x,st.Current_Map.sprites[i].size_m.y,
-							st.Current_Map.sprites[i].current_sector);
-				}
+			else
+				DrawGraphic(st.Current_Map.obj[i].position.x, st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y,
+				st.Current_Map.obj[i].angle, (float)st.Current_Map.obj[i].color.r * st.Current_Map.obj[i].amblight, (float)st.Current_Map.obj[i].color.g * st.Current_Map.obj[i].amblight,
+				(float)st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],
+				st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
+				st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
 			}
+		}
+
+	for (i = 0; i < st.Current_Map.num_sprites; i++)
+	{
+		if (((st.viewmode & 1 && st.Current_Map.sprites[i].position.z<24) || (st.viewmode & 2 && st.Current_Map.sprites[i].position.z>23 && st.Current_Map.sprites[i].position.z<32)
+			|| (st.viewmode & 4 && st.Current_Map.sprites[i].position.z>31 && st.Current_Map.sprites[i].position.z<40)
+			|| (st.viewmode & 8 && st.Current_Map.sprites[i].position.z>39 && st.Current_Map.sprites[i].position.z<48)
+			|| (st.viewmode & 16 && st.Current_Map.sprites[i].position.z>47 && st.Current_Map.sprites[i].position.z < 57)) && (st.Current_Map.sprites[i].flags != 1024))
+		{
+			if ((st.viewmode & 32 && (~st.Current_Map.sprites[i].flags & 2)) || ((~st.viewmode & 32) && st.Current_Map.sprites[i].flags & 2) || ((~st.viewmode & 32) && (~st.Current_Map.sprites[i].flags & 2)))
+				DrawSprite(st.Current_Map.sprites[i].position.x, st.Current_Map.sprites[i].position.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y, st.Current_Map.sprites[i].angle,
+				(float)st.Current_Map.sprites[i].color.r, (float)st.Current_Map.sprites[i].color.g, (float)st.Current_Map.sprites[i].color.b,
+				mgg_game[st.Current_Map.sprites[i].MGG_ID].frames[st.Current_Map.sprites[i].frame_ID],
+				st.Current_Map.sprites[i].color.a, st.Current_Map.sprites[i].position.z, st.Current_Map.sprites[i].flags,
+				st.Current_Map.sprites[i].size_a.x, st.Current_Map.sprites[i].size_a.y, st.Current_Map.sprites[i].size_m.x, st.Current_Map.sprites[i].size_m.y,
+				st.Current_Map.sprites[i].current_sector);
+		}
+	}
 
 			for (i = 1; i <= st.num_lights; i++)
 			{
@@ -11063,7 +11235,7 @@ void Renderer(uint8 type)
 			glClearColor(0, 0, 0, 0);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//glClear(GL_STENCIL_BUFFER_BIT);
 
 		if (z_used > 31 || z_used < 24)
@@ -11289,6 +11461,12 @@ void Renderer(uint8 type)
 
 				glBindVertexArray(0);
 
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, tex_bound[0]);
+
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, tex_bound[1]);
+
 				state = 0;
 			}
 
@@ -11301,16 +11479,16 @@ void Renderer(uint8 type)
 
 			for(j=0;j<z_slot[i];j++)
 			{
-				if(ent[z_buffer[i][j]].data.vb_id!=-1)
+				if (ent[z_buffer[i][j]].data.vb_id != -1)
 				{
-					m=ent[z_buffer[i][j]].data.vb_id;
+					m = ent[z_buffer[i][j]].data.vb_id;
 
 					glActiveTexture(GL_TEXTURE0);
 
-					if(tex_bound[0]!=vbdt[m].texture)
+					if (tex_bound[0] != vbdt[m].texture)
 					{
 						glBindTexture(GL_TEXTURE_2D,vbdt[m].texture);
-						tex_bound[0]=vbdt[m].texture;
+						tex_bound[0] = vbdt[m].texture;
 					}
 
 					//glUniform2f(st.renderer.unifs[6],(float) ent[z_buffer[i][j]].data.sizex/32768,(float) ent[z_buffer[i][j]].data.sizey/32768);
@@ -11355,6 +11533,8 @@ void Renderer(uint8 type)
 							}
 						}
 
+						glUniform1i(st.renderer.unifs[16], ent[z_buffer[i][j]].circle);
+
 					}
 
 					glBindVertexArray(vbdt[m].vao_id);
@@ -11395,7 +11575,10 @@ void Renderer(uint8 type)
 					//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
 
 					if (i<24 || i>31)
-						glUniform1f(st.renderer.unifs[4],0);
+					{
+						glUniform1i(st.renderer.unifs[16], ent[z_buffer[i][j]].circle);
+						glUniform1f(st.renderer.unifs[4], 0);
+					}
 					else
 					{
 						glActiveTexture(GL_TEXTURE1);
@@ -11432,6 +11615,8 @@ void Renderer(uint8 type)
 								glUniform1f(st.renderer.unifs[4], 3);
 							}
 						}
+
+						glUniform1i(st.renderer.unifs[16], ent[z_buffer[i][j]].circle);
 					}
 
 					glBindVertexArray(vbd.vao_id);

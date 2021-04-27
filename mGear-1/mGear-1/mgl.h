@@ -22,6 +22,56 @@
 #define GetRegfSwitch(x) f[4] = f[x];
 #define SetRegfSwitch(x) f[x] = f[4];
 
+//Instructions variant opcodes
+#define vopREGCONST 0
+#define vopREGMEM 1
+#define vopREGREG 2
+#define vopMEMCONST 3
+#define vopMEMREG 4
+#define vopMEMMEM 5
+
+//Instruction opcodes
+#define opSET 0
+#define opADD 10
+#define opSUB 20
+#define opMUL 30
+#define opDIV 40
+#define opPOW 50
+#define opLOG 60
+#define opSQRT 70
+#define opCOS 76
+#define opSIN 82
+#define opTAN 88
+#define opACOS 94
+#define opASIN 100
+#define opATAN 106
+#define opAND 112
+#define opOR 122
+#define opXOR 132
+#define opIFGE 142
+#define opIFLE 152
+#define opIFG 162
+#define opIFL 172
+#define opIFE 182
+#define opIFNE 192
+#define opWHILE 202
+#define opLOOP 203
+#define opCALL 204
+#define opPUSHC 205
+#define opPUSHM 206
+#define opPUSHR 207
+#define opPUSHRF 208
+#define opRET 210
+#define opSHIFTL 211
+#define opSHIFTR 221
+
+#define opFTI 250
+#define opITF 251
+#define opPOPR 252
+#define opPOPRF 253
+#define opDATA 254
+#define opEXTOP 255
+
 enum enginecalls
 {
 	E_LOG = 0,
@@ -77,7 +127,6 @@ struct MGLEng_Funcs
 typedef struct MGLEng_Funcs eng_calls;
 
 //MGL compiling structs
-
 struct _MGMC
 {
 	unsigned char **function_code;

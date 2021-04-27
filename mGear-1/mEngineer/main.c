@@ -202,6 +202,71 @@ int16 DirFiles(const char *path, char content[512][512])
 	return filenum;
 }
 
+void SnapToGrid(int32 *x, int32 *y)
+{
+	if (meng.gridsize > 0)
+	{
+		int32 grid_ceil = (float)meng.gridsize / GAME_ASPECT;
+
+		int32 g_sx = GAME_WIDTH / meng.gridsize;
+		int32 g_sy = st.gamey / grid_ceil;
+
+		int64 st_x = (((*x - GAME_UNIT_MIN) % GAME_WIDTH) % (GAME_WIDTH / meng.gridsize));
+		int64 st_y = (((*y - GAME_UNIT_MIN) % GAME_HEIGHT) % (GAME_HEIGHT / grid_ceil));
+
+		*x = st_x > g_sx / 2 ? *x + g_sx - st_x : *x - st_x;
+		*y = st_y > g_sy / 2 ? *y + g_sy - st_y : *y - st_y;
+	}
+}
+
+void PositionToEdge(int32 *x, int32 *y, int32 sizex, int32 sizey)
+{
+	sizex /= 2;
+	sizey /= 2;
+	switch (meng.select_edge)
+	{
+		case 0:
+			*x += sizex;
+			*y += sizey;
+			break;
+
+		case 1:
+			//*x -= sizex;
+			*y += sizey;
+			break;
+
+		case 2:
+			*x -= sizex;
+			*y += sizey;
+			break;
+
+		case 3:
+			*x += sizex;
+			//*y += sizey;
+			break;
+
+		case 5:
+			*x -= sizex;
+			//*y += sizey;
+			break;
+
+		case 6:
+			*x += sizex;
+			*y -= sizey;
+			break;
+
+		case 7:
+			//*x -= sizex;
+			*y -= sizey;
+			break;
+
+		case 8:
+			*x -= sizex;
+			*y -= sizey;
+			break;
+	}
+}
+
 void RedoZBuffers()
 {
 	int16 m = 0;
@@ -236,7 +301,7 @@ void RedoZBuffers()
 
 	for (m = 1; m <= st.num_lights; m++)
 	{
-		int8 lz = st.game_lightmaps[m].falloff[4];
+		int8 lz = st.game_lightmaps[m].falloff[4] + 24;
 
 		meng.z_buffer[lz][meng.z_slot[lz]] = m + 12000;
 		meng.z_slot[lz]++;
@@ -1121,20 +1186,20 @@ static void ViewPortCommands()
 				}
 			}
 			*/
-			if(st.Current_Map.num_sector>0)
+			if (st.Current_Map.num_sector > 0)
 			{
 				l=24;
 				//for(l=16;l<58;l++)
 				//{
-					for(k=meng.z_slot[l];k>-1;k--)
+				for (k = meng.z_slot[l]; k > -1; k--)
 					{
-						if(meng.viewmode!=1 && meng.viewmode<5)
+						if (meng.viewmode != 1 && meng.viewmode < 5)
 							break;
 
 						if (meng.curlayer == 1 && l<24 || meng.curlayer == 1 && l>31)
 							break;
 
-						i=meng.z_buffer[l][k];
+						i = meng.z_buffer[l][k];
 
 						if(i < 10000 || i > 12000)
 							continue;
@@ -1338,7 +1403,7 @@ static void ViewPortCommands()
 				{
 					for (k = meng.z_slot[l] - 1; k>-1; k--)
 					{
-						if (meng.curlayer != MIDGROUND_MODE || l<24 || l>31)
+						if (meng.curlayer != MIDGROUND_MODE || l < 24 || l > 31)
 							break;
 
 						i = meng.z_buffer[l][k];
@@ -1495,6 +1560,9 @@ static void ViewPortCommands()
 							st.Current_Map.sprites[i].position.x -= meng.p.x;
 							st.Current_Map.sprites[i].position.y -= meng.p.y;
 
+							SnapToGrid(&st.Current_Map.sprites[i].position.x, &st.Current_Map.sprites[i].position.y);
+							PositionToEdge(&st.Current_Map.sprites[i].position.x, &st.Current_Map.sprites[i].position.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y);
+
 							p.x = st.Current_Map.sprites[i].position.x + (st.Current_Map.sprites[i].body.size.x / 2);
 							p.y = st.Current_Map.sprites[i].position.y - (st.Current_Map.sprites[i].body.size.y / 2);
 						}
@@ -1520,6 +1588,9 @@ static void ViewPortCommands()
 
 									STW(&meng.p.x, &meng.p.y);
 
+									SnapToGrid(&meng.p.x, &meng.p.y);
+									PositionToEdge(&meng.p.x, &meng.p.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y);
+
 									meng.p.x-=st.Current_Map.sprites[i].position.x;
 									meng.p.y-=st.Current_Map.sprites[i].position.y;
 								}
@@ -1538,6 +1609,9 @@ static void ViewPortCommands()
 
 								st.Current_Map.sprites[i].position.x-=meng.p.x;
 								st.Current_Map.sprites[i].position.y-=meng.p.y;
+
+								SnapToGrid(&st.Current_Map.sprites[i].position.x, &st.Current_Map.sprites[i].position.y);
+								PositionToEdge(&st.Current_Map.sprites[i].position.x, &st.Current_Map.sprites[i].position.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y);
 
 								p.x=st.Current_Map.sprites[i].position.x+(st.Current_Map.sprites[i].body.size.x/2);
 								p.y=st.Current_Map.sprites[i].position.y-(st.Current_Map.sprites[i].body.size.y/2);
@@ -2009,9 +2083,9 @@ static void ViewPortCommands()
 				}
 			}
 
-			if(st.Current_Map.num_obj>0)
+			if(st.Current_Map.num_obj > 0)
 			{
-				for(l=16;l<57;l++)
+				for (l = 16; l<57; l++)
 				{
 					if(meng.viewmode==0 && l>23)
 						break;
@@ -2073,9 +2147,148 @@ static void ViewPortCommands()
 
 							st.Current_Map.obj[i].position.x -= meng.p.x;
 							st.Current_Map.obj[i].position.y -= meng.p.y;
+
+							SnapToGrid(&st.Current_Map.obj[i].position.x, &st.Current_Map.obj[i].position.y);
+							PositionToEdge(&st.Current_Map.obj[i].position.x, &st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y);
 						
 							p.x = st.Current_Map.obj[i].position.x + (st.Current_Map.obj[i].size.x / 2);
 							p.y = st.Current_Map.obj[i].position.y - (st.Current_Map.obj[i].size.y / 2);
+						}
+
+						if (meng.sub_com == OBJEXTRUDE && meng.command2 == EDIT_OBJ && meng.obj_edit_selection == i)
+						{
+							p = st.Current_Map.obj[i].position;
+							Pos s = st.Current_Map.obj[i].size;
+
+							//AddCamCalc(&p, &s);
+
+							if (CheckCollisionMouseWorld(p.x + 512 + s.x / 2, p.y, 512, 512, 0, 2) && meng.sub_com == OBJEXTRUDE)
+							{
+								meng.extruding = 1;
+								st.cursor_type = CURSOR_S_LR;
+
+								pm = st.mouse;
+								STW(&pm.x, &pm.y);
+							}
+
+							if (CheckCollisionMouseWorld(p.x - 512 - s.x / 2, p.y, 512, 512, 0, 2) && meng.sub_com == OBJEXTRUDE)
+							{
+								meng.extruding = 2;
+								st.cursor_type = CURSOR_S_LR;
+
+								pm = st.mouse;
+								STW(&pm.x, &pm.y);
+							}
+
+							if (CheckCollisionMouseWorld(p.x + 512 + s.x / 2, p.y - 512, 512, 512, 0, 2) && st.mouse1 && meng.sub_com == OBJEXTRUDE)
+							{
+								//meng.extruding = 2;
+
+								float sx = ((float)32768.0f * st.Current_Map.obj[i].size.x) /
+									(float)(((float)mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].w /
+									mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].h) * st.Current_Map.obj[i].size.y);
+
+								sx = ceil(sx / 32768.0f);
+
+								int32 tx = st.Current_Map.obj[i].texsize.x;
+
+								st.Current_Map.obj[i].texsize.x = sx * 32768;
+
+								if (tx == st.Current_Map.obj[i].texsize.x)
+								{
+									st.Current_Map.obj[i].texsize.x = (sx + 1) * 32768;
+									sx += 1;
+								}
+
+								int32 sx2 = st.Current_Map.obj[i].size.x;
+
+								st.Current_Map.obj[i].size.x = sx * (float)(((float)mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].w /
+									mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].h) * st.Current_Map.obj[i].size.y);
+
+								st.Current_Map.obj[i].position.x -= (sx2 - st.Current_Map.obj[i].size.x) / 2;
+							}
+
+							if (CheckCollisionMouseWorld(p.x - 512 - s.x / 2, p.y - 512, 512, 512, 0, 2) && st.mouse1 && meng.sub_com == OBJEXTRUDE)
+							{
+								//meng.extruding = 2;
+
+								float sx = ((float)32768.0f * st.Current_Map.obj[i].size.x) /
+									(float)(((float)mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].w /
+									mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].h) * st.Current_Map.obj[i].size.y);
+
+								sx = ceil(sx / 32768.0f);
+
+								int32 tx = st.Current_Map.obj[i].texsize.x;
+
+								st.Current_Map.obj[i].texsize.x = sx * 32768;
+
+								if (tx == st.Current_Map.obj[i].texsize.x)
+								{
+									st.Current_Map.obj[i].texsize.x = (sx + 1) * 32768;
+									sx += 1;
+								}
+
+								int32 sx2 = st.Current_Map.obj[i].size.x;
+
+								st.Current_Map.obj[i].size.x = sx * (float)(((float)mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].w /
+									mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].h) * st.Current_Map.obj[i].size.y);
+
+								st.Current_Map.obj[i].position.x += (sx2 - st.Current_Map.obj[i].size.x) / 2;
+							}
+
+							if (meng.extruding == 1)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									//p.x -= pm.x;
+									p.x -= pm.x;
+
+									p.x *= -1;
+
+									st.Current_Map.obj[i].position.x -= p.x % 2 != 0 ? (p.x + 1) / 2 : p.x / 2;
+									st.Current_Map.obj[i].size.x -= p.x % 2 != 0 ? p.x + 1 : p.x;
+									st.Current_Map.obj[i].texsize.x = ((float)32768.0f * st.Current_Map.obj[i].size.x) /
+										(float)(((float)mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].w /
+										mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].h) * st.Current_Map.obj[i].size.y);
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.extruding = 0;
+									st.cursor_type = CURSOR_DEFAULT;
+								}
+							}
+
+							if (meng.extruding == 2)
+							{
+								if (st.mouse1)
+								{
+									p = st.mouse;
+									STW(&p.x, &p.y);
+									//p.x -= pm.x;
+									p.x -= pm.x;
+
+									//p.x *= -1;
+
+									st.Current_Map.obj[i].position.x += p.x % 2 != 0 ? (p.x + 1) / 2 : p.x / 2;
+									st.Current_Map.obj[i].size.x -= p.x % 2 != 0 ? p.x + 1 : p.x;
+									st.Current_Map.obj[i].texsize.x = ((float)32768.0f * st.Current_Map.obj[i].size.x) /
+										(float)(((float)mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].w /
+										mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID].h) * st.Current_Map.obj[i].size.y);
+
+									pm = st.mouse;
+									STW(&pm.x, &pm.y);
+								}
+								else
+								{
+									meng.extruding = 0;
+									st.cursor_type = CURSOR_DEFAULT;
+								}
+							}
 						}
 
 						if(CheckCollisionMouseWorld(st.Current_Map.obj[i].position.x,st.Current_Map.obj[i].position.y,st.Current_Map.obj[i].size.x,st.Current_Map.obj[i].size.y,st.Current_Map.obj[i].angle,
@@ -2091,38 +2304,50 @@ static void ViewPortCommands()
 
 								if(meng.got_it==-1)
 								{
-									meng.command2=EDIT_OBJ;
-									meng.p=st.mouse;
-									meng.got_it=i;
+									meng.command2 = EDIT_OBJ;
+									meng.p = st.mouse;
+									meng.got_it = i;
 
 									meng.obj_edit_selection = i;
 
 									STW(&meng.p.x, &meng.p.y);
 
-									meng.p.x-=st.Current_Map.obj[i].position.x;
-									meng.p.y-=st.Current_Map.obj[i].position.y;
+									SnapToGrid(&meng.p.x, &meng.p.y);
+									PositionToEdge(&meng.p.x, &meng.p.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y);
+
+									meng.p.x -= st.Current_Map.obj[i].position.x;
+									meng.p.y -= st.Current_Map.obj[i].position.y;
 								}
 								
 								if(meng.got_it!=-1 && meng.got_it != i)
 									continue;
 								
 								
-									p=st.mouse;
+									p = st.mouse;
 
 									STW(&p.x, &p.y);
+	
+									meng.com_id = i;
 
-									meng.com_id=i;
+									//SnapToGrid(&p.x, &p.y);
+									//PositionToEdge(&p.x, &p.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y);
 
-									st.Current_Map.obj[i].position.x=p.x;
-									st.Current_Map.obj[i].position.y=p.y;
+									st.Current_Map.obj[i].position.x = p.x;
+									st.Current_Map.obj[i].position.y = p.y;
 
-									st.Current_Map.obj[i].position.x-=meng.p.x;
-									st.Current_Map.obj[i].position.y-=meng.p.y;
+									st.Current_Map.obj[i].position.x -= meng.p.x;
+									st.Current_Map.obj[i].position.y -= meng.p.y;
+
+									SnapToGrid(&st.Current_Map.obj[i].position.x, &st.Current_Map.obj[i].position.y);
+									PositionToEdge(&st.Current_Map.obj[i].position.x, &st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y);
 									
-									p.x=st.Current_Map.obj[i].position.x+(st.Current_Map.obj[i].size.x/2);
-									p.y=st.Current_Map.obj[i].position.y-(st.Current_Map.obj[i].size.y/2);
+									p.x = st.Current_Map.obj[i].position.x;
+									p.y = st.Current_Map.obj[i].position.y;
 
-									got_it=1;
+									//SnapToGrid(&p.x, &p.y);
+									//PositionToEdge(&p.x, &p.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y);
+
+									got_it = 1;
 									break;
 								
 							}
@@ -2585,21 +2810,22 @@ static void ViewPortCommands()
 		{
 			if(st.mouse1)
 			{
-				if(st.Current_Map.num_obj<MAX_OBJS)
+				if (st.Current_Map.num_obj < MAX_OBJS)
 				{
 					i=st.Current_Map.num_obj;
 					//for(i=0;i<MAX_OBJS;i++)
 					//{
 						if(st.Current_Map.obj[i].type==BLANK)
 						{
-							st.Current_Map.obj[i].type=meng.obj.type;
+							st.Current_Map.obj[i].type = meng.obj.type;
 								
-							st.Current_Map.obj[i].amblight=meng.obj.amblight;
-							st.Current_Map.obj[i].color=meng.obj.color;
-							st.Current_Map.obj[i].tex.ID=meng.tex_ID;
-							st.Current_Map.obj[i].tex.MGG_ID=meng.tex_MGGID;
-							st.Current_Map.obj[i].texsize=meng.obj.texsize;
-							st.Current_Map.obj[i].texpan=meng.obj.texpan;
+							st.Current_Map.obj[i].amblight = meng.obj.amblight;
+							st.Current_Map.obj[i].color = meng.obj.color;
+							st.Current_Map.obj[i].tex.ID = meng.tex_ID;
+							st.Current_Map.obj[i].tex.MGG_ID = meng.tex_MGGID;
+							st.Current_Map.obj[i].texsize = meng.obj.texsize;
+							st.Current_Map.obj[i].texpan = meng.obj.texpan;
+
 							st.Current_Map.obj[i].position=st.mouse;
 							STWci(&st.Current_Map.obj[i].position.x,&st.Current_Map.obj[i].position.y);
 
@@ -2638,10 +2864,13 @@ static void ViewPortCommands()
 								st.Current_Map.obj[i].position.y+=(float) st.Camera.position.y*st.Current_Map.fr_v;
 							}
 
-							st.Current_Map.obj[i].size.x=meng.pre_size.x;
-							st.Current_Map.obj[i].size.y=meng.pre_size.y;
-							st.Current_Map.obj[i].angle=0;
-							st.Current_Map.obj[i].flag=meng.obj.flag;
+							st.Current_Map.obj[i].size.x = meng.pre_size.x;
+							st.Current_Map.obj[i].size.y = meng.pre_size.y;
+							st.Current_Map.obj[i].angle = 0;
+							st.Current_Map.obj[i].flag = meng.obj.flag;
+
+							SnapToGrid(&st.Current_Map.obj[i].position.x, &st.Current_Map.obj[i].position.y);
+							PositionToEdge(&st.Current_Map.obj[i].position.x, &st.Current_Map.obj[i].position.y, st.Current_Map.obj[i].size.x, st.Current_Map.obj[i].size.y);
 
 							if(meng.obj.type==BACKGROUND3)
 								st.Current_Map.obj[i].position.z=55;
@@ -2658,10 +2887,11 @@ static void ViewPortCommands()
 							if(meng.obj.type==FOREGROUND)
 								st.Current_Map.obj[i].position.z=23;
 
-							meng.z_buffer[st.Current_Map.obj[i].position.z][meng.z_slot[st.Current_Map.obj[i].position.z]]=i;
+							meng.z_buffer[st.Current_Map.obj[i].position.z][meng.z_slot[st.Current_Map.obj[i].position.z]] = i;
 							meng.z_slot[st.Current_Map.obj[i].position.z]++;
-							if(st.Current_Map.obj[i].position.z>meng.z_used)
-								meng.z_used=st.Current_Map.obj[i].position.z;
+
+							if (st.Current_Map.obj[i].position.z > meng.z_used)
+								meng.z_used = st.Current_Map.obj[i].position.z;
 
 							st.Current_Map.num_obj++;
 							//break;
@@ -2674,7 +2904,7 @@ static void ViewPortCommands()
 			}
 		}
 		else
-		if(meng.command==ADD_SPRITE)
+		if (meng.command == ADD_SPRITE)
 		{
 			if(st.mouse1)
 			{
@@ -2753,6 +2983,9 @@ static void ViewPortCommands()
 								strcpy(st.Current_Map.sprites[i].tags_str[j],st.Game_Sprites[meng.sprite_selection].tags_str[j]);
 
 							st.Current_Map.sprites[i].angle=0;
+
+							SnapToGrid(&st.Current_Map.sprites[i].position.x, &st.Current_Map.sprites[i].position.y);
+							PositionToEdge(&st.Current_Map.sprites[i].position.x, &st.Current_Map.sprites[i].position.y, st.Current_Map.sprites[i].body.size.x, st.Current_Map.sprites[i].body.size.y);
 
 							if(meng.spr.type==BACKGROUND3)
 								st.Current_Map.sprites[i].position.z=55;
@@ -2868,7 +3101,7 @@ static void MGGListLoad()
 
 static void ENGDrawLight()
 {
-	int16 i=0, j=0;
+	int32 i = 0, j = 0;
 
 	TEX_DATA texture;
 
@@ -2878,6 +3111,10 @@ static void ENGDrawLight()
 
 	Pos p, s;
 	uPos16 p2;
+
+	int32 mx = st.mouse.x, my = st.mouse.y;
+
+	STW(&mx, &my);
 
 	if(meng.viewmode!=INGAMEVIEW_MODE)
 	{
@@ -2899,15 +3136,115 @@ static void ENGDrawLight()
 				st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_size.y,0,255,255,255,mgg_sys[0].frames[4],64,0,0,TEX_PAN_RANGE,TEX_PAN_RANGE,24,0);
 
 			DrawLine(st.Current_Map.cam_area.area_pos.x-128,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x+128,st.Current_Map.cam_area.area_pos.y,
-				230,255,0,255,256,24);
+				230,255,0,255,256,16);
 
 			DrawLine(st.Current_Map.cam_area.area_pos.x-128,st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x+128,
-				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
+				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,16);
 
 			DrawLine(st.Current_Map.cam_area.area_pos.x,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x,st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
 
 			DrawLine(st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,
-				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,24);
+				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,16);
+		}
+
+		if (meng.command == ADD_OBJ)
+		{
+			int32 mx2 = mx, my2 = my, mx3, my3, mx4 = 0, my4 = 0;
+			float aspect = 1;;
+
+			SnapToGrid(&mx2, &my2);
+			PositionToEdge(&mx2, &my2, meng.pre_size.x, meng.pre_size.y);
+
+			if (meng.select_edge == 0 || meng.select_edge == 3 || meng.select_edge == 6 || meng.select_edge == 2 || meng.select_edge == 5 ||  meng.select_edge == 8)
+			{
+				mx3 = mx2;
+				my3 = my2;
+
+				mx3 -= meng.pre_size.x / 2;
+
+				mx4 = mx3 + meng.pre_size.x;
+
+				SnapToGrid(&mx4, &my3);
+
+				mx4 -= mx3;
+
+				aspect = (float) meng.pre_size.x / meng.pre_size.y;
+
+				mx3 = (mx4 - meng.pre_size.x) / 2;
+
+				my4 = (float)mx4 / aspect;
+				my3 = (my4 - meng.pre_size.y) / 2;
+
+				DrawGraphic(mx2 + mx3, my2 + my3, mx4, my4, 0, meng.obj.color.r, meng.obj.color.g, meng.obj.color.b, mgg_map[meng.tex_MGGID].frames[meng.tex_ID], 128,
+					meng.obj.texpan.x, meng.obj.texpan.y, meng.obj.texsize.x, meng.obj.texsize.y, 16, 2);
+			}
+			else
+				DrawGraphic(mx2, my2, meng.pre_size.x, meng.pre_size.y, 0, meng.obj.color.r, meng.obj.color.g, meng.obj.color.b, mgg_map[meng.tex_MGGID].frames[meng.tex_ID], 128,
+				meng.obj.texpan.x, meng.obj.texpan.y, meng.obj.texsize.x, meng.obj.texsize.y, 16, 2);
+		}
+
+		if (meng.command == ADD_SPRITE)
+		{
+			int32 mx2 = mx, my2 = my;
+
+			SnapToGrid(&mx2, &my2);
+
+			PositionToEdge(&mx2, &my2, meng.spr.body.size.x, meng.spr.body.size.y);
+
+			DrawGraphic(mx2, my2, meng.spr.body.size.x, meng.spr.body.size.y, 0, meng.obj.color.r, meng.obj.color.g, meng.obj.color.b,
+				mgg_game[st.Game_Sprites[meng.sprite_selection].MGG_ID].frames[st.Game_Sprites[meng.sprite_selection].frame[meng.sprite_frame_selection]], 128,
+				meng.obj.texpan.x, meng.obj.texpan.y, meng.obj.texsize.x, meng.obj.texsize.y, 16, 2);
+		}
+		
+		if (meng.gridsize > 0)
+		{
+			int64 st_i = st.Camera.position.x + ((GAME_WIDTH / meng.gridsize) - (((st.Camera.position.x - GAME_UNIT_MIN) % GAME_WIDTH) % (GAME_WIDTH / meng.gridsize)));
+
+			for (i = st_i; i < st.Camera.position.x + GAME_WIDTH; i += GAME_WIDTH / meng.gridsize)
+				DrawLine(i, st.Camera.position.y, i, st.Camera.position.y + GAME_HEIGHT, 64, 64, 64, 255, 16, 54);
+
+			int32 grid_ceil =  (float) meng.gridsize / GAME_ASPECT;
+
+			st_i = st.Camera.position.y + ((GAME_HEIGHT / grid_ceil) - (((st.Camera.position.y - GAME_UNIT_MIN) % GAME_HEIGHT) % (int32) (GAME_HEIGHT / grid_ceil)));
+
+			for (i = st_i; i < st.Camera.position.y + GAME_HEIGHT; i += GAME_HEIGHT / grid_ceil)
+				DrawLine(st.Camera.position.x, i, st.Camera.position.x + GAME_WIDTH, i, 64, 64, 64, 255, 16, 54);
+
+			int32 g_sx = GAME_WIDTH / meng.gridsize;
+			int32 g_sy = st.gamey / grid_ceil;
+
+			st_i = (((mx - GAME_UNIT_MIN) % GAME_WIDTH) % (GAME_WIDTH / meng.gridsize));
+			int64 st_y = (((my - GAME_UNIT_MIN) % GAME_HEIGHT) % (GAME_HEIGHT / grid_ceil));
+
+			DrawCircle(st_i > g_sx / 2 ? mx + g_sx - st_i : mx - st_i, st_y > g_sy / 2 ? my + g_sy - st_y : my - st_y, 32, 255, 0, 0, 255, 54);
+		}
+
+		if (meng.sub_com == OBJEXTRUDE && meng.command2 == EDIT_OBJ && meng.obj_edit_selection != -1)
+		{
+			i = meng.obj_edit_selection;
+
+			p = st.Current_Map.obj[i].position;
+			s = st.Current_Map.obj[i].size;
+
+			AddCamCalc(&p, &s);
+			char icon[2];
+
+			icon[0] = FOWARD2_ICON;
+			icon[1] = '\0';
+
+			DrawStringUI(icon, p.x + 512 + s.x / 2, p.y, 1, 1, 0, 255, 255, 255, 255, 1, 2048, 2048, 2);
+
+			icon[0] = FOWARDJUMP2_ICON;
+
+			DrawStringUI(icon, p.x + 512 + s.x / 2, p.y - 512, 1, 1, 0, 255, 255, 255, 255, 1, 2048, 2048, 2);
+
+			icon[0] = BACK2_ICON;
+
+			DrawStringUI(icon, p.x - 512 - s.x / 2, p.y, 1, 1, 0, 255, 255, 255, 255, 1, 2048, 2048, 2);
+
+			icon[0] = BACKJUMP2_ICON;
+
+			DrawStringUI(icon, p.x - 512 - s.x / 2, p.y - 512, 1, 1, 0, 255, 255, 255, 255, 1, 2048, 2048, 2);
 		}
 
 		if (st.num_lights > 0)
@@ -4805,13 +5142,14 @@ void CoordBar()
 
 	STW(&x, &y);
 
-	if (nk_begin(ctx, "Coord bar", nk_rect(st.screenx - 200, st.screeny - 130, 200, 130),NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER))
+	if (nk_begin(ctx, "Coord bar", nk_rect(st.screenx - 200, st.screeny - 160, 200, 160),NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BORDER))
 	{
 		nk_layout_row_dynamic(ctx, 20, 1);
 		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "M X: %d M Y: %d", st.mouse.x, st.mouse.y);
 		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "MG X: %d MG Y: %d", x, y);
 		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "X: %d Y: %d", st.Camera.position.x, st.Camera.position.y);
 		nk_labelf(ctx, NK_TEXT_ALIGN_LEFT, "Zoom: %f", st.Camera.dimension.x);
+		meng.gridsize = nk_propertyi(ctx, "Grid size: ", 0, meng.gridsize, 252, 4, 4);
 		nk_layout_row_dynamic(ctx, 15, 1);
 	}
 
@@ -4845,8 +5183,8 @@ void LayerBar()
 
 				case NEDIT_LIGHT:
 					st.game_lightmaps[meng.light_edit_selection].falloff[4] += 1.0f;
-					if (st.game_lightmaps[meng.light_edit_selection].falloff[4] > 31.0f)
-						st.game_lightmaps[meng.light_edit_selection].falloff[4] = 31.0f;
+					if (st.game_lightmaps[meng.light_edit_selection].falloff[4] + 24 > 31.0f)
+						st.game_lightmaps[meng.light_edit_selection].falloff[4] = 31.0f - 24;
 					break;
 			}
 		}
@@ -4869,8 +5207,8 @@ void LayerBar()
 
 			case NEDIT_LIGHT:
 				st.game_lightmaps[meng.light_edit_selection].falloff[4] -= 1.0f;
-				if (st.game_lightmaps[meng.light_edit_selection].falloff[4] < 24.0f)
-					st.game_lightmaps[meng.light_edit_selection].falloff[4] = 24.0f;
+				if (st.game_lightmaps[meng.light_edit_selection].falloff[4] + 24 < 24.0f)
+					st.game_lightmaps[meng.light_edit_selection].falloff[4] = 0;
 				break;
 			}
 		}
@@ -4937,7 +5275,7 @@ void LayerBar()
 					break;
 
 				case NEDIT_LIGHT:
-					i = st.game_lightmaps[meng.light_edit_selection].falloff[4];
+					i = st.game_lightmaps[meng.light_edit_selection].falloff[4] + 24;
 
 					for (j = 0; j < meng.z_slot[i]; j++)
 					{
@@ -5413,10 +5751,10 @@ void NewLeftPannel()
 				//char *lighttype[] = { "Point Light medium", "Point Light strong", "Point Light normal", "SpotLight medium", "SpotLight strong", "SpotLight normal" };
 				//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
 
-				meng.light.falloff = nk_propertyf(ctx, "Radius", 0, meng.light.falloff, 32768, 0.02, 0.01);
-				meng.lightmappos.z = nk_propertyi(ctx, "Intensity", -4096, meng.lightmappos.z, 4096, 4, 1);
+				meng.light.falloff = nk_propertyi(ctx, "Radius", 0, meng.light.falloff, 32768, 64, 8);
+				meng.lightmappos.z = nk_propertyi(ctx, "Intensity", 0, meng.lightmappos.z, 256, 4, 1);
 				meng.light.c = nk_propertyf(ctx, "Cutoff", 0, meng.light.c, 32, 0.1, 0.01);
-				meng.light.l = nk_propertyi(ctx, "Midground Z", 0, meng.light.l, 8, 1, 1);
+				meng.light.l = nk_propertyi(ctx, "Midground Z", 0, meng.light.l, 7, 1, 1);
 
 				//nk_button_label(ctx, "Load lightmap");
 			}
@@ -5528,7 +5866,40 @@ void NewLeftPannel()
 
 					SetThemeBack(ctx);
 
-					nk_layout_row_dynamic(ctx, 30, 1);
+					nk_layout_row_dynamic(ctx, 20, 1);
+					nk_spacing(ctx, 1);
+					nk_label(ctx, "Edge snap", NK_TEXT_ALIGN_CENTERED);
+					nk_layout_row_dynamic(ctx, 20, 7);
+
+					nk_spacing(ctx, 1);
+
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 0 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 0 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 1 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 1 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 2 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 2 : meng.select_edge;
+
+					nk_spacing(ctx, 1);
+					nk_spacing(ctx, 7);
+					nk_spacing(ctx, 1);
+
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 3 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 3 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 4 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 4 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 5 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 5 : meng.select_edge;
+
+					nk_spacing(ctx, 1);
+					nk_spacing(ctx, 7);
+					nk_spacing(ctx, 1);
+
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 6 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 6 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 7 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 7 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 8 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 8 : meng.select_edge;
+
+					nk_spacing(ctx, 1);
 				}
 
 				if (meng.command2 == EDIT_OBJ)
@@ -5591,6 +5962,57 @@ void NewLeftPannel()
 
 					SetThemeBack(ctx);
 
+					nk_layout_row_dynamic(ctx, 20, 1);
+					nk_spacing(ctx, 1);
+					nk_label(ctx, "Edge snap", NK_TEXT_ALIGN_CENTERED);
+					nk_layout_row_dynamic(ctx, 20, 7);
+
+					nk_spacing(ctx, 1);
+
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 0 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 0 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 1 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 1 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 2 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 2 : meng.select_edge;
+
+					nk_spacing(ctx, 1);
+					nk_spacing(ctx, 7);
+					nk_spacing(ctx, 1);
+
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 3 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 3 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 4 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 4 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 5 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 5 : meng.select_edge;
+
+					nk_spacing(ctx, 1);
+					nk_spacing(ctx, 7);
+					nk_spacing(ctx, 1);
+
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 6 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 6 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 7 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 7 : meng.select_edge;
+					nk_spacing(ctx, 1);
+					meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 8 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 8 : meng.select_edge;
+
+					nk_spacing(ctx, 1);
+
+					nk_layout_row_dynamic(ctx, 25, 1);
+
+					nk_spacing(ctx, 1);
+
+					if (meng.sub_com == OBJEXTRUDE)
+						ctx->style.button.normal = ctx->style.button.hover;
+
+					if (nk_button_label(ctx, "Extrude"))
+					{
+						if (meng.sub_com != OBJEXTRUDE)
+							meng.sub_com = OBJEXTRUDE;
+						else
+							meng.sub_com = 0;
+					}
+
+					SetThemeBack(ctx);
 					/*
 					if (st.Current_Map.obj[meng.obj_edit_selection].type == MIDGROUND)
 					{
@@ -5641,9 +6063,9 @@ void NewLeftPannel()
 					//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
 
 					ls->falloff[0] = nk_propertyf(ctx, "Radius", 0, ls->falloff[0], 32768, 0.02, 0.01);
-					ls->falloff[1] = nk_propertyi(ctx, "Intensity", -4096, ls->falloff[1], 4096, 4, 1);
+					ls->falloff[1] = nk_propertyi(ctx, "Intensity", 0, ls->falloff[1], 256, 4, 1);
 					ls->falloff[2] = nk_propertyf(ctx, "Cutoff", 0, ls->falloff[2], 32, 0.1, 0.01);
-					ls->falloff[4] = nk_propertyi(ctx, "Midground Z", 0, ls->falloff[4], 8, 1, 1);
+					ls->falloff[4] = nk_propertyi(ctx, "Midground Z", 0, ls->falloff[4], 7, 1, 1);
 
 					nk_button_label(ctx, "Load lightmap");
 				}
@@ -5673,24 +6095,29 @@ void NewLeftPannel()
 
 				data = meng.tex_selection;
 
-				if (data.vb_id != -1)
+				if (st.Current_Map.num_mgg > 0)
 				{
-					px = ((float)data.posx / 32768) * data.w;
-					ceil(px);
-					//px += data.x_offset;
-					py = ((float)data.posy / 32768) * data.h;
-					ceil(py);
-					//py += data.y_offset;
-					sx = ((float)data.sizex / 32768) * data.w;
-					ceil(sx);
-					sy = ((float)data.sizey / 32768) * data.h;
-					ceil(sy);
-					texid = nk_subimage_id(data.data, data.w, data.h, nk_rect(px, py, sx, sy));
+					if (data.vb_id != -1)
+					{
+						px = ((float)data.posx / 32768) * data.w;
+						ceil(px);
+						//px += data.x_offset;
+						py = ((float)data.posy / 32768) * data.h;
+						ceil(py);
+						//py += data.y_offset;
+						sx = ((float)data.sizex / 32768) * data.w;
+						ceil(sx);
+						sy = ((float)data.sizey / 32768) * data.h;
+						ceil(sy);
+						texid = nk_subimage_id(data.data, data.w, data.h, nk_rect(px, py, sx, sy));
+					}
+					else
+						texid = nk_image_id(data.data);
+
+					nk_image(ctx, texid);
 				}
 				else
-					texid = nk_image_id(data.data);
-
-				nk_image(ctx, texid);
+					nk_label(ctx, "No MGGs loaded", NK_TEXT_ALIGN_CENTERED);
 
 				//nk_layout_row_dynamic(ctx, 30, 1);
 
@@ -5715,6 +6142,41 @@ void NewLeftPannel()
 							meng.obj.flag -= 1;
 					}
 				}
+
+				nk_layout_row_dynamic(ctx, 20, 1);
+				nk_label(ctx, "Edge snap", NK_TEXT_ALIGN_CENTERED);
+				nk_layout_row_dynamic(ctx, 20, 7);
+
+				nk_spacing(ctx, 1);
+
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 0 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 0 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 1 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 1 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 2 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 2 : meng.select_edge;
+
+				nk_spacing(ctx, 1);
+				nk_spacing(ctx, 7);
+				nk_spacing(ctx, 1);
+
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 3 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 3 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 4 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 4 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 5 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 5 : meng.select_edge;
+
+				nk_spacing(ctx, 1);
+				nk_spacing(ctx, 7);
+				nk_spacing(ctx, 1);
+
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 6 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 6 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 7 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 7 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 8 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 8 : meng.select_edge;
+
+				nk_spacing(ctx, 1);
+
 			}
 
 			if (meng.pannel_choice == ADD_SPRITE)
@@ -5765,6 +6227,40 @@ void NewLeftPannel()
 
 				nk_label(ctx, st.Game_Sprites[meng.sprite_selection].name, NK_TEXT_ALIGN_CENTERED);
 
+				nk_layout_row_dynamic(ctx, 20, 1);
+				nk_label(ctx, "Edge snap", NK_TEXT_ALIGN_CENTERED);
+				nk_layout_row_dynamic(ctx, 20, 7);
+
+				nk_spacing(ctx, 1);
+
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 0 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 0 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 1 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 1 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 2 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 2 : meng.select_edge;
+
+				nk_spacing(ctx, 1);
+				nk_spacing(ctx, 7);
+				nk_spacing(ctx, 1);
+
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 3 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 3 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 4 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 4 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 5 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 5 : meng.select_edge;
+
+				nk_spacing(ctx, 1);
+				nk_spacing(ctx, 7);
+				nk_spacing(ctx, 1);
+
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 6 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 6 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 7 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 7 : meng.select_edge;
+				nk_spacing(ctx, 1);
+				meng.select_edge = nk_button_symbol(ctx, meng.select_edge == 8 ? NK_SYMBOL_RECT_SOLID : NK_SYMBOL_RECT_OUTLINE) == 1 ? 8 : meng.select_edge;
+
+				nk_spacing(ctx, 1);
+
 			}
 		}
 
@@ -5800,9 +6296,9 @@ void FixZLayers()
 					meng.z_buffer[i][j] = -1;
 				}
 
-				if (meng.z_buffer[i][j] >= 12000 && st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4] != i && meng.z_buffer[i][j] != -1)
+				if (meng.z_buffer[i][j] >= 12000 && st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4] + 24 != i && meng.z_buffer[i][j] != -1)
 				{
-					z = st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4];
+					z = st.game_lightmaps[meng.z_buffer[i][j] - 12000].falloff[4] + 24;
 					meng.z_buffer[z][meng.z_slot[z]] = meng.z_buffer[i][j];
 					meng.z_slot[z]++;
 					meng.z_buffer[i][j] = -1;
@@ -5904,6 +6400,7 @@ int main(int argc, char *argv[])
 	meng.spr.size.y=2048;
 	meng.editview = MIDGROUND_MODE;
 	meng.LayerBar = 0;
+	
 
 	//SpriteListLoad();
 
@@ -5997,7 +6494,7 @@ int main(int argc, char *argv[])
 		else
 			BASICBKD(255,255,255);
 		*/
-		loops=0;
+		loops = 0;
 
 		uint32 c_tick = GetTicks();
 
@@ -6115,17 +6612,20 @@ int main(int argc, char *argv[])
 			loops++;
 			//SetTimerM(1);
 
+			
 			if(meng.loop_complete)
 			{
-				loops=10;
-				meng.loop_complete=0;
+				loops = 10;
+				meng.loop_complete = 0;
 			}
-
+			
 			if((st.Text_Input && !meng.sub_com && !st.num_uiwindow && UI_Sys.current_option==-1) && (meng.command==ADD_LIGHT_TO_LIGHTMAP && !meng.got_it && st.Text_Input))
 				st.Text_Input=0;
 
 			if(meng.viewmode==INGAMEVIEW_MODE)
 				LockCamera();
+
+			MainSound();
 		}
 
 		DrawSys();
@@ -6213,7 +6713,7 @@ int main(int argc, char *argv[])
 		*/
 
 		UIMain_DrawSystem();
-		MainSound();
+		//MainSound();
 		Renderer(0);
 
 		//float bg[4];
@@ -6223,7 +6723,7 @@ int main(int argc, char *argv[])
 			//printf("porra\n");
 
 		nk_sdl_render(NK_ANTI_ALIASING_OFF, MAX_NK_VERTEX_BUFFER, MAX_NK_ELEMENT_BUFFER, MAX_NK_COMMAND_BUFFER);
-
+		//nk_clear(ctx);
 		SwapBuffer(wn);
 
 		nkrendered = 0;

@@ -152,4 +152,8 @@ void NewMap()
 	meng.light.falloff = 256;
 	meng.light.c = 0.01;
 	meng.light.intensity = 1;
+
+	meng.gridsize = 64;
+
+	meng.tex_selection.vb_id = -1;
 }
