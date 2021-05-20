@@ -263,7 +263,7 @@ struct _mEng
 
 	enum NKUITheme theme;
 
-	uint8 select_edge;
+	uint8 select_edge : 5, snap_fit : 1, snap_scale : 1, snap_rot : 1;
 };
 
 typedef struct _mEng mEng;

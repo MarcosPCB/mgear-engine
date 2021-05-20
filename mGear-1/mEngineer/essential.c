@@ -156,4 +156,8 @@ void NewMap()
 	meng.gridsize = 64;
 
 	meng.tex_selection.vb_id = -1;
+
+	meng.snap_fit = 1;
+	meng.snap_scale = 1;
+	meng.snap_rot = 1;
 }
