@@ -225,6 +225,8 @@ void InputProcess()
 					if(events.button.button==SDL_BUTTON_RIGHT)
 						st.mouse2=1;
 
+					if (events.button.button == SDL_BUTTON_MIDDLE)
+						st.mouse3 = 1;
 				}
 				else
 				if(events.type==SDL_MOUSEBUTTONUP)
@@ -237,6 +239,9 @@ void InputProcess()
 
 					if(events.button.button==SDL_BUTTON_RIGHT)
 						st.mouse2=0;
+
+					if (events.button.button == SDL_BUTTON_MIDDLE)
+						st.mouse3 = 0;
 
 				}
 				else

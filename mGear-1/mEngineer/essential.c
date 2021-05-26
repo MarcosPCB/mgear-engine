@@ -121,7 +121,7 @@ void NewMap()
 
 	meng.viewmode = 7;
 
-	memset(meng.z_buffer, 0, 2048 * 57 * sizeof(int16));
+	memset(meng.z_buffer, -1, 2048 * 57 * sizeof(int16));
 	memset(meng.z_slot, 0, 57 * sizeof(int16));
 	meng.z_used = 0;
 
@@ -151,7 +151,7 @@ void NewMap()
 	meng.light.color.r = meng.light.color.g = meng.light.color.b = 255;
 	meng.light.falloff = 256;
 	meng.light.c = 0.01;
-	meng.light.intensity = 1;
+	meng.light.intensity = 64;
 
 	meng.gridsize = 64;
 
@@ -160,4 +160,7 @@ void NewMap()
 	meng.snap_fit = 1;
 	meng.snap_scale = 1;
 	meng.snap_rot = 1;
+	meng.snap = 1;
+
+	meng.mouse_move = 0;
 }

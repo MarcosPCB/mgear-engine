@@ -73,6 +73,7 @@
 #define CAMERA_BOX 61
 #define MAPPR_BOX 62
 #define LAYERS_BOX 63
+#define CAMMOVE 64
 
 #define FOREGROUND_MODE 0
 #define MIDGROUND_MODE 1
@@ -119,6 +120,8 @@
 #define TERMINAL_ICON 118
 #define SAVE_ICON 49
 #define VIDEO_ICON 90
+#define ARROWUP_ICON 93
+#define ARROWDOWN_ICON 97
 #define SOUND_ICON 88
 #define IMAGE_ICON 87
 #define TEXT_ICON 86
@@ -165,7 +168,7 @@ struct _mEng
 	int8 LayerBar;
 	int8 NodeMode;
 
-	uint8 gridsize;
+	uint16 gridsize;
 
 	int8 playing_sound;
 
@@ -263,7 +266,10 @@ struct _mEng
 
 	enum NKUITheme theme;
 
-	uint8 select_edge : 5, snap_fit : 1, snap_scale : 1, snap_rot : 1;
+	uint8 select_edge : 4, snap : 1, snap_fit : 1, snap_scale : 1, snap_rot : 1;
+
+	uint8 mouse_move;
+	Pos mouse_move_pos, mouse_move_pos2;
 };
 
 typedef struct _mEng mEng;

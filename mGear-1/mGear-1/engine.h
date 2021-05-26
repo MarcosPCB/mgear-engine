@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdarg.h>
+#include <intrin.h>
 
 #ifndef _MGTYPES_H
 	#include "types.h"
@@ -71,6 +72,8 @@
 #define QLZ_COMPRESSION_LEVEL 3
 #define QLZ_STREAMING_BUFFER 0
 #define QLZ_MEMORY_SAFE 0
+
+#define LINEVB 0
 
 #ifndef MGEAR_CLEAN_VERSION
 typedef FMOD_SOUND Sound;
@@ -1081,6 +1084,7 @@ struct _SETTINGS_
 	Pos mouse;
 	uint8 mouse1;
 	uint8 mouse2;
+	uint8 mouse3;
 	uint8 mouse_on : 2;
 	int32 mouse_wheel;
 
@@ -1140,6 +1144,7 @@ struct _SETTINGS_
 	char LogName[32];
 
 	TEX_DATA BasicTex;
+	TEX_DATA Line;
 
 	HANDLE process;
 	HANDLE thread;
@@ -1223,6 +1228,8 @@ void FPSCounter();
 
 void CreateLog();
 void LogIn(void *userdata, int category, SDL_LogPriority, const char *message);
+
+int32 POFCeil(int32 value);
 
 #ifdef HAS_SPLASHSCREEN
 
