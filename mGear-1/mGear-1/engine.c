@@ -19,6 +19,8 @@
 #include <string.h>
 #include <signal.h>
 #include <DbgHelp.h>
+#include <immintrin.h>
+#include <xmmintrin.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -30,6 +32,9 @@
 
 #include <stb_image.h>
 
+#define SPLASHSCREEN_TIME 2000
+#define SPLASHSCREEN_ALPHA 3
+#define SPLASHSCREEN_ALPHA_TIME 2
 //#include "leak_detector_c.h"
 
 //#define  free(mem_ref) 		  	 	xfree(mem_ref)
@@ -922,163 +927,6 @@ uint8 FillAlphaLight(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, u
 	return 1;
 }
 
-uint32 AddLightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, uint16 intensity, LIGHT_TYPE type)
-{
-	register uint16 i, j;
-	float d, att;
-	register uint16 col;
-
-	if(!data)
-		return 0;
-	
-	for(i=0;i<h;i++)
-	{
-		for(j=0;j<w;j++)
-		{
-			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
-			d=mSqrt(d);
-
-			if(d==0.0f)
-				d=1.0f;
-
-			if(type==POINT_LIGHT_STRONG)
-				att=1.0f/(d*d*falloff);
-			else
-			if(type==POINT_LIGHT_NORMAL)
-				att=1.0f/(1.0f + falloff * (d*d));
-			else
-				att=1.0f/(d*falloff);
-
-			col=255*att*intensity;
-
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+3]+col)>255)
-				data[(i*w*4)+(j*4)+3]=255;
-			else
-				data[(i*w*4)+(j*4)+3]+=(unsigned char)col;
-			/*
-			col=b*att*intensity;
-
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+1]+col)>255)
-				data[(i*w*4)+(j*4)+1]=255;
-			else
-				data[(i*w*4)+(j*4)]+=(unsigned char)col;
-
-			col=g*att*intensity;
-
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+2]+col)>255)
-				data[(i*w*4)+(j*4)+2]=255;
-			else
-				data[(i*w*4)+(j*4)+1]+=(unsigned char)col;
-				
-			col=r*att*intensity;
-
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+3]+col)>255)
-				data[(i*w*4)+(j*4)+3]=255;
-			else
-				data[(i*w*4)+(j*4)+2]+=(unsigned char)col;
-				*/
-		}
-	}
-
-	return 1;
-}
-
-uint32 AddSpotlightToAlphaLight(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, uint16 intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang)
-{
-	register uint16 i, j;
-	float d, att;
-	float angle, angle2;
-	register uint16 col;
-
-	if(!data)
-		return 0;
-	
-	for(i=0;i<h;i++)
-	{
-		for(j=0;j<w;j++)
-		{
-			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
-			d=mSqrt(d);
-
-			if(d==0)
-				d=1;
-
-			if(type==SPOTLIGHT_STRONG)
-				att=1.0f/(d*d*falloff);
-			else
-			if(type==SPOTLIGHT_NORMAL)
-				att=1.0f/(1.0f + falloff * (d*d));
-			else
-				att=1.0f/(d*falloff);
-
-
-			angle=atan2(x2-x,y2-y);
-			angle2=atan2(j-x,i-y);
-
-			angle2-=angle;
-
-			angle2=(angle2*180)/pi;
-
-			if(angle2<0) angle2*=-1;
-
-			if(angle2>ang)
-				continue;
-		
-			col=255*att*intensity;
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)]+col)>255)
-				data[(i*w*4)+(j*4)]=255;
-			else
-				data[(i*w*4)+(j*4)]+=(unsigned char)col;
-
-			col=b*att*intensity;
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+1]+col)>255)
-				data[(i*w*4)+(j*4)+1]=255;
-			else
-				data[(i*w*4)+(j*4)+1]+=(unsigned char)col;
-
-			col=g*att*intensity;
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+2]+col)>255)
-				data[(i*w*4)+(j*4)+2]=255;
-			else
-				data[(i*w*4)+(j*4)+2]+=(unsigned char)col;
-				
-			col=r*att*intensity;
-			if(col>255)
-				col=255;
-			
-			if((data[(i*w*4)+(j*4)+3]+col)>255)
-				data[(i*w*4)+(j*4)+3]=255;
-			else
-				data[(i*w*4)+(j*4)+3]+=(unsigned char)col;
-				
-		}
-	}
-
-	return 1;
-}
-
-
 GLuint GenerateAlphaLightTexture(unsigned char* data, uint16 w, uint16 h)
 {
 	GLuint tex;
@@ -1140,221 +988,6 @@ uint8 FillLightmap(unsigned char *data, uint8 r, uint8 g, uint8 b, uint16 w, uin
 			data[(i*w*3)+(j*3)]=b;
 			data[(i*w*3)+(j*3)+1]=g;
 			data[(i*w*3)+(j*3)+2]=r;
-		}
-	}
-
-	return 1;
-}
-
-uint32 NAddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float constant, float linear, float quadratic, float intensity)
-{
-	register uint16 i, j, x, y;
-	float d, att;
-	register uint32 col;
-	uint8 max;
-
-	x = w / 2;
-	y = h / 2;
-
-	if (!data)
-		return 0;
-
-	for (i = 0; i<h; i++)
-	{
-		for (j = 0; j<w; j++)
-		{
-			d = ((x - j)*(x - j)) + ((y - i)*(y - i));
-			d = mSqrt(d);
-
-			if (d == 0.0f)
-				d = 1.0f;
-
-			att = 255.0f / (constant + (d * linear) + (d * d * quadratic));
-			max = 255;
-
-			float df = abs(((d / (w / 2.0f)) - 1.0f));
-
-			col = ((float) (b * df) * att) * intensity;
-
-			if ((data[(i*w * 3) + (j * 3)] + col)>max)
-				data[(i*w * 3) + (j * 3)] = max;
-			else
-				data[(i*w * 3) + (j * 3)] += (unsigned char)col;
-
-			col = ((float) (g * df) * att) * intensity;
-
-			if ((data[(i*w * 3) + (j * 3) + 1] + col)>max)
-				data[(i*w * 3) + (j * 3) + 1] = max;
-			else
-				data[(i*w * 3) + (j * 3) + 1] += (unsigned char)col;
-
-			col = ((float) (r * df) * att) * intensity;
-
-			if ((data[(i*w * 3) + (j * 3) + 2] + col)>max)
-				data[(i*w * 3) + (j * 3) + 2] = max;
-			else
-				data[(i*w * 3) + (j * 3) + 2] += (unsigned char)col;
-
-		}
-	}
-
-	return 1;
-}
-
-uint32 AddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, uint16 intensity, LIGHT_TYPE type)
-{
-	register uint16 i, j;
-	float d, att;
-	register uint16 col;
-	uint8 max;
-
-	if(!data)
-		return 0;
-	
-	for(i=0;i<h;i++)
-	{
-		for(j=0;j<w;j++)
-		{
-			att=1.0f;
-
-			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
-			d=mSqrt(d);
-
-			if(d==0.0f)
-				d=1.0f;
-
-			//att/=(d*falloff);
-
-			if(type==POINT_LIGHT_STRONG)
-			{
-				att /= (1.0f + (d * (falloff/10.0f)) + (d*d*falloff));
-				max=255;
-			}
-			else
-			if(type==POINT_LIGHT_NORMAL)
-			{
-				att /= (1.0f + (d * falloff) + (d*d*(falloff/10.0f)));
-				max=255;
-			}
-			else
-			if (type == POINT_LIGHT_MEDIUM)
-			{
-				att = 255.0f - (d / falloff);
-				if (att < 0.0f) att = 0;
-				if (att > 255.0f) att = 255;
-				att *= att;
-				max = 255;
-			}
-			if (type == SPOTLIGHT_NORMAL)
-			{
-				att = 255.0f - ((d*d) / (falloff*falloff));
-				if (att < 0.0f) att = 0;
-				if (att > 255.0f) att = 255.0f;
-				att *= att;
-				max=255;
-			}
-
-			col=b*att*intensity;
-			
-			if((data[(i*w*3)+(j*3)]+col)>max)
-				data[(i*w*3)+(j*3)]=max;
-			else
-				data[(i*w*3)+(j*3)]+=(unsigned char)col;
-
-			col=g*att*intensity;
-			
-			if((data[(i*w*3)+(j*3)+1]+col)>max)
-				data[(i*w*3)+(j*3)+1]=max;
-			else
-				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
-				
-			col=r*att*intensity;
-			
-			if((data[(i*w*3)+(j*3)+2]+col)>max)
-				data[(i*w*3)+(j*3)+2]=max;
-			else
-				data[(i*w*3)+(j*3)+2]+=(unsigned char)col;
-				
-		}
-	}
-
-	return 1;
-}
-
-uint32 AddSpotlightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uint8 g, uint8 b, float falloff, uint16 x, uint16 y, uint16 z, uint16 intensity, LIGHT_TYPE type, uint16 x2, uint16 y2, uint16 ang)
-{
-	register  i, j;
-	float d, att;
-	float angle, angle2;
-	register uint16 col;
-	uint8 max;
-
-	if(!data)
-		return 0;
-	
-	for(i=0;i<h;i++)
-	{
-		for(j=0;j<w;j++)
-		{
-			att=1.0f;
-
-			d=((x-j)*(x-j)) + ((y-i)*(y-i)) + (z*z);
-			d=mSqrt(d);
-
-			if(d==0)
-				d=1;
-
-			if(type==SPOTLIGHT_STRONG)
-			{
-				att/=(d*d*falloff);
-				max=255;
-			}
-			else
-			if(type==SPOTLIGHT_NORMAL)
-			{
-				att/=(1.0f + falloff * (d*d));
-				max=64;
-			}
-			else
-			{
-				att/=(d*falloff);
-				max=128;
-			}
-
-
-			angle=atan2(x2-x,y2-y);
-			angle2=atan2(j-x,i-y);
-
-			angle2-=angle;
-
-			angle2=(angle2*180)/pi;
-
-			if(angle2<0) angle2*=-1;
-
-			if(angle2>ang)
-				continue;
-		
-			col=b*att*intensity;
-			
-			if((data[(i*w*3)+(j*3)]+col)>max)
-				data[(i*w*3)+(j*3)]=max;
-			else
-				data[(i*w*3)+(j*3)]+=(unsigned char)col;
-
-			col=g*att*intensity;
-			
-			if((data[(i*w*3)+(j*3)+1]+col)>max)
-				data[(i*w*3)+(j*3)+1]=max;
-			else
-				data[(i*w*3)+(j*3)+1]+=(unsigned char)col;
-				
-			col=r*att*intensity;
-			
-			if((data[(i*w*3)+(j*3)+2]+col)>max)
-				data[(i*w*3)+(j*3)+2]=max;
-			else
-				data[(i*w*3)+(j*3)+2]+=(unsigned char)col;
-				
 		}
 	}
 
@@ -2762,6 +2395,9 @@ SHADER_CREATION:
 				st.renderer.unifs[14] = glGetUniformLocation(st.renderer.Program[3], "sector_y");
 				st.renderer.unifs[15] = glGetUniformLocation(st.renderer.Program[3], "sector_y_2");
 				st.renderer.unifs[16] = glGetUniformLocation(st.renderer.Program[3], "circle");
+				st.renderer.unifs[17] = glGetUniformLocation(st.renderer.Program[3], "spotcos");
+				st.renderer.unifs[18] = glGetUniformLocation(st.renderer.Program[3], "spotinnercos");
+				st.renderer.unifs[19] = glGetUniformLocation(st.renderer.Program[3], "spotdir");
 				//st.renderer.unifs[6]=glGetUniformLocation(st.renderer.Program[3],"Tile");
 				//st.renderer.unifs[7]=glGetUniformLocation(st.renderer.Program[3],"Tiles");
 
@@ -2849,43 +2485,6 @@ SHADER_CREATION:
 		st.SinTable[i]=sin((k*pi)/180);
 		st.TanTable[i]=tan((k*pi)/180);
 	}
-
-#ifndef MGEAR_CLEAN_VERSION
-	memset(st.game_lightmaps,0,MAX_LIGHTMAPS*sizeof(_GAME_LIGHTMAPS));
-
-	st.game_lightmaps[0].stat=1;
-
-	st.game_lightmaps[0].W_w=GAME_WIDTH;
-	st.game_lightmaps[0].W_h=st.gamey;
-
-	st.game_lightmaps[0].T_w=4;
-	st.game_lightmaps[0].T_h=2;
-
-	st.game_lightmaps[0].num_lights=1;
-	st.game_lightmaps[0].w_pos.x=st.gamey;
-	st.game_lightmaps[0].w_pos.y=4096;
-	st.game_lightmaps[0].w_pos.z=0;
-
-	st.game_lightmaps[0].t_pos[0].x=2;
-	st.game_lightmaps[0].t_pos[0].y=1;
-	st.game_lightmaps[0].t_pos[0].z=0;
-
-	st.game_lightmaps[0].t_pos[1].x=0;
-	st.game_lightmaps[0].t_pos[1].y=0;
-	st.game_lightmaps[0].t_pos[1].z=0;
-
-	st.game_lightmaps[0].t_pos[2].x=200;
-	st.game_lightmaps[0].t_pos[2].y=95;
-	st.game_lightmaps[0].t_pos[2].z=0;
-
-	st.game_lightmaps[0].data=GenerateLightmap(st.game_lightmaps[0].T_w, st.game_lightmaps[0].T_h);
-	AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,0.1,st.game_lightmaps[0].t_pos[0].x,st.game_lightmaps[0].t_pos[0].y,st.game_lightmaps[0].t_pos[0].z,255,POINT_LIGHT_NORMAL);
-	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[1].x,st.game_lightmaps[0].t_pos[1].y,st.game_lightmaps[0].t_pos[1].z,128);
-	//AddLightToLightmap(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h,255,255,255,16,st.game_lightmaps[0].t_pos[2].x,st.game_lightmaps[0].t_pos[2].y,st.game_lightmaps[0].t_pos[0].z,255);
-
-	st.game_lightmaps[0].tex=GenerateLightmapTexture(st.game_lightmaps[0].data,st.game_lightmaps[0].T_w,st.game_lightmaps[0].T_h);
-
-#endif
 
 	DataN = malloc(64 * 64 * 3);
 
@@ -5251,6 +4850,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	//int32 d, a;
 	int32 v[4], v2[4], af_v[3], num_af_v = 0, a, zl = st.game_lightmaps[light_id].falloff[4] + 24, zdw = 32 - z, zdl = zl - z, by = 0, mdist;
+	//zl = -24;
 
 	if (ldist == 1)
 	{
@@ -5293,7 +4893,9 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		}
 	}
 
-	if (zdl >= 0) zl *= -1;
+	//zl = 32 - zl;;
+	if (zdl >= 0)
+		zl *= -1;
 
 	zl = 32 - zl;
 
@@ -5315,15 +4917,15 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		shw[m][i].vertex[10] += (float)zdw * ((shw[m][i].vertex[10] - ty1) / zl);
 	}
 	
-	float fty = (sizey + 2200 + ((float)zdw * ((y - ty1) / zl))) / st.Camera.dimension.y, fy, fy1;
+	float fty = ((((float)zdw * ((y - ty1) / zl)))) / st.Camera.dimension.y, fy, fy1;
 
 	if (zdl >= 0)
 	{
 		fy = ((st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) - st.Camera.position.y) * st.Camera.dimension.y;
 		fy1 = (st.Current_Map.sector[sector_id].base_y - st.Current_Map.sector[sector_id].floor_y_up) -
-			(((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
+			(((y / st.Camera.dimension.y) + st.Camera.position.y));
 
-		fy1 *= -1;
+		//fy1 *= -1;
 
 		//zl *= -1;
 		//zdw *= -1;
@@ -5333,12 +4935,10 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 		fy = ((st.Current_Map.sector[sector_id].base_y + st.Current_Map.sector[sector_id].floor_y_down) - st.Camera.position.y) * st.Camera.dimension.y;
 		fy1 = (st.Current_Map.sector[sector_id].base_y + st.Current_Map.sector[sector_id].floor_y_down) -
 			(((y / st.Camera.dimension.y) + st.Camera.position.y) + (fty / 2));
-
-		
 	}
 
 	
-
+	
 	if (ldist == 1 && sector_id != -1 && st.Current_Map.sector[sector_id].floor_y_continued == 1)
 	{
 		v2[0] = shw[m][i].vertex[1] - by;
@@ -5355,10 +4955,63 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 			}
 		}
 
-		if (v2[l] > 0) v2[l] -= (shw[m][i].vertex[l * 3 + 1] - by);
-		if (v2[k] > 0) v2[k] -= (shw[m][i].vertex[k * 3 + 1] - by);
-		v[k] = -zl;
-		v[l] = -zl;
+		//fy1 += v2[k] - ty1;
+		
+		float y_range = abs(fy - by);
+
+		if (v2[l] > 0)
+			v2[l] -= (shw[m][i].vertex[l * 3 + 1] - fy);
+		else
+		{
+			float correct_x;
+
+			correct_x = (float)(abs(v2[l]) / y_range) * zdw;
+
+			if (correct_x > zdw)
+				correct_x = zdw;
+
+			v2[l] = correct_x;
+
+			///correct_x = (float)(y - ty1) / (by - ty1);
+			//v2[l] *= correct_x;
+		}
+
+		if (v2[k] > 0)
+			v2[k] -= (shw[m][i].vertex[k * 3 + 1] - fy);
+		else
+		{
+			float correct_x;
+
+			correct_x = (float)(abs(v2[k]) / y_range) * zdw;
+
+			if (correct_x > zdw)
+				correct_x = zdw;
+
+			v2[k] = correct_x;
+
+			//correct_x = (float)(y - ty1) / (by - ty1);
+			//v2[k] *= correct_x;
+		}
+
+		v[k] = zl;
+		v[l] = zl;
+
+		float dist_by = shw[m][i].vertex[k * 3 + 1] - by;
+
+		if (dist_by > 0)
+			dist_by = 0;
+		else
+			dist_by = abs(dist_by);
+
+		dist_by /= (float)y_range;
+
+		if (dist_by < 0.9)
+			dist_by = 0.9;
+
+		float correct_zdw = zdw * dist_by;
+		
+		fty = (float)(zdw * fty) / zl;
+		fy1 = (float)(zdw * fy1) / zl;
 		
 		for (j = 0; j < 4; j++)
 		{
@@ -5369,24 +5022,45 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 			}
 		}
 
-		fty = (zdw * fty) / zl;
-		fy1 = (zdw * fy1) / zl;
-
+		
 		shw[m][i].vertex[0] += (float)v2[0] * ((shw[m][i].vertex[0] - tx1) / v[0]);
 		shw[m][i].vertex[3] += (float)v2[1] * ((shw[m][i].vertex[3] - tx1) / v[1]);
 		shw[m][i].vertex[6] += (float)v2[2] * ((shw[m][i].vertex[6] - tx1) / v[2]);
 		shw[m][i].vertex[9] += (float)v2[3] * ((shw[m][i].vertex[9] - tx1) / v[3]);
+		
+		//v[k] = -zl;
+		//v[l] = -zl;
+
+		float sizeyc = shw[m][i].vertex[3 * 3 + 1] + ((float)zdw * ((shw[m][i].vertex[3 * 3 + 1] - ty1) / zl));
+		sizeyc -= shw[m][i].vertex[0 * 3 + 1] + ((float)zdw * ((shw[m][i].vertex[0 * 3 + 1] - ty1) / zl));
+
+		fty = shw[m][i].vertex[k * 3 + 1] + ((float)zdw * ((shw[m][i].vertex[k * 3 + 1] - ty1) / zl));
+		fty -= fy;
+
+		//fty *= 32768.0f;
+		fty /= sizeyc;
+
+		fty = 1.0f - fty;
+
+		fy1 = shw[m][i].vertex[l * 3 + 1] + (zdw * ((shw[m][i].vertex[l * 3 + 1] - ty1) / zl));
+		fy1 -= fy;
+
+		//fy1 *= 32768.0f;
+		fy1 /= (float)sizey;
 
 		for (j = 0; j < 4; j++)
 		{
-			if (j == l || j == k) shw[m][i].vertex[j * 3 + 1] += (float)v2[j] * ((shw[m][i].vertex[j * 3 + 1] - ty1) / v[j]);
-			else shw[m][i].vertex[j * 3 + 1] = fy;
+			if (j == l || j == k)
+				shw[m][i].vertex[j * 3 + 1] += (float)v2[j] * ((float)(shw[m][i].vertex[j * 3 + 1] - ty1) / v[j]);
+			else
+				shw[m][i].vertex[j * 3 + 1] = fy;
 		}
 
 	}
+	
 
-	ax = (float)1 / (GAME_WIDTH / 2);
-	ay = (float)1 / (st.gamey / 2);
+	ax = (float)1.0f / (GAME_WIDTH / 2.0f);
+	ay = (float)1.0f / (st.gamey / 2.0f);
 
 	ay *= -1.0f;
 
@@ -5434,6 +5108,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 
 	if (data.vb_id == -1)
 	{
+		
 		if (ldist == 1)
 		{
 			shw[m][i].texcor[0] = 0;
@@ -5450,12 +5125,13 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 				}
 				else
 				{
-					if (j > 1) shw[m][i].texcor[j * 2 + 1] = 32768 + 1.0f - (fy1 / fty);
-					else shw[m][i].texcor[j * 2 + 1] = 1.0f - (fy1 / fty);
+					if (j > 1) shw[m][i].texcor[j * 2 + 1] = (float)fty * 32768.0f;
+					else shw[m][i].texcor[j * 2 + 1] = fty;
 				}
 			}
 		}
 		else
+		
 		{
 			shw[m][i].texcor[0] = 0;
 			shw[m][i].texcor[1] = 0;
@@ -5469,6 +5145,7 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 	}
 	else
 	{
+		
 		if (ldist == 1)
 		{
 			shw[m][i].texcor[0] = data.posx;
@@ -5485,12 +5162,13 @@ int8 DrawShadow(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, int16 lig
 				}
 				else
 				{
-					if (j > 1) shw[m][i].texcor[j * 2 + 1] = data.posy + data.sizey + (float)((1.0f - (fy1 / fty)) * data.sizey);
-					else shw[m][i].texcor[j * 2 + 1] = data.posy + (float)((1.0f - (fy1 / fty)) * data.sizey);
+					if (j > 1) shw[m][i].texcor[j * 2 + 1] = data.posy + data.sizey + (float)(fty * data.sizey);
+					else shw[m][i].texcor[j * 2 + 1] = data.posy + (float)(fty * data.sizey);
 				}
 			}
 		}
 		else
+		
 		{
 			shw[m][i].texcor[0] = data.posx;
 			shw[m][i].texcor[1] = data.posy;
@@ -5556,7 +5234,9 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 			if (sector_id > -1 && dist < st.game_lightmaps[i].W_w)
 			{
 				DrawShadow(x, y, sizex, sizey, ang, i, 0, data, z, sector_id, st.num_entities);
-				DrawShadow(x, y, sizex, sizey, ang, i, 1, data, z, sector_id, st.num_entities);
+
+				if(st.Current_Map.sector[sector_id].floor_y_continued == 1)
+					DrawShadow(x, y, sizex, sizey, ang, i, 1, data, z, sector_id, st.num_entities);
 			}
 
 			if (sector_id == -1 && dist < st.game_lightmaps[i].W_w)
@@ -5939,7 +5619,156 @@ int8 DrawLight(int32 x, int32 y, int32 z, int32 radius, Color color, float fallo
 
 	lmp[i].texcor[0] = falloff;
 	lmp[i].texcor[1] = intensity;
+	lmp[i].texcor[2] = z;
 	lmp[i].texcor[3] = f3;
+
+	lmp[i].type = POINT_LIGHT;
+
+	for (j = 0; j<12; j += 3)
+	{
+		lmp[i].vertex[j] *= ax;
+		lmp[i].vertex[j] -= 1;
+
+		lmp[i].vertex[j + 1] *= ay;
+		lmp[i].vertex[j + 1] += 1;
+
+		lmp[i].vertex[j + 2] *= az;
+		lmp[i].vertex[j + 2] -= 1;
+	}
+
+	for (j = 0; j<16; j += 4)
+	{
+		lmp[i].color[j] = color.r;
+		lmp[i].color[j + 1] = color.g;
+		lmp[i].color[j + 2] = color.b;
+		lmp[i].color[j + 3] = color.a;
+	}
+
+	lmp[i].scenario = light_id;
+
+	st.num_lightmap++;
+
+	return 0;
+}
+
+int8 DrawSpotLight(int32 x, int32 y, int32 z, int32 radius, Color color, float falloff, float intensity, float f3, int32 sx2, int32 sy2, int16 ang, int16 innerang, uint8 light_id)
+{
+	float tmp, ax, ay, az, tx1, ty1, tx2, ty2, tw, th;
+
+	uint8 val = 0;
+
+	uint32 i = 0, j = 0, k = 0;
+
+	int32 sizex, sizey, x2 = x, y2 = y;
+
+	sizex = sizey = radius;
+
+	if (CheckBounds(x, y, sizex, sizey, 17))
+		return 1;
+
+	tx1 = x;
+	ty1 = y;
+	tx2 = sizex;
+	ty2 = sizey;
+
+	x -= st.Camera.position.x;
+	y -= st.Camera.position.y;
+
+	///sx2 -= st.Camera.position.x;
+	//sy2 -= st.Camera.position.y;
+
+	i = st.num_lightmap;
+
+	if (i == MAX_LIGHTMAPS)
+		return 2;
+
+	sizex *= st.Camera.dimension.x;
+	sizey *= st.Camera.dimension.y;
+
+	x *= st.Camera.dimension.x;
+	y *= st.Camera.dimension.y;
+
+	//sx2 *= st.Camera.dimension.x;
+	//sy2 *= st.Camera.dimension.y;
+
+	lmp[i].vertex[0] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[1] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[2] = 0;
+
+	lmp[i].vertex[3] = (float)x + (((x + (sizex / 2)) - x)*mCos(ang) - ((y - (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[4] = (float)y + (((x + (sizex / 2)) - x)*mSin(ang) + ((y - (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[5] = 0;
+
+	lmp[i].vertex[6] = (float)x + (((x + (sizex / 2)) - x)*mCos(ang) - ((y + (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[7] = (float)y + (((x + (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[8] = 0;
+
+	lmp[i].vertex[9] = (float)x + (((x - (sizex / 2)) - x)*mCos(ang) - ((y + (sizey / 2)) - y)*mSin(ang));
+	lmp[i].vertex[10] = (float)y + (((x - (sizex / 2)) - x)*mSin(ang) + ((y + (sizey / 2)) - y)*mCos(ang));
+	lmp[i].vertex[11] = 0;
+
+
+	ax = (float)1 / (GAME_WIDTH / 2);
+	ay = (float)1 / (st.gamey / 2);
+
+	ay *= -1.0f;
+
+	az = (float)1 / (4096 / 2);
+
+	lmp[i].texcorlight[0] = (float)tx1 + (((tx1 - (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 - (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[1] = (float)ty1 + (((tx1 - (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 - (ty2 / 2)) - ty1)*mCos(ang));
+
+	lmp[i].texcorlight[2] = (float)tx1 + (((tx1 + (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 - (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[3] = (float)ty1 + (((tx1 + (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 - (ty2 / 2)) - ty1)*mCos(ang));
+
+	lmp[i].texcorlight[4] = (float)tx1 + (((tx1 + (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 + (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[5] = (float)ty1 + (((tx1 + (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 + (ty2 / 2)) - ty1)*mCos(ang));
+
+	lmp[i].texcorlight[6] = (float)tx1 + (((tx1 - (tx2 / 2)) - tx1)*mCos(ang) - ((ty1 + (ty2 / 2)) - ty1)*mSin(ang));
+	lmp[i].texcorlight[7] = (float)ty1 + (((tx1 - (tx2 / 2)) - tx1)*mSin(ang) + ((ty1 + (ty2 / 2)) - ty1)*mCos(ang));
+
+	WTSf(&lmp[i].texcorlight[0], &lmp[i].texcorlight[1]);
+	WTSf(&lmp[i].texcorlight[2], &lmp[i].texcorlight[3]);
+	WTSf(&lmp[i].texcorlight[4], &lmp[i].texcorlight[5]);
+	WTSf(&lmp[i].texcorlight[6], &lmp[i].texcorlight[7]);
+
+	lmp[i].texcorlight[0] /= (float)st.screenx;
+	lmp[i].texcorlight[1] /= (float)st.screeny;
+	lmp[i].texcorlight[2] /= (float)st.screenx;
+	lmp[i].texcorlight[3] /= (float)st.screeny;
+	lmp[i].texcorlight[4] /= (float)st.screenx;
+	lmp[i].texcorlight[5] /= (float)st.screeny;
+	lmp[i].texcorlight[6] /= (float)st.screenx;
+	lmp[i].texcorlight[7] /= (float)st.screeny;
+
+	lmp[i].texcorlight[1] *= -1;
+	lmp[i].texcorlight[3] *= -1;
+	lmp[i].texcorlight[5] *= -1;
+	lmp[i].texcorlight[7] *= -1;
+
+	WTS(&x2, &y2);
+	WTS(&sx2, &sy2);
+
+	//x += st.Camera.position.x;
+	//y += st.Camera.position.y;
+
+	lmp[i].pos.x = x2;
+	lmp[i].pos.y = y2;
+
+	z = (z*st.screenx) / 4096;
+
+	lmp[i].texcor[2] = z;
+
+	lmp[i].texcor[0] = falloff;
+	lmp[i].texcor[1] = intensity;
+	lmp[i].texcor[2] = z;
+	lmp[i].texcor[3] = f3;
+	lmp[i].texcor[4] = sx2;
+	lmp[i].texcor[5] = sy2;
+	lmp[i].texcor[6] = mCos(ang);
+	lmp[i].texcor[7] = mCos(innerang);
+
+	lmp[i].type = SPOT_LIGHT;
 
 	for (j = 0; j<12; j += 3)
 	{
@@ -5995,6 +5824,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 
 	lmp[i].data.data=data;
 
+	/*
 	if(type==AMBIENT_LIGHT)
 		lmp[i].ang=0;
 	else
@@ -6003,7 +5833,7 @@ int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint da
 	else
 	if(type==POINT_LIGHT_STRONG)
 		lmp[i].ang=2;
-
+	*/
 			lmp[i].vertex[0]=(float)x+(((x-(sizex/2))-x)*mCos(ang) - ((y-(sizey/2))-y)*mSin(ang));
 			lmp[i].vertex[1]=(float)y+(((x-(sizex/2))-x)*mSin(ang) + ((y-(sizey/2))-y)*mCos(ang));
 			lmp[i].vertex[2]=0;
@@ -7369,21 +7199,23 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 
 	int16 ang;
 
-	float ax = 1 / (GAME_WIDTH / 2), ay = 1 / (st.gamey / 2), az = 1 / (4096 / 2), ang2, tx1, ty1, tx2, ty2;
+	float ax = 1.0f / (GAME_WIDTH / 2.0f), ay = 1.0f / (st.gamey / 2.0f), az = 1.0f / (4096.0f / 2.0f), ang2, tx1, ty1, tx2, ty2;
+
+	int32 lw1, lw2;
 
 	i = st.num_entities;
 
 	if (i == MAX_GRAPHICS - 1 && ent[i].stat == USED)
 		return 2;
 
+	if (linewidth > 512)
+		linewidth = 512;
+
 	//if(ent[i].stat==DEAD)
 	//{
 		ent[i].stat = USED;
 		st.num_entities++;
-		//ent[i].data.data = DataNT;
 		ent[i].data.vb_id = 0;
-		//ent[i].data.channel = 0;
-		//ent[i].data.normal = 0;
 		ent[i].scenario = -1;
 		ent[i].circle = 0;
 
@@ -7393,7 +7225,7 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		z_buffer[z][z_slot[z]] = i;
 		z_slot[z]++;
 
-		if (z > z_used) z_used = z;;
+		if (z > z_used) z_used = z;
 		
 		if(z>15)
 		{
@@ -7429,80 +7261,117 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ang = ang2;
 		ang *= 10;
 
-		linewidth /= 2;
+		if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+		{
+			float tmp;
+			if (linewidth > 96)
+				tmp = 0.45f;
+			else
+				tmp = 0.30f;
+
+			lw1 = (float)linewidth * tmp;
+			lw2 = linewidth / 2;
+			linewidth *= (float)tmp;
+		}
+		else
+			linewidth /= 2;
+			
 		
-		ent[i].vertex[0] = (float)x - (linewidth*mSin(ang));
-		ent[i].vertex[1] = (float)y + (linewidth*mCos(ang));
-		ent[i].vertex[2] = z;
+		float lcos = (float)linewidth * mCos(ang);
+		float lsin = (float)linewidth * mSin(ang);
 
-		ent[i].vertex[3] = (float)x2 - (linewidth*mSin(ang));
-		ent[i].vertex[4] = (float)y2 + (linewidth*mCos(ang));
-		ent[i].vertex[5] = z;
+		ent[i].vertex[2] = ent[i].vertex[5] = ent[i].vertex[8] = ent[i].vertex[11] = z;
 
-		ent[i].vertex[6] = (float)x2 + (linewidth*mSin(ang));
-		ent[i].vertex[7] = (float)y2 - (linewidth*mCos(ang));
-		ent[i].vertex[8] = z;
+		__m256 vt, vt_lw;
 
-		ent[i].vertex[9] = (float)x + (linewidth*mSin(ang));
-		ent[i].vertex[10] = (float)y - (linewidth*mCos(ang));
-		ent[i].vertex[11] = z;
+		vt = _mm256_setr_ps(x, y, x2, y2, y2, x2, y, x);
+		vt_lw = _mm256_setr_ps(lsin, lcos, lsin, lcos, lcos, lsin, lcos, lsin);
 
-		ax = (float)1.0f / (GAME_WIDTH / 2.0f);
-		ay = (float)1.0f / (st.gamey / 2.0f);
+		vt = _mm256_addsub_ps(vt, vt_lw);
+
+		ent[i].vertex[0] = vt.m256_f32[0];
+		ent[i].vertex[1] = vt.m256_f32[1];
+
+		ent[i].vertex[3] = vt.m256_f32[2];
+		ent[i].vertex[4] = vt.m256_f32[3];
+
+		ent[i].vertex[6] = vt.m256_f32[5];
+		ent[i].vertex[7] = vt.m256_f32[4];
+
+		ent[i].vertex[9] = vt.m256_f32[7];
+		ent[i].vertex[10] = vt.m256_f32[6];
+		
+
+		if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+		{
+			ent[i + 1].stat = USED;
+			st.num_entities++;
+			ent[i + 1].data.vb_id = 0;
+			ent[i + 1].scenario = -1;
+			ent[i + 1].circle = 0;
+
+			z_buffer[z][z_slot[z]] = i + 1;
+			z_slot[z]++;
+
+			ent[i + 2].stat = USED;
+			st.num_entities++;
+			ent[i + 2].data.vb_id = 0;
+			ent[i + 2].scenario = -1;
+			ent[i + 2].circle = 0;
+
+			z_buffer[z][z_slot[z]] = i + 2;
+			z_slot[z]++;
+
+			//linewidth *= 2;
+
+			i++;
+
+			ent[i].vertex[0] = (float)x - (lw2*mSin(ang));
+			ent[i].vertex[1] = (float)y + (lw2*mCos(ang));
+			ent[i].vertex[2] = z;
+
+			ent[i].vertex[3] = (float)x2 - (lw2*mSin(ang));
+			ent[i].vertex[4] = (float)y2 + (lw2*mCos(ang));
+			ent[i].vertex[5] = z;
+
+			//linewidth /= -2;
+			lw1 *= -1;
+
+			ent[i].vertex[6] = (float)x2 + (lw1*mSin(ang));
+			ent[i].vertex[7] = (float)y2 - (lw1*mCos(ang));
+			ent[i].vertex[8] = z;
+
+			ent[i].vertex[9] = (float)x + (lw1*mSin(ang));
+			ent[i].vertex[10] = (float)y - (lw1*mCos(ang));
+			ent[i].vertex[11] = z;
+
+			i++;
+			//linewidth *= 2;
+			lw2 *= -1;
+
+			ent[i].vertex[0] = (float)x - (lw2*mSin(ang));
+			ent[i].vertex[1] = (float)y + (lw2*mCos(ang));
+			ent[i].vertex[2] = z;
+
+			ent[i].vertex[3] = (float)x2 - (lw2*mSin(ang));
+			ent[i].vertex[4] = (float)y2 + (lw2*mCos(ang));
+			ent[i].vertex[5] = z;
+
+			//linewidth /= -2;
+			lw1 *= -1;
+
+			ent[i].vertex[6] = (float)x2 + (lw1*mSin(ang));
+			ent[i].vertex[7] = (float)y2 - (lw1*mCos(ang));
+			ent[i].vertex[8] = z;
+
+			ent[i].vertex[9] = (float)x + (lw1*mSin(ang));
+			ent[i].vertex[10] = (float)y - (lw1*mCos(ang));
+			ent[i].vertex[11] = z;
+
+			i -= 2;
+		}
 
 		ay *= -1.0f;
-
-		az = (float)1.0f / (4096 / 2.0f);
-		
-		/*
-		if (z > 15)
-		{
-			/*
-			ent[i].texcorlight[0]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
-			ent[i].texcorlight[1]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
-
-			ent[i].texcorlight[2]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1-(ty2/2))-ty1)*mSin(ang));
-			ent[i].texcorlight[3]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1-(ty2/2))-ty1)*mCos(ang));
-
-			ent[i].texcorlight[4]=(float)tx1+(((tx1+(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
-			ent[i].texcorlight[5]=(float)ty1+(((tx1+(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
-
-			ent[i].texcorlight[6]=(float)tx1+(((tx1-(tx2/2))-tx1)*mCos(ang) - ((ty1+(ty2/2))-ty1)*mSin(ang));
-			ent[i].texcorlight[7]=(float)ty1+(((tx1-(tx2/2))-tx1)*mSin(ang) + ((ty1+(ty2/2))-ty1)*mCos(ang));
-			*/
-			/*
-			ent[i].texcorlight[0] = (float)tx1 - (linewidth*mSin(ang));
-			ent[i].texcorlight[1] = (float)ty1 + (linewidth*mCos(ang));
-
-			ent[i].texcorlight[2] = (float)tx2 - (linewidth*mSin(ang));
-			ent[i].texcorlight[3] = (float)ty2 + (linewidth*mCos(ang));
-
-			ent[i].texcorlight[4] = (float)tx2 + (linewidth*mSin(ang));
-			ent[i].texcorlight[5] = (float)ty2 - (linewidth*mCos(ang));
-
-			ent[i].texcorlight[6] = (float)tx1 + (linewidth*mSin(ang));
-			ent[i].texcorlight[7] = (float)ty1 - (linewidth*mCos(ang));
-
-			WTSf(&ent[i].texcorlight[0], &ent[i].texcorlight[1]);
-			WTSf(&ent[i].texcorlight[2], &ent[i].texcorlight[3]);
-			WTSf(&ent[i].texcorlight[4], &ent[i].texcorlight[5]);
-			WTSf(&ent[i].texcorlight[6], &ent[i].texcorlight[7]);
-			
-			ent[i].texcorlight[0] /= (float)st.screenx;
-			ent[i].texcorlight[1] /= (float)st.screeny;
-			ent[i].texcorlight[2] /= (float)st.screenx;
-			ent[i].texcorlight[3] /= (float)st.screeny;
-			ent[i].texcorlight[4] /= (float)st.screenx;
-			ent[i].texcorlight[5] /= (float)st.screeny;
-			ent[i].texcorlight[6] /= (float)st.screenx;
-			ent[i].texcorlight[7] /= (float)st.screeny;
-
-			ent[i].texcorlight[1] *= -1;
-			ent[i].texcorlight[3] *= -1;
-			ent[i].texcorlight[5] *= -1;
-			ent[i].texcorlight[7] *= -1;
-			*/
-		//}
 		
 
 		ent[i].texcor[0]=0.0f;
@@ -7514,8 +7383,44 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 		ent[i].texcor[6]=0.0f;
 		ent[i].texcor[7]=1.0f;
 
+		if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+		{
+			memcpy(ent[i + 1].texcor, ent[i].texcor, sizeof(float)* 8);
+			memcpy(ent[i + 2].texcor, ent[i].texcor, sizeof(float)* 8);
+		}
+
+		
+		//vt = _mm256_setzero_ps();
+		//vt_lw = _mm256_setzero_ps();
+
+		vt = _mm256_setr_ps(ent[i].vertex[0], ent[i].vertex[1], ent[i].vertex[3], ent[i].vertex[4], ent[i].vertex[6], ent[i].vertex[7], ent[i].vertex[9], ent[i].vertex[10]);
+		__m256 vt3 = _mm256_setr_ps(ax, ay, ax, ay, ax, ay, ax, ay);
+		__m256 vt2 = _mm256_set1_ps(1.0);
+
+		vt = _mm256_mul_ps(vt, vt3);
+		vt = _mm256_addsub_ps(vt, vt2);
+
+		
+		ent[i].vertex[0] = vt.m256_f32[0];
+		ent[i].vertex[1] = vt.m256_f32[1];
+
+		ent[i].vertex[3] = vt.m256_f32[2];
+		ent[i].vertex[4] = vt.m256_f32[3];
+
+		ent[i].vertex[6] = vt.m256_f32[4];
+		ent[i].vertex[7] = vt.m256_f32[5];
+
+		ent[i].vertex[9] = vt.m256_f32[6];
+		ent[i].vertex[10] = vt.m256_f32[7];
+
+		ent[i].vertex[2] = ent[i].vertex[5] = ent[i].vertex[8] = ent[i].vertex[11] *= az;
+		ent[i].vertex[2] = ent[i].vertex[5] = ent[i].vertex[8] = ent[i].vertex[11] -= 1;
+		
+
 		for (j = 0; j < 12; j += 3)
 		{
+			
+			/*
 			ent[i].vertex[j] *= ax;
 			ent[i].vertex[j] -= 1;
 
@@ -7524,24 +7429,62 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 				
 			ent[i].vertex[j + 2] *= az;
 			ent[i].vertex[j + 2] -= 1;
-				
+			*/
+
+			if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+			{
+				ent[i + 1].vertex[j] *= ax;
+				ent[i + 1].vertex[j] -= 1;
+
+				ent[i + 1].vertex[j + 1] *= ay;
+				ent[i + 1].vertex[j + 1] += 1;
+
+				ent[i + 1].vertex[j + 2] *= az;
+				ent[i + 1].vertex[j + 2] -= 1;
+
+				ent[i + 2].vertex[j] *= ax;
+				ent[i + 2].vertex[j] -= 1;
+
+				ent[i + 2].vertex[j + 1] *= ay;
+				ent[i + 2].vertex[j + 1] += 1;
+
+				ent[i + 2].vertex[j + 2] *= az;
+				ent[i + 2].vertex[j + 2] -= 1;
+			}
 		}
 
-		for (j = 0; j < 16; j += 4)
+		
+		ent[i].color[0] = ent[i].color[4] = ent[i].color[8] = ent[i].color[12] = r;
+		ent[i].color[1] = ent[i].color[5] = ent[i].color[9] = ent[i].color[13] = g;
+		ent[i].color[2] = ent[i].color[6] = ent[i].color[10] = ent[i].color[14] = b;
+		ent[i].color[3] = ent[i].color[7] = ent[i].color[11] = ent[i].color[15] = a;
+
+		if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
 		{
-			ent[i].color[j] = r;
-			ent[i].color[j + 1] = g;
-			ent[i].color[j + 2] = b;
-			ent[i].color[j + 3] = a;
-		}
+			ent[i + 1].color[0] = ent[i + 1].color[4] = ent[i + 1].color[8] = ent[i + 1].color[12] = r;
+			ent[i + 1].color[1] = ent[i + 1].color[5] = ent[i + 1].color[9] = ent[i + 1].color[13] = g;
+			ent[i + 1].color[2] = ent[i + 1].color[6] = ent[i + 1].color[10] = ent[i + 1].color[14] = b;
+			ent[i + 1].color[3] = ent[i + 1].color[7] = 0;
+			ent[i + 1].color[11] = ent[i + 1].color[15] = a;
 
-		/*
-		texone_ids[texone_num]=i;
-		texone_num++;
-		*/
+			ent[i + 2].color[0] = ent[i + 2].color[4] = ent[i + 2].color[8] = ent[i + 2].color[12] = r;
+			ent[i + 2].color[1] = ent[i + 2].color[5] = ent[i + 2].color[9] = ent[i + 2].color[13] = g;
+			ent[i + 2].color[2] = ent[i + 2].color[6] = ent[i + 2].color[10] = ent[i + 2].color[14] = b;
+			ent[i + 2].color[3] = ent[i + 2].color[7] = 0;
+			ent[i + 2].color[11] = ent[i + 2].color[15] = a;
+		}
 
 		vbdt[LINEVB].num_elements++;
 		ent[i].data.loc = vbdt[LINEVB].num_elements - 1;
+
+		if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+		{
+			vbdt[LINEVB].num_elements++;
+			ent[i + 1].data.loc = vbdt[LINEVB].num_elements - 1;
+
+			vbdt[LINEVB].num_elements++;
+			ent[i + 2].data.loc = vbdt[LINEVB].num_elements - 1;
+		}
 
 
 	//}
@@ -9612,7 +9555,7 @@ uint32 SaveMap(const char *name)
 
 		memcpy(&lights[i].falloff,st.game_lightmaps[i+1].falloff,16*sizeof(float));
 		memcpy(&lights[i].spot_ang,st.game_lightmaps[i+1].spot_ang,16*sizeof(int16));
-		memcpy(&lights[i].type,st.game_lightmaps[i+1].type,16*sizeof(LIGHT_TYPE));
+		//memcpy(&lights[i].type,st.game_lightmaps[i+1].type,16*sizeof(LIGHT_TYPE));
 		memcpy(&lights[i].t_pos,st.game_lightmaps[i+1].t_pos,16*sizeof(uPos16));
 		memcpy(&lights[i].t_pos2,st.game_lightmaps[i+1].t_pos2,16*sizeof(uPos16));
 	}
@@ -10800,12 +10743,21 @@ uint32 LoadMap(const char *name)
 		st.game_lightmaps[i+1].W_h=lights[i].W_h;
 		st.game_lightmaps[i+1].W_w=lights[i].W_w;
 		st.game_lightmaps[i+1].w_pos=lights[i].w_pos;
+		st.game_lightmaps[i + 1].type = lights[i].type[0];
+
+		st.game_lightmaps[i + 1].spotcos = lights[i].spot_ang[0];
+		st.game_lightmaps[i + 1].spotinnercos = lights[i].spot_ang[1];
+		st.game_lightmaps[i + 1].s_dir.x = lights[i].t_pos[0].x;
+		st.game_lightmaps[i + 1].s_dir.y = lights[i].t_pos[0].y;
+
+		if (st.game_lightmaps[i + 1].type != POINTLIGHT || st.game_lightmaps[i + 1].type != SPOTLIGHT)
+			st.game_lightmaps[i + 1].type = POINTLIGHT;
 
 		memcpy(&st.game_lightmaps[i+1].falloff,lights[i].falloff,16*sizeof(float));
-		memcpy(&st.game_lightmaps[i+1].spot_ang,lights[i].spot_ang,16*sizeof(int16));
-		memcpy(&st.game_lightmaps[i+1].type,lights[i].type,16*sizeof(LIGHT_TYPE));
-		memcpy(&st.game_lightmaps[i+1].t_pos,lights[i].t_pos,16*sizeof(uPos16));
-		memcpy(&st.game_lightmaps[i+1].t_pos2,lights[i].t_pos2,16*sizeof(uPos16));
+		//memcpy(&st.game_lightmaps[i+1].spot_ang,lights[i].spot_ang,16*sizeof(int16));
+		///memcpy(&st.game_lightmaps[i+1].type,lights[i].type,16*sizeof(LIGHT_TYPE));
+		//memcpy(&st.game_lightmaps[i+1].t_pos,lights[i].t_pos,16*sizeof(uPos16));
+		///memcpy(&st.game_lightmaps[i+1].t_pos2,lights[i].t_pos2,16*sizeof(uPos16));
 
 		st.game_lightmaps[i+1].stat=1;
 		/*
@@ -10941,9 +10893,16 @@ void DrawMap()
 			for (i = 1; i <= st.num_lights; i++)
 			{
 				if ((st.viewmode & LIGHT_VIEW || st.viewmode & INGAME_VIEW) && st.game_lightmaps[i].obj_id != -2)
-					DrawLight(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, st.game_lightmaps[i].w_pos.z, st.game_lightmaps[i].W_w,
+				{
+					if (st.game_lightmaps[i].type != SPOTLIGHT)
+						DrawLight(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, st.game_lightmaps[i].falloff[4] + 50, st.game_lightmaps[i].W_w,
 						st.game_lightmaps[i].ambient_color, st.game_lightmaps[i].falloff[0], st.game_lightmaps[i].falloff[1], st.game_lightmaps[i].falloff[2],
 						st.game_lightmaps[i].ang, i);
+					else
+						DrawSpotLight(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, st.game_lightmaps[i].falloff[4] + 50, st.game_lightmaps[i].W_w, st.game_lightmaps[i].ambient_color,
+						st.game_lightmaps[i].falloff[0], st.game_lightmaps[i].falloff[1], st.game_lightmaps[i].falloff[2], st.game_lightmaps[i].s_dir.x, st.game_lightmaps[i].s_dir.y,
+						st.game_lightmaps[i].spotcos, st.game_lightmaps[i].spotinnercos, i);
+				}
 			}
 
 	
@@ -11089,46 +11048,39 @@ void Renderer(uint8 type)
 
 	for(m=z_used;m>-1;m--)
 	{
-		if(!z_slot[m]) continue;
+		if (!z_slot[m]) continue;
 		else
-		for(n=0;n<z_slot[m];n++)
+		for (n = 0; n < z_slot[m]; n++)
 		{
-			i=z_buffer[m][n];
-			if(ent[i].data.vb_id!=-1)
+			i = z_buffer[m][n];
+
+			if (ent[i].data.vb_id != -1)
 			{
-				for(j=0;j<16;j++)
+				memcpy(vbdt[ent[i].data.vb_id].color + (k[ent[i].data.vb_id] * 16), ent[i].color, sizeof(GLubyte)* 16);
+				memcpy(vbdt[ent[i].data.vb_id].vertex + (k[ent[i].data.vb_id] * 12), ent[i].vertex, sizeof(float) * 12);
+
+				memcpy(vbdt[ent[i].data.vb_id].texcoord + (k[ent[i].data.vb_id] * 8), ent[i].texcor, sizeof(float) * 8);
+
+				memcpy(vbdt[ent[i].data.vb_id].texcoordlight + (k[ent[i].data.vb_id] * 8), ent[i].texcorlight, sizeof(float) * 8);
+
+				for (j = 0; j < 6; j++)
 				{
-					//if(j<4)
-						//vbdt[ent[i].data.vb_id].texrepeat[(k[ent[i].data.vb_id])+j]=ent[i].texrepeat[j];
+					if (j <= 2)
+						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id] * 6) + j] = ((k[ent[i].data.vb_id] * 6) - (k[ent[i].data.vb_id] * 2)) + j;
 
-					vbdt[ent[i].data.vb_id].color[(k[ent[i].data.vb_id]*16)+j]=ent[i].color[j];
+					if (j == 3 || j == 4)
+						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id] * 6) + j] = ((k[ent[i].data.vb_id] * 6) - (k[ent[i].data.vb_id] * 2)) + (j - 1);
 
-					if(j<12)
-						vbdt[ent[i].data.vb_id].vertex[(k[ent[i].data.vb_id]*12)+j]=ent[i].vertex[j];
-
-					if(j<8)
-					{
-						vbdt[ent[i].data.vb_id].texcoord[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcor[j];
-
-						vbdt[ent[i].data.vb_id].texcoordlight[(k[ent[i].data.vb_id]*8)+j]=ent[i].texcorlight[j];
-					}
-					
-					if(j<=2)
-						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+j;
-
-					if(j==3 || j==4)
-						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2))+(j-1);
-
-					if(j==5)
-						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id]*6)+j]=((k[ent[i].data.vb_id]*6)-(k[ent[i].data.vb_id]*2));
+					if (j == 5)
+						vbdt[ent[i].data.vb_id].index[(k[ent[i].data.vb_id] * 6) + j] = ((k[ent[i].data.vb_id] * 6) - (k[ent[i].data.vb_id] * 2));
 				}
 
-				ent[i].data.loc=k[ent[i].data.vb_id];
+				ent[i].data.loc = k[ent[i].data.vb_id];
 
 				k[ent[i].data.vb_id]++;
 			}
 			else
-				ent[i].data.loc=-1;
+				ent[i].data.loc = -1;
 		}
 	}
 
@@ -11346,11 +11298,17 @@ void Renderer(uint8 type)
 
 					glBlendFunc(GL_ONE, GL_ONE);
 
-					glUniform1f(st.renderer.unifs[4], 5);
+					if (lmp[n].type == POINT_LIGHT)
+						glUniform1f(st.renderer.unifs[4], 5);
+					else if (lmp[n].type == SPOT_LIGHT)
+						glUniform1f(st.renderer.unifs[4], 8);
 
 					glUniform3f(st.renderer.unifs[5], lmp[n].pos.x, st.screeny - lmp[n].pos.y, lmp[n].texcor[2]);
 					glUniform2f(st.renderer.unifs[6], st.screenx, st.screeny);
 					glUniform3f(st.renderer.unifs[7], lmp[n].texcor[0], lmp[n].texcor[1], lmp[n].texcor[3]);
+					glUniform2f(st.renderer.unifs[19], lmp[n].texcor[4], st.screeny - lmp[n].texcor[5]);
+					glUniform1f(st.renderer.unifs[17], lmp[n].texcor[6]);
+					glUniform1f(st.renderer.unifs[18], lmp[n].texcor[7]);
 
 					Pos camp = st.Camera.position; 
 					PosF cams = st.Camera.dimension;
@@ -11652,30 +11610,30 @@ void Renderer(uint8 type)
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		//memset(z_buffer,0,57*(2048)*sizeof(int16));
-		memset(z_slot,0,57*sizeof(int16));
+		memset(z_slot, 0, 57 * sizeof(int16));
 		z_used = 0;
 
-		for(i=0;i<MAX_STRINGS;i++)
+		for (i = 0; i < MAX_STRINGS; i++)
 		{
-			if(st.strings[i].stat==1)
+			if (st.strings[i].stat == 1)
 			{
-				st.strings[i].stat=2;
+				st.strings[i].stat = 2;
 				continue;
 			}
 			else
-			if(st.strings[i].stat==2)
+			if (st.strings[i].stat == 2)
 			{
-				glDeleteTextures(1,&st.strings[i].data.data);
-				st.strings[i].data.channel=0;
-				st.strings[i].stat=0;
+				glDeleteTextures(1, &st.strings[i].data.data);
+				st.strings[i].data.channel = 0;
+				st.strings[i].stat = 0;
 			}
 		}
 		
-		for(i=0;i<vbdt_num;i++)
+		for (i = 0; i < vbdt_num; i++)
 		{
-			if(vbdt[i].num_elements>0)
+			if (vbdt[i].num_elements > 0)
 			{
-				vbdt[i].num_elements=0;
+				vbdt[i].num_elements = 0;
 			}
 		}
 		
@@ -11691,7 +11649,7 @@ void Renderer(uint8 type)
 
 	st.num_lightmap = 0;
 	memset(&ent, 0, MAX_GRAPHICS * sizeof(_ENTITIES));
-	memset(&lmp, 0, MAX_LIGHTMAPS);
+	memset(&lmp, 0, MAX_LIGHTMAPS * sizeof(_ENTITIES));
 	memset(&shw, 0, MAX_LIGHTMAPS * (MAX_LIGHTMAPS / 16));
 
 	//SDL_GL_SwapWindow(wn);

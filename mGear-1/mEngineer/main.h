@@ -236,6 +236,8 @@ struct _mEng
 		float c, l, q;
 		uint8 light_id;
 		LIGHT_TYPE type;
+		int16 spotang, spotinnerang;
+		Pos spotdir;
 	} light;
 
 	uint32 palette[256][256];

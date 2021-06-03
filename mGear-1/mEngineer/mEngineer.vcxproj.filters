@@ -45,6 +45,12 @@
     <ClCompile Include="mggeditor.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="essential.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\mGear-1\funcs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -74,10 +80,38 @@
     <ClInclude Include="mggeditor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\mGear-1\funcs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mGear-1\skins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mGear-1\nuklear.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mGear-1\nuklear_sdl_gl3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\mGear-1\a.asm">
       <Filter>Source Files</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mEngineer.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="mEngineer.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="eng_splash.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

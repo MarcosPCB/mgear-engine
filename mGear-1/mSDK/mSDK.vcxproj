@@ -69,23 +69,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\LibTomCrypt\headers;C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)mGear-1;$(SolutionDir)APIs\Nuklear;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\APIs\LibTomCrypt;$(SolutionDir)\APIs\curl-7.59.0\I386;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)mGear-1;$(SolutionDir)APIs\Nuklear;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\APIs\curl-7.59.0\I386;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug64|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\LibTomCrypt\headers;C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)mGear-1;$(SolutionDir)APIs\Nuklear;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\APIs\LibTomCrypt;$(SolutionDir)\APIs\curl-7.59.0\AMD64;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x64;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x64;$(SolutionDir)\APIs\glee\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)APIs\SDL2-2.0.3\include;$(SolutionDir)APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)APIs\glee;$(SolutionDir)mGear-1;$(SolutionDir)APIs\Nuklear;$(SolutionDir)APIs\stb;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\APIs\curl-7.59.0\AMD64;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x64;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x64;$(SolutionDir)\APIs\glee\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\LibTomCrypt\headers;C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\APIs\LibTomCrypt;$(SolutionDir)\APIs\curl-7.59.0\I386;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\APIs\curl-7.59.0\I386;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x86;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x86;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release64|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\LibTomCrypt\headers;C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\APIs\LibTomCrypt;$(SolutionDir)\APIs\curl-7.59.0\AMD64;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x64;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x64;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\Marcos\Desktop\prj\mGear-1\APIs\curl\include\curl;$(SolutionDir)\APIs\SDL2-2.0.3\include;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\include;$(SolutionDir)\APIs\stb;$(SolutionDir)\APIs\glee;$(SolutionDir)\APIs\FMOD\inc;$(SolutionDir)\mGear-1;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)\APIs\curl-7.59.0\AMD64;$(SolutionDir)\APIs\SDL2-2.0.3\lib\x64;$(SolutionDir)\APIs\SDL2_ttf-2.0.12\lib\x64;$(SolutionDir)\APIs\glee\Release;$(SolutionDir)\APIs\FMOD\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,7 +93,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;MGEAR_CLEAN_VERSION;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;MGEAR_CLEAN_VERSION;CURL_STATICLIB;HAS_SPLASHSCREEN;SPLASHSCREEN_RESOURCE;%(PreprocessorDefinitions);HAS_SPLASHSCREEN;SPLASHSCREEN_RESOURCE</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DisableSpecificWarnings>4996;4005;4101;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
@@ -107,7 +107,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;LIBCURL.LIB;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;LIBCURL.LIB;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <ShowProgress>NotSet</ShowProgress>
@@ -120,7 +120,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;MGEAR_CLEAN_VERSION;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;MGEAR_CLEAN_VERSION;CURL_STATICLIB;%(PreprocessorDefinitions);HAS_SPLASHSCREEN;SPLASHSCREEN_RESOURCE</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DisableSpecificWarnings>4996;4005;4101;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
@@ -134,7 +134,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;LIBCURL.LIB;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;LIBCURL.LIB;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <ShowProgress>NotSet</ShowProgress>
@@ -150,7 +150,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;NDEBUG;_WINDOWS;_VAO_RENDER;_VERTARRAY;MGEAR_CLEAN_VERSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;NDEBUG;_WINDOWS;_VAO_RENDER;_VERTARRAY;MGEAR_CLEAN_VERSION;%(PreprocessorDefinitions);HAS_SPLASHSCREEN;SPLASHSCREEN_RESOURCE</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
@@ -164,7 +164,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;libcurl.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;libcurl.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <OutputFile>$(SolutionDir)\SDK\bin\$(TargetFileName)</OutputFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
@@ -179,7 +179,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;NDEBUG;_WINDOWS;_VAO_RENDER;_VERTARRAY;MGEAR_CLEAN_VERSION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;HAS_IA_COMM;NDEBUG;_WINDOWS;_VAO_RENDER;_VERTARRAY;MGEAR_CLEAN_VERSION;%(PreprocessorDefinitions);HAS_SPLASHSCREEN;SPLASHSCREEN_RESOURCE</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
@@ -193,7 +193,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;tomcrypt.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;LIBCMTD.LIB;Shlwapi.lib;libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <OutputFile>$(SolutionDir)\SDK\bin\$(TargetFileName)</OutputFile>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>

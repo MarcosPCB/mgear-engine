@@ -5787,7 +5787,7 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	//DisplaySplashScreen();
+	DisplaySplashScreen();
 
 	strcpy(st.WindowTitle,"Tex");
 
@@ -5874,7 +5874,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	//InitEngineWindow();
+	InitEngineWindow();
 
 BACKLOOP:
 

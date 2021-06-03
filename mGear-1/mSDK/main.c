@@ -2922,7 +2922,7 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	//DisplaySplashScreen();
+	DisplaySplashScreen();
 	
 	curl_global_init(CURL_GLOBAL_ALL);
 
@@ -3036,7 +3036,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	//InitEngineWindow();
+	InitEngineWindow();
 
 	while(!st.quit)
 	{

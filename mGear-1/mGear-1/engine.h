@@ -163,7 +163,8 @@ enum _Enttype
 	TEXT,
 	TEXT_UI,
 	UI,
-	LIGHT_MAP,
+	POINT_LIGHT,
+	SPOT_LIGHT,
 	LINE,
 	ent_none
 };
@@ -246,14 +247,9 @@ typedef struct _ENTITIES_ _ENTITIES;
 
 enum _LIGHT_TYPE
 {
-	AMBIENT_LIGHT = 0,
-	POINT_LIGHT_MEDIUM = 1,
-	POINT_LIGHT_STRONG = 2,
-	POINT_LIGHT_NORMAL = 3,
-	SPOTLIGHT_MEDIUM = 4,
-	SPOTLIGHT_STRONG = 5,
-	SPOTLIGHT_NORMAL = 6,
-	TGA_FILE = 7
+	POINTLIGHT = 0,
+	SPOTLIGHT = 1,
+	TGA_FILE = 2
 };
 
 typedef enum _LIGHT_TYPE LIGHT_TYPE;
@@ -878,7 +874,7 @@ struct _Render
 	GLuint GShader[16];
 	GLuint Program[16];
 
-	GLint unifs[17];
+	GLint unifs[24];
 
 	//Custom shaders
 	/*
@@ -928,6 +924,9 @@ struct _GAME_LIGHTMAPS_
 
 	uPos16 t_pos2[16];
 
+	Pos s_dir;
+	int16 spotcos, spotinnercos;
+
 	unsigned char *data;
 
 	uint8 num_lights;
@@ -936,7 +935,7 @@ struct _GAME_LIGHTMAPS_
 
 	uint8 stat;
 
-	LIGHT_TYPE type[16];
+	LIGHT_TYPE type;
 
 	ColorA16 color[16];
 
@@ -1340,7 +1339,7 @@ int8 DrawObj(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uin
 int8 DrawGraphic(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 x1, int32 y1, int32 x2, int32 y2, int8 z, uint16 flag);
 int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, TEX_DATA data, uint8 a, int32 z, int16 flags, int32 sizeax, int32 sizeay, int32 sizemx, int32 sizemy);
 int8 DrawLight(int32 x, int32 y, int32 z, int16 ang, uint8 r, uint8 g, uint8 b, LIGHT_TYPE type, uint8 intensity, float falloff, int32 radius);
-int8 DrawLightmap(int32 x, int32 y, int32 z, int32 sizex, int32 sizey, GLuint data, LIGHT_TYPE type, int16 ang);
+int8 DrawSpotLight(int32 x, int32 y, int32 z, int32 radius, Color color, float falloff, float intensity, float f3, int32 sx2, int32 sy2, int16 ang, int16 innerang, uint8 light_id);
 int8 DrawHud(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, uint8 g, uint8 b, int32 x1, int32 y1, int32 x2, int32 y2, TEX_DATA data, uint8 a, int8 layer);
 int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, uint8 a, int16 linewidth, int32 z);
 int8 DrawCircle(int32 x, int32 y, int32 radius, uint8 r, uint8 g, uint8 b, uint8 a, int32 z);

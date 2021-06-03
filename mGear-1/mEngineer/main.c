@@ -868,7 +868,7 @@ void LightingMisc()
 
 	if (st.mouse1)
 	{
-		for (int i = 0; i < MAX_LIGHTMAPS; i++)
+		for (int i = 1; i < MAX_LIGHTMAPS; i++)
 		{
 			if (!gl[i].stat)
 			{
@@ -880,11 +880,11 @@ void LightingMisc()
 				STW(&gl[i].w_pos.x, &gl[i].w_pos.y);
 				SnapToGrid(&gl[i].w_pos.x, &gl[i].w_pos.y);
 
-				gl[i].w_pos.z = meng.lightmappos.z;
+				gl[i].w_pos.z = meng.light.l + 24;
 
 				//gl[i].T_w = gl[i].T_h = 
 
-				gl[i].W_w = gl[i].W_h = (meng.light.falloff * (mSqrt(1.0f/meng.light.c) - 1.0f)) * 3;
+				gl[i].W_w = gl[i].W_h = (float)(meng.light.falloff * (mSqrt(1.0f / meng.light.c) - 1.0f)) * 4;
 				STW(&gl[i].W_w, &gl[i].W_h);
 
 				gl[i].falloff[0] = meng.light.falloff;
@@ -893,6 +893,14 @@ void LightingMisc()
 				gl[i].ambient_color = meng.light.color;
 				gl[i].falloff[1] = meng.light.intensity;
 				gl[i].falloff[4] = meng.light.l;
+
+				gl[i].type = meng.light.type;
+
+				gl[i].spotcos = meng.light.spotang;
+				gl[i].spotinnercos = meng.light.spotinnerang;
+				meng.light.spotdir.x = gl[i].w_pos.x;
+				meng.light.spotdir.y = gl[i].w_pos.y + 1024;
+				gl[i].s_dir = meng.light.spotdir;
 
 				int8 lz = meng.light.l + 24;
 
@@ -1551,14 +1559,39 @@ static void ViewPortCommands()
 
 							meng.com_id = i;
 
+							Pos dif;
+
+							dif.x = gl[i].s_dir.x - gl[i].w_pos.x;
+							dif.y = gl[i].s_dir.y - gl[i].w_pos.y;
+
 							gl[i].w_pos.x = p.x;
 							gl[i].w_pos.y = p.y;
 
 							gl[i].w_pos.x -= meng.p.x;
 							gl[i].w_pos.y -= meng.p.y;
 
+							gl[i].s_dir.x = gl[i].w_pos.x + dif.x;
+							gl[i].s_dir.y = gl[i].w_pos.y + dif.y;
+
 							p.x = gl[i].w_pos.x + 150;
 							p.y = gl[i].w_pos.y - 150;
+						}
+						else if (st.mouse1 && meng.got_it == i + 12000 + 256)
+						{
+							p = st.mouse;
+
+							STW(&p.x, &p.y);
+
+							meng.com_id = i;
+
+							gl[i].s_dir.x = p.x;
+							gl[i].s_dir.y = p.y;
+
+							gl[i].s_dir.x -= meng.p.x;
+							gl[i].s_dir.y -= meng.p.y;
+
+							p.x = gl[i].s_dir.x + 150;
+							p.y = gl[i].s_dir.y - 150;
 						}
 
 						if (CheckCollisionMouseWorld(gl[i].w_pos.x, gl[i].w_pos.y, 300, 300, 0, l))
@@ -1594,6 +1627,11 @@ static void ViewPortCommands()
 
 								meng.com_id = i;
 
+								Pos dif;
+
+								dif.x = gl[i].s_dir.x - gl[i].w_pos.x;
+								dif.y = gl[i].s_dir.y - gl[i].w_pos.y;
+
 								gl[i].w_pos.x = p.x;
 								gl[i].w_pos.y = p.y;
 
@@ -1602,6 +1640,56 @@ static void ViewPortCommands()
 
 								p.x = gl[i].w_pos.x + 150;
 								p.y = gl[i].w_pos.y - 150;
+
+								gl[i].s_dir.x = gl[i].w_pos.x + dif.x;
+								gl[i].s_dir.y = gl[i].w_pos.y + dif.y;
+
+								got_it = 1;
+								break;
+							}
+						}
+
+						if (gl[i].type == SPOTLIGHT && CheckCollisionMouseWorld(gl[i].s_dir.x, gl[i].s_dir.y, 128, 128, 0, l))
+						{
+							if (st.mouse1)
+							{
+								if (meng.command2 != NEDIT_LIGHT && meng.sub_com == SCALER_SELECT)
+									continue;
+
+								memset(meng.layers, 0, 57 * 2048 * 2);
+								meng.layers[l][k] = 1;
+
+								if (meng.got_it == -1)
+								{
+									meng.command2 = NEDIT_LIGHT;
+									meng.p = st.mouse;
+									meng.got_it = i + 12000 + 256;
+
+									meng.light_edit_selection = i;
+
+									STW(&meng.p.x, &meng.p.y);
+
+									meng.p.x -= gl[i].s_dir.x;
+									meng.p.y -= gl[i].s_dir.y;
+								}
+
+								if (meng.got_it != -1 && meng.got_it != i + 12000 + 256)
+									continue;
+
+								p = st.mouse;
+
+								STW(&p.x, &p.y);
+
+								meng.com_id = i;
+
+								gl[i].s_dir.x = p.x;
+								gl[i].s_dir.y = p.y;
+
+								gl[i].s_dir.x -= meng.p.x;
+								gl[i].s_dir.y -= meng.p.y;
+
+								p.x = gl[i].s_dir.x + 150;
+								p.y = gl[i].s_dir.y - 150;
 
 								got_it = 1;
 								break;
@@ -4308,6 +4396,14 @@ static void ENGDrawLight()
 				tmp.x *= st.Camera.dimension.x;
 				tmp.y *= st.Camera.dimension.y;
 
+				if (st.game_lightmaps[i].type == SPOTLIGHT)
+				{
+					DrawLine(st.game_lightmaps[i].w_pos.x + 12, st.game_lightmaps[i].w_pos.y + 12, st.game_lightmaps[i].s_dir.x + 12, st.game_lightmaps[i].s_dir.y + 12, 0, 0, 0, 255, 32, 16);
+					DrawLine(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, st.game_lightmaps[i].s_dir.x, st.game_lightmaps[i].s_dir.y, 235, 235, 235, 255, 32, 16);
+					DrawCircle(st.game_lightmaps[i].s_dir.x + 12, st.game_lightmaps[i].s_dir.y + 12, 32, 0, 0, 0, 255, 16);
+					DrawCircle(st.game_lightmaps[i].s_dir.x, st.game_lightmaps[i].s_dir.y, 32, 255, 255, 255, 255, 16);
+				}
+
 				//DrawUI(tmp.x, tmp.y, 512, 512, 0, 255, 255, 255, 0, 0, 32768, 32768, st.BasicTex, 255, 0);
 				DrawGraphic(st.game_lightmaps[i].w_pos.x, st.game_lightmaps[i].w_pos.y, 300, 300, 0, 255, 255, 255, st.BasicTex,
 					255, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, 16, 2);
@@ -6849,7 +6945,7 @@ void NewLeftPannel()
 				//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
 
 				meng.light.falloff = nk_propertyi(ctx, "Radius", 0, meng.light.falloff, 32768, 64, 8);
-				meng.lightmappos.z = nk_propertyi(ctx, "Intensity", 0, meng.light.intensity, 256, 8, 1);
+				meng.light.intensity = nk_propertyi(ctx, "Intensity", 0, meng.light.intensity, 256, 8, 1);
 				meng.light.c = nk_propertyf(ctx, "Cutoff", 0, meng.light.c, 32, 0.1, 0.01);
 				meng.light.l = nk_propertyi(ctx, "Midground Z", 0, meng.light.l, 7, 1, 1);
 
@@ -7174,10 +7270,24 @@ void NewLeftPannel()
 					//char *lighttype[] = { "Point Light medium", "Point Light strong", "Point Light normal", "SpotLight medium", "SpotLight strong", "SpotLight normal" };
 					//meng.light.type = nk_combo(ctx, lighttype, 6, meng.light.type - 1, 30, nk_vec2(110, 360)) + 1;
 
+					int ltype = ls->type;
+					nk_combobox_string(ctx, "Point Light\0Spot Light\0", &ltype, 2, 25, nk_vec2(100, 100));
+					ls->type = ltype;
+
 					ls->falloff[0] = nk_propertyi(ctx, "Radius", 0, ls->falloff[0], 32768, 32, 4);
 					ls->falloff[1] = nk_propertyi(ctx, "Intensity", 0, ls->falloff[1], 256, 8, 1);
 					ls->falloff[2] = nk_propertyf(ctx, "Cutoff", 0, ls->falloff[2], 32, 0.1, 0.01);
 					ls->falloff[4] = nk_propertyi(ctx, "Midground Z", 0, ls->falloff[4], 7, 1, 1);
+
+					if (ls->type == SPOTLIGHT)
+					{
+						ls->spotcos = nk_propertyi(ctx, "Spot angle", 10, ls->spotcos, 900, 50, 10);
+						ls->spotinnercos = nk_propertyi(ctx, "Spot inner angle", 5, ls->spotinnercos, ls->spotcos - 5, 100, 10);
+					}
+
+					ls->W_w = ls->W_h = (float)(ls->falloff[0] * (mSqrt(1.0f / ls->falloff[2]) - 1.0f)) * 4.0f;
+
+					STW(&ls->W_w, &ls->W_h);
 
 					FixLayerBar();
 
@@ -7390,7 +7500,7 @@ void NewLeftPannel()
 
 int main(int argc, char *argv[])
 {
-	int16 i=0, test=0, ch, ch2, ch3;
+	int16 i = 0, test = 0, ch, ch2, ch3, op_file = -1;
 	int16 testa = 0;
 	char str[64];
 
@@ -7407,6 +7517,7 @@ int main(int argc, char *argv[])
 	//_CrtSetDbgFlag(_CRTDBG_CHECK_ALWAYS_DF);
 
 	PreInit("meng", argc, argv);
+	
 
 	if(LoadCFG()==0)
 		if(MessageBox(NULL,"Error while trying to read or write the configuration file",NULL,MB_OK | MB_ICONERROR)==IDOK) 
@@ -7415,6 +7526,7 @@ int main(int argc, char *argv[])
 	strcpy(st.LogName, "meng.log");
 		
 	Init();
+	DisplaySplashScreen();
 
 	strcpy(st.WindowTitle,"Engineer");
 
@@ -7440,6 +7552,8 @@ int main(int argc, char *argv[])
 		{
 			if (strcmp(argv[i], "-p") == NULL)
 				strcpy(meng.prj_path, argv[i + 1]);
+			else if (strcmp(argv[i], "-o") == NULL)
+				op_file = i + 1;
 		}
 	}
 
@@ -7460,18 +7574,18 @@ int main(int argc, char *argv[])
 
 	//SpriteListLoad();
 
-	BASICBKD(255,255,255);
-	DrawString2UI("Loading assets...", 8192, 4608, 0, 0, 0, 255, 255, 255, 255, ARIAL, 2048, 2048, 6);
+	//BASICBKD(255,255,255);
+	//DrawString2UI("Loading assets...", 8192, 4608, 0, 0, 0, 255, 255, 255, 255, ARIAL, 2048, 2048, 6);
 
 	char ico[2];
 
 	ico[0] = 30;
 	ico[1] = 0;
 
-	DrawString2UI(ico, 8192, st.gamey - 2048, 0, 0, 0, 255, 255, 255, 255, 1, 4096, 4096, 6);
+	//DrawString2UI(ico, 8192, st.gamey - 2048, 0, 0, 0, 255, 255, 255, 255, 1, 4096, 4096, 6);
 
-	Renderer(1);
-	SwapBuffer(wn);
+	//Renderer(1);
+	//SwapBuffer(wn);
 
 	LoadSpriteList("sprite.slist");
 
@@ -7528,12 +7642,139 @@ int main(int argc, char *argv[])
 
 	SetCurrentDirectory(meng.prj_path);
 
+	InitEngineWindow();
+
 	NewMap();
 
 	SetSkin(ctx, THEME_BLACK);
 	meng.theme = THEME_BLACK;
 
 	SETENGINEPATH;
+
+	if (op_file != -1)
+	{
+		if (LoadMap(argv[op_file]))
+		{
+			memset(meng.mgg_list, 0, 32 * 256);
+			meng.num_mgg = 0;
+			LogApp("Map %s loaded", st.Current_Map.name);
+
+			for (int a = 0, id = 0; a < st.Current_Map.num_mgg; a++)
+			{
+				DrawUI(8192, 4608, 16384, 8192, 0, 0, 0, 0, 0, 0, TEX_PAN_RANGE, TEX_PAN_RANGE, mgg_sys[0].frames[4], 255, 0);
+				sprintf(str, "Loading %d%", (a / st.Current_Map.num_mgg) * 100);
+				DrawString2UI(str, 8192, 4608, 1, 1, 0, 255, 255, 255, 255, ARIAL, FONT_SIZE * 2, FONT_SIZE * 2, 0);
+				char path2[MAX_PATH];
+				//PathRelativePathTo(path2, meng.prj_path, FILE_ATTRIBUTE_DIRECTORY, st.Current_Map.MGG_FILES[a], FILE_ATTRIBUTE_DIRECTORY);
+				strcpy(path2, meng.prj_path);
+				strcat(path2, "\\");
+				strcat(path2, st.Current_Map.MGG_FILES[a]);
+
+				if (CheckMGGFile(path2))
+				{
+					LoadMGG(&mgg_map[id], path2);
+					strcpy(meng.mgg_list[a], mgg_map[id].name);
+					meng.num_mgg++;
+					id++;
+				}
+				else
+				{
+					FreeMap();
+
+					LogApp("Error while loading map's MGG: %s", st.Current_Map.MGG_FILES[a]);
+					break;
+				}
+
+			}
+
+			st.Camera.position.x = 0;
+			st.Camera.position.y = 0;
+			meng.scroll = 0;
+			meng.tex_selection.data = -1;
+			meng.command2 = 0;
+			meng.scroll2 = 0;
+			meng.mgg_sel = 0;
+			meng.pannel_choice = 2;
+			meng.command = 2;
+			meng.menu_sel = 0;
+			meng.obj.amblight = 1;
+			meng.obj.color.r = meng.spr.color.r = 255;
+			meng.obj.color.g = meng.spr.color.g = 255;
+			meng.obj.color.b = meng.spr.color.b = 255;
+			meng.obj.color.a = meng.spr.color.a = 255;
+			meng.obj.texsize.x = 32768;
+			meng.obj.texsize.y = 32768;
+			meng.obj.texpan.x = 0;
+			meng.obj.texpan.y = 0;
+			meng.obj.type = meng.spr.type = MIDGROUND;
+			meng.obj_lightmap_sel = -1;
+
+			meng.lightmapsize.x = 0;
+			meng.lightmapsize.y = 0;
+
+			meng.spr.gid = -1;
+			meng.spr2.gid = -1;
+			meng.sprite_selection = 0;
+			meng.sprite_frame_selection = 0;
+			meng.spr.size.x = 2048;
+			meng.spr.size.y = 2048;
+
+			meng.playing_sound = 0;
+
+			meng.lightmap_res.x = meng.lightmap_res.y = 256;
+			st.gt = INGAME;
+			st.mouse1 = 0;
+			//free(path2);
+			free(meng.path);
+			meng.path = (char*)malloc(2);
+			strcpy(meng.path, ".");
+
+			meng.viewmode = 7;
+
+			memset(meng.z_buffer, -1, 2048 * 57 * sizeof(int16));
+			memset(meng.z_slot, 0, 57 * sizeof(int16));
+			meng.z_used = 0;
+
+			for (int m = 0; m<st.Current_Map.num_obj; m++)
+			{
+				meng.z_buffer[st.Current_Map.obj[m].position.z][meng.z_slot[st.Current_Map.obj[m].position.z]] = m;
+				meng.z_slot[st.Current_Map.obj[m].position.z]++;
+				if (st.Current_Map.obj[m].position.z>meng.z_used)
+					meng.z_used = st.Current_Map.obj[m].position.z;
+			}
+
+			for (int m = 0; m<st.Current_Map.num_sprites; m++)
+			{
+				meng.z_buffer[st.Current_Map.sprites[m].position.z][meng.z_slot[st.Current_Map.sprites[m].position.z]] = m + 2000;
+				meng.z_slot[st.Current_Map.sprites[m].position.z]++;
+				if (st.Current_Map.sprites[m].position.z>meng.z_used)
+					meng.z_used = st.Current_Map.sprites[m].position.z;
+			}
+
+			for (int m = 0; m<st.Current_Map.num_sector; m++)
+			{
+				meng.z_buffer[24][meng.z_slot[24]] = m + 10000;
+				meng.z_slot[24]++;
+				if (24>meng.z_used)
+					meng.z_used = 24;
+			}
+
+			for (int m = 1; m <= st.num_lights; m++)
+			{
+				int8 lz = st.game_lightmaps[m].falloff[4] + 24;
+
+				meng.z_buffer[lz][meng.z_slot[lz]] = m + 12000;
+				meng.z_slot[lz]++;
+
+				if (lz>meng.z_used)
+					meng.z_used = lz;
+			}
+
+			SetCurrentDirectory(meng.prj_path);
+
+			//break;
+		}
+	}
 	//SetDirContent("mgg");
 
 	while(!st.quit)

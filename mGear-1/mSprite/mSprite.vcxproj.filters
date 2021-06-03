@@ -54,6 +54,9 @@
     <ClInclude Include="..\mGear-1\UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -62,10 +65,26 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{3c79bd4b-c108-48c7-8561-031505a9dcf8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{844db7d7-d215-4159-9971-88c2b3a580b7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\mGear-1\a.asm">
       <Filter>Source Files</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mSprite.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="mSprite.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="sprite_splash.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

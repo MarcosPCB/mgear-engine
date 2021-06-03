@@ -27,8 +27,8 @@
     <ClCompile Include="..\mGear-1\UI.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="skins.h">
-      <Filter>Header Files</Filter>
+    <ClCompile Include="..\mGear-1\funcs.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -65,5 +65,27 @@
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mGear-1\funcs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mGear-1\skins.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mTex.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="mTex.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="tex_splash.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

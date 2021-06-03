@@ -2290,7 +2290,7 @@ int main(int argc, char *argv[])
 
 	Init();
 
-	//DisplaySplashScreen();
+	DisplaySplashScreen();
 
 	strcpy(st.WindowTitle, "Sprite");
 
@@ -2334,7 +2334,7 @@ int main(int argc, char *argv[])
 
 	GetCurrentDirectory(MAX_PATH, mspr.program_path);
 
-	//InitEngineWindow();
+	InitEngineWindow();
 
 	mspr.anim_frame = mspr.selected_spr = mspr.state_selected = mspr.curframe = -1;
 

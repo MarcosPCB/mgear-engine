@@ -16,11 +16,11 @@ static const char *Texture_VShader[64]={
 
 	"void main()\n"
 	"{\n"
-	"gl_Position = vec4(Position, 1.0);\n"
-	"TexCoord2 = TexCoord;\n"
-	"colore = Color;\n"
-	"TexLight2 = TexLight;\n"
-	"Pos = Position;\n"
+		"gl_Position = vec4(Position.x, Position.y, Position.z, 1.0);\n"
+		"TexCoord2 = TexCoord;\n"
+		"colore = Color;\n"
+		"TexLight2 = TexLight;\n"
+		"Pos = Position;\n"
 	"}\n"
 };
 
@@ -304,6 +304,9 @@ static const char *Lightmap_FShader[128]={
 
 	"uniform vec3 falloff;\n"
 	"uniform vec2 res;\n"
+	"uniform float spotcos;\n"
+	"uniform float spotinnercos;\n"
+	"uniform vec2 spotdir;\n"
 
 	"uniform vec2 camp;\n"
 	"uniform vec2 cams;\n"
@@ -330,7 +333,7 @@ static const char *Lightmap_FShader[128]={
 			
 			"FColor = texture(texu, TexCoord2) * colore * alpha;\n"
 		"}\n"
-
+		"else\n"
 		"if(normal == 1.0)\n"
 		"{\n"
 			"vec4 Lightmap = texture(texu2, TexLight2) * 4.0;\n"
@@ -341,7 +344,7 @@ static const char *Lightmap_FShader[128]={
 
 			"FColor = texture(texu, TexCoord2) * colore + (Lightmap * max(dot(N, L), 0.0));\n"
 		"}\n"
-		//		"else\n"
+		"else\n"
 		"if(normal == 2.0)\n"
 		"{\n"
 		//"vec4 Lightmap = texture(texu2, TexLight2);\n"
@@ -350,14 +353,14 @@ static const char *Lightmap_FShader[128]={
 			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
 			"Amb = colore;\n"
 		"}\n"
-		//		"else\n"
+		"else\n"
 		"if(normal == 3.0)\n"
 		"{\n"
 			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
 			"FColor = texture(texu, TexCoord2);\n"
 			"Mask = vec4(0, 0, 0, texture(texu, TexCoord2).a);\n"
 		"}\n"
-
+		"else\n"
 		"if(normal == 4.0)\n"
 		"{\n"
 			"vec3 L = normalize(texture(texu4, TexCoord2).rgb);\n"
@@ -365,6 +368,7 @@ static const char *Lightmap_FShader[128]={
 			"vec3 N = normalize(texture(texu3, TexCoord2).rgb * 2.0 - 1.0);\n"
 			"FColor = texture(texu, TexCoord2) * (texture(texu2, TexCoord2) + ((texture(texu4, TexCoord2)) * max(dot(N, L), 0.0)));\n"
 		"}\n"
+		"else\n"
 		"if(normal == 5.0)\n"
 		"{\n"
 			"vec3 LightDir = vec3(Lightpos.xy - gl_FragCoord.xy, Lightpos.z);\n"
@@ -377,7 +381,7 @@ static const char *Lightmap_FShader[128]={
 			//calculate attenuation
 			//"float Attenuation = clamp((1.0 / (0.01 + (falloff.x * D))) - 0.01, 0.0, 10);\n"
 			"float Attenuation = 1.0f / (((D / (falloff.x * cams.x)) + 1.0f) * (256.0f / falloff.y));\n"
-			"Attenuation = ((Attenuation - falloff.z) / (1.0f - Attenuation));\n"
+			"Attenuation = clamp(((Attenuation - falloff.z) / (1.0f - Attenuation)), 0.0, 2.0);\n"
 			//"Attenuation = clamp(falloff.y / pow((D / falloff.x) + 1, 2), 0.0, falloff.y); \n"
 			//"float Attenuation = pow(smoothstep(falloff.x, 0, D), falloff.y);\n"
 
@@ -388,25 +392,54 @@ static const char *Lightmap_FShader[128]={
 			"FColor = vec4(FinalColor, 1.0);\n"
 			//"NColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
 		"}\n"
-
+		"else\n"
 		"if(normal == 6.0)\n"
 		"{\n"
 			//"NColor = vec4(0.0, 0.0 , 0.0, 1.0);\n"
 			//"Amb = vec4(1.0, 0.0 , 0.0, 1.0);\n"
 
-			"if(sector == 1 && gl_FragCoord.y < sector_y) discard;\n"
-			"if(sector == 2 && gl_FragCoord.y < sector_y) discard;\n"
+			"if(sector == 1 && gl_FragCoord.y < sector_y - 1) discard;\n"
+			"if(sector == 2 && gl_FragCoord.y < sector_y - 1) discard;\n"
 			"if(sector == 2 && gl_FragCoord.y > sector_y_2) discard;\n"
 
 			"if(shadow == 0)\n"
-				"FColor = vec4(0, 0, 0, clamp(textureLod(texu5, TexCoord2, 1).a - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+				"FColor = vec4(0, 0, 0, clamp(texture(texu5, TexCoord2, 1) - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
 			"else\n"
-				"FColor = vec4(0, 0, 0, clamp(textureLod(texu5, TexCoord2, 1).r - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+				"FColor = vec4(0, 0, 0, clamp(texture(texu5, TexCoord2, 1) - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
 		"}\n"
-
+		"else\n"
 		"if(normal == 7.0)\n"
 		"{\n"
 			"FColor = vec4(0, 0, 0, 1.0 - texture(texu4, TexCoord2).a);\n"
+		"}\n"
+		"else\n"
+		"if(normal == 8.0)\n"
+		"{\n"
+			"vec3 LightDir = vec3(Lightpos.xy - gl_FragCoord.xy, Lightpos.z);\n"
+			"vec3 SpotLightDir = vec3(Lightpos.xy - spotdir.xy, Lightpos.z);\n"
+
+			"float SpotEffect = dot(normalize(LightDir), normalize(SpotLightDir));\n"
+
+			"if(SpotEffect > spotcos)\n"
+			"{\n"
+
+				"float SpotAtt = spotinnercos - spotcos;\n"//smoothstep(0.7, 0.99, SpotEffect);\n"
+				"SpotAtt = clamp((SpotEffect - spotcos) / SpotAtt, 0.0, 1.0);\n"
+
+				"float D = length(LightDir);\n"
+
+				"vec3 Ambient = texture(texu2, TexLight2).rgb;\n"
+
+				//calculate attenuation
+				"float Attenuation = SpotAtt * (1.0 / (((D / (falloff.x * cams.x)) + 1.0f) * (256.0f / falloff.y)));\n"
+				"Attenuation = clamp(((Attenuation / falloff.z) / (1.0f - Attenuation)), 0.0, 2.0);\n"
+				//"Attenuation = clamp(falloff.y / pow((D / falloff.x) + 1, 2), 0.0, falloff.y); \n"
+
+				//the calculation which brings it all together
+				"vec3 FinalColor = Attenuation * colore.rgb;\n"
+
+				"FColor = vec4(FinalColor, 1.0);\n"
+			"}\n"
 		"}\n"
 	"}\n"
 };

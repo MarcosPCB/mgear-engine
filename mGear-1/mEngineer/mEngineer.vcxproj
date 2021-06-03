@@ -206,20 +206,20 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;ENGINEER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_VAO_RENDER;_VBO_RENDER;_VA_RENDER;_DEBUG;_CONSOLE;_VERTARRAY;ENGINEER;ENG_DIAGNOSTICS;HAS_SPLASHSCREEN;SPLASHSCREEN_RESOURCE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DisableSpecificWarnings>4996;4005;4101;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <CompileAs>CompileAsC</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;Shlwapi.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <ShowProgress>NotSet</ShowProgress>
@@ -248,7 +248,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;Shlwapi.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <ShowProgress>NotSet</ShowProgress>
@@ -331,7 +331,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;SDL2_image.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;Shlwapi.lib;SDL2_image.lib;LIBCMTD.LIB;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT.LIB</IgnoreSpecificDefaultLibraries>
       <OutputFile>$(SolutionDir)SDK\bin\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -380,7 +380,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <OutputFile>$(SolutionDir)SDK\bin\$(TargetName)$(TargetExt)</OutputFile>
@@ -403,7 +403,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;GLee.lib;SDL2_ttf.lib;OpenGL32.lib;glu32.lib;fmodex_vc.lib;DbgHelp.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
       <Profile>true</Profile>
       <OutputFile>$(SolutionDir)SDK\bin\$(TargetName)$(TargetExt)</OutputFile>
@@ -473,6 +473,7 @@
     <ClInclude Include="..\mGear-1\funcs.h" />
     <ClInclude Include="..\mGear-1\input.h" />
     <ClInclude Include="..\mGear-1\nuklear.h" />
+    <ClInclude Include="..\mGear-1\nuklear_sdl_gl3.h" />
     <ClInclude Include="..\mGear-1\physics.h" />
     <ClInclude Include="..\mGear-1\quicklz.h" />
     <ClInclude Include="..\mGear-1\skins.h" />
@@ -480,7 +481,7 @@
     <ClInclude Include="..\mGear-1\UI.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="mggeditor.h" />
-    <ClInclude Include="nuklear_sdl_gl3.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -491,6 +492,13 @@
   </ItemGroup>
   <ItemGroup>
     <MASM Include="..\mGear-1\a.asm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="mEngineer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="eng_splash.png" />
+    <Image Include="mEngineer.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
