@@ -236,7 +236,7 @@ struct _ENTITIES_ //To be rendered
 	float vertex[12];
 	float texcor[8];
 	float texcorlight[8];
-	float texrepeat[4];
+	float vertex2[12];
 	GLubyte color[16];
 	ColorF Color;
 	int8 scenario;

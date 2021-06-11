@@ -16,6 +16,7 @@ static const char *Texture_VShader[64]={
 
 	"void main()\n"
 	"{\n"
+
 		"gl_Position = vec4(Position.x, Position.y, Position.z, 1.0);\n"
 		"TexCoord2 = TexCoord;\n"
 		"colore = Color;\n"
@@ -402,10 +403,95 @@ static const char *Lightmap_FShader[128]={
 			"if(sector == 2 && gl_FragCoord.y < sector_y - 1) discard;\n"
 			"if(sector == 2 && gl_FragCoord.y > sector_y_2) discard;\n"
 
-			"if(shadow == 0)\n"
-				"FColor = vec4(0, 0, 0, clamp(texture(texu5, TexCoord2, 1) - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
-			"else\n"
-				"FColor = vec4(0, 0, 0, clamp(texture(texu5, TexCoord2, 1) - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+			"float blurw = 100.0f * (1.0f - (falloff.y / 256.0f));\n"
+			"vec4 blur = texture(texu5, TexCoord2);\n"
+			"vec2 bluroffset = 1.0f / res.xy;\n"
+
+			"for(int i = 1; i <= 100; ++ i)\n"
+			"{\n"
+				"if (float (i) >= blurw)\n"
+					"break;\n"
+
+				"float weight = 1.0 - float(i) / blurw;\n"
+				"weight = weight * weight * (3.0 - 2.0 * weight);\n"
+				"vec4 samplec1 = texture(texu5, TexCoord2 + vec2(bluroffset.x, 0.0f) * float(i));\n"
+				"vec4 samplec2 = texture(texu5, TexCoord2 - vec2(bluroffset.x, 0.0f) * float(i));\n"
+				"blur += vec4(samplec1.rgb + samplec2.rgb, 2.0f) * weight;\n"
+			"}\n"
+
+			"blur = vec4(blur.rgb / blur.w, blur.a);\n"
+
+			"for(int i = 1; i <= 100; ++ i)\n"
+			"{\n"
+				"if (float (i) >= blurw)\n"
+					"break;\n"
+
+				"float weight = 1.0 - float(i) / blurw;\n"
+				"weight = weight * weight * (3.0 - 2.0 * weight);\n"
+
+				"vec4 samplec1 = texture(texu5, TexCoord2 + vec2(0.0f, bluroffset.y) * float(i));\n"
+				"vec4 samplec2 = texture(texu5, TexCoord2 - vec2(0.0f, bluroffset.y) * float(i));\n"
+				"blur += vec4(samplec1.rgb + samplec2.rgb, 2.0f) * weight;\n"
+			"}\n"
+
+			"FColor = vec4(0, 0, 0, clamp((blur.r / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+		"}\n"
+		"else\n"
+		"if(normal == 9.0)\n"
+		"{\n"
+			//"NColor = vec4(0.0, 0.0 , 0.0, 1.0);\n"
+			//"Amb = vec4(1.0, 0.0 , 0.0, 1.0);\n"
+
+			"if(sector == 1 && gl_FragCoord.y < sector_y - 1) discard;\n"
+			"if(sector == 2 && gl_FragCoord.y < sector_y - 1) discard;\n"
+			"if(sector == 2 && gl_FragCoord.y > sector_y_2) discard;\n"
+
+			"vec3 LightDir = vec3(Lightpos.xy - gl_FragCoord.xy, Lightpos.z);\n"
+			"vec3 SpotLightDir = vec3(Lightpos.xy - spotdir.xy, Lightpos.z);\n"
+
+			"float SpotEffect = dot(normalize(LightDir), normalize(SpotLightDir));\n"
+
+			"if(SpotEffect > spotcos)\n"
+			"{\n"
+
+				"float SpotAtt = spotinnercos - spotcos;\n"
+				"SpotAtt = clamp((SpotEffect - spotcos) / SpotAtt, 0.0, 1.0) * 2.0f;\n"
+
+				"float blurw = 100.0f * (1.0f - (falloff.y / 256.0f));\n"
+				"vec4 blur = texture(texu5, TexCoord2);\n"
+				"vec2 bluroffset = 1.0f / res.xy;\n"
+
+				"for(int i = 1; i <= 100; ++ i)\n"
+				"{\n"
+					"if (float (i) >= blurw)\n"
+					"break;\n"
+
+					"float weight = 1.0 - float(i) / blurw;\n"
+					"weight = weight * weight * (3.0 - 2.0 * weight);\n"
+					"vec4 samplec1 = texture(texu5, TexCoord2 + vec2(bluroffset.x, 0.0f) * float(i));\n"
+					"vec4 samplec2 = texture(texu5, TexCoord2 - vec2(bluroffset.x, 0.0f) * float(i));\n"
+					"blur += vec4(samplec1.rgb + samplec2.rgb, 2.0f) * weight;\n"
+				"}\n"
+
+				"blur = vec4(blur.rgb / blur.w, blur.a);\n"
+
+				"for(int i = 1; i <= 100; ++ i)\n"
+				"{\n"
+					"if (float (i) >= blurw)\n"
+					"break;\n"
+
+					"float weight = 1.0 - float(i) / blurw;\n"
+					"weight = weight * weight * (3.0 - 2.0 * weight);\n"
+
+					"vec4 samplec1 = texture(texu5, TexCoord2 + vec2(0.0f, bluroffset.y) * float(i));\n"
+					"vec4 samplec2 = texture(texu5, TexCoord2 - vec2(0.0f, bluroffset.y) * float(i));\n"
+					"blur += vec4(samplec1.rgb + samplec2.rgb, 2.0f) * weight;\n"
+				"}\n"
+
+				//"blur.r *= SpotAtt;\n"
+
+				"FColor = vec4(0, 0, 0, SpotAtt * clamp((blur.rgb / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+			"}\n"
 		"}\n"
 		"else\n"
 		"if(normal == 7.0)\n"
@@ -440,6 +526,11 @@ static const char *Lightmap_FShader[128]={
 
 				"FColor = vec4(FinalColor, 1.0);\n"
 			"}\n"
+		"}\n"
+		"else\n"
+		"if(normal == 10.0)\n"
+		"{\n"
+			"FColor = texture(texu5, TexCoord2);\n"
 		"}\n"
 	"}\n"
 };
