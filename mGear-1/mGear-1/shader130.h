@@ -1,27 +1,42 @@
 #ifndef SHADER130_H
 #define SHADER130_H
 
-static const char *Texture_VShader[64]={
+static const char *Texture_VShader[128]={
 	"#version 330\n"
 
 	"in vec3 Position;\n"
 	"in vec2 TexCoord;\n"
 	"in vec4 Color;\n"
 	"in vec2 TexLight;\n"
+	"in float LBlock;\n"
 
 	"out vec2 TexCoord2;\n"
 	"out vec4 colore;\n"
 	"out vec2 TexLight2;\n"
 	"out vec3 Pos;\n"
+	"out float Bck;\n"
+
+	"uniform vec3 Lightpos;\n"
+
+	"uniform float normal;\n"
 
 	"void main()\n"
 	"{\n"
+		"if(normal == 12.0) {\n"
+			"vec2 pnorm = (Position.xy + 1.0) * 0.5;\n"
+			"vec2 lnorm = (Lightpos.xy + 1.0) * 0.5;\n"
+			"vec2 dist = vec2(0.5 - (lnorm.x - pnorm.x), lnorm.y - pnorm.y + 0.5);\n"
+			//"dist = (lnorm - pnorm) - dist;\n"
+			"dist = (dist / 0.5) - 1.0;\n"
+			"gl_Position = vec4(dist.x, dist.y, Position.z, 1.0); }\n"
+		"else\n"
+			"gl_Position = vec4(Position.x, Position.y, Position.z, 1.0);\n"
 
-		"gl_Position = vec4(Position.x, Position.y, Position.z, 1.0);\n"
 		"TexCoord2 = TexCoord;\n"
 		"colore = Color;\n"
 		"TexLight2 = TexLight;\n"
 		"Pos = Position;\n"
+		"Bck = LBlock;\n"
 	"}\n"
 };
 
@@ -271,8 +286,10 @@ const char *Lightmap_FShader[128]={
 };
 */
 
-static const char *Lightmap_FShader[128]={
+static const char *Lightmap_FShader[256]={
 	"#version 330\n"
+
+	"float PI;\n"
 
 	"precision mediump float;\n"
 
@@ -284,12 +301,15 @@ static const char *Lightmap_FShader[128]={
 
 	"in vec3 Pos;\n"
 
+	"in float Bck;\n"
+
 	"uniform vec3 Lightpos;\n"
 
 	"layout (location = 0) out vec4 FColor;\n"
 	"layout (location = 1) out vec4 NColor;\n"
 	"layout (location = 2) out vec4 Amb;\n"
 	"layout (location = 3) out vec4 Mask;\n"
+	"layout (location = 5) out vec4 Blockers;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -300,6 +320,8 @@ static const char *Lightmap_FShader[128]={
 	"uniform sampler2D texu4;\n"
 
 	"uniform sampler2D texu5;\n"
+
+	"uniform sampler2D texu6;\n"
 
 	"uniform float normal;\n"
 
@@ -318,8 +340,13 @@ static const char *Lightmap_FShader[128]={
 	"uniform float sector_y_2;\n"
 	"uniform int circle;\n"
 
+	"float sample(vec2 coord, float r) {\n"
+		"return step(r, texture(texu6, coord).r);\n"
+	"}\n"
+
 	"void main()\n"
 	"{\n"
+		"PI = 3.1415;\n"
 		"if(normal == 0.0)\n"
 		"{\n"
 			"vec4 alpha = vec4(1.0);\n"
@@ -353,6 +380,7 @@ static const char *Lightmap_FShader[128]={
 			"FColor = vec4(Diff.rgb, Diff.a * colore.a);\n"
 			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
 			"Amb = colore;\n"
+			//"Blockers = vec4(0, 0, 0, texture(texu, TexCoord2).a) + Bck;\n"
 		"}\n"
 		"else\n"
 		"if(normal == 3.0)\n"
@@ -360,6 +388,7 @@ static const char *Lightmap_FShader[128]={
 			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
 			"FColor = texture(texu, TexCoord2);\n"
 			"Mask = vec4(0, 0, 0, texture(texu, TexCoord2).a);\n"
+			"Blockers = vec4(0, 0, 0, texture(texu, TexCoord2).a) + Bck;\n"
 		"}\n"
 		"else\n"
 		"if(normal == 4.0)\n"
@@ -389,8 +418,8 @@ static const char *Lightmap_FShader[128]={
 			//the calculation which brings it all together
 			//"vec3 Intensity = Ambient + Attenuation;\n"
 			"vec3 FinalColor = Attenuation * colore.rgb;\n"
-
-			"FColor = vec4(FinalColor, 1.0);\n"
+			
+			"FColor = vec4(FinalColor * texture(texu6, TexLight2).a, 1.0);\n"
 			//"NColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
 		"}\n"
 		"else\n"
@@ -434,7 +463,7 @@ static const char *Lightmap_FShader[128]={
 				"blur += vec4(samplec1.rgb + samplec2.rgb, 2.0f) * weight;\n"
 			"}\n"
 
-			"FColor = vec4(0, 0, 0, clamp((blur.r / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+			"FColor = vec4(0.0, 0.0, 0.0, clamp((blur.r / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
 		"}\n"
 		"else\n"
 		"if(normal == 9.0)\n"
@@ -531,6 +560,82 @@ static const char *Lightmap_FShader[128]={
 		"if(normal == 10.0)\n"
 		"{\n"
 			"FColor = texture(texu5, TexCoord2);\n"
+		"}\n"
+		"else\n"
+		"if(normal == 11.0)\n"
+		"{\n"
+			"float distance = 1.0;\n"
+
+			"for (float y = 0.0; y < res.y; y += 1.0)\n"
+			"{\n"
+				//rectangular to polar filter
+				//"vec2 ln = Lightpos.xy * 2.0 - 1.0;\n"
+				"vec2 norm = vec2(TexCoord2.s, (y / res.y)) * 2.0 - 1.0;\n"
+				"float theta = PI * 1.5 + norm.x * PI;\n"
+				"float r = (1.0 + norm.y) * 0.5;\n"
+
+				//coord which we will sample from occlude map
+				"vec2 coord = vec2(-r * sin(theta), -r * cos(theta)) / 2.0 + 0.5;\n"
+
+				//sample the occlusion map
+				"vec4 data = texture(texu, coord);\n"
+
+				//the current distance is how far from the top we've come
+				"float dst = y / res.y;\n"
+
+				//if we've hit an opaque fragment (occluder), then get new distance
+				//if the new distance is below the current, then we'll use that for our ray
+				"if (data.a > 0.75)\n"
+					"distance = min(distance, dst);\n"
+					//NOTE: we could probably use "break" or "return" here
+			"}\n"
+			//"gl_FragColor = vec4(vec3(distance), 1.0);\n"
+			
+			"FColor = vec4(vec3(distance), 1.0);\n"
+		"}\n"
+		"else\n"
+		"if(normal == 12.0)\n"
+		"{\n"
+			"FColor =  vec4(0, 0, 0, texture(texu, TexCoord2).a + Bck);\n"
+		"}\n"
+		"else\n"
+		"if(normal == 13.0)\n"
+		"{\n"
+			"vec2 norm = TexCoord2.st * 2.0 - 1.0;\n"
+			"norm = norm.xy - Lightpos.xy;\n"
+			
+			"float theta = atan(norm.y, norm.x);\n"
+			"float r = length(norm);\n"
+			"float coord = (theta + PI) / (2.0 * PI);\n"
+
+			//the tex coord to sample our 1D lookup texture	
+			//always 0.0 on y axis
+			"vec2 tc = vec2(coord, 0.0);\n"
+
+			//the center tex coord, which gives us hard shadows
+			"float center = sample(tc, r);\n"
+
+
+			//we multiply the blur amount by our distance from center
+			//this leads to more blurriness as the shadow "fades away"
+			"float blur = ((1.0 / res.x)  * smoothstep(0.0, 1.0, r)) * (256.0f / falloff.y);\n"
+
+			//now we use a simple gaussian blur
+			"float sum = 0.0;\n"
+
+			"sum += sample(vec2(tc.x - 4.0*blur, tc.y), r) * 0.05;\n"
+			"sum += sample(vec2(tc.x - 3.0*blur, tc.y), r) * 0.09;\n"
+			"sum += sample(vec2(tc.x - 2.0*blur, tc.y), r) * 0.12;\n"
+			"sum += sample(vec2(tc.x - 1.0*blur, tc.y), r) * 0.15;\n"
+
+			"sum += center * 0.16;\n"
+
+			"sum += sample(vec2(tc.x + 1.0*blur, tc.y), r) * 0.15;\n"
+			"sum += sample(vec2(tc.x + 2.0*blur, tc.y), r) * 0.12;\n"
+			"sum += sample(vec2(tc.x + 3.0*blur, tc.y), r) * 0.09;\n"
+			"sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;\n"
+
+			"FColor = vec4(0.0, 0.0, 0.0, clamp(sum * smoothstep(1.0, 0.0, r), 0.0, 1.0));\n"
 		"}\n"
 	"}\n"
 };

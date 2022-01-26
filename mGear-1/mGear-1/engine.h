@@ -188,6 +188,7 @@ struct _VB_DATAT
 	float *texcoord;
 	float *texcoordlight;
 	float *texrepeat;
+	float *lblocker;
 	GLubyte *color;
 	GLushort *index;
 	GLuint texture;
@@ -219,6 +220,7 @@ struct _TEX_DATA
 	int channel; //texture dimensions
 	int16 x_offset;
 	int16 y_offset;
+	
 };
 
 typedef struct _TEX_DATA TEX_DATA;
@@ -241,6 +243,7 @@ struct _ENTITIES_ //To be rendered
 	ColorF Color;
 	int8 scenario;
 	int8 circle;
+	float l_blocker[4];
 };
 
 typedef struct _ENTITIES_ _ENTITIES;
@@ -884,10 +887,10 @@ struct _Render
 	*/
 
 	GLuint FBO[4];
-	GLuint FBTex[8];
+	GLuint FBTex[16];
 	GLuint RBO[8];
 
-	GLuint Buffers[8];
+	GLuint Buffers[16];
 
 	uint16 shader_version;
 
