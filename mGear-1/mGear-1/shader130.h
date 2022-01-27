@@ -309,7 +309,9 @@ static const char *Lightmap_FShader[256]={
 	"layout (location = 1) out vec4 NColor;\n"
 	"layout (location = 2) out vec4 Amb;\n"
 	"layout (location = 3) out vec4 Mask;\n"
+	"layout (location = 4) out vec4 Lights;\n"
 	"layout (location = 5) out vec4 Blockers;\n"
+	"layout (location = 6) out vec4 Shadows;\n"
 
 	"uniform sampler2D texu;\n"
 
@@ -388,7 +390,7 @@ static const char *Lightmap_FShader[256]={
 			"NColor = vec4(texture(texu3, TexCoord2).rgb, texture(texu, TexCoord2).a);\n"
 			"FColor = texture(texu, TexCoord2);\n"
 			"Mask = vec4(0, 0, 0, texture(texu, TexCoord2).a);\n"
-			"Blockers = vec4(0, 0, 0, texture(texu, TexCoord2).a) + Bck;\n"
+			//"Blockers = vec4(0, 0, 0, texture(texu, TexCoord2).a) + Bck;\n"
 		"}\n"
 		"else\n"
 		"if(normal == 4.0)\n"
@@ -419,7 +421,7 @@ static const char *Lightmap_FShader[256]={
 			//"vec3 Intensity = Ambient + Attenuation;\n"
 			"vec3 FinalColor = Attenuation * colore.rgb;\n"
 			
-			"FColor = vec4(FinalColor * texture(texu6, TexLight2).a, 1.0);\n"
+			"Lights = vec4(FinalColor * texture(texu6, TexLight2).a, 1.0);\n"
 			//"NColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
 		"}\n"
 		"else\n"
@@ -463,7 +465,7 @@ static const char *Lightmap_FShader[256]={
 				"blur += vec4(samplec1.rgb + samplec2.rgb, 2.0f) * weight;\n"
 			"}\n"
 
-			"FColor = vec4(0.0, 0.0, 0.0, clamp((blur.r / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+			"Lights = vec4(0.0, 0.0, 0.0, clamp((blur.r / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
 		"}\n"
 		"else\n"
 		"if(normal == 9.0)\n"
@@ -519,7 +521,7 @@ static const char *Lightmap_FShader[256]={
 
 				//"blur.r *= SpotAtt;\n"
 
-				"FColor = vec4(0, 0, 0, SpotAtt * clamp((blur.rgb / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
+				"Lights = vec4(0, 0, 0, SpotAtt * clamp((blur.rgb / blur.w) / 1.5f - texture(texu4, TexLight2).a, 0.0, 1.0));\n"
 			"}\n"
 		"}\n"
 		"else\n"
@@ -553,7 +555,7 @@ static const char *Lightmap_FShader[256]={
 				//the calculation which brings it all together
 				"vec3 FinalColor = Attenuation * colore.rgb;\n"
 
-				"FColor = vec4(FinalColor, 1.0);\n"
+				"Lights = vec4(FinalColor, 1.0);\n"
 			"}\n"
 		"}\n"
 		"else\n"
@@ -596,7 +598,7 @@ static const char *Lightmap_FShader[256]={
 		"else\n"
 		"if(normal == 12.0)\n"
 		"{\n"
-			"FColor =  vec4(0, 0, 0, texture(texu, TexCoord2).a + Bck);\n"
+			"Blockers = vec4(0, 0, 0, clamp(texture(texu, TexCoord2).a * colore.a * Bck, 0.0, 1.0));\n"
 		"}\n"
 		"else\n"
 		"if(normal == 13.0)\n"
@@ -635,7 +637,7 @@ static const char *Lightmap_FShader[256]={
 			"sum += sample(vec2(tc.x + 3.0*blur, tc.y), r) * 0.09;\n"
 			"sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;\n"
 
-			"FColor = vec4(0.0, 0.0, 0.0, clamp(sum * smoothstep(1.0, 0.0, r), 0.0, 1.0));\n"
+			"Shadows = vec4(0.0, 0.0, 0.0, clamp(sum * smoothstep(1.0, 0.0, r) - (-1.0 * texture(texu4, TexCoord2).a), 0.0, 1.0));\n"
 		"}\n"
 	"}\n"
 };

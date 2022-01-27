@@ -1121,7 +1121,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 			glBufferSubData(GL_ARRAY_BUFFER,(12*data->buffer_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 			glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
 			glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))),(data->num_elements*8)*sizeof(float),data->texcoordlight);
-			glBufferSubData(GL_ARRAY_BUFFER, (((12 * data->buffer_elements)*sizeof(GLfloat)) + ((8 * data->buffer_elements)*sizeof(GLfloat)) + ((data->buffer_elements * 16)*sizeof(GLubyte)) + ((data->num_elements * 8)*sizeof(float))), (data->num_elements * 4)*sizeof(GLfloat), data->lblocker);
+			glBufferSubData(GL_ARRAY_BUFFER, (((12 * data->buffer_elements)*sizeof(GLfloat)) + ((8 * data->buffer_elements)*sizeof(GLfloat)) + ((data->buffer_elements * 16)*sizeof(GLubyte)) + ((data->buffer_elements * 8)*sizeof(float))), (data->num_elements * 4)*sizeof(GLfloat), data->lblocker);
 
 			if(upd_index)
 			{
@@ -1173,7 +1173,7 @@ static int16 UpdateVAO(VB_DATAT *data, uint8 upd_buff, uint8 upd_index, uint8 pr
 		glBufferSubData(GL_ARRAY_BUFFER,(12*data->buffer_elements)*sizeof(GLfloat),(8*data->num_elements)*sizeof(GLfloat),data->texcoord);
 		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))),(((data->num_elements*16)*sizeof(GLubyte))),data->color);
 		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))),(data->num_elements*8)*sizeof(float),data->texcoordlight);
-		glBufferSubData(GL_ARRAY_BUFFER,(((12*data->buffer_elements)*sizeof(GLfloat))+((8*data->buffer_elements)*sizeof(GLfloat))+((data->buffer_elements*16)*sizeof(GLubyte))+((data->num_elements*8)*sizeof(float))),(data->num_elements*4)*sizeof(float),data->lblocker);
+		glBufferSubData(GL_ARRAY_BUFFER, (((12 * data->buffer_elements)*sizeof(GLfloat)) + ((8 * data->buffer_elements)*sizeof(GLfloat)) + ((data->buffer_elements * 16)*sizeof(GLubyte)) + ((data->buffer_elements * 8)*sizeof(float))), (data->num_elements * 4)*sizeof(float), data->lblocker);
 
 
 		glVertexAttribPointer(pos,3,GL_FLOAT,GL_FALSE,0,0);
@@ -5462,9 +5462,9 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 		i=st.num_entities;
 
 	if (flags & 8)
-		memset(ent[i].l_blocker, 1, 4 * sizeof(float));
+		ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 1.0f;
 	else
-		memset(ent[i].l_blocker, 1, 4 * sizeof(float));
+		ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 0.0f;
 
 	/*
 			if(data.vb_id!=-1)
@@ -11203,7 +11203,7 @@ void Renderer(uint8 type)
 			vbdt[i].index=(GLushort*) calloc(vbdt[i].num_elements*6,sizeof(GLushort));
 			vbdt[i].color=(GLubyte*) calloc(vbdt[i].num_elements*16,sizeof(GLubyte));
 			vbdt[i].texcoordlight=(float*) calloc(vbdt[i].num_elements*8,sizeof(float));
-			vbdt[i].lblocker = (GLubyte*)calloc(vbdt[i].num_elements * 4, sizeof(GLfloat));
+			vbdt[i].lblocker = (float*)calloc(vbdt[i].num_elements * 4, sizeof(GLfloat));
 			//vbdt[i].texrepeat=(float*) calloc(vbdt[i].num_elements*4,sizeof(float));
 		}
 	}
@@ -11382,7 +11382,7 @@ void Renderer(uint8 type)
 
 			glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
 
-			glDrawBuffers(6, st.renderer.Buffers);
+			glDrawBuffers(7, st.renderer.Buffers);
 			//glClear(GL_STENCIL_BUFFER_BIT);
 
 			state = 1;
@@ -11397,7 +11397,7 @@ void Renderer(uint8 type)
 				glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
 				//glClear(GL_STENCIL_BUFFER);
 
-				glDrawBuffers(6, st.renderer.Buffers);
+				glDrawBuffers(7, st.renderer.Buffers);
 
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				//glClear(GL_STENCIL_BUFFER_BIT);
@@ -11458,11 +11458,13 @@ void Renderer(uint8 type)
 
 				for (uint16 n = 0; n < st.num_lightmap; n++)
 				{
-					glDrawBuffers(1, &st.renderer.Buffers[5]);
+					//glDrawBuffers(1, &st.renderer.Buffers[5]);
 
 					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-					glClear(GL_COLOR_BUFFER_BIT);
+					GLuint b[4] = { 0, 0, 0, 0 };
+
+					glClearBufferuiv(GL_COLOR, 5, b);
 
 					float ax = (float)1.0 / (st.screenx / 2.0);
 					float ay = (float)1.0 / (st.screeny / 2.0);
@@ -11470,6 +11472,10 @@ void Renderer(uint8 type)
 					ay *= -1.0f;
 
 					glUniform3f(st.renderer.unifs[5], lmp[n].pos.x * ax - 1.0, lmp[n].pos.y * ay + 1.0, lmp[n].texcor[2]);
+
+					glActiveTexture(GL_TEXTURE0);
+
+					tex_bound[0] = -1;
 
 					for (i = 31; i > 23; i--)
 					{
@@ -11482,61 +11488,13 @@ void Renderer(uint8 type)
 							{
 								m = ent[z_buffer[i][j]].data.vb_id;
 
-								glActiveTexture(GL_TEXTURE0);
-
 								if (tex_bound[0] != vbdt[m].texture)
 								{
 									glBindTexture(GL_TEXTURE_2D, vbdt[m].texture);
 									tex_bound[0] = vbdt[m].texture;
 								}
 
-								//glUniform2f(st.renderer.unifs[6],(float) ent[z_buffer[i][j]].data.sizex/32768,(float) ent[z_buffer[i][j]].data.sizey/32768);
-								//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
-
-								if (i < 24 || i > 31)
-									glUniform1f(st.renderer.unifs[4], 0);
-								else
-								{
-									glActiveTexture(GL_TEXTURE1);
-
-									if (vbdt[m].normal)
-									{
-										if (tex_bound[1] != vbdt[m].Ntexture)
-										{
-											glBindTexture(GL_TEXTURE_2D, vbdt[m].Ntexture);
-											tex_bound[1] = vbdt[m].Ntexture;
-										}
-										if (i > 23 && i < 32) glUniform1f(st.renderer.unifs[4], 2);
-										else glUniform1f(st.renderer.unifs[4], 0);
-									}
-									else
-									{
-
-										if (tex_bound[1] != DataNT)
-										{
-											glBindTexture(GL_TEXTURE_2D, DataNT);
-											tex_bound[1] = DataNT;
-										}
-
-										if (ent[z_buffer[i][j]].scenario == 1)
-										{
-											//glStencilFunc(GL_KEEP, 1, 0xFF);
-											//glStencilMask(0x00);
-											glUniform1f(st.renderer.unifs[4], 2);
-										}
-										else
-										{
-											//glStencilFunc(GL_ALWAYS, 1, 0xFF);
-											//glStencilMask(0xFF);
-											glUniform1f(st.renderer.unifs[4], 12);
-										}
-									}
-
-									glUniform1i(st.renderer.unifs[16], 0);
-
-								}
-
-								glUniform1i(st.renderer.unifs[16], 0);
+								glUniform1f(st.renderer.unifs[4], 12);
 
 								glBindVertexArray(vbdt[m].vao_id);
 
@@ -11564,62 +11522,13 @@ void Renderer(uint8 type)
 							}
 							else
 							{
-								glActiveTexture(GL_TEXTURE0);
-
 								if (tex_bound[0] != ent[z_buffer[i][j]].data.data)
 								{
 									glBindTexture(GL_TEXTURE_2D, ent[z_buffer[i][j]].data.data);
 									tex_bound[0] = ent[z_buffer[i][j]].data.data;
-								}
-
-								//glUniform2f(st.renderer.unifs[6],(float) ent[z_buffer[i][j]].data.sizex/32768,(float) ent[z_buffer[i][j]].data.sizey/32768);
-								//glUniform2f(st.renderer.unifs[7],(float) ent[z_buffer[i][j]].data.posx/32768,(float) ent[z_buffer[i][j]].data.posy/32768);
-
-								if (i<24 || i>31)
-								{
-									glUniform1i(st.renderer.unifs[16], ent[z_buffer[i][j]].circle);
-									glUniform1f(st.renderer.unifs[4], 0);
-								}
-								else
-								{
-									glActiveTexture(GL_TEXTURE1);
-
-									if (ent[z_buffer[i][j]].data.normal)
-									{
-										if (i > 23 && i < 32) glUniform1f(st.renderer.unifs[4], 2);
-										else glUniform1f(st.renderer.unifs[4], 0);
-
-										if (tex_bound[1] != ent[z_buffer[i][j]].data.Ndata)
-										{
-											glBindTexture(GL_TEXTURE_2D, ent[z_buffer[i][j]].data.Ndata);
-											tex_bound[1] = ent[z_buffer[i][j]].data.Ndata;
-										}
-									}
-									else
-									{
-										if (tex_bound[1] != DataNT)
-										{
-											glBindTexture(GL_TEXTURE_2D, DataNT);
-											tex_bound[1] = DataNT;
-										}
-
-										if (ent[z_buffer[i][j]].scenario == 1)
-										{
-											//glStencilFunc(GL_KEEP, 1, 0xFF);
-											//glStencilMask(0x00);
-											glUniform1f(st.renderer.unifs[4], 2);
-										}
-										else
-										{
-											//glStencilFunc(GL_ALWAYS, 1, 0xFF);
-											//glStencilMask(0xFF);
-											glUniform1f(st.renderer.unifs[4], 12);
-										}
-									}
-
-									glUniform1i(st.renderer.unifs[16], ent[z_buffer[i][j]].circle);
-								}
-
+								}		
+								glUniform1f(st.renderer.unifs[4], 12);
+					
 								glBindVertexArray(vbd.vao_id);
 
 								glBindBuffer(GL_ARRAY_BUFFER, vbd.vbo_id);
@@ -11627,9 +11536,8 @@ void Renderer(uint8 type)
 								glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), ent[z_buffer[i][j]].vertex);
 								glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), ent[z_buffer[i][j]].texcor);
 								glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)), 16 * sizeof(GLubyte), ent[z_buffer[i][j]].color);
-								glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)), 8 * sizeof(float), ent[z_buffer[i][j]].texcorlight);
-								if (i>24 || i<31)
-									glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)) + (8 * sizeof(GLfloat)), 4 * sizeof(GLfloat), ent[z_buffer[i][j]].l_blocker);
+								//glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)), 8 * sizeof(float), ent[z_buffer[i][j]].texcorlight);
+								glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)) + (8 * sizeof(GLfloat)), 4 * sizeof(GLfloat), ent[z_buffer[i][j]].l_blocker);
 
 								glDrawRangeElements(GL_TRIANGLES, 0, 6, 6, GL_UNSIGNED_SHORT, 0);
 
@@ -11650,14 +11558,13 @@ void Renderer(uint8 type)
 
 					glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[1]);
 
-					glActiveTexture(GL_TEXTURE0);
+					//glActiveTexture(GL_TEXTURE0);
 
 					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[5]);
 
 					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-					glDrawBuffers(1, &st.renderer.Buffers[7]);
 					glViewport(0, 0, 512, 1);
 
 					glClear(GL_COLOR_BUFFER_BIT);
@@ -11673,23 +11580,19 @@ void Renderer(uint8 type)
 
 					glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
 
-					glDrawBuffers(1, &st.renderer.Buffers[6]);
-
-					glActiveTexture(GL_TEXTURE1);
-
-					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[1]);
-
-					glActiveTexture(GL_TEXTURE2);
-
-					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[2]);
-
-					glActiveTexture(GL_TEXTURE3);
-
-					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[3]);
-
-					glActiveTexture(GL_TEXTURE0);
-
 					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[0]);
+
+					//glActiveTexture(GL_TEXTURE1);
+
+					//glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[1]);
+
+					//glActiveTexture(GL_TEXTURE2);
+
+					//glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[2]);
+
+					//glActiveTexture(GL_TEXTURE3);
+
+					//glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[3]);
 
 					glActiveTexture(GL_TEXTURE6);
 
@@ -11699,7 +11602,7 @@ void Renderer(uint8 type)
 					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 					glViewport(0, 0, st.screenx, st.screeny);
-					glClear(GL_COLOR_BUFFER_BIT);
+					//glClear(GL_COLOR_BUFFER_BIT);
 
 					//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -11710,9 +11613,6 @@ void Renderer(uint8 type)
 					glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), vbd.texcoord);
 					glDrawRangeElements(GL_TRIANGLES, 0, 6, 6, GL_UNSIGNED_SHORT, 0);
 
-					glDrawBuffers(1, &st.renderer.Buffers[4]);
-
-					//glActiveTexture(GL_TEXTURE6);
 
 					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[6]);
 
@@ -11781,7 +11681,7 @@ void Renderer(uint8 type)
 						{
 							glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[2]);
 
-							glDrawBuffers(1, &st.renderer.Buffers[8]);
+							//glDrawBuffers(1, &st.renderer.Buffers[8]);
 							glViewport(0, 0, st.screenx / 20, st.screeny / 20);
 
 							glClear(GL_COLOR_BUFFER_BIT);
@@ -11797,7 +11697,7 @@ void Renderer(uint8 type)
 
 							glBindFramebuffer(GL_FRAMEBUFFER, st.renderer.FBO[0]);
 
-							glDrawBuffers(1, &st.renderer.Buffers[4]);
+							//glDrawBuffers(1, &st.renderer.Buffers[4]);
 							glViewport(0, 0, st.screenx, st.screeny);
 						}
 
@@ -12086,8 +11986,8 @@ void Renderer(uint8 type)
 					glBufferSubData(GL_ARRAY_BUFFER,12*sizeof(float),8*sizeof(float),ent[z_buffer[i][j]].texcor);
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float)),16*sizeof(GLubyte),ent[z_buffer[i][j]].color);
 					glBufferSubData(GL_ARRAY_BUFFER,(12*sizeof(float))+(8*sizeof(float))+(16*sizeof(GLubyte)),8*sizeof(float),ent[z_buffer[i][j]].texcorlight);
-					if (i<24 || i>31)
-						glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)) + (8 * sizeof(GLfloat)), 4 * sizeof(GLfloat), ent[z_buffer[i][j]].l_blocker);
+					//if (i<24 || i>31)
+						//glBufferSubData(GL_ARRAY_BUFFER, (12 * sizeof(float)) + (8 * sizeof(float)) + (16 * sizeof(GLubyte)) + (8 * sizeof(GLfloat)), 4 * sizeof(GLfloat), ent[z_buffer[i][j]].l_blocker);
 
 					glDrawRangeElements(GL_TRIANGLES,0,6,6,GL_UNSIGNED_SHORT,0);
 

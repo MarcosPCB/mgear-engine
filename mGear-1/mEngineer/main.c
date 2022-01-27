@@ -6996,11 +6996,21 @@ void NewLeftPannel()
 					if (nk_button_label(ctx, "Transform"))
 						meng.command = TRANSFORM_BOX;
 
+					nk_layout_row_dynamic(ctx, 30, 2);
+
+					uint8 flg = (st.Current_Map.sprites[meng.sprite_edit_selection].flags & 8) == 8;
+
+					if (nk_option_label(ctx, "Block Shadow", flg) == 1 && flg == 0)
+						st.Current_Map.sprites[meng.sprite_edit_selection].flags |= 8;
+
+					if (nk_option_label(ctx, "Persp. Shadow", !flg) && flg == 1)
+						st.Current_Map.sprites[meng.sprite_edit_selection].flags -= 8;
+
 					for (i = 0; i < st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].num_tags; i++)
 					{
 						if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "MUSFX") == NULL)
 						{
-							nk_layout_row_dynamic(ctx, 30, 2);
+							//nk_layout_row_dynamic(ctx, 30, 2);
 
 							if (nk_button_label(ctx, "Play Music"))
 							{
@@ -7020,7 +7030,7 @@ void NewLeftPannel()
 
 						if (strcmp(st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].tag_names[i], "SNDFX") == NULL)
 						{
-							nk_layout_row_dynamic(ctx, 30, 2);
+							//nk_layout_row_dynamic(ctx, 30, 2);
 
 							if (nk_button_label(ctx, "Play Sound"))
 							{
@@ -7038,6 +7048,8 @@ void NewLeftPannel()
 							nk_layout_row_dynamic(ctx, 30, 1);
 						}
 					}
+
+					nk_layout_row_dynamic(ctx, 30, 1);
 
 					nk_label(ctx, "Current sprite layer", NK_TEXT_LB);
 					meng.spr2.type = nk_combo(ctx, Layers, 5, st.Current_Map.sprites[meng.sprite_edit_selection].type_s, 25, nk_vec2(110, 200));
