@@ -6913,7 +6913,45 @@ void NewLeftPannel()
 
 			SetThemeBack(ctx,meng.theme);
 
-			nk_spacing(ctx, 1);
+			if(meng.pannel_choice == NLBLOCK_PANNEL)
+				ctx->style.button.normal = ctx->style.button.hover;
+
+			if (nk_button_label(ctx, "Light Blocker"))
+				meng.command = meng.pannel_choice = NLBLOCK_PANNEL;
+
+			SetThemeBack(ctx, meng.theme);
+
+			//nk_spacing(ctx, 1);
+
+			if (meng.pannel_choice == NLBLOCK_PANNEL)
+			{
+				nk_spacing(ctx, 1);
+				nk_layout_row_dynamic(ctx, 30, 2);
+
+				if (meng.command == NLBLOCK_ADD_CIRCLE)
+					ctx->style.button.normal = ctx->style.button.hover;
+
+				if (nk_button_label(ctx, "Circle"))
+					meng.command = NLBLOCK_ADD_CIRCLE;
+
+				SetThemeBack(ctx, meng.theme);
+
+				if (meng.command == NLBLOCK_ADD_QUAD)
+					ctx->style.button.normal = ctx->style.button.hover;
+
+				if (nk_button_label(ctx, "Quad"))
+					meng.command = NLBLOCK_ADD_QUAD;
+
+				SetThemeBack(ctx, meng.theme);
+
+				if (meng.command == NLBLOCK_ADD_CUSTOM)
+					ctx->style.button.normal = ctx->style.button.hover;
+
+				if (nk_button_label(ctx, "Custom"))
+					meng.command = NLBLOCK_ADD_CUSTOM;
+
+				SetThemeBack(ctx, meng.theme);
+			}
 
 			if (meng.pannel_choice == NLIGHTING)
 			{

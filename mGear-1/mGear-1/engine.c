@@ -11005,7 +11005,22 @@ uint32 LoadMap(const char *name)
 	}
 	*/
 
+	//Validation system (needs more work)
+	for (i = 0; i < st.Current_Map.num_sprites; i++)
+	{
+		if (st.Game_Sprites[st.Current_Map.sprites[i].GameID].flags & 32 && (st.Current_Map.sprites[i].flags & 32) == 0) //Wrong shadow flag
+			st.Current_Map.sprites[i].flags |= 32;
 
+		if (st.Game_Sprites[st.Current_Map.sprites[i].GameID].flags & 64 && (st.Current_Map.sprites[i].flags & 64) == 0) //Wrong shadow flag
+			st.Current_Map.sprites[i].flags |= 64;
+
+		if (st.Game_Sprites[st.Current_Map.sprites[i].GameID].flags & 8 && (st.Current_Map.sprites[i].flags & 8) == 0 && (st.Current_Map.sprites[i].flags & 16) == 0)
+			st.Current_Map.sprites[i].flags |= 8;
+		else if (st.Game_Sprites[st.Current_Map.sprites[i].GameID].flags & 16 && (st.Current_Map.sprites[i].flags & 8) == 0 && (st.Current_Map.sprites[i].flags & 16) == 0)
+			st.Current_Map.sprites[i].flags |= 16;
+
+		LogApp("MAP LOADING - Warning: Shadow flags not properly defined - Sprite: %d, Game ID: %d", i, st.Current_Map.sprites[i].GameID);
+	}
 
 	LogApp("Map %s loaded",name);
 
