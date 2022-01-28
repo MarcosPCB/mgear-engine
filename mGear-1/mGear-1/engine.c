@@ -5395,7 +5395,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 
 	register uint32 i=0, j=0, k=0;
 
-	if (z > 23 && z < 32)
+	if (z > 23 && z < 32 && (flags & 8) == 0 && flags & 16 && flags & 64)
 	{
 		float dist;
 
@@ -5461,7 +5461,7 @@ int8 DrawSprite(int32 x, int32 y, int32 sizex, int32 sizey, int16 ang, uint8 r, 
 	else
 		i=st.num_entities;
 
-	if (flags & 8)
+	if (flags & 8 && (flags & 16) == 0 && flags & 32)
 		ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 1.0f;
 	else
 		ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 0.0f;
@@ -9780,7 +9780,7 @@ int32 LoadSpriteCFG(char *filename, int id)
 	FILE *file;
 	int value, value2, value3, error = 0;
 	uint16 i, id2, skip, num_frames, gameid, sizedefined = 0;
-	char buf[2048], str[16], str2[16], str3[16], str4[8][16], *tok, shadow = 0;
+	char buf[2048], str[32], str2[32], str3[32], str4[8][32], *tok, shadow = 0;
 
 	for (i = 0; i < MAX_GAME_MGG; i++)
 	{
@@ -9837,6 +9837,61 @@ int32 LoadSpriteCFG(char *filename, int id)
 		{
 			st.Game_Sprites[id].shadow = 1;
 			shadow = 1;
+
+			if (strcmp(str2, "BLOCK") == NULL)
+				st.Game_Sprites[id].flags |= 8 + 32; //Block shadow by default
+			else
+			if (strcmp(str2, "PERSPECTIVE") == NULL)
+				st.Game_Sprites[id].flags |= 16 + 64; //Perspective shadow by default
+			else
+			{
+				LogApp("Warning: Missing default shadow type declaration. Perspective shadow type defined", filename);
+				st.Game_Sprites[id].flags |= 16 + 64; //Perspective shadow by default
+			}
+
+
+			continue;
+		}
+
+		if (strcmp(str, "BLOCK_SHADOW") == NULL)
+		{
+			if (shadow == 1)
+			{
+				if (st.Game_Sprites[id].flags & 32)
+				{
+					LogApp("Warning: Tried to declare BLOCK_SHADOW already enabled: %s", filename);
+					continue;
+				}
+				else
+					st.Game_Sprites[id].flags |= 32;
+			}
+			else
+			{
+				LogApp("Error: Tried to declare BLOCK_SHADOW without the SHADOW declaration: %s", filename);
+				error++;
+			}
+
+			continue;
+		}
+
+		if (strcmp(str, "PERSPECTIVE_SHADOW") == NULL)
+		{
+			if (shadow == 1)
+			{
+				if (st.Game_Sprites[id].flags & 64)
+				{
+					LogApp("Warning: Tried to declare PERSPECTIVE_SHADOW already enabled: %s", filename);
+					continue;
+				}
+				else
+					st.Game_Sprites[id].flags |= 64;
+			}
+			else
+			{
+				LogApp("Error: Tried to declare PERSPECTIVE_SHADOW without the SHADOW declaration: %s", filename);
+				error++;
+			}
+
 			continue;
 		}
 
@@ -9935,11 +9990,11 @@ int32 LoadSpriteCFG(char *filename, int id)
 		{
 			num_frames=atoi(str2);
 
-			if(skip==1)
-				st.Game_Sprites[id].num_start_frames=st.Game_Sprites[id].num_frames=num_frames;
+			if (skip == 1)
+				st.Game_Sprites[id].num_start_frames = st.Game_Sprites[id].num_frames = num_frames;
 			else
-			if(skip==2)
-				st.Game_Sprites[id].num_start_frames=num_frames;
+			if (skip == 2)
+				st.Game_Sprites[id].num_start_frames = num_frames;
 			else
 			if(skip==3 || skip==4)
 			{
@@ -11570,7 +11625,10 @@ void Renderer(uint8 type)
 					glClear(GL_COLOR_BUFFER_BIT);
 
 					glUniform2f(st.renderer.unifs[6], st.screenx, st.screeny);
+					//glUniform3f(st.renderer.unifs[5], lmp[n].pos.x, st.screeny - lmp[n].pos.y, lmp[n].texcor[2]);
+
 					glUniform1f(st.renderer.unifs[4], 11);
+
 					//glUniform3f(st.renderer.unifs[5], lmp[n].pos.x, ((st.screeny - lmp[n].pos.y) * ay) - 1.0, lmp[n].texcor[2]);
 
 					glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), vbd.vertex);
@@ -11582,17 +11640,7 @@ void Renderer(uint8 type)
 
 					glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[0]);
 
-					//glActiveTexture(GL_TEXTURE1);
-
-					//glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[1]);
-
-					//glActiveTexture(GL_TEXTURE2);
-
-					//glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[2]);
-
-					//glActiveTexture(GL_TEXTURE3);
-
-					//glBindTexture(GL_TEXTURE_2D, st.renderer.FBTex[3]);
+					
 
 					glActiveTexture(GL_TEXTURE6);
 
@@ -11606,8 +11654,16 @@ void Renderer(uint8 type)
 
 					//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-					glUniform1f(st.renderer.unifs[4], 13);
-					glUniform3f(st.renderer.unifs[5], lmp[n].pos.x * ax - 1.0, lmp[n].pos.y * ay + 1.0, lmp[n].texcor[2]);
+					if (lmp[n].type == POINT_LIGHT)
+						glUniform1f(st.renderer.unifs[4], 13);
+					else if (lmp[n].type == SPOT_LIGHT)
+						glUniform1f(st.renderer.unifs[4], 14);
+
+					glUniform3f(st.renderer.unifs[5], lmp[n].pos.x, lmp[n].pos.y, lmp[n].texcor[2]);
+					//glUniform3f(st.renderer.unifs[5], lmp[n].pos.x * ax - 1.0, lmp[n].pos.y * ay + 1.0, lmp[n].texcor[2]);
+					glUniform1f(st.renderer.unifs[17], lmp[n].texcor[6]);
+					glUniform2f(st.renderer.unifs[19], lmp[n].texcor[4], st.screeny - lmp[n].texcor[5]);
+					glUniform1f(st.renderer.unifs[18], lmp[n].texcor[7]);
 
 					glBufferSubData(GL_ARRAY_BUFFER, 0, 12 * sizeof(float), vbd.vertex);
 					glBufferSubData(GL_ARRAY_BUFFER, 12 * sizeof(float), 8 * sizeof(float), vbd.texcoord);
@@ -11633,9 +11689,8 @@ void Renderer(uint8 type)
 					glUniform3f(st.renderer.unifs[5], lmp[n].pos.x, st.screeny - lmp[n].pos.y, lmp[n].texcor[2]);
 					//glUniform2f(st.renderer.unifs[6], st.screenx, st.screeny);
 					glUniform3f(st.renderer.unifs[7], lmp[n].texcor[0], lmp[n].texcor[1], lmp[n].texcor[3]);
-					glUniform2f(st.renderer.unifs[19], lmp[n].texcor[4], st.screeny - lmp[n].texcor[5]);
-					glUniform1f(st.renderer.unifs[17], lmp[n].texcor[6]);
-					glUniform1f(st.renderer.unifs[18], lmp[n].texcor[7]);
+					//glUniform2f(st.renderer.unifs[19], lmp[n].texcor[4], st.screeny - lmp[n].texcor[5]);
+					//glUniform1f(st.renderer.unifs[18], lmp[n].texcor[7]);
 
 					Pos camp = st.Camera.position; 
 					PosF cams = st.Camera.dimension;

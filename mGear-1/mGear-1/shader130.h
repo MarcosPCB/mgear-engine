@@ -555,7 +555,7 @@ static const char *Lightmap_FShader[256]={
 				//the calculation which brings it all together
 				"vec3 FinalColor = Attenuation * colore.rgb;\n"
 
-				"Lights = vec4(FinalColor, 1.0);\n"
+				"Lights = vec4(FinalColor * texture(texu6, TexLight2).a, 1.0);\n"
 			"}\n"
 		"}\n"
 		"else\n"
@@ -596,6 +596,63 @@ static const char *Lightmap_FShader[256]={
 			"FColor = vec4(vec3(distance), 1.0);\n"
 		"}\n"
 		"else\n"
+		"if(normal == 14.0)\n"
+		"{\n"
+
+			"vec2 lp = vec2(Lightpos.x, res.y - Lightpos.y);\n"
+			"vec3 LightDir = vec3(lp.xy - gl_FragCoord.xy, Lightpos.z);\n"
+			"vec3 SpotLightDir = vec3(lp.xy - spotdir.xy, Lightpos.z);\n"
+
+			"float SpotEffect = dot(normalize(LightDir), normalize(SpotLightDir));\n"
+
+			"if(SpotEffect > spotcos)\n"
+			"{\n"
+
+				"vec2 norm = TexCoord2.st * 2.0 - 1.0;\n"
+
+				"float ax = 1.0f / (res.x / 2.0f);\n"
+				"float ay = 1.0f / (res.y / 2.0f);\n"
+				"ay *= -1.0;\n"
+
+				"lp = vec2(Lightpos.x * ax - 1.0, Lightpos.y * ay + 1.0);\n"
+
+				"norm = norm.xy - lp.xy;\n"
+
+				"float theta = atan(norm.y, norm.x);\n"
+				"float r = length(norm);\n"
+				"float coord = (theta + PI) / (2.0 * PI);\n"
+
+				//the tex coord to sample our 1D lookup texture	
+				//always 0.0 on y axis
+				"vec2 tc = vec2(coord, 0.0);\n"
+
+				//the center tex coord, which gives us hard shadows
+				"float center = sample(tc, r);\n"
+
+
+				//we multiply the blur amount by our distance from center
+				//this leads to more blurriness as the shadow "fades away"
+				"float blur = ((1.0 / res.x)  * smoothstep(0.0, 1.0, r)) * (256.0f / falloff.y);\n"
+
+				//now we use a simple gaussian blur
+				"float sum = 0.0;\n"
+
+				"sum += sample(vec2(tc.x - 4.0*blur, tc.y), r) * 0.05;\n"
+				"sum += sample(vec2(tc.x - 3.0*blur, tc.y), r) * 0.09;\n"
+				"sum += sample(vec2(tc.x - 2.0*blur, tc.y), r) * 0.12;\n"
+				"sum += sample(vec2(tc.x - 1.0*blur, tc.y), r) * 0.15;\n"
+
+				"sum += center * 0.16;\n"
+
+				"sum += sample(vec2(tc.x + 1.0*blur, tc.y), r) * 0.15;\n"
+				"sum += sample(vec2(tc.x + 2.0*blur, tc.y), r) * 0.12;\n"
+				"sum += sample(vec2(tc.x + 3.0*blur, tc.y), r) * 0.09;\n"
+				"sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;\n"
+
+				"Shadows = vec4(0.0, 0.0, 0.0, clamp(sum * smoothstep(1.0, 0.0, r) - (-1.0 * texture(texu4, TexCoord2).a), 0.0, 1.0));\n"
+			"}\n"
+		"}\n"
+		"else\n"
 		"if(normal == 12.0)\n"
 		"{\n"
 			"Blockers = vec4(0, 0, 0, clamp(texture(texu, TexCoord2).a * colore.a * Bck, 0.0, 1.0));\n"
@@ -604,7 +661,14 @@ static const char *Lightmap_FShader[256]={
 		"if(normal == 13.0)\n"
 		"{\n"
 			"vec2 norm = TexCoord2.st * 2.0 - 1.0;\n"
-			"norm = norm.xy - Lightpos.xy;\n"
+
+			"float ax = 1.0f / (res.x / 2.0f);\n"
+			"float ay = 1.0f / (res.y / 2.0f);\n"
+			"ay *= -1.0;\n"
+
+			"vec2 lp = vec2(Lightpos.x * ax - 1.0f, Lightpos.y * ay + 1.0f);\n"
+
+			"norm = norm.xy - lp.xy;\n"
 			
 			"float theta = atan(norm.y, norm.x);\n"
 			"float r = length(norm);\n"

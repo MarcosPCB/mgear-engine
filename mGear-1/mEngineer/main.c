@@ -6996,15 +6996,31 @@ void NewLeftPannel()
 					if (nk_button_label(ctx, "Transform"))
 						meng.command = TRANSFORM_BOX;
 
-					nk_layout_row_dynamic(ctx, 30, 2);
+					if (st.Current_Map.sprites[meng.sprite_edit_selection].flags & 32 || st.Current_Map.sprites[meng.sprite_edit_selection].flags & 64)
+					{
+						nk_spacing(ctx, 1);
+						nk_label(ctx, "Default shadow", NK_TEXT_ALIGN_CENTERED);
 
-					uint8 flg = (st.Current_Map.sprites[meng.sprite_edit_selection].flags & 8) == 8;
+						nk_layout_row_dynamic(ctx, 30, 2);
 
-					if (nk_option_label(ctx, "Block Shadow", flg) == 1 && flg == 0)
-						st.Current_Map.sprites[meng.sprite_edit_selection].flags |= 8;
+						uint8 flg = (st.Current_Map.sprites[meng.sprite_edit_selection].flags & 8) == 8;
 
-					if (nk_option_label(ctx, "Persp. Shadow", !flg) && flg == 1)
-						st.Current_Map.sprites[meng.sprite_edit_selection].flags -= 8;
+						if (nk_option_label(ctx, "Block Shadow", flg) == 1 && flg == 0 && st.Current_Map.sprites[meng.sprite_edit_selection].flags & 32)
+						{
+							st.Current_Map.sprites[meng.sprite_edit_selection].flags |= 8;
+
+							if (st.Current_Map.sprites[meng.sprite_edit_selection].flags & 64)
+								st.Current_Map.sprites[meng.sprite_edit_selection].flags -= 16;
+						}
+
+						if (nk_option_label(ctx, "Persp. Shadow", !flg) && flg == 1 && st.Current_Map.sprites[meng.sprite_edit_selection].flags & 64)
+						{
+							if (st.Current_Map.sprites[meng.sprite_edit_selection].flags & 32)
+								st.Current_Map.sprites[meng.sprite_edit_selection].flags -= 8;
+
+							st.Current_Map.sprites[meng.sprite_edit_selection].flags |= 16;
+						}
+					}
 
 					for (i = 0; i < st.Game_Sprites[st.Current_Map.sprites[meng.sprite_edit_selection].GameID].num_tags; i++)
 					{
