@@ -22,7 +22,7 @@ static const char *Texture_VShader[128]={
 
 	"void main()\n"
 	"{\n"
-		"if(normal == 12.0) {\n"
+		"if(normal == 12.0 || normal == 15.0) {\n"
 			"vec2 pnorm = (Position.xy + 1.0) * 0.5;\n"
 			"vec2 lnorm = (Lightpos.xy + 1.0) * 0.5;\n"
 			"vec2 dist = vec2(0.5 - (lnorm.x - pnorm.x), lnorm.y - pnorm.y + 0.5);\n"
@@ -702,6 +702,18 @@ static const char *Lightmap_FShader[256]={
 			"sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;\n"
 
 			"Shadows = vec4(0.0, 0.0, 0.0, clamp(sum * smoothstep(1.0, 0.0, r) - (-1.0 * texture(texu4, TexCoord2).a), 0.0, 1.0));\n"
+		"}\n"
+		"else\n"
+		"if(normal == 15.0)\n"
+		"{\n"
+			"vec4 alpha = vec4(1.0);\n"
+
+			"vec2 d = 2.0 * TexCoord2.xy - 1.0;\n"
+			"float r = dot(d, d);\n"
+			"float delta = fwidth(r);\n"
+			"alpha = vec4(vec3(1.0), 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r));\n"
+
+			"Blockers = texture(texu, TexCoord2) * alpha;\n"
 		"}\n"
 	"}\n"
 };

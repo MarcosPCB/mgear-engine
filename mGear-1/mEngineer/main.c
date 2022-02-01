@@ -1235,6 +1235,151 @@ static void ViewPortCommands()
 			}
 		}
 		else
+		if (meng.command == NLBLOCK_ADD_CIRCLE)
+		{
+			if (st.mouse1 && meng.sub_com == 0)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].type = 0;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].enabled = 0;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1] = st.mouse.y;
+
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[3] = 1024;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1]);
+
+				st.mouse1 = 0;
+
+				meng.sub_com = 1;
+			}
+			else
+			if (meng.sub_com == 1)
+			{
+				int32 mx = st.mouse.x, my = st.mouse.y;
+				float d = 0;
+
+				STW(&mx, &my);
+
+				GetDistance(mx, my, st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0], st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1], st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[3]);
+
+				if (st.mouse1)
+				{
+					meng.z_buffer[24][meng.z_slot[24]] = st.Current_Map.num_blocks + 20000;
+					meng.z_slot[24]++;
+
+					st.Current_Map.num_blocks++;
+
+					meng.sub_com = 0;
+
+					st.mouse1 = 0;
+
+					LogApp("Light blocker added");
+				}
+			}
+		}
+		else
+		if (meng.command == NLBLOCK_ADD_QUAD)
+		{
+			if (st.mouse1 && meng.sub_com == 0)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].type = 1;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].enabled = 0;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1] = st.mouse.y;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1]);
+
+				st.mouse1 = 0;
+
+				meng.sub_com = 1;
+			}
+			else
+			if (st.mouse1 && meng.sub_com == 1)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[2] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[3] = st.mouse.y;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[2], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[3]);
+
+				st.mouse1 = 0;
+
+				meng.sub_com = 2;
+			}
+			else
+			if (st.mouse1 && meng.sub_com == 2)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[4] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[5] = st.mouse.y;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[4], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[5]);
+
+				st.mouse1 = 0;
+
+				meng.sub_com = 3;
+			}
+			else
+			if (st.mouse1 && meng.sub_com == 3)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[6] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[7] = st.mouse.y;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[6], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[7]);
+
+				st.mouse1 = 0;
+
+				meng.z_buffer[24][meng.z_slot[24]] = st.Current_Map.num_blocks + 20000;
+				meng.z_slot[24]++;
+
+				st.Current_Map.num_blocks++;
+
+				meng.sub_com = 0;
+
+				st.mouse1 = 0;
+
+				LogApp("Light blocker added");
+			}
+		}
+		else
+		if (meng.command == NLBLOCK_ADD_LINE)
+		{
+			if (st.mouse1 && meng.sub_com == 0)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].type = 2;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].enabled = 0;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1] = st.mouse.y;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[0], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[1]);
+
+				st.mouse1 = 0;
+
+				meng.sub_com = 1;
+			}
+			else
+			if (st.mouse1 && meng.sub_com == 1)
+			{
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[2] = st.mouse.x;
+				st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[3] = st.mouse.y;
+
+				STW(&st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[2], &st.Current_Map.blocks[st.Current_Map.num_blocks].vertex[3]);
+
+				st.mouse1 = 0;
+
+				meng.sub_com = 0;
+
+				meng.z_buffer[24][meng.z_slot[24]] = st.Current_Map.num_blocks + 20000;
+				meng.z_slot[24]++;
+
+				st.Current_Map.num_blocks++;
+
+				meng.sub_com = 0;
+
+				st.mouse1 = 0;
+
+				LogApp("Light blocker added");
+			}
+		}
+		else
 		if(meng.command==SELECT_EDIT)
 		{
 			/*
@@ -4085,7 +4230,7 @@ static void ENGDrawLight()
 
 	STW(&mx, &my);
 
-	if(meng.viewmode!=INGAMEVIEW_MODE)
+	if (meng.viewmode != INGAMEVIEW_MODE)
 	{
 		if(st.Current_Map.cam_area.horiz_lim)
 		{
@@ -4114,6 +4259,246 @@ static void ENGDrawLight()
 
 			DrawLine(st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,st.Current_Map.cam_area.area_pos.y,st.Current_Map.cam_area.area_pos.x+st.Current_Map.cam_area.area_size.x,
 				st.Current_Map.cam_area.area_pos.y+st.Current_Map.cam_area.area_size.y,230,255,0,255,256,16);
+		}
+
+		if (st.Current_Map.num_blocks > 0)
+		{
+			Pos v[4];
+
+			for (i = 0; i < st.Current_Map.num_blocks; i++)
+			{
+				switch (st.Current_Map.blocks[i].type)
+				{
+					case 0:
+						p.x = st.Current_Map.blocks[i].vertex[0];
+						p.y = st.Current_Map.blocks[i].vertex[1];
+
+						s.x = s.y = st.Current_Map.blocks[i].vertex[3] * 4;
+
+						AddCamCalc(&p, &s);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, st.Current_Map.blocks[i].vertex[3], 0, 0, 0, 255, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[3], 255, 255, 255, 255, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[3] - 16, 0, 0, 200, 255, 16);
+
+						DrawStringUI("LB", p.x, p.y, 1024, 1024, 0, 255, 255, 255, 255,
+							0, s.x, s.y, 2);
+						break;
+
+					case 1:
+						v[0].x = st.Current_Map.blocks[i].vertex[0];
+						v[0].y = st.Current_Map.blocks[i].vertex[1];
+
+						v[1].x = st.Current_Map.blocks[i].vertex[2];
+						v[1].y = st.Current_Map.blocks[i].vertex[3];
+
+						v[2].x = st.Current_Map.blocks[i].vertex[4];
+						v[2].y = st.Current_Map.blocks[i].vertex[5];
+
+						v[3].x = st.Current_Map.blocks[i].vertex[6];
+						v[3].y = st.Current_Map.blocks[i].vertex[7];
+
+						p.x = v[0].x + (max(v[2].x - v[0].x, v[1].x - v[3].x) / 2);
+						p.y = v[0].y + (max(v[2].y - v[0].y, v[1].y - v[3].y) / 2);
+
+						s.x = s.y = (v[2].x - v[0].x) * 1.5f;
+
+						AddCamCalc(&p, &s);
+
+						v[0].x += 16;
+						v[0].y += 16;
+
+						v[1].x += 16;
+						v[1].y += 16;
+
+						v[2].x += 16;
+						v[2].y += 16;
+
+						v[3].x += 16;
+						v[3].y += 16;
+
+						DrawPolygon(v, 0, 0, 0, 255, 16);
+
+						v[0].x -= 16;
+						v[0].y -= 16;
+
+						v[1].x -= 16;
+						v[1].y -= 16;
+
+						v[2].x -= 16;
+						v[2].y -= 16;
+
+						v[3].x -= 16;
+						v[3].y -= 16;
+
+						DrawPolygon(v, 255, 255, 255, 255, 16);
+
+						DrawCircle(v[0].x, v[0].y, 64, 0, 0, 0, 255, 16);
+						DrawCircle(v[0].x, v[0].y, 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(v[1].x, v[1].y, 64, 0, 0, 0, 255, 16);
+						DrawCircle(v[1].x, v[1].y, 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(v[2].x, v[2].y, 64, 0, 0, 0, 255, 16);
+						DrawCircle(v[2].x, v[2].y, 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(v[3].x, v[3].y, 64, 0, 0, 0, 255, 16);
+						DrawCircle(v[3].x, v[3].y, 64, 255, 255, 255, 255, 16);
+
+						v[0].x += 16;
+						v[0].y += 16;
+
+						v[1].x -= 16;
+						v[1].y += 16;
+
+						v[2].x -= 16;
+						v[2].y -= 16;
+
+						v[3].x += 16;
+						v[3].y -= 16;
+						
+						DrawPolygon(v, 0, 0, 200, 255, 16);
+
+						DrawStringUI("LB", p.x, p.y, 1024, 1024, 0, 255, 255, 255, 255,
+							0, s.x, s.y, 2);
+
+						break;
+
+					case 2:
+						DrawLine(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, 0, 0, 0, 255, 128, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 255, 255, 255, 255, 128, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], 64 + 16, 0, 0, 0, 255, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 64 + 16, 0, 0, 0, 255, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 64, 255, 255, 255, 255, 16);
+
+						p.x = min(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[2]) + abs(st.Current_Map.blocks[i].vertex[0] - st.Current_Map.blocks[i].vertex[2]) / 2 - 256;
+						p.y = min(st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[3]) + abs(st.Current_Map.blocks[i].vertex[1] - st.Current_Map.blocks[i].vertex[3]) / 2 - 256;
+
+						s.x = s.y = 1536;
+
+						AddCamCalc(&p, &s);
+
+						DrawStringUI("LB", p.x, p.y, 1024, 1024, 0, 255, 255, 255, 255,
+							0, 1536, 1536, 2);
+
+						break;
+				}
+			}
+		}
+
+		if (meng.command == NLBLOCK_ADD_CIRCLE)
+		{
+			if (meng.sub_com == 1)
+			{
+				i = st.Current_Map.num_blocks;
+
+				if (st.Current_Map.blocks[i].type == 0)
+				{
+					DrawCircle(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, st.Current_Map.blocks[i].vertex[3], 0, 0, 0, 128, 16);
+					DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[3], 255, 255, 255, 255, 16);
+					DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[3] - 16, 0, 0, 255, 255, 16);
+				}
+			}
+		}
+
+		if (meng.command == NLBLOCK_ADD_LINE)
+		{
+			if (meng.sub_com == 1)
+			{
+				i = st.Current_Map.num_blocks;
+
+				if (st.Current_Map.blocks[i].type == 2)
+				{
+					p = st.mouse;
+					STW(&p.x, &p.y);
+
+					DrawLine(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, p.x + 16, p.y + 16, 0, 0, 0, 255, 128, 16);
+					DrawLine(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], p.x, p.y, 255, 255, 255, 255, 128, 16);
+
+					DrawCircle(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, 64, 0, 0, 0, 255, 16);
+					DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], 64, 255, 255, 255, 255, 16);
+
+					DrawCircle(p.x + 16, p.y + 16, 64, 0, 0, 0, 255, 16);
+					DrawCircle(p.x, p.y, 64, 255, 255, 255, 255, 16);
+				}
+			}
+		}
+
+		if (meng.command == NLBLOCK_ADD_QUAD)
+		{
+			i = st.Current_Map.num_blocks;
+
+			if (st.Current_Map.blocks[i].type == 1)
+			{
+				switch (meng.sub_com)
+				{
+					case 1:
+						p = st.mouse;
+						STW(&p.x, &p.y);
+
+						DrawLine(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, p.x + 16, p.y + 16, 0, 0, 0, 128, 32, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], p.x, p.y, 255, 255, 255, 255, 32, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(p.x + 16, p.y + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(p.x, p.y, 64, 255, 255, 255, 255, 16);
+
+						break;
+
+					case 2:
+						p = st.mouse;
+						STW(&p.x, &p.y);
+
+						DrawLine(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, 0, 0, 0, 128, 32, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 255, 255, 255, 255, 32, 16);
+
+						DrawLine(st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, p.x + 16, p.y + 16, 0, 0, 0, 128, 32, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], p.x, p.y, 255, 255, 255, 255, 32, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(p.x + 16, p.y + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(p.x, p.y, 64, 255, 255, 255, 255, 16);
+
+						break;
+
+					case 3:
+						p = st.mouse;
+						STW(&p.x, &p.y);
+
+						DrawLine(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, 0, 0, 0, 128, 32, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 255, 255, 255, 255, 32, 16);
+
+						DrawLine(st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, st.Current_Map.blocks[i].vertex[4] + 16, st.Current_Map.blocks[i].vertex[5] + 16, 0, 0, 0, 128, 32, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], st.Current_Map.blocks[i].vertex[4], st.Current_Map.blocks[i].vertex[5], 255, 255, 255, 255, 32, 16);
+
+						DrawLine(st.Current_Map.blocks[i].vertex[4] + 16, st.Current_Map.blocks[i].vertex[5] + 16, p.x + 16, p.y + 16, 0, 0, 0, 128, 32, 16);
+						DrawLine(st.Current_Map.blocks[i].vertex[4], st.Current_Map.blocks[i].vertex[5], p.x, p.y, 255, 255, 255, 255, 32, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[0] + 16, st.Current_Map.blocks[i].vertex[1] + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[2] + 16, st.Current_Map.blocks[i].vertex[3] + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(st.Current_Map.blocks[i].vertex[4] + 16, st.Current_Map.blocks[i].vertex[5] + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(st.Current_Map.blocks[i].vertex[4], st.Current_Map.blocks[i].vertex[5], 64, 255, 255, 255, 255, 16);
+
+						DrawCircle(p.x + 16, p.y + 16, 64, 0, 0, 0, 128, 16);
+						DrawCircle(p.x, p.y, 64, 255, 255, 255, 255, 16);
+
+						break;
+				}
+			}
 		}
 
 		if (meng.command == ADD_OBJ && st.Current_Map.num_mgg > 0)
@@ -6932,7 +7317,10 @@ void NewLeftPannel()
 					ctx->style.button.normal = ctx->style.button.hover;
 
 				if (nk_button_label(ctx, "Circle"))
+				{
 					meng.command = NLBLOCK_ADD_CIRCLE;
+					meng.sub_com = 0;
+				}
 
 				SetThemeBack(ctx, meng.theme);
 
@@ -6940,15 +7328,21 @@ void NewLeftPannel()
 					ctx->style.button.normal = ctx->style.button.hover;
 
 				if (nk_button_label(ctx, "Quad"))
+				{
 					meng.command = NLBLOCK_ADD_QUAD;
+					meng.sub_com = 0;
+				}
 
 				SetThemeBack(ctx, meng.theme);
 
-				if (meng.command == NLBLOCK_ADD_CUSTOM)
+				if (meng.command == NLBLOCK_ADD_LINE)
 					ctx->style.button.normal = ctx->style.button.hover;
 
-				if (nk_button_label(ctx, "Custom"))
-					meng.command = NLBLOCK_ADD_CUSTOM;
+				if (nk_button_label(ctx, "Line"))
+				{
+					meng.command = NLBLOCK_ADD_LINE;
+					meng.sub_com = 0;
+				}
 
 				SetThemeBack(ctx, meng.theme);
 			}
@@ -7592,7 +7986,10 @@ int main(int argc, char *argv[])
 	strcpy(st.LogName, "meng.log");
 		
 	Init();
+	
+#ifdef HAS_SPLASHSCREEN && SPLASHSCREEN_RESOURCE
 	DisplaySplashScreen();
+#endif
 
 	strcpy(st.WindowTitle,"Engineer");
 
@@ -7708,7 +8105,9 @@ int main(int argc, char *argv[])
 
 	SetCurrentDirectory(meng.prj_path);
 
+#ifdef HAS_SPLASHSCREEN && SPLASHSCREEN_RESOURCE
 	InitEngineWindow();
+#endif
 
 	NewMap();
 

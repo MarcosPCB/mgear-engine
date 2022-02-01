@@ -4753,7 +4753,7 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 		ent[i].data.vb_id=-1;
 		ent[i].data.channel=0;
 		ent[i].data.normal=0;
-		ent[i].scenario=-2;
+		ent[i].scenario=0;
 
 		if(z>56) z=56;
 		else if(z<16) z+=16;
@@ -4795,12 +4795,12 @@ int8 DrawPolygon(Pos vertex_s[4], uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 
 		ent[i].texcor[0]=0;
 		ent[i].texcor[1]=0;
-		ent[i].texcor[2]=0;
+		ent[i].texcor[2]=1;
 		ent[i].texcor[3]=0;
-		ent[i].texcor[4]=0;
-		ent[i].texcor[5]=0;
+		ent[i].texcor[4]=1;
+		ent[i].texcor[5]=1;
 		ent[i].texcor[6]=0;
-		ent[i].texcor[7]=0;
+		ent[i].texcor[7]=1;
 
 
 		ax=(float) 1/(GAME_WIDTH/2);
@@ -7676,6 +7676,315 @@ int8 DrawLine(int32 x, int32 y, int32 x2, int32 y2, uint8 r, uint8 g, uint8 b, u
 	return 0;
 }
 
+int8 DrawLBlockLine(int32 x, int32 y, int32 x2, int32 y2)
+{
+	uint8 valx = 0, valy = 0;
+
+	uint16 i = 0, j = 0, k = 0;
+
+	int32 x3, y3;
+
+	uint32 a1;
+
+	int16 ang;
+
+	int32 z = 24, linewidth = 128;
+
+	float ax = 1.0f / (GAME_WIDTH / 2.0f), ay = 1.0f / (st.gamey / 2.0f), az = 1.0f / (4096.0f / 2.0f), ang2, tx1, ty1, tx2, ty2;
+
+	int32 lw1, lw2;
+
+	i = st.num_entities;
+
+	if (i == MAX_GRAPHICS - 1 && ent[i].stat == USED)
+		return 2;
+
+	if (linewidth > 512)
+		linewidth = 512;
+
+	//if(ent[i].stat==DEAD)
+	//{
+	ent[i].stat = USED;
+	st.num_entities++;
+	ent[i].data.vb_id = 0;
+	ent[i].scenario = -2;
+	ent[i].circle = 0;
+
+	ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 1.0;
+
+	if (z > 56) z = 56;
+	//else if(z<16) z+=16;
+
+	z_buffer[z][z_slot[z]] = i;
+	z_slot[z]++;
+
+	if (z > z_used) z_used = z;
+
+	if (z>15)
+	{
+		tx1 = x;
+		ty1 = y;
+		tx2 = x2;
+		ty2 = y2;
+
+		x -= st.Camera.position.x;
+		y -= st.Camera.position.y;
+
+		x2 -= st.Camera.position.x;
+		y2 -= st.Camera.position.y;
+
+		x *= st.Camera.dimension.x;
+		y *= st.Camera.dimension.y;
+
+		x2 *= st.Camera.dimension.x;
+		y2 *= st.Camera.dimension.y;
+
+		linewidth *= st.Camera.dimension.x;
+	}
+
+	x3 = x2 - x;
+	y3 = y2 - y;
+
+	ang2 = atan2((float)y3, (float)x3);
+	if (ang2 == pi)
+		ang2 = 0;
+
+	ang2 += pi;
+	ang2 = (180.0f / pi) * ang2;
+	ang = ang2;
+	ang *= 10;
+
+	if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+	{
+		float tmp;
+		if (linewidth > 96)
+			tmp = 0.45f;
+		else
+			tmp = 0.30f;
+
+		lw1 = (float)linewidth * tmp;
+		lw2 = linewidth / 2;
+		linewidth *= (float)tmp;
+	}
+	else
+		linewidth /= 2;
+
+
+	float lcos = (float)linewidth * mCos(ang);
+	float lsin = (float)linewidth * mSin(ang);
+
+	ent[i].vertex[2] = ent[i].vertex[5] = ent[i].vertex[8] = ent[i].vertex[11] = z;
+
+	__m256 vt, vt_lw;
+
+	vt = _mm256_setr_ps(x, y, x2, y2, y2, x2, y, x);
+	vt_lw = _mm256_setr_ps(lsin, lcos, lsin, lcos, lcos, lsin, lcos, lsin);
+
+	vt = _mm256_addsub_ps(vt, vt_lw);
+
+	ent[i].vertex[0] = vt.m256_f32[0];
+	ent[i].vertex[1] = vt.m256_f32[1];
+
+	ent[i].vertex[3] = vt.m256_f32[2];
+	ent[i].vertex[4] = vt.m256_f32[3];
+
+	ent[i].vertex[6] = vt.m256_f32[5];
+	ent[i].vertex[7] = vt.m256_f32[4];
+
+	ent[i].vertex[9] = vt.m256_f32[7];
+	ent[i].vertex[10] = vt.m256_f32[6];
+
+
+	if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+	{
+		ent[i + 1].stat = USED;
+		st.num_entities++;
+		ent[i + 1].data.vb_id = 0;
+		ent[i + 1].scenario = -2;
+		ent[i + 1].circle = 0;
+
+		z_buffer[z][z_slot[z]] = i + 1;
+		z_slot[z]++;
+
+		ent[i + 2].stat = USED;
+		st.num_entities++;
+		ent[i + 2].data.vb_id = 0;
+		ent[i + 2].scenario = -2;
+		ent[i + 2].circle = 0;
+
+		z_buffer[z][z_slot[z]] = i + 2;
+		z_slot[z]++;
+
+		//linewidth *= 2;
+
+		i++;
+
+		ent[i].vertex[0] = (float)x - (lw2*mSin(ang));
+		ent[i].vertex[1] = (float)y + (lw2*mCos(ang));
+		ent[i].vertex[2] = z;
+
+		ent[i].vertex[3] = (float)x2 - (lw2*mSin(ang));
+		ent[i].vertex[4] = (float)y2 + (lw2*mCos(ang));
+		ent[i].vertex[5] = z;
+
+		//linewidth /= -2;
+		lw1 *= -1;
+
+		ent[i].vertex[6] = (float)x2 + (lw1*mSin(ang));
+		ent[i].vertex[7] = (float)y2 - (lw1*mCos(ang));
+		ent[i].vertex[8] = z;
+
+		ent[i].vertex[9] = (float)x + (lw1*mSin(ang));
+		ent[i].vertex[10] = (float)y - (lw1*mCos(ang));
+		ent[i].vertex[11] = z;
+
+		i++;
+		//linewidth *= 2;
+		lw2 *= -1;
+
+		ent[i].vertex[0] = (float)x - (lw2*mSin(ang));
+		ent[i].vertex[1] = (float)y + (lw2*mCos(ang));
+		ent[i].vertex[2] = z;
+
+		ent[i].vertex[3] = (float)x2 - (lw2*mSin(ang));
+		ent[i].vertex[4] = (float)y2 + (lw2*mCos(ang));
+		ent[i].vertex[5] = z;
+
+		//linewidth /= -2;
+		lw1 *= -1;
+
+		ent[i].vertex[6] = (float)x2 + (lw1*mSin(ang));
+		ent[i].vertex[7] = (float)y2 - (lw1*mCos(ang));
+		ent[i].vertex[8] = z;
+
+		ent[i].vertex[9] = (float)x + (lw1*mSin(ang));
+		ent[i].vertex[10] = (float)y - (lw1*mCos(ang));
+		ent[i].vertex[11] = z;
+
+		i -= 2;
+	}
+
+	ay *= -1.0f;
+
+
+	ent[i].texcor[0] = 0.0f;
+	ent[i].texcor[1] = 0.0f;
+	ent[i].texcor[2] = 1.0f;
+	ent[i].texcor[3] = 0.0f;
+	ent[i].texcor[4] = 1.0f;
+	ent[i].texcor[5] = 1.0f;
+	ent[i].texcor[6] = 0.0f;
+	ent[i].texcor[7] = 1.0f;
+
+	if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+	{
+		memcpy(ent[i + 1].texcor, ent[i].texcor, sizeof(float)* 8);
+		memcpy(ent[i + 2].texcor, ent[i].texcor, sizeof(float)* 8);
+	}
+
+
+	//vt = _mm256_setzero_ps();
+	//vt_lw = _mm256_setzero_ps();
+
+	vt = _mm256_setr_ps(ent[i].vertex[0], ent[i].vertex[1], ent[i].vertex[3], ent[i].vertex[4], ent[i].vertex[6], ent[i].vertex[7], ent[i].vertex[9], ent[i].vertex[10]);
+	__m256 vt3 = _mm256_setr_ps(ax, ay, ax, ay, ax, ay, ax, ay);
+	__m256 vt2 = _mm256_set1_ps(1.0);
+
+	vt = _mm256_mul_ps(vt, vt3);
+	vt = _mm256_addsub_ps(vt, vt2);
+
+
+	ent[i].vertex[0] = vt.m256_f32[0];
+	ent[i].vertex[1] = vt.m256_f32[1];
+
+	ent[i].vertex[3] = vt.m256_f32[2];
+	ent[i].vertex[4] = vt.m256_f32[3];
+
+	ent[i].vertex[6] = vt.m256_f32[4];
+	ent[i].vertex[7] = vt.m256_f32[5];
+
+	ent[i].vertex[9] = vt.m256_f32[6];
+	ent[i].vertex[10] = vt.m256_f32[7];
+
+	ent[i].vertex[2] = ent[i].vertex[5] = ent[i].vertex[8] = ent[i].vertex[11] *= az;
+	ent[i].vertex[2] = ent[i].vertex[5] = ent[i].vertex[8] = ent[i].vertex[11] -= 1;
+
+
+	for (j = 0; j < 12; j += 3)
+	{
+
+		/*
+		ent[i].vertex[j] *= ax;
+		ent[i].vertex[j] -= 1;
+
+		ent[i].vertex[j + 1] *= ay;
+		ent[i].vertex[j + 1] += 1;
+
+		ent[i].vertex[j + 2] *= az;
+		ent[i].vertex[j + 2] -= 1;
+		*/
+
+		if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+		{
+			ent[i + 1].vertex[j] *= ax;
+			ent[i + 1].vertex[j] -= 1;
+
+			ent[i + 1].vertex[j + 1] *= ay;
+			ent[i + 1].vertex[j + 1] += 1;
+
+			ent[i + 1].vertex[j + 2] *= az;
+			ent[i + 1].vertex[j + 2] -= 1;
+
+			ent[i + 2].vertex[j] *= ax;
+			ent[i + 2].vertex[j] -= 1;
+
+			ent[i + 2].vertex[j + 1] *= ay;
+			ent[i + 2].vertex[j + 1] += 1;
+
+			ent[i + 2].vertex[j + 2] *= az;
+			ent[i + 2].vertex[j + 2] -= 1;
+		}
+	}
+
+
+	ent[i].color[0] = ent[i].color[4] = ent[i].color[8] = ent[i].color[12] = 0;
+	ent[i].color[1] = ent[i].color[5] = ent[i].color[9] = ent[i].color[13] = 0;
+	ent[i].color[2] = ent[i].color[6] = ent[i].color[10] = ent[i].color[14] = 0;
+	ent[i].color[3] = ent[i].color[7] = ent[i].color[11] = ent[i].color[15] = 255;
+
+	if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+	{
+		ent[i + 1].color[0] = ent[i + 1].color[4] = ent[i + 1].color[8] = ent[i + 1].color[12] = 0;
+		ent[i + 1].color[1] = ent[i + 1].color[5] = ent[i + 1].color[9] = ent[i + 1].color[13] = 0;
+		ent[i + 1].color[2] = ent[i + 1].color[6] = ent[i + 1].color[10] = ent[i + 1].color[14] = 0;
+		ent[i + 1].color[3] = ent[i + 1].color[7] = 0;
+		ent[i + 1].color[11] = ent[i + 1].color[15] = 255;
+
+		ent[i + 2].color[0] = ent[i + 2].color[4] = ent[i + 2].color[8] = ent[i + 2].color[12] = 0;
+		ent[i + 2].color[1] = ent[i + 2].color[5] = ent[i + 2].color[9] = ent[i + 2].color[13] = 0;
+		ent[i + 2].color[2] = ent[i + 2].color[6] = ent[i + 2].color[10] = ent[i + 2].color[14] = 0;
+		ent[i + 2].color[3] = ent[i + 2].color[7] = 0;
+		ent[i + 2].color[11] = ent[i + 2].color[15] = 255;
+	}
+
+	vbdt[LINEVB].num_elements++;
+	ent[i].data.loc = vbdt[LINEVB].num_elements - 1;
+
+	if (ang != 0 && ang != 900 && ang != 1800 && ang != 2700 && ang != 3600)
+	{
+		vbdt[LINEVB].num_elements++;
+		ent[i + 1].data.loc = vbdt[LINEVB].num_elements - 1;
+
+		vbdt[LINEVB].num_elements++;
+		ent[i + 2].data.loc = vbdt[LINEVB].num_elements - 1;
+	}
+
+
+	//}
+
+	return 0;
+}
+
 int8 DrawCircle(int32 x, int32 y, int32 radius, uint8 r, uint8 g, uint8 b, uint8 a, int32 z)
 {
 	uint8 valx = 0, valy = 0;
@@ -7831,6 +8140,245 @@ int8 DrawCircle(int32 x, int32 y, int32 radius, uint8 r, uint8 g, uint8 b, uint8
 	texone_ids[texone_num] = i;
 	texone_num++;
 	//}
+
+	return 0;
+}
+
+int8 DrawLBlockCircle(int32 x, int32 y, int32 radius)
+{
+	uint8 valx = 0, valy = 0;
+
+	uint16 i = 0, j = 0, k = 0;
+
+	uint32 a1;
+
+	int16 ang;
+
+	float ax = 1 / (GAME_WIDTH / 2), ay = 1 / (st.gamey / 2), az = 1 / (4096 / 2), ang2, tx1, ty1, tx2, ty2;
+
+	i = st.num_entities;
+
+	if (i == MAX_GRAPHICS - 1 && ent[i].stat == USED)
+		return 2;
+
+	ax = (float)1 / (GAME_WIDTH / 2);
+	ay = (float)1 / (st.gamey / 2);
+
+	ay *= -1.0f;
+
+	az = (float)1 / (4096 / 2);
+
+	//if(ent[i].stat==DEAD)
+	//{
+	ent[i].stat = USED;
+	st.num_entities++;
+	ent[i].data.data = DataNT;
+	ent[i].data.vb_id = -1;
+	ent[i].data.channel = 0;
+	ent[i].data.normal = 0;
+	ent[i].scenario = -2;
+	ent[i].circle = 1;
+
+	ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 1.0;
+
+	//if (z>56) z = 56;
+	//else if(z<16) z+=16;
+
+	int32 z = 24;
+
+	z_buffer[z][z_slot[z]] = i;
+	z_slot[z]++;
+
+	if (z>z_used) z_used = z;
+
+	tx1 = x;
+	ty1 = y;
+
+	x -= st.Camera.position.x;
+	y -= st.Camera.position.y;
+
+	x *= st.Camera.dimension.x;
+	y *= st.Camera.dimension.y;
+
+	radius *= st.Camera.dimension.x;
+
+
+	ang = 0;
+
+	ent[i].vertex[0] = (float)x - radius;
+	ent[i].vertex[1] = (float)y - radius;
+	ent[i].vertex[2] = z;
+
+	ent[i].vertex[3] = (float)x + radius;
+	ent[i].vertex[4] = (float)y - radius;
+	ent[i].vertex[5] = z;
+
+	ent[i].vertex[6] = (float)x + radius;
+	ent[i].vertex[7] = (float)y + radius;
+	ent[i].vertex[8] = z;
+
+	ent[i].vertex[9] = (float)x - radius;
+	ent[i].vertex[10] = (float)y + radius;
+	ent[i].vertex[11] = z;
+
+	ent[i].texcor[0] = 0.0f;
+	ent[i].texcor[1] = 0.0f;
+	ent[i].texcor[2] = 1.0f;
+	ent[i].texcor[3] = 0.0f;
+	ent[i].texcor[4] = 1.0f;
+	ent[i].texcor[5] = 1.0f;
+	ent[i].texcor[6] = 0.0f;
+	ent[i].texcor[7] = 1.0f;
+
+	for (j = 0; j < 12; j += 3)
+	{
+		ent[i].vertex[j] *= ax;
+		ent[i].vertex[j] -= 1;
+
+		ent[i].vertex[j + 1] *= ay;
+		ent[i].vertex[j + 1] += 1;
+
+		ent[i].vertex[j + 2] *= az;
+		ent[i].vertex[j + 2] -= 1;
+
+	}
+
+	for (j = 0; j < 16; j += 4)
+	{
+		ent[i].color[j] = 0;
+		ent[i].color[j + 1] = 0;
+		ent[i].color[j + 2] = 0;
+		ent[i].color[j + 3] = 0;
+	}
+
+	texone_ids[texone_num] = i;
+	texone_num++;
+	//}
+
+	return 0;
+}
+
+int8 DrawLBlockPolygon(Pos vertex_s[4])
+{
+	uint8 valx = 0, valy = 0;
+
+	uint16 i = 0, j = 0, k = 0;
+
+	int32 x3, y3;
+
+	uint32 a1;
+
+	int16 ang;
+
+	Pos vertex[4];
+
+	int32 z = 24;
+
+	float ax = 1 / (GAME_WIDTH / 2), ay = 1 / (st.gamey / 2), az = 1 / (4096 / 2), ang2, tx1, ty1, tx2, ty2;
+
+	memcpy(vertex, vertex_s, 4 * sizeof(Pos));
+
+	i = st.num_entities;
+
+	if (i == MAX_GRAPHICS - 1 && ent[i].stat == USED)
+		return 2;
+
+	ent[i].stat = USED;
+	st.num_entities++;
+	ent[i].data.data = DataNT;
+	ent[i].data.vb_id = -1;
+	ent[i].data.channel = 0;
+	ent[i].data.normal = 0;
+	ent[i].scenario = -2;
+
+	ent[i].l_blocker[0] = ent[i].l_blocker[1] = ent[i].l_blocker[2] = ent[i].l_blocker[3] = 1.0;
+
+	z_buffer[z][z_slot[z]] = i;
+	z_slot[z]++;
+
+	if (z>z_used) z_used = z;
+
+	if (z>15)
+	{
+		for (j = 0; j<4; j++)
+		{
+
+			vertex[j].x -= st.Camera.position.x;
+			vertex[j].y -= st.Camera.position.y;
+
+			vertex[j].x *= st.Camera.dimension.x;
+			vertex[j].y *= st.Camera.dimension.y;
+
+		}
+	}
+
+	ent[i].vertex[0] = vertex[0].x;
+	ent[i].vertex[1] = vertex[0].y;
+	ent[i].vertex[2] = z;
+
+	ent[i].vertex[3] = vertex[1].x;
+	ent[i].vertex[4] = vertex[1].y;
+	ent[i].vertex[5] = z;
+
+	ent[i].vertex[6] = vertex[2].x;
+	ent[i].vertex[7] = vertex[2].y;
+	ent[i].vertex[8] = z;
+
+	ent[i].vertex[9] = vertex[3].x;
+	ent[i].vertex[10] = vertex[3].y;
+	ent[i].vertex[11] = z;
+
+	ent[i].texcor[0] = 0;
+	ent[i].texcor[1] = 0;
+	ent[i].texcor[2] = 1;
+	ent[i].texcor[3] = 0;
+	ent[i].texcor[4] = 1;
+	ent[i].texcor[5] = 1;
+	ent[i].texcor[6] = 0;
+	ent[i].texcor[7] = 1;
+
+
+	ax = (float)1.0f / (GAME_WIDTH / 2.0f);
+	ay = (float)1.0f / (st.gamey / 2.0f);
+
+	ay *= -1.0f;
+
+	az = (float)1 / (4096 / 2);
+
+	for (j = 0; j<12; j += 3)
+	{
+		ent[i].vertex[j] *= ax;
+		ent[i].vertex[j] -= 1;
+
+		ent[i].vertex[j + 1] *= ay;
+		ent[i].vertex[j + 1] += 1;
+
+		ent[i].vertex[j + 2] *= az;
+		ent[i].vertex[j + 2] -= 1;
+	}
+
+	ent[i].color[0] = 0;
+	ent[i].color[1] = 0;
+	ent[i].color[2] = 0;
+	ent[i].color[3] = 255;
+
+	ent[i].color[4] = 0;
+	ent[i].color[5] = 0;
+	ent[i].color[6] = 0;
+	ent[i].color[7] = 255;
+
+	ent[i].color[8] = 0;
+	ent[i].color[9] = 0;
+	ent[i].color[10] = 0;
+	ent[i].color[11] = 255;
+
+	ent[i].color[12] = 0;
+	ent[i].color[13] = 0;
+	ent[i].color[14] = 0;
+	ent[i].color[15] = 255;
+
+	texone_ids[texone_num] = i;
+	texone_num++;
 
 	return 0;
 }
@@ -11104,8 +11652,43 @@ void DrawMap()
 				(float)st.Current_Map.obj[i].color.b * st.Current_Map.obj[i].amblight, mgg_map[st.Current_Map.obj[i].tex.MGG_ID].frames[st.Current_Map.obj[i].tex.ID],
 				st.Current_Map.obj[i].color.a, st.Current_Map.obj[i].texpan.x, st.Current_Map.obj[i].texpan.y, st.Current_Map.obj[i].texsize.x, st.Current_Map.obj[i].texsize.y,
 				st.Current_Map.obj[i].position.z, st.Current_Map.obj[i].flag);
+		}
+	}
+
+	Pos p[4];
+
+	for (i = 0; i < st.Current_Map.num_blocks; i++)
+	{
+		if (st.Current_Map.blocks[i].enabled == 0)
+		{
+			switch (st.Current_Map.blocks[i].type)
+			{
+				case 0:
+					DrawLBlockCircle(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[3]);
+					break;
+
+				case 1:
+					p[0].x = st.Current_Map.blocks[i].vertex[0];
+					p[0].y = st.Current_Map.blocks[i].vertex[1];
+
+					p[1].x = st.Current_Map.blocks[i].vertex[2];
+					p[1].y = st.Current_Map.blocks[i].vertex[3];
+
+					p[2].x = st.Current_Map.blocks[i].vertex[4];
+					p[2].y = st.Current_Map.blocks[i].vertex[5];
+
+					p[3].x = st.Current_Map.blocks[i].vertex[6];
+					p[3].y = st.Current_Map.blocks[i].vertex[7];
+
+					DrawLBlockPolygon(p);
+					break;
+
+				case 2:
+					DrawLBlockLine(st.Current_Map.blocks[i].vertex[0], st.Current_Map.blocks[i].vertex[1], st.Current_Map.blocks[i].vertex[2], st.Current_Map.blocks[i].vertex[3]);
+					break;
 			}
 		}
+	}
 
 	for (i = 0; i < st.Current_Map.num_sprites; i++)
 	{
@@ -11596,8 +12179,12 @@ void Renderer(uint8 type)
 								{
 									glBindTexture(GL_TEXTURE_2D, ent[z_buffer[i][j]].data.data);
 									tex_bound[0] = ent[z_buffer[i][j]].data.data;
-								}		
-								glUniform1f(st.renderer.unifs[4], 12);
+								}
+
+								if (ent[z_buffer[i][j]].scenario == -2 && ent[z_buffer[i][j]].circle == 1)
+									glUniform1f(st.renderer.unifs[4], 15);
+								else
+									glUniform1f(st.renderer.unifs[4], 12);
 					
 								glBindVertexArray(vbd.vao_id);
 
@@ -11906,6 +12493,9 @@ void Renderer(uint8 type)
 
 			for(j=0;j<z_slot[i];j++)
 			{
+				if (ent[z_buffer[i][j]].scenario == -2)
+					continue;
+
 				if (ent[z_buffer[i][j]].data.vb_id != -1)
 				{
 					m = ent[z_buffer[i][j]].data.vb_id;

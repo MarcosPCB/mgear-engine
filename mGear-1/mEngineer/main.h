@@ -97,6 +97,11 @@
 #define PICK_TAG 109
 #define OBJEXTRUDE 110
 
+#define NLBLOCK_PANNEL 111
+#define NLBLOCK_ADD_CIRCLE 112
+#define NLBLOCK_ADD_QUAD 113
+#define NLBLOCK_ADD_LINE 114
+
 //Font icons
 #define DEBUG_ICON 37
 #define PLAY_ICON 66

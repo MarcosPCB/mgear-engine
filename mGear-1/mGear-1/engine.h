@@ -64,6 +64,7 @@
 #define MAX_MAPMGG 32
 #define MAX_STRINGS 512
 #define MAX_UISCREENS 64
+#define MAX_LBLOCKS 128
 
 #define MAX_VERTEX MAX_GRAPHICS*8
 #define MAX_COLORS MAX_GRAPHICS*12
@@ -670,6 +671,15 @@ struct _MGMSPRITE_
 
 typedef struct _MGMSPRITE_ _MGMSPRITE;
 
+struct _MGMBLOCK
+{
+	uint8 type; //0 - Circle, 1 - Quad
+	int32 vertex[8];
+	uint8 enabled; //0 - Enabled, 1 - Disabled
+};
+
+typedef struct _MGMBLOCK MGMBLOCK;
+
 //MGM -> MGear Map
 struct _MGM_
 {
@@ -707,6 +717,10 @@ struct _MGM_
 	char activator_table[2048];
 
 	uint8 num_global_states;
+
+	uint16 num_blocks;
+
+	MGMBLOCK *blocks;
 };
 
 typedef struct _MGM_ _MGM;
@@ -1303,7 +1317,7 @@ uint32 NAddLightToLightmap(unsigned char *data, uint16 w, uint16 h, uint8 r, uin
 #endif
 
 #define P2(expr) expr * expr
-#define GetDistance(x, y, x2, y2, dist) { dist = mSqrt(P2(x - x2) + P2(y - y2)); }
+#define GetDistance(x, y, x2, y2, dist) { dist = mSqrt(P2((x - x2)) + P2((y - y2))); }
 
 //Faster than math.h functions
 float mCos(int16 ang);

@@ -22,6 +22,9 @@ void NewMap()
 	if (st.Current_Map.sector)
 		free(st.Current_Map.sector);
 
+	if (st.Current_Map.blocks)
+		free(st.Current_Map.blocks);
+
 	if (st.num_lights>0)
 	{
 		for (i = 1; i <= st.num_lights; i++)
@@ -33,9 +36,11 @@ void NewMap()
 		}
 	}
 
-	st.Current_Map.obj = (_MGMOBJ*)malloc(MAX_OBJS*sizeof(_MGMOBJ));
-	st.Current_Map.sector = (_SECTOR*)malloc(MAX_SECTORS*sizeof(_SECTOR));
-	st.Current_Map.sprites = (_MGMSPRITE*)malloc(MAX_SPRITES*sizeof(_MGMSPRITE));
+	st.Current_Map.obj = (_MGMOBJ*)malloc(MAX_OBJS * sizeof(_MGMOBJ));
+	st.Current_Map.sector = (_SECTOR*)malloc(MAX_SECTORS * sizeof(_SECTOR));
+	st.Current_Map.sprites = (_MGMSPRITE*)malloc(MAX_SPRITES * sizeof(_MGMSPRITE));
+
+	st.Current_Map.blocks = malloc(MAX_LBLOCKS * sizeof(MGMBLOCK));
 
 	st.Current_Map.num_sector = 0;
 	st.Current_Map.num_obj = 0;
@@ -147,11 +152,13 @@ void NewMap()
 	st.Current_Map.bck3_size.x = st.Current_Map.bck3_size.y = TEX_PAN_RANGE;
 
 	meng.curlayer = 1;
-	meng.light.type = POINT_LIGHT_NORMAL;
+	meng.light.type = POINTLIGHT;
 	meng.light.color.r = meng.light.color.g = meng.light.color.b = 255;
-	meng.light.falloff = 256;
+	meng.light.falloff = 512;
 	meng.light.c = 0.01;
 	meng.light.intensity = 64;
+	meng.light.spotang = 450;
+	meng.light.spotinnerang = 150;
 
 	meng.gridsize = 64;
 
